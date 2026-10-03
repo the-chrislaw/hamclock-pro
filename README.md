@@ -10,6 +10,7 @@ Requires a C++17 compiler, GNU make, SDL2 development headers/library, and `sdl2
 make
 make check
 make integration-check
+make map-check
 make preview
 ./build/hamclock-pro
 ```
@@ -50,3 +51,5 @@ SDL2 is the installed renderer used for this first executable experiment. Framew
 See `docs/` for review findings and feature work. Original application source is MIT licensed; SDL2 and system components retain their own licenses. Distribution dependency notices and name clearance remain release gates.
 
 Bundled Natural Earth 110m coastline data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md`. The map is a generalized global coastline, not a navigation chart; other HamClock projections, filled land, terminator and station overlays remain pending.
+
+`make verify` runs the native unit checks, executable regression checks, and offline malformed-input checks for the coastline importer. The importer tests create synthetic files in temporary directories and do not download geographic data. UI and Pi hardware checks remain separate.
