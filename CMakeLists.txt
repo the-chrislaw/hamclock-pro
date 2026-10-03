@@ -21,6 +21,16 @@ set_target_properties(hamclock-pro-editor PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.stationeditor
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Station Editor")
 
+add_library(hamclock-world-map STATIC
+    src/qt/world_map_widget.cpp
+    src/map/path.cpp
+    src/map/projection.cpp
+    src/domain/geometry.cpp)
+target_link_libraries(hamclock-world-map PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-world-map PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 include(CTest)
 if(BUILD_TESTING)
     add_executable(qt-appearance-regression tests/qt_appearance_regression.cpp src/qt/editor_appearance.cpp)
@@ -31,3 +41,26 @@ if(BUILD_TESTING)
     add_test(NAME qt-appearance-regression COMMAND qt-appearance-regression)
     set_tests_properties(qt-appearance-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-map-regression tests/qt_map_regression.cpp)
+    target_link_libraries(qt-map-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-regression COMMAND qt-map-regression)
+    set_tests_properties(qt-map-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+add_executable(hamclock-pro-map-preview MACOSX_BUNDLE
+    src/qt/map_preview.cpp
+    src/qt/editor_appearance.cpp
+    src/app/station_view.cpp
+    src/platform/settings.cpp)
+target_link_libraries(hamclock-pro-map-preview PRIVATE hamclock-world-map)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-map-preview PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(hamclock-pro-map-preview PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.mappreview
+    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Map Preview")
