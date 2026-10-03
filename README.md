@@ -14,7 +14,7 @@ make preview
 ./build/hamclock-pro
 ```
 
-The application uses a resizable native window with an 800 × 480 logical canvas. Escape closes it. Displayed demonstration values and schematic graphics are not live station data. No radio control, incoming network service, data provider, telemetry, or privileged runtime is implemented.
+The application uses a resizable native window with an 800 × 480 logical canvas. Escape closes it. Pane values remain illustrative; the map now uses real Natural Earth coastlines in an equirectangular projection. No radio control, incoming network service, live data provider, telemetry, or privileged runtime is implemented.
 
 The native window still uses the earlier experimental visual style, which was rejected for the product. The accepted softer design is in `design/dashboard.html`; open it locally to inspect System/Light/Dark appearance, text enlargement and touch controls. It contains illustrative readings and is not the native runtime.
 
@@ -46,3 +46,5 @@ Use a private directory you control; a valid save replaces the selected regular 
 SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
 
 See `docs/` for review findings and feature work. Original application source is MIT licensed; SDL2 and system components retain their own licenses. Distribution dependency notices and name clearance remain release gates.
+
+Bundled Natural Earth 110m coastline data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md`. The map is a generalized global coastline, not a navigation chart; other HamClock projections, filled land, terminator and station overlays remain pending.

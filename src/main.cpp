@@ -3,13 +3,14 @@
 #include "app/commands.hpp"
 #include "domain/geometry.hpp"
 #include "platform/settings.hpp"
+#include "map/coastline.hpp"
+#include "map/projection.hpp"
 #include <array>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <string>
-#include <vector>
 
 namespace {
 constexpr int W=800,H=480;
@@ -57,14 +58,19 @@ void render(SDL_Renderer*r,const Model&m) {
  for(unsigned i=0;i<panes.size();++i) { const auto b=panes[i];panel(r,b);color(r,229,238,245);text(r,b.x+10,b.y+10,titles[m.selected[i]]);color(r,138,158,177);text(r,b.x+10,b.y+29,"ILLUSTRATIVE PREVIEW");color(r,98,207,181);
   for(int n=0;n<10;++n) { const int height=12+((n*17+i*11)%37);fill(r,{b.x+12+n*16,b.y+94-height,8,height}); }
  }
- Box map{205,188,584,280};panel(r,map);color(r,138,158,177);text(r,217,200,"WORLD VIEW / ORIGINAL SCHEMATIC / NOT A NAVIGATION MAP");
- // Deliberately schematic original land silhouettes; no external map assets.
- color(r,29,49,64);for(int x=map.x+24;x<map.x+map.w;x+=48)SDL_RenderDrawLine(r,x,map.y+34,x,map.y+map.h-24);
- for(int y=map.y+42;y<map.y+map.h-18;y+=36)SDL_RenderDrawLine(r,map.x+12,y,map.x+map.w-12,y);
- const std::vector<std::vector<SDL_Point>> shapes={{{246,258},{280,238},{315,251},{344,245},{328,273},{299,284},{286,308},{267,284},{246,258}},{{306,313},{329,324},{343,356},{327,395},{312,414},{299,365},{306,313}},{{465,252},{493,244},{515,262},{510,279},{531,303},{508,348},{484,360},{469,330},{463,296},{465,252}},{{520,256},{560,235},{608,248},{650,239},{701,267},{678,284},{646,280},{620,312},{587,299},{563,278},{520,256}},{{646,362},{686,345},{723,372},{710,393},{672,400},{646,362}}};
- color(r,81,135,143);for(const auto&s:shapes)SDL_RenderDrawLines(r,s.data(),static_cast<int>(s.size()));
- color(r,98,207,181);SDL_RenderDrawLine(r,283,280,536,278);fill(r,{280,277,6,6});fill(r,{533,275,6,6});
- color(r,138,158,177);text(r,217,447,"DEMO GEOMETRY / FEATURES NOT YET IMPLEMENTED");SDL_RenderPresent(r);
+ Box map{205,188,584,280};panel(r,map);color(r,138,158,177);text(r,217,200,"WORLD VIEW / REAL COASTLINES / EQUIRECTANGULAR");
+ const Box earth{287,226,420,210};
+ auto pixel = [&](hamclock::MapPoint p) { return SDL_Point{earth.x+static_cast<int>(p.x*earth.w),earth.y+static_cast<int>(p.y*earth.h)}; };
+ color(r,29,49,64);
+ for(int i=0;i<=12;++i)SDL_RenderDrawLine(r,earth.x+i*earth.w/12,earth.y,earth.x+i*earth.w/12,earth.y+earth.h);
+ for(int i=0;i<=6;++i)SDL_RenderDrawLine(r,earth.x,earth.y+i*earth.h/6,earth.x+earth.w,earth.y+i*earth.h/6);
+ color(r,125,177,183);
+ for(const auto&part:hamclock::coastline_parts) for(std::size_t i=1;i<part.count;++i) {
+  const auto a=hamclock::coastline_points[part.start+i-1],b=hamclock::coastline_points[part.start+i];
+  const auto split=hamclock::map_split_equirectangular({a.latitude,a.longitude},{b.latitude,b.longitude});
+  for(std::size_t j=0;j<split.count;++j){const auto first=pixel(split.segments[j].first),second=pixel(split.segments[j].second);SDL_RenderDrawLine(r,first.x,first.y,second.x,second.y);}
+ }
+ color(r,138,158,177);text(r,217,447,"NATURAL EARTH 110M / OFFLINE / OVERLAYS NOT IMPLEMENTED");SDL_RenderPresent(r);
 }
 bool test() {
  Model m; if(m.click(-1,80)||m.click(800,480)||m.click(395,70))return false;
@@ -78,7 +84,7 @@ bool test() {
 int main(int argc,char**argv) {
  if(argc>=2&&std::strcmp(argv[1],"--calculate")==0) return hamclock::calculate_command(argc,argv);
  if(argc>=2&&(std::strcmp(argv[1],"--save-station")==0||std::strcmp(argv[1],"--load-station")==0)) return hamclock::settings_command(argc,argv);
- if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0)?0:1; }
+ if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0)?0:1; }
  const bool headless=argc==3&&std::strcmp(argv[1],"--headless-frame")==0;
  if(argc!=1&&!headless) {std::fprintf(stderr,"Usage: %s [--self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}
  if(SDL_Init(headless?0:SDL_INIT_VIDEO)!=0){std::fprintf(stderr,"SDL init: %s\n",SDL_GetError());return 1;}
@@ -88,6 +94,6 @@ int main(int argc,char**argv) {
  if(!r){std::fprintf(stderr,"Renderer: %s\n",SDL_GetError());if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return 1;}
  SDL_RenderSetLogicalSize(r,W,H);Model model;int result=0;
  if(headless){render(r,model);if(SDL_SaveBMP(s,argv[2])!=0){std::fprintf(stderr,"Save frame: %s\n",SDL_GetError());result=1;}}
- else { bool running=true;while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT||(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_ESCAPE))running=false;if(e.type==SDL_MOUSEBUTTONDOWN&&e.button.button==SDL_BUTTON_LEFT)model.click(e.button.x,e.button.y);}render(r,model);SDL_Delay(25);} }
+ else { bool running=true,dirty=true;std::time_t previous=0;while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT||(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_ESCAPE))running=false;if(e.type==SDL_MOUSEBUTTONDOWN&&e.button.button==SDL_BUTTON_LEFT)dirty=model.click(e.button.x,e.button.y)||dirty;if(e.type==SDL_WINDOWEVENT)dirty=true;}const auto now=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());if(running&&(dirty||now!=previous)){render(r,model);previous=now;dirty=false;}SDL_Delay(25);} }
  SDL_DestroyRenderer(r);if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return result;
 }
