@@ -6,7 +6,7 @@ CXXFLAGS += -std=c++17 -Wall -Wextra -Wpedantic
 LDLIBS += $(shell $(SDL_CONFIG) --libs)
 SOURCES := $(wildcard src/*.cpp src/app/*.cpp src/domain/*.cpp src/platform/*.cpp src/map/*.cpp)
 
-.PHONY: all check integration-check map-check locator-check verify preview clean
+.PHONY: all check integration-check map-check land-check locator-check verify preview clean
 all: build/hamclock-pro
 
 build/hamclock-pro: $(SOURCES) $(wildcard src/*.h src/*.hpp src/app/*.hpp src/domain/*.hpp src/platform/*.hpp src/map/*.hpp)
@@ -34,7 +34,10 @@ locator-check: build/locator-input-regression build/locator-boundary-regression
 	./build/locator-input-regression
 	./build/locator-boundary-regression
 
-verify: check integration-check map-check locator-check
+land-check:
+	PYTHONDONTWRITEBYTECODE=1 python3 tests/land_import_regression.py
+
+verify: check integration-check map-check locator-check land-check
 
 preview: build/hamclock-pro
 	./build/hamclock-pro --headless-frame build/dashboard.bmp
