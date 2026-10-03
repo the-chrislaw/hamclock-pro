@@ -8,6 +8,7 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
 
 add_executable(hamclock-pro-editor MACOSX_BUNDLE
     src/qt/station_editor.cpp
+    src/qt/station_editor_dialog.cpp
     src/qt/editor_appearance.cpp
     src/app/station_edit.cpp
     src/app/station_view.cpp
@@ -64,3 +65,21 @@ endif()
 set_target_properties(hamclock-pro-map-preview PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.mappreview
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Map Preview")
+
+if(BUILD_TESTING)
+    add_executable(qt-station-dialog-regression
+        tests/qt_station_dialog_regression.cpp
+        src/qt/station_editor_dialog.cpp
+        src/qt/editor_appearance.cpp
+        src/app/station_edit.cpp
+        src/app/station_view.cpp
+        src/platform/settings.cpp
+        src/domain/geometry.cpp)
+    target_link_libraries(qt-station-dialog-regression PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-station-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-station-dialog-regression COMMAND qt-station-dialog-regression)
+    add_test(NAME qt-station-dialog-mac-layout COMMAND qt-station-dialog-regression --mac-button-layout)
+    set_tests_properties(qt-station-dialog-regression qt-station-dialog-mac-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
