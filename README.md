@@ -17,6 +17,8 @@ make preview
 
 The application uses a resizable native window with an 800 × 480 logical canvas. Escape closes it. Pane values remain illustrative; the map now uses real Natural Earth coastlines in an equirectangular projection. No radio control, incoming network service, live data provider, telemetry, or privileged runtime is implemented.
 
+Use Tab/Shift-Tab or Left/Right to focus a pane, then Enter or Space to cycle its illustrative selection. A visible outline marks focus. Mouse selection remains available. These controls do not provide a native screen-reader interface; the accessibility-tree work remains pending.
+
 The native window still uses the earlier experimental visual style, which was rejected for the product. The accepted softer design is in `design/dashboard.html`; open it locally to inspect System/Light/Dark appearance, text enlargement and touch controls. It contains illustrative readings and is not the native runtime.
 
 ## Targets and validation

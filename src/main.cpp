@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include "app/commands.hpp"
 #include "app/station_view.hpp"
+#include "app/pane_controls.hpp"
 #include "domain/geometry.hpp"
 #include "platform/settings.hpp"
 #include "map/coastline.hpp"
@@ -23,7 +24,13 @@ constexpr int W=800,H=480;
 struct Box { int x,y,w,h; bool contains(int px,int py) const { return px>=x&&py>=y&&px<x+w&&py<y+h; } };
 constexpr std::array<Box,3> panes={Box{205,68,190,112},Box{402,68,190,112},Box{599,68,190,112}};
 constexpr std::array<const char*,5> titles={"SPACE WEATHER","BAND CONDITIONS","SOLAR ACTIVITY","DX SPOTS","SATELLITES"};
-struct Model { std::array<unsigned,3> selected{0,1,2}; std::optional<hamclock::StationView> station; std::vector<hamclock::Location> route; bool click(int x,int y) { for(unsigned i=0;i<panes.size();++i) if(panes[i].contains(x,y)) { selected[i]=(selected[i]+1)%titles.size(); return true; } return false; } };
+struct Model {
+ hamclock::PaneControls controls; std::optional<hamclock::StationView> station; std::vector<hamclock::Location> route;
+ bool click(int x,int y) { for(unsigned i=0;i<panes.size();++i) if(panes[i].contains(x,y)) return controls.choose(i); return false; }
+ bool key(SDL_Keycode key, Uint16 modifiers) {
+  switch(key){case SDLK_TAB:return controls.focus_next((modifiers&KMOD_SHIFT)!=0);case SDLK_LEFT:return controls.move_focus(-1);case SDLK_RIGHT:return controls.move_focus(1);case SDLK_RETURN:case SDLK_KP_ENTER:case SDLK_SPACE:return controls.activate();default:return false;}
+ }
+};
 // Five-column glyphs, authored for this prototype. Bits run top to bottom.
 const unsigned char* glyph(char c) {
  static const unsigned char letters[][5]={
@@ -60,8 +67,8 @@ void render(SDL_Renderer*r,const Model&m) {
  color(r,229,238,245);text(r,24,175,"DX / TARGET",2);color(r,138,158,177);text(r,24,206,m.station?m.station->dx_grid:"SELECT A DESTINATION");
  text(r,24,241,m.station?m.station->distance_text:"NO LIVE RADIO DATA");text(r,24,261,m.station?m.station->bearing_text:"NO NETWORK REQUESTS");
  color(r,98,207,181);text(r,24,308,"SUN / MOON",2);color(r,138,158,177);text(r,24,339,"NOT CALCULATED");
- text(r,24,416,"ESC TO EXIT");text(r,24,438,"CLICK PANE TO CYCLE");
- for(unsigned i=0;i<panes.size();++i) { const auto b=panes[i];panel(r,b);color(r,229,238,245);text(r,b.x+10,b.y+10,titles[m.selected[i]]);color(r,138,158,177);text(r,b.x+10,b.y+29,"ILLUSTRATIVE PREVIEW");color(r,98,207,181);
+ text(r,24,396,"TAB TO FOCUS PANE");text(r,24,416,"ENTER OR SPACE: CYCLE");text(r,24,438,"ESC TO EXIT");
+ for(unsigned i=0;i<panes.size();++i) { const auto b=panes[i];panel(r,b);if(m.controls.focused==i){color(r,229,238,245);for(int offset=1;offset<=2;++offset){SDL_Rect focus{b.x-offset,b.y-offset,b.w+2*offset,b.h+2*offset};SDL_RenderDrawRect(r,&focus);}}color(r,229,238,245);text(r,b.x+10,b.y+10,titles[m.controls.selected[i]]);color(r,138,158,177);text(r,b.x+10,b.y+29,"ILLUSTRATIVE PREVIEW");color(r,98,207,181);
   for(int n=0;n<10;++n) { const int height=12+((n*17+i*11)%37);fill(r,{b.x+12+n*16,b.y+94-height,8,height}); }
  }
  Box map{205,188,584,280};panel(r,map);color(r,138,158,177);text(r,217,200,"WORLD VIEW / REAL COASTLINES / EQUIRECTANGULAR");
@@ -85,9 +92,10 @@ void render(SDL_Renderer*r,const Model&m) {
 }
 bool test() {
  Model m; if(m.click(-1,80)||m.click(800,480)||m.click(395,70))return false;
- if(!m.click(205,68)||m.selected[0]!=1||m.selected[1]!=1)return false;
- for(int i=0;i<4;++i)m.click(205,68);if(m.selected[0]!=0)return false;
- if(!m.click(788,179)||m.selected[2]!=3||m.click(789,180))return false;
+ if(!m.click(205,68)||m.controls.selected[0]!=1||m.controls.selected[1]!=1)return false;
+ for(int i=0;i<4;++i)m.click(205,68);if(m.controls.selected[0]!=0)return false;
+ if(!m.click(788,179)||m.controls.selected[2]!=3||m.click(789,180))return false;
+ Model keyboard;if(keyboard.key(SDLK_RETURN,0)||!keyboard.key(SDLK_TAB,KMOD_SHIFT)||keyboard.controls.focused!=2||!keyboard.key(SDLK_SPACE,0)||keyboard.controls.selected[2]!=3||!keyboard.key(SDLK_RIGHT,0)||keyboard.controls.focused!=0||keyboard.key(SDLK_a,0))return false;
  for(const auto&b:panes) if(b.x<0||b.y<0||b.x+b.w>W||b.y+b.h>H)return false;
  return true;
 }
@@ -95,7 +103,7 @@ bool test() {
 int main(int argc,char**argv) {
  if(argc>=2&&std::strcmp(argv[1],"--calculate")==0) return hamclock::calculate_command(argc,argv);
  if(argc>=2&&(std::strcmp(argv[1],"--save-station")==0||std::strcmp(argv[1],"--load-station")==0)) return hamclock::settings_command(argc,argv);
- if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0&&hamclock::run_station_view_tests()==0&&hamclock::run_path_tests()==0)?0:1; }
+ if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0&&hamclock::run_station_view_tests()==0&&hamclock::run_path_tests()==0&&hamclock::run_pane_control_tests()==0)?0:1; }
  const bool station_mode=(argc==3||argc==5)&&std::strcmp(argv[1],"--station")==0;
  const bool headless=(argc==3&&std::strcmp(argv[1],"--headless-frame")==0)||(station_mode&&argc==5&&std::strcmp(argv[3],"--headless-frame")==0);
  if(argc!=1&&!headless&&!(station_mode&&argc==3)) {std::fprintf(stderr,"Usage: %s [--station PATH [--headless-frame PATH.bmp] | --self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}
@@ -108,6 +116,6 @@ int main(int argc,char**argv) {
  if(!r){std::fprintf(stderr,"Renderer: %s\n",SDL_GetError());if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return 1;}
  SDL_RenderSetLogicalSize(r,W,H);int result=0;
  if(headless){render(r,model);if(SDL_SaveBMP(s,argv[station_mode?4:2])!=0){std::fprintf(stderr,"Save frame: %s\n",SDL_GetError());result=1;}}
- else { bool running=true,dirty=true;std::time_t previous=0;while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT||(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_ESCAPE))running=false;if(e.type==SDL_MOUSEBUTTONDOWN&&e.button.button==SDL_BUTTON_LEFT)dirty=model.click(e.button.x,e.button.y)||dirty;if(e.type==SDL_WINDOWEVENT)dirty=true;}const auto now=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());if(running&&(dirty||now!=previous)){render(r,model);previous=now;dirty=false;}SDL_Delay(25);} }
+ else { bool running=true,dirty=true;std::time_t previous=0;while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT||(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_ESCAPE))running=false;if(e.type==SDL_KEYDOWN)dirty=model.key(e.key.keysym.sym,e.key.keysym.mod)||dirty;if(e.type==SDL_MOUSEBUTTONDOWN&&e.button.button==SDL_BUTTON_LEFT)dirty=model.click(e.button.x,e.button.y)||dirty;if(e.type==SDL_WINDOWEVENT)dirty=true;}const auto now=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());if(running&&(dirty||now!=previous)){render(r,model);previous=now;dirty=false;}SDL_Delay(25);} }
  SDL_DestroyRenderer(r);if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return result;
 }
