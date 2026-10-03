@@ -1,23 +1,29 @@
 // Original HamClock Pro dashboard foundation. Illustrative, offline data only.
 #include <SDL.h>
 #include "app/commands.hpp"
+#include "app/station_view.hpp"
 #include "domain/geometry.hpp"
 #include "platform/settings.hpp"
 #include "map/coastline.hpp"
 #include "map/projection.hpp"
+#include "map/path.hpp"
 #include <array>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <string>
+#include <optional>
+#include <algorithm>
+#include <utility>
+#include <vector>
 
 namespace {
 constexpr int W=800,H=480;
 struct Box { int x,y,w,h; bool contains(int px,int py) const { return px>=x&&py>=y&&px<x+w&&py<y+h; } };
 constexpr std::array<Box,3> panes={Box{205,68,190,112},Box{402,68,190,112},Box{599,68,190,112}};
 constexpr std::array<const char*,5> titles={"SPACE WEATHER","BAND CONDITIONS","SOLAR ACTIVITY","DX SPOTS","SATELLITES"};
-struct Model { std::array<unsigned,3> selected{0,1,2}; bool click(int x,int y) { for(unsigned i=0;i<panes.size();++i) if(panes[i].contains(x,y)) { selected[i]=(selected[i]+1)%titles.size(); return true; } return false; } };
+struct Model { std::array<unsigned,3> selected{0,1,2}; std::optional<hamclock::StationView> station; std::vector<hamclock::Location> route; bool click(int x,int y) { for(unsigned i=0;i<panes.size();++i) if(panes[i].contains(x,y)) { selected[i]=(selected[i]+1)%titles.size(); return true; } return false; } };
 // Five-column glyphs, authored for this prototype. Bits run top to bottom.
 const unsigned char* glyph(char c) {
  static const unsigned char letters[][5]={
@@ -50,9 +56,9 @@ void render(SDL_Renderer*r,const Model&m) {
  char clock[32];std::strftime(clock,sizeof(clock),"%H:%M:%S UTC",&tm);
  color(r,229,238,245);text(r,600,17,clock,2); color(r,138,158,177);text(r,600,43,"SYSTEM CLOCK");
  panel(r,{12,68,183,400});color(r,98,207,181);text(r,24,82,"DE / HOME",2);
- color(r,229,238,245);text(r,24,113,"DEMO STATION",2);color(r,138,158,177);text(r,24,141,"LOCATION NOT SET");
- color(r,229,238,245);text(r,24,175,"DX / TARGET",2);color(r,138,158,177);text(r,24,206,"SELECT A DESTINATION");
- text(r,24,241,"NO LIVE RADIO DATA");text(r,24,261,"NO NETWORK REQUESTS");
+ color(r,229,238,245);text(r,24,113,m.station?m.station->callsign:"DEMO STATION");color(r,138,158,177);text(r,24,141,m.station?m.station->de_grid:"LOCATION NOT SET");
+ color(r,229,238,245);text(r,24,175,"DX / TARGET",2);color(r,138,158,177);text(r,24,206,m.station?m.station->dx_grid:"SELECT A DESTINATION");
+ text(r,24,241,m.station?m.station->distance_text:"NO LIVE RADIO DATA");text(r,24,261,m.station?m.station->bearing_text:"NO NETWORK REQUESTS");
  color(r,98,207,181);text(r,24,308,"SUN / MOON",2);color(r,138,158,177);text(r,24,339,"NOT CALCULATED");
  text(r,24,416,"ESC TO EXIT");text(r,24,438,"CLICK PANE TO CYCLE");
  for(unsigned i=0;i<panes.size();++i) { const auto b=panes[i];panel(r,b);color(r,229,238,245);text(r,b.x+10,b.y+10,titles[m.selected[i]]);color(r,138,158,177);text(r,b.x+10,b.y+29,"ILLUSTRATIVE PREVIEW");color(r,98,207,181);
@@ -70,7 +76,12 @@ void render(SDL_Renderer*r,const Model&m) {
   const auto split=hamclock::map_split_equirectangular({a.latitude,a.longitude},{b.latitude,b.longitude});
   for(std::size_t j=0;j<split.count;++j){const auto first=pixel(split.segments[j].first),second=pixel(split.segments[j].second);SDL_RenderDrawLine(r,first.x,first.y,second.x,second.y);}
  }
- color(r,138,158,177);text(r,217,447,"NATURAL EARTH 110M / OFFLINE / OVERLAYS NOT IMPLEMENTED");SDL_RenderPresent(r);
+ if(m.station){
+  color(r,98,207,181);
+  for(std::size_t i=1;i<m.route.size();++i){const auto split=hamclock::map_split_equirectangular(m.route[i-1],m.route[i]);for(std::size_t j=0;j<split.count;++j){const auto a=pixel(split.segments[j].first),b=pixel(split.segments[j].second);SDL_RenderDrawLine(r,a.x,a.y,b.x,b.y);}}
+  for(const auto&entry:std::array<std::pair<hamclock::Location,const char*>,2>{{{m.station->de,"DE"},{m.station->dx,"DX"}}}){const auto p=pixel(hamclock::map_project_equirectangular(entry.first));fill(r,{p.x-2,p.y-2,5,5});text(r,std::min(p.x+5,earth.x+earth.w-12),std::max(earth.y,p.y-9),entry.second);}
+ }
+ color(r,138,158,177);text(r,217,447,m.station?(m.route.empty()?"NATURAL EARTH / ROUTE UNDEFINED / OFFLINE":"NATURAL EARTH / SHORT PATH GEOMETRY / OFFLINE"):"NATURAL EARTH 110M / OFFLINE / STATION NOT SET");SDL_RenderPresent(r);
 }
 bool test() {
  Model m; if(m.click(-1,80)||m.click(800,480)||m.click(395,70))return false;
@@ -84,16 +95,19 @@ bool test() {
 int main(int argc,char**argv) {
  if(argc>=2&&std::strcmp(argv[1],"--calculate")==0) return hamclock::calculate_command(argc,argv);
  if(argc>=2&&(std::strcmp(argv[1],"--save-station")==0||std::strcmp(argv[1],"--load-station")==0)) return hamclock::settings_command(argc,argv);
- if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0)?0:1; }
- const bool headless=argc==3&&std::strcmp(argv[1],"--headless-frame")==0;
- if(argc!=1&&!headless) {std::fprintf(stderr,"Usage: %s [--self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}
+ if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0&&hamclock::run_station_view_tests()==0&&hamclock::run_path_tests()==0)?0:1; }
+ const bool station_mode=(argc==3||argc==5)&&std::strcmp(argv[1],"--station")==0;
+ const bool headless=(argc==3&&std::strcmp(argv[1],"--headless-frame")==0)||(station_mode&&argc==5&&std::strcmp(argv[3],"--headless-frame")==0);
+ if(argc!=1&&!headless&&!(station_mode&&argc==3)) {std::fprintf(stderr,"Usage: %s [--station PATH [--headless-frame PATH.bmp] | --self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}
+ Model model;
+ if(station_mode){try{model.station=hamclock::make_station_view(hamclock::load_settings(argv[2]));if(hamclock::geometry(model.station->de,model.station->dx).status!=hamclock::BearingStatus::Antipodal)model.route=hamclock::map_short_path(model.station->de,model.station->dx);}catch(const std::exception&error){std::fprintf(stderr,"Station startup error: %s\n",error.what());return 2;}}
  if(SDL_Init(headless?0:SDL_INIT_VIDEO)!=0){std::fprintf(stderr,"SDL init: %s\n",SDL_GetError());return 1;}
  SDL_Window*w=nullptr;SDL_Surface*s=nullptr;SDL_Renderer*r=nullptr;
  if(headless){s=SDL_CreateRGBSurfaceWithFormat(0,W,H,32,SDL_PIXELFORMAT_ARGB8888);if(s)r=SDL_CreateSoftwareRenderer(s);}
  else { w=SDL_CreateWindow("HamClock Pro - Offline foundation",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,W,H,SDL_WINDOW_RESIZABLE);if(w)r=SDL_CreateRenderer(w,-1,SDL_RENDERER_ACCELERATED|SDL_RENDERER_PRESENTVSYNC);if(w&&!r)r=SDL_CreateRenderer(w,-1,SDL_RENDERER_SOFTWARE); }
  if(!r){std::fprintf(stderr,"Renderer: %s\n",SDL_GetError());if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return 1;}
- SDL_RenderSetLogicalSize(r,W,H);Model model;int result=0;
- if(headless){render(r,model);if(SDL_SaveBMP(s,argv[2])!=0){std::fprintf(stderr,"Save frame: %s\n",SDL_GetError());result=1;}}
+ SDL_RenderSetLogicalSize(r,W,H);int result=0;
+ if(headless){render(r,model);if(SDL_SaveBMP(s,argv[station_mode?4:2])!=0){std::fprintf(stderr,"Save frame: %s\n",SDL_GetError());result=1;}}
  else { bool running=true,dirty=true;std::time_t previous=0;while(running){SDL_Event e;while(SDL_PollEvent(&e)){if(e.type==SDL_QUIT||(e.type==SDL_KEYDOWN&&e.key.keysym.sym==SDLK_ESCAPE))running=false;if(e.type==SDL_MOUSEBUTTONDOWN&&e.button.button==SDL_BUTTON_LEFT)dirty=model.click(e.button.x,e.button.y)||dirty;if(e.type==SDL_WINDOWEVENT)dirty=true;}const auto now=std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());if(running&&(dirty||now!=previous)){render(r,model);previous=now;dirty=false;}SDL_Delay(25);} }
  SDL_DestroyRenderer(r);if(s)SDL_FreeSurface(s);if(w)SDL_DestroyWindow(w);SDL_Quit();return result;
 }

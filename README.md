@@ -41,7 +41,9 @@ Station configuration can also be saved and inspected explicitly:
 ./build/hamclock-pro --load-station ./station.conf
 ```
 
-Use a private directory you control; a valid save replaces the selected regular file. The native screen does not yet load these settings or offer an editor. Invalid/corrupt input produces an error instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
+Use a private directory you control; a valid save replaces the selected regular file. Launch `./build/hamclock-pro --station ./station.conf` to load that explicit file into the native display. It shows callsign, DE/DX locators, spherical distance, initial true bearing and a sampled short great-circle route. There is no native editor yet; appearance remains stored but is not applied by this experimental native renderer. Invalid/corrupt input produces an error before opening the display instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
+
+For a reproducible offline station frame, use `./build/hamclock-pro --station ./station.conf --headless-frame ./build/station.bmp`. Coincident/antipodal bearings are explicitly undefined; antipodal routes are not drawn. A route represents geometry, not predicted propagation or radio coverage.
 
 SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
 

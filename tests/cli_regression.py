@@ -34,6 +34,11 @@ with tempfile.TemporaryDirectory(prefix="hamclock-cli-") as directory:
     saved = json.loads(run("--load-station", str(path)).stdout)
     assert saved == {"callsign": "N0CALL", "appearance": "system", "de_lat": 0,
                      "de_lon": 0, "dx_lat": 51.5, "dx_lon": -0.1}
+    frame = pathlib.Path(directory) / "station.bmp"
+    run("--station", str(path), "--headless-frame", str(frame))
+    image = frame.read_bytes()
+    assert image[:2] == b"BM" and len(image) > 800 * 480 * 3
+    assert path.read_bytes() == before
     run("--save-station", str(path), "N0CALL", "91", "0", "0", "0", "dark", code=2)
     assert path.read_bytes() == before
     run("--save-station", str(path), "N0CALL", "0", "0", "0", "0", "invalid", code=2)
@@ -43,7 +48,15 @@ with tempfile.TemporaryDirectory(prefix="hamclock-cli-") as directory:
     run("--save-station", str(link), "N0CALL", "0", "0", "0", "0", "dark", code=2)
     assert link.is_symlink() and path.read_bytes() == before
     run("--load-station", str(link), code=2)
+    run("--station", str(link), "--headless-frame", str(frame), code=2)
+    assert frame.read_bytes() == image
     path.write_text("version=1\n", encoding="ascii")
     run("--load-station", str(path), code=2)
+    run("--station", str(path), "--headless-frame", str(frame), code=2)
+    assert frame.read_bytes() == image
     assert path.read_text(encoding="ascii") == "version=1\n"
+    run("--save-station", str(path), "N0CALL", "0", "0", "0", "180", "dark")
+    run("--station", str(path), "--headless-frame", str(frame))
+    assert frame.read_bytes()[:2] == b"BM"
+    run("--station", str(path), "--unexpected", str(frame), code=2)
 print("Executable CLI regression checks passed")
