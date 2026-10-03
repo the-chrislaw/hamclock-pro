@@ -9,6 +9,8 @@ clockwise, holes counterclockwise; ring order does not identify holes. Multiple
 exteriors are allowed. This importer does NOT classify/repair topology, clip
 seams, or convert winding to GeoJSON. +/-180 retain distinct boundary identity.
 Closure/area validation alone does not certify absence of self-intersections.
+Only out-of-range endpoint excursions of at most 1e-12 degrees are snapped
+to the same signed geographic endpoint; every in-range coordinate is retained.
 Output publication assumes a trusted stable parent directory, last writer wins;
 it does not provide directory-fsync crash durability or adversarial path locking.
 """
@@ -31,13 +33,29 @@ MAX_RING_POINTS = 20000
 MAX_MEMBERS = 256
 MAX_OUTPUT = 12 * 1024 * 1024
 MEMBER = "ne_110m_land.shp"
+ENDPOINT_OVERSHOOT = 1e-12  # Degrees; does not relax declared-box containment.
+
+
+def _geographic(value, limit):
+    if not math.isfinite(value):
+        raise ValueError("invalid geographic coordinate")
+    if -limit <= value <= limit:
+        return value
+    if abs(value) - limit <= ENDPOINT_OVERSHOOT:
+        return math.copysign(limit, value)
+    raise ValueError("invalid geographic coordinate")
 
 
 def _box(data, offset):
     west, south, east, north = struct.unpack_from("<4d", data, offset)
-    if not (all(math.isfinite(v) for v in (west, south, east, north))
-            and -180 <= west <= east <= 180 and -90 <= south <= north <= 90):
+    # Reject reversed source bounds before normalization can collapse them.
+    if not (west <= east and south <= north):
         raise ValueError("invalid geographic bounding box")
+    try:
+        west, east = (_geographic(v, 180.) for v in (west, east))
+        south, north = (_geographic(v, 90.) for v in (south, north))
+    except ValueError as error:
+        raise ValueError("invalid geographic bounding box") from error
     return west, south, east, north
 
 
@@ -81,9 +99,7 @@ def decode_shp(data):
         point_offset = pos + 44 + 4 * count_rings
         for index in range(count_points):
             lon, lat = struct.unpack_from("<dd", data, point_offset + 16 * index)
-            if not (math.isfinite(lon) and math.isfinite(lat)
-                    and -180 <= lon <= 180 and -90 <= lat <= 90):
-                raise ValueError("invalid geographic coordinate")
+            lon, lat = _geographic(lon, 180.), _geographic(lat, 90.)
             if not (box[0] <= lon <= box[2] and box[1] <= lat <= box[3]
                     and overall[0] <= lon <= overall[2] and overall[1] <= lat <= overall[3]):
                 raise ValueError("coordinate outside declared bounds")

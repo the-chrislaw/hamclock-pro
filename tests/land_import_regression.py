@@ -3,6 +3,7 @@
 import hashlib
 import importlib.util
 import io
+import math
 import os
 from pathlib import Path
 import struct
@@ -85,6 +86,56 @@ class LandRegression(unittest.TestCase):
         ring = [(0., 0.), (0., 1.123456789012345), (2., 1.), (0., 0.)]
         self.assertEqual(land.decode_shp(shape([[ring]]))[0], ring)
         self.assertEqual(land.decode_shp(shape([[list(reversed(ring))]]))[0], list(reversed(ring)))
+
+    def test_endpoint_envelope_adjacent_floats(self):
+        # 1e-12 is not exactly representable relative to 90/180. Exercise the
+        # last accepted binary float and its immediate rejected successor.
+        for limit in (90., 180.):
+            accepted = limit + land.ENDPOINT_OVERSHOOT
+            while accepted - limit > land.ENDPOINT_OVERSHOOT:
+                accepted = math.nextafter(accepted, limit)
+            rejected = math.nextafter(accepted, math.inf)
+            self.assertLessEqual(accepted - limit, land.ENDPOINT_OVERSHOOT)
+            self.assertGreater(rejected - limit, land.ENDPOINT_OVERSHOOT)
+            for sign in (-1., 1.):
+                self.assertEqual(land._geographic(sign * accepted, limit), sign * limit)
+                with self.assertRaises(ValueError):
+                    land._geographic(sign * rejected, limit)
+                for value in (sign * limit, math.nextafter(sign * limit, 0.)):
+                    self.assertEqual(land._geographic(value, limit), value)
+            for value in (float('nan'), float('inf'), -float('inf')):
+                with self.assertRaises(ValueError):
+                    land._geographic(value, limit)
+        self.assertEqual(math.copysign(1., land._geographic(-0., 180.)), -1.)
+
+    def test_endpoint_normalization_points_boxes_closure_and_full_width(self):
+        for latitude in (-90., 90.):
+            outside_lat = math.nextafter(latitude, math.copysign(math.inf, latitude))
+            inward_lat = latitude - math.copysign(10., latitude)
+            outside_lon = math.nextafter(180., math.inf)
+            ring = [(-outside_lon, outside_lat), (-outside_lon, inward_lat),
+                    (outside_lon, inward_lat), (outside_lon, outside_lat),
+                    (-outside_lon, outside_lat)]
+            normalized = [(-180., latitude), (-180., inward_lat),
+                          (180., inward_lat), (180., latitude), (-180., latitude)]
+            self.assertEqual(land.decode_shp(shape([[ring]]))[0], normalized)
+            self.assertEqual(normalized[3][0] - normalized[4][0], 360.)
+
+    def test_endpoint_tolerance_does_not_expand_interior_boxes(self):
+        data = shape([[OUTER]])
+        struct.pack_into('<d', data, 36 + 16, math.nextafter(4., 0.))
+        self.reject(data)
+        data = shape([[OUTER]])
+        struct.pack_into('<d', data, 112 + 16, math.nextafter(4., 0.))
+        self.reject(data)
+
+    def test_reversed_outside_boxes_not_repaired(self):
+        for offset in (36, 112):
+            for values in ((math.nextafter(180., math.inf), 0., 180., 4.),
+                           (0., math.nextafter(90., math.inf), 4., 90.)):
+                data = shape([[OUTER]])
+                struct.pack_into('<4d', data, offset, *values)
+                self.reject(data)
 
     def test_repeated_consecutive_points(self):
         ring = [OUTER[0]] + OUTER
