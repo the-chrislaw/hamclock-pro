@@ -85,9 +85,11 @@ void WorldMapWidget::changeEvent(QEvent* event) {
 }
 void WorldMapWidget::paintEvent(QPaintEvent*) {
     const bool dark=appearance_=="dark" || (appearance_=="system" && palette().color(QPalette::Window).lightness()<128);
-    const QColor sea(dark?"#24383c":"#dce8eb"),coast(dark?"#9fb5b7":"#647c7e"),route(dark?"#b4d9e8":"#315e77");
+    const QColor sea(dark?"#374a51":"#dce8eb"),coast(dark?"#8b9fa3":"#647c7e"),route(dark?"#b4d9e8":"#315e77");
     QPainter painter(this);painter.setRenderHint(QPainter::Antialiasing);
-    painter.fillRect(rect(),palette().color(QPalette::Window));
+    // Keep the letterbox in the active ocean theme; widget palettes may be
+    // overridden by native style inheritance. Geographic bounds stay 2:1.
+    painter.fillRect(rect(),sea);
     const auto bounds=mapBounds();if(bounds.isEmpty())return;
     painter.setClipRect(bounds);painter.fillRect(bounds,sea);
     painter.save();painter.translate(bounds.topLeft());painter.scale(bounds.width(),bounds.height());

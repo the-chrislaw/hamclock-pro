@@ -87,6 +87,7 @@ endif()
 add_executable(hamclock-pro-dashboard MACOSX_BUNDLE
     src/qt/dashboard_main.cpp
     src/qt/station_dashboard.cpp
+    src/qt/dashboard_appearance.cpp
     src/qt/station_editor_dialog.cpp
     src/qt/editor_appearance.cpp
     src/app/station_edit.cpp
@@ -103,6 +104,7 @@ if(BUILD_TESTING)
     add_executable(qt-dashboard-regression
         tests/qt_dashboard_regression.cpp
         src/qt/station_dashboard.cpp
+    src/qt/dashboard_appearance.cpp
         src/qt/station_editor_dialog.cpp
         src/qt/editor_appearance.cpp
         src/app/station_edit.cpp

@@ -47,9 +47,10 @@ int main(int argc,char** argv){
  // Broad area bounds permit platform antialiasing variation while rejecting
  // an empty ocean or accidental solid land fill. No endpoint/route is present.
  check(coastline_pixels>1000 && coastline_pixels<60000,"real coastline present without invented solid fill");
- map.setAppearance("dark");map.render(&image);check(image.pixelColor(12,200)==QColor("#24383c"),"rendered dark ocean");
+ map.setAppearance("dark");map.render(&image);check(image.pixelColor(12,200)==QColor("#374a51"),"rendered dark ocean");
+ check(image.pixelColor(0,0)==QColor("#374a51"),"dark letterbox follows ocean rather than inherited light palette");
  QPalette palette;palette.setColor(QPalette::Window,QColor("#111111"));map.setPalette(palette);map.setAppearance("system");map.render(&image);
- check(image.pixelColor(12,200)==QColor("#24383c"),"system dark palette");
+ check(image.pixelColor(12,200)==QColor("#374a51"),"system dark palette");
  palette.setColor(QPalette::Window,QColor("#fafafa"));map.setPalette(palette);map.render(&image);
  check(image.pixelColor(12,200)==QColor("#dce8eb"),"system palette change reflected");
  map.setAppearance("light");map.setEndpoints({0,0},{0,90});map.setRouteVisible(true);map.render(&image);
