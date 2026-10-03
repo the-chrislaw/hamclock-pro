@@ -48,6 +48,8 @@ Use a private directory you control; a valid save replaces the selected regular 
 
 For a reproducible offline station frame, use `./build/hamclock-pro --station ./station.conf --headless-frame ./build/station.bmp`. Coincident/antipodal bearings are explicitly undefined; antipodal routes are not drawn. A route represents geometry, not predicted propagation or radio coverage.
 
+The station-edit draft model supports bounded intermediate input, strict validation and cancel without saving. It is exercised by `make check` but is not wired to a native dialog yet. Its callsign policy remains provisional; the final-original manual must define parity rather than treating these input limits as original behavior.
+
 SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
 
 See `docs/` for review findings and feature work. Original application source is MIT licensed; SDL2 and system components retain their own licenses. Distribution dependency notices and name clearance remain release gates.

@@ -3,6 +3,7 @@
 #include "app/commands.hpp"
 #include "app/station_view.hpp"
 #include "app/pane_controls.hpp"
+#include "app/station_edit.hpp"
 #include "domain/geometry.hpp"
 #include "platform/settings.hpp"
 #include "map/coastline.hpp"
@@ -103,7 +104,7 @@ bool test() {
 int main(int argc,char**argv) {
  if(argc>=2&&std::strcmp(argv[1],"--calculate")==0) return hamclock::calculate_command(argc,argv);
  if(argc>=2&&(std::strcmp(argv[1],"--save-station")==0||std::strcmp(argv[1],"--load-station")==0)) return hamclock::settings_command(argc,argv);
- if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0&&hamclock::run_station_view_tests()==0&&hamclock::run_path_tests()==0&&hamclock::run_pane_control_tests()==0)?0:1; }
+ if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0&&hamclock::run_map_tests()==0&&hamclock::run_station_view_tests()==0&&hamclock::run_path_tests()==0&&hamclock::run_pane_control_tests()==0&&hamclock::run_station_edit_tests()==0)?0:1; }
  const bool station_mode=(argc==3||argc==5)&&std::strcmp(argv[1],"--station")==0;
  const bool headless=(argc==3&&std::strcmp(argv[1],"--headless-frame")==0)||(station_mode&&argc==5&&std::strcmp(argv[3],"--headless-frame")==0);
  if(argc!=1&&!headless&&!(station_mode&&argc==3)) {std::fprintf(stderr,"Usage: %s [--station PATH [--headless-frame PATH.bmp] | --self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}

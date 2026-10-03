@@ -1,6 +1,10 @@
 # Development checkpoint
 
-The user renewed work after the overnight cutoff on October 3, 2026. The overnight schedule remains paused; these batches ran interactively.
+The user now explicitly requires starting the next queued batch whenever work ends. Continuous follow-ups are active every 30 minutes; the expired October 3 morning cutoff has been revoked. Use one bounded deliverable per run with a 20-minute work limit and preserve unvalidated work locally rather than pushing it.
+
+Published through private draft #6 (keyboard focus/navigation). Station-edit model is frozen and independently audited; author/independent sanitizers and root/independent make verify passed. Root is publishing this model and the framework/parity research. No native widget is claimed by the logic-only increment.
+
+Next batch already started: map_options owns only src/qt/station_editor.cpp and docs/qt-editor.md for a standard Qt Widgets prototype. The user explicitly approved Qt base and CMake installation. Root owns optional build integration, dependency setup and computer validation; independent audit follows source freeze. Station-clock parity research is frozen in docs/station-clock-parity.md, with original callsign/locator/timezone gaps recorded. Do not stage the unfinished Qt prototype with the model increment. After this batch completes select the next queued item instead of leaving all work idle.
 
 Completed batch 1: permanent offline coastline importer security regressions, private draft #5 stacked on #4. Thirty-one test methods passed, the isolation finding was fixed and independently re-reviewed, and root and independent reviewer ran make verify successfully.
 
