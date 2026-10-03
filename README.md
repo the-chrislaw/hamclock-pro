@@ -73,3 +73,9 @@ On macOS the binary is `build/qt/hamclock-pro-editor.app/Contents/MacOS/hamclock
 This editor has no dashboard or on-screen keyboard. Actual native Save, invalid-input and Cancel checks have passed locally; theme repair, rendered-widget regressions and independent review now pass. See `docs/qt-editor.md` and `docs/computer-validation.md`. Qt and its dependencies retain separate licensing obligations; distribution packaging, assistive-technology and Pi testing remain release gates.
 
 The same optional CMake build now also provides `hamclock-pro-map-preview --station PATH` (inside its `.app/Contents/MacOS/` directory on macOS). This read-only native preview shows real coastlines, saved station grids, calculated short-path distance/bearing and a seam-safe route. System/Light/Dark and Show short path affect the preview only. Its map/keyboard/theme behavior was computer-tested locally; Pi, touch and full accessibility validation remain pending.
+
+## Softer native station dashboard (development increment)
+
+The optional CMake build also produces `hamclock-pro-dashboard --station PATH` (inside its `.app/Contents/MacOS/` directory on macOS). Use an existing valid private station file. This native slice shows actual UTC, saved DE/DX coordinates and grids, computed short-path readings, and licensed real coastlines. Edit station opens the shared dialog; successful Save refreshes the dashboard and saved System/Light/Dark appearance. Cancel and validation/write failures preserve the current station.
+
+Local computer-control checks and independent unit/executable audits passed for this increment. It is not the full accepted dashboard or final-original feature parity; Pi/touch, deployment licenses, assistive-software and other release checks remain pending. Details: `docs/qt-dashboard.md`, `docs/qt-dashboard-audit.md`, `docs/computer-validation.md`.

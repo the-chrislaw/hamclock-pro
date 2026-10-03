@@ -83,3 +83,35 @@ if(BUILD_TESTING)
     add_test(NAME qt-station-dialog-mac-layout COMMAND qt-station-dialog-regression --mac-button-layout)
     set_tests_properties(qt-station-dialog-regression qt-station-dialog-mac-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
+
+add_executable(hamclock-pro-dashboard MACOSX_BUNDLE
+    src/qt/dashboard_main.cpp
+    src/qt/station_dashboard.cpp
+    src/qt/station_editor_dialog.cpp
+    src/qt/editor_appearance.cpp
+    src/app/station_edit.cpp
+    src/app/station_view.cpp
+    src/platform/settings.cpp)
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-world-map)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-dashboard PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(hamclock-pro-dashboard PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.dashboard
+    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Dashboard")
+if(BUILD_TESTING)
+    add_executable(qt-dashboard-regression
+        tests/qt_dashboard_regression.cpp
+        src/qt/station_dashboard.cpp
+        src/qt/station_editor_dialog.cpp
+        src/qt/editor_appearance.cpp
+        src/app/station_edit.cpp
+        src/app/station_view.cpp
+        src/platform/settings.cpp)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-dashboard-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-dashboard-regression COMMAND qt-dashboard-regression)
+    set_tests_properties(qt-dashboard-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
