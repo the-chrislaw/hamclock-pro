@@ -9,6 +9,7 @@ Requires a C++17 compiler, GNU make, SDL2 development headers/library, and `sdl2
 ```sh
 make
 make check
+make integration-check
 make preview
 ./build/hamclock-pro
 ```
@@ -32,6 +33,15 @@ Original offline calculations now provide Maidenhead locators, spherical great-c
 ```
 
 Inputs are signed decimal latitude/longitude in degrees. Invalid or non-finite coordinates are rejected. Coincident and antipodal locations return an explicit status and null bearings. Distances use a mean-radius spherical Earth approximation; they are not surveyed ellipsoidal distances. Domain and input validation checks run with `make check`.
+
+Station configuration can also be saved and inspected explicitly:
+
+```sh
+./build/hamclock-pro --save-station ./station.conf N0CALL 0 0 51.5 -0.1 system
+./build/hamclock-pro --load-station ./station.conf
+```
+
+Use a private directory you control; a valid save replaces the selected regular file. The native screen does not yet load these settings or offer an editor. Invalid/corrupt input produces an error instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
 
 SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
 

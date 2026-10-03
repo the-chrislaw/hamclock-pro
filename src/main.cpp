@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include "app/commands.hpp"
 #include "domain/geometry.hpp"
+#include "platform/settings.hpp"
 #include <array>
 #include <chrono>
 #include <cstdio>
@@ -76,9 +77,10 @@ bool test() {
 }
 int main(int argc,char**argv) {
  if(argc>=2&&std::strcmp(argv[1],"--calculate")==0) return hamclock::calculate_command(argc,argv);
- if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0)?0:1; }
+ if(argc>=2&&(std::strcmp(argv[1],"--save-station")==0||std::strcmp(argv[1],"--load-station")==0)) return hamclock::settings_command(argc,argv);
+ if(argc==2&&std::strcmp(argv[1],"--self-test")==0) { bool ok=test();std::puts(ok?"Pane geometry and interaction tests passed":"Pane tests failed");return (ok&&hamclock::run_domain_tests()==0&&hamclock::run_command_tests()==0&&hamclock::run_settings_tests()==0)?0:1; }
  const bool headless=argc==3&&std::strcmp(argv[1],"--headless-frame")==0;
- if(argc!=1&&!headless) {std::fprintf(stderr,"Usage: %s [--self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON]\n",argv[0]);return 2;}
+ if(argc!=1&&!headless) {std::fprintf(stderr,"Usage: %s [--self-test | --headless-frame PATH.bmp | --calculate DE_LAT DE_LON DX_LAT DX_LON | --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark | --load-station PATH]\n",argv[0]);return 2;}
  if(SDL_Init(headless?0:SDL_INIT_VIDEO)!=0){std::fprintf(stderr,"SDL init: %s\n",SDL_GetError());return 1;}
  SDL_Window*w=nullptr;SDL_Surface*s=nullptr;SDL_Renderer*r=nullptr;
  if(headless){s=SDL_CreateRGBSurfaceWithFormat(0,W,H,32,SDL_PIXELFORMAT_ARGB8888);if(s)r=SDL_CreateSoftwareRenderer(s);}

@@ -1,5 +1,7 @@
 #include "commands.hpp"
 #include "../domain/geometry.hpp"
+#include "../platform/settings.hpp"
+#include <cstring>
 #include <cerrno>
 #include <cmath>
 #include <cstdio>
@@ -55,6 +57,42 @@ int calculate_command(int argc, char** argv) {
         return 0;
     } catch (const std::invalid_argument& error) {
         std::fprintf(stderr, "Invalid location: %s\n", error.what());
+        return 2;
+    }
+}
+
+int settings_command(int argc, char** argv) {
+    const bool save = argc >= 2 && std::strcmp(argv[1], "--save-station") == 0;
+    if ((save && argc != 9) || (!save && argc != 3)) {
+        std::fputs("Usage: hamclock-pro --save-station PATH CALLSIGN DE_LAT DE_LON DX_LAT DX_LON system|light|dark\n"
+                   "       hamclock-pro --load-station PATH\n", stderr);
+        return 2;
+    }
+    try {
+        if (save) {
+            // Bound user strings before copying; numeric arguments are bounded separately.
+            auto bounded = [](const char* raw, std::size_t maximum) {
+                std::size_t length = 0;
+                while (length <= maximum && raw[length] != '\0') ++length;
+                if (length > maximum) throw std::invalid_argument("Station argument too long");
+                return std::string(raw, length);
+            };
+            StationSettings settings{{coordinate(argv[4]), coordinate(argv[5])},
+                                     {coordinate(argv[6]), coordinate(argv[7])},
+                                     bounded(argv[3], 16), bounded(argv[8], 6)};
+            save_settings(argv[2], settings);
+            std::puts("Station settings saved");
+        } else {
+            const auto settings = load_settings(argv[2]);
+            // Validated strings contain no JSON quoting or escape characters.
+            std::printf("{\"callsign\":\"%s\",\"appearance\":\"%s\","
+                        "\"de_lat\":%.17g,\"de_lon\":%.17g,\"dx_lat\":%.17g,\"dx_lon\":%.17g}\n",
+                        settings.callsign.c_str(), settings.appearance.c_str(), settings.de.latitude,
+                        settings.de.longitude, settings.dx.latitude, settings.dx.longitude);
+        }
+        return 0;
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "Station settings error: %s\n", error.what());
         return 2;
     }
 }
