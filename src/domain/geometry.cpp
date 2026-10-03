@@ -16,6 +16,20 @@ double azimuth(double radians_value) {
     double degrees = std::fmod(radians_value * 180.0 / pi + 360.0, 360.0);
     return degrees == 0.0 ? 0.0 : degrees;
 }
+// Each coordinate axis has 4320 six-character cells. Boundaries use the
+// same representable rational reconstruction as the locator-input decoder.
+// Compare coordinates directly rather than adding an offset/scaling, which
+// can erase an ULP and put a canonical corner in its preceding cell.
+unsigned locator_axis(double coordinate,double divisor,double offset) {
+    unsigned low=0,high=4320;
+    while(low+1<high) {
+        const unsigned middle=low+(high-low)/2;
+        const double boundary=static_cast<double>(middle)/divisor-offset;
+        if(coordinate>=boundary)low=middle;
+        else high=middle;
+    }
+    return low;
+}
 void require_valid(Location location) {
     if (!valid_location(location))
         throw std::invalid_argument("Latitude/longitude must be finite and within geographic bounds");
@@ -60,28 +74,17 @@ std::string maidenhead(Location location, unsigned precision) {
     require_valid(location);
     if (precision != 2 && precision != 4 && precision != 6)
         throw std::invalid_argument("Maidenhead precision must be 2, 4, or 6 characters");
-    double x = longitude(location.longitude) + 180.0;
-    // Addition can round an interior longitude up to the exclusive endpoint.
-    if (x >= 360.0) x = std::nextafter(360.0, 0.0);
-    double y = location.latitude + 90.0;
-    if (y == 180.0) y = std::nextafter(180.0, 0.0);
-    const int field_x = static_cast<int>(std::floor(x / 20.0));
-    const int field_y = static_cast<int>(std::floor(y / 10.0));
+    const unsigned x=locator_axis(longitude(location.longitude),12.0,180.0);
+    const unsigned y=locator_axis(location.latitude,24.0,90.0);
     std::string result;
-    result += static_cast<char>('A' + field_x);
-    result += static_cast<char>('A' + field_y);
-    if (precision == 2) return result;
-    x -= field_x * 20.0;
-    y -= field_y * 10.0;
-    const int square_x = static_cast<int>(std::floor(x / 2.0));
-    const int square_y = static_cast<int>(std::floor(y));
-    result += static_cast<char>('0' + square_x);
-    result += static_cast<char>('0' + square_y);
-    if (precision == 4) return result;
-    const int sub_x = std::clamp(static_cast<int>(std::floor((x - square_x * 2.0) * 12.0)), 0, 23);
-    const int sub_y = std::clamp(static_cast<int>(std::floor((y - square_y) * 24.0)), 0, 23);
-    result += static_cast<char>('a' + sub_x);
-    result += static_cast<char>('a' + sub_y);
+    result += static_cast<char>('A'+x/240U);
+    result += static_cast<char>('A'+y/240U);
+    if(precision==2)return result;
+    result += static_cast<char>('0'+x%240U/24U);
+    result += static_cast<char>('0'+y%240U/24U);
+    if(precision==4)return result;
+    result += static_cast<char>('a'+x%24U);
+    result += static_cast<char>('a'+y%24U);
     return result;
 }
 } // namespace hamclock

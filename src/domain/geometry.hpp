@@ -26,9 +26,14 @@ GeometryResult geometry(Location de, Location dx);
 bool valid_location(Location location) noexcept;
 
 // Maidenhead locators use upper-case fields/squares and lower-case subsquares.
-// Precision is the total character count: 2, 4, or 6. Boundary coordinates
-// enter the cell to their north/east; +180 wraps west and +90 uses the last
-// northern cell. Invalid coordinates or precision throw std::invalid_argument.
+// Precision is the total character count: 2, 4, or 6. Replacement boundary
+// policy uses canonical representable SW corners: longitude i/12-180 and
+// latitude i/24-90 for integral i in [0,4320]. An exact canonical corner enters
+// its north/east cell; the immediately preceding representable double stays
+// south/west. No epsilon or coordinate nudge is used. This policy matches the
+// decoder's rational-double reconstruction, not a claim of original numeric
+// implementation parity. +180 wraps west and +90 uses the last northern cell.
+// Invalid coordinates or precision throw std::invalid_argument.
 std::string maidenhead(Location location, unsigned precision = 6);
 
 int run_domain_tests();
