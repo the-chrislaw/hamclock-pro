@@ -15,6 +15,8 @@ struct StationSettings {
 // filesystem failures throw runtime_error. Explicit saves replace regular files;
 // failed loads do not fall back to defaults or initiate an automatic save.
 void save_settings(const std::string& path, const StationSettings& settings);
+// Atomic create-only publication: fails if any final destination already exists.
+void save_new_settings(const std::string& path, const StationSettings& settings);
 StationSettings load_settings(const std::string& path);
 int run_settings_tests();
 } // namespace hamclock

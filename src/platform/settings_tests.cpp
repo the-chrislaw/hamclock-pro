@@ -28,7 +28,13 @@ int run_settings_tests() {
     const std::string valid = "version=1\nde_lat=37.7\nde_lon=-122.4\ndx_lat=51.5\ndx_lon=-0.1\ncallsign=N0CALL/P\nappearance=system\n";
     try {
         const StationSettings original{{37.71234567890123, -122.4}, {51.5, -0.1}, "N0CALL/P", "system"};
-        save_settings(path, original);
+        save_new_settings(path, original);
+        bool existing_new_rejected = false;
+        auto replacement = original; replacement.callsign = "N1TEST";
+        try { save_new_settings(path, replacement); }
+        catch (const std::runtime_error&) { existing_new_rejected = true; }
+        check(existing_new_rejected && load_settings(path).callsign == original.callsign,
+              "new save cannot replace existing regular file");
         const auto loaded = load_settings(path);
         check(loaded.de.latitude == original.de.latitude && loaded.de.longitude == original.de.longitude &&
               loaded.dx.latitude == original.dx.latitude && loaded.dx.longitude == original.dx.longitude &&
@@ -111,6 +117,10 @@ int run_settings_tests() {
         check(io_thrown && ::lstat(link.c_str(), &link_status) == 0 && S_ISLNK(link_status.st_mode),
               "symlink save rejected and link preserved");
         check(load_settings(path).callsign == original.callsign, "symlink target preserved");
+        io_thrown = false;
+        try { save_new_settings(link, replacement); } catch (const std::runtime_error&) { io_thrown = true; }
+        check(io_thrown && ::lstat(link.c_str(), &link_status) == 0 && S_ISLNK(link_status.st_mode) &&
+              load_settings(path).callsign == original.callsign, "new save preserves symlink and target");
         ::unlink(link.c_str());
         const std::string fifo = directory + "/pipe.conf";
         check(::mkfifo(fifo.c_str(), 0600) == 0, "create test fifo");
@@ -122,7 +132,26 @@ int run_settings_tests() {
         struct stat fifo_status {};
         check(io_thrown && ::lstat(fifo.c_str(), &fifo_status) == 0 && S_ISFIFO(fifo_status.st_mode),
               "FIFO save rejected and FIFO preserved");
+        io_thrown = false;
+        try { save_new_settings(fifo, original); } catch (const std::runtime_error&) { io_thrown = true; }
+        check(io_thrown && ::lstat(fifo.c_str(), &fifo_status) == 0 && S_ISFIFO(fifo_status.st_mode),
+              "new save preserves FIFO");
         ::unlink(fifo.c_str());
+        const auto fresh_path = directory + "/new.conf";
+        auto invalid_new = original; invalid_new.callsign.clear();
+        bool invalid_new_rejected = false;
+        try { save_new_settings(fresh_path, invalid_new); }
+        catch (const std::invalid_argument&) { invalid_new_rejected = true; }
+        check(invalid_new_rejected && ::access(fresh_path.c_str(), F_OK) != 0,
+              "invalid new save does not publish a file");
+        bool new_directory_rejected = false;
+        try { save_new_settings(directory, original); }
+        catch (const std::runtime_error&) { new_directory_rejected = true; }
+        check(new_directory_rejected, "new save cannot replace directory");
+        bool new_parent_rejected = false;
+        try { save_new_settings(directory + "/missing/new.conf", original); }
+        catch (const std::runtime_error&) { new_parent_rejected = true; }
+        check(new_parent_rejected, "new save missing parent fails");
         ::unlink(path.c_str());
         bool missing_thrown = false;
         try { (void)load_settings(path); } catch (const std::runtime_error&) { missing_thrown = true; }

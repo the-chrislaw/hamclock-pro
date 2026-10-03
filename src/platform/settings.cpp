@@ -87,15 +87,18 @@ StationSettings parse(const std::string& data) {
 }
 } // namespace
 
-void save_settings(const std::string& path, const StationSettings& settings) {
+namespace {
+void save_impl(const std::string& path, const StationSettings& settings, bool replace) {
     validate_path(path);
     validate(settings);
-    struct stat destination {};
-    if (::lstat(path.c_str(), &destination) == 0) {
-        if (!S_ISREG(destination.st_mode))
-            throw std::runtime_error("Settings destination must be a regular file");
-    } else if (errno != ENOENT) {
-        throw io_error("Inspect settings destination");
+    if (replace) {
+        struct stat destination {};
+        if (::lstat(path.c_str(), &destination) == 0) {
+            if (!S_ISREG(destination.st_mode))
+                throw std::runtime_error("Settings destination must be a regular file");
+        } else if (errno != ENOENT) {
+            throw io_error("Inspect settings destination");
+        }
     }
     std::ostringstream output;
     output.imbue(std::locale::classic());
@@ -123,7 +126,16 @@ void save_settings(const std::string& path, const StationSettings& settings) {
         const int closed = ::close(fd);
         fd = -1;
         if (closed != 0) throw io_error("Close settings");
-        if (::rename(temporary.data(), path.c_str()) != 0) throw io_error("Replace settings");
+        if (replace) {
+            if (::rename(temporary.data(), path.c_str()) != 0) throw io_error("Replace settings");
+        } else {
+            // Same-directory hardlink publishes only if the final name is absent.
+            // This is atomic even if another writer creates it during our save.
+            if (::link(temporary.data(), path.c_str()) != 0) throw io_error("Create settings destination");
+            // Publication succeeded. A cleanup failure must not report that the
+            // user's save failed; the private duplicate can be removed later.
+            (void)::unlink(temporary.data());
+        }
     } catch (...) {
         const int saved_errno = errno;
         if (fd >= 0) ::close(fd);
@@ -131,6 +143,15 @@ void save_settings(const std::string& path, const StationSettings& settings) {
         errno = saved_errno;
         throw;
     }
+}
+
+} // namespace
+
+void save_settings(const std::string& path, const StationSettings& settings) {
+    save_impl(path, settings, true);
+}
+void save_new_settings(const std::string& path, const StationSettings& settings) {
+    save_impl(path, settings, false);
 }
 
 StationSettings load_settings(const std::string& path) {

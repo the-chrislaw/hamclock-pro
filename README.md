@@ -44,11 +44,11 @@ Station configuration can also be saved and inspected explicitly:
 ./build/hamclock-pro --load-station ./station.conf
 ```
 
-Use a private directory you control; a valid save replaces the selected regular file. Launch `./build/hamclock-pro --station ./station.conf` to load that explicit file into the native display. It shows callsign, DE/DX locators, spherical distance, initial true bearing and a sampled short great-circle route. There is no native editor yet; appearance remains stored but is not applied by this experimental native renderer. Invalid/corrupt input produces an error before opening the display instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
+Use a private directory you control; a valid save replaces the selected regular file. Launch `./build/hamclock-pro --station ./station.conf` to load that explicit file into the native display. It shows callsign, DE/DX locators, spherical distance, initial true bearing and a sampled short great-circle route. A separate Qt station-editor prototype is in local validation; appearance is not applied by this experimental SDL renderer. Invalid/corrupt input produces an error before opening the display instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
 
 For a reproducible offline station frame, use `./build/hamclock-pro --station ./station.conf --headless-frame ./build/station.bmp`. Coincident/antipodal bearings are explicitly undefined; antipodal routes are not drawn. A route represents geometry, not predicted propagation or radio coverage.
 
-The station-edit draft model supports bounded intermediate input, strict validation and cancel without saving. It is exercised by `make check` but is not wired to a native dialog yet. Its callsign policy remains provisional; the final-original manual must define parity rather than treating these input limits as original behavior.
+The station-edit draft model supports bounded intermediate input, strict validation and cancel without saving. It is exercised by `make check` and is wired to the separate Qt dialog prototype. Its callsign policy remains provisional; the final-original manual must define parity rather than treating these input limits as original behavior.
 
 SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
 
@@ -57,3 +57,17 @@ See `docs/` for review findings and feature work. Original application source is
 Bundled Natural Earth 110m coastline data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md`. The map is a generalized global coastline, not a navigation chart; other HamClock projections, filled land, terminator and station overlays remain pending.
 
 `make verify` runs the native unit checks, executable regression checks, and offline malformed-input checks for the coastline importer. The importer tests create synthetic files in temporary directories and do not download geographic data. UI and Pi hardware checks remain separate.
+
+## Optional Qt station editor (development prototype)
+
+Requires approved Qt 6.4 or later Core/Gui/Widgets development packages and CMake. The SDL build remains independent.
+
+```sh
+cmake -S . -B build/qt -DCMAKE_PREFIX_PATH=/path/to/qtbase
+cmake --build build/qt
+ctest --test-dir build/qt --output-on-failure
+```
+
+On macOS the binary is `build/qt/hamclock-pro-editor.app/Contents/MacOS/hamclock-pro-editor`; other platforms use `build/qt/hamclock-pro-editor`. Pass `--station PATH` to edit a valid file or `--new-station PATH` for an unsaved draft. Save validates and persists; Cancel discards edits. New-file saves refuse any existing destination. Use a private directory you control.
+
+This editor has no dashboard or on-screen keyboard. Actual native Save, invalid-input and Cancel checks have passed locally; theme repair, rendered-widget regressions and independent review now pass. See `docs/qt-editor.md` and `docs/computer-validation.md`. Qt and its dependencies retain separate licensing obligations; distribution packaging, assistive-technology and Pi testing remain release gates.
