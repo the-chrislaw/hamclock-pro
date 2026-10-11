@@ -1,4 +1,6 @@
 #include "world_map_widget.hpp"
+#include "land_fill_path.hpp"
+#include "../map/land.hpp"
 #include "../map/coastline.hpp"
 #include "../map/path.hpp"
 #include "../map/projection.hpp"
@@ -8,12 +10,27 @@
 #include <QPalette>
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <stdexcept>
 namespace hamclock {
 WorldMapWidget::WorldMapWidget(QWidget* parent) : QWidget(parent) {
     setObjectName("worldMap");
     setAccessibleName("World map");
     setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    // Convert the immutable generated views without aliasing distinct types.
+    // Paths own their data; build once, never reparse geography during paint.
+    std::vector<LandFillPoint> points;
+    std::vector<LandFillRing> rings;
+    std::vector<LandFillRecord> records;
+    points.reserve(std::size(land_points));
+    rings.reserve(std::size(land_rings));
+    records.reserve(std::size(land_records));
+    for (const auto& point : land_points) points.push_back({point.longitude,point.latitude});
+    for (const auto& ring : land_rings) rings.push_back({ring.start,ring.count});
+    for (const auto& record : land_records) records.push_back({record.first_ring,record.count});
+    auto fill=make_land_fill_paths({points.data(),points.size(),rings.data(),rings.size(),records.data(),records.size()});
+    if (fill.error!=LandFillError::None) throw std::runtime_error("Bundled land geometry could not be prepared");
+    land_=std::move(fill.paths);
     for (const auto& part : coastline_parts)
         for (std::size_t i=1; i<part.count; ++i) {
             const auto a=coastline_points[part.start+i-1], b=coastline_points[part.start+i];
@@ -71,7 +88,7 @@ QString WorldMapWidget::routeSummary() const {return de_?summary_:QString("Stati
 QSize WorldMapWidget::sizeHint() const {return {600,330};}
 QSize WorldMapWidget::minimumSizeHint() const {return {160,100};}
 void WorldMapWidget::describe() {
-    QString description="Equirectangular world coastline from Natural Earth 110m. North is up. ";
+    QString description="Equirectangular world land and coastline from Natural Earth 110m. North is up. ";
     description += routeSummary();
     if(de_) description += QString(" DE circle: latitude %1, longitude %2. DX square: latitude %3, longitude %4.")
         .arg(de_->latitude,0,'g',10).arg(de_->longitude,0,'g',10).arg(dx_->latitude,0,'g',10).arg(dx_->longitude,0,'g',10);
@@ -86,6 +103,7 @@ void WorldMapWidget::changeEvent(QEvent* event) {
 void WorldMapWidget::paintEvent(QPaintEvent*) {
     const bool dark=appearance_=="dark" || (appearance_=="system" && palette().color(QPalette::Window).lightness()<128);
     const QColor sea(dark?"#374a51":"#dce8eb"),coast(dark?"#8b9fa3":"#647c7e"),route(dark?"#b4d9e8":"#315e77");
+    const QColor land(dark?"#29363b":"#d6ddce");
     QPainter painter(this);painter.setRenderHint(QPainter::Antialiasing);
     // Keep the letterbox in the active ocean theme; widget palettes may be
     // overridden by native style inheritance. Geographic bounds stay 2:1.
@@ -93,6 +111,8 @@ void WorldMapWidget::paintEvent(QPaintEvent*) {
     const auto bounds=mapBounds();if(bounds.isEmpty())return;
     painter.setClipRect(bounds);painter.fillRect(bounds,sea);
     painter.save();painter.translate(bounds.topLeft());painter.scale(bounds.width(),bounds.height());
+    painter.setPen(Qt::NoPen);painter.setBrush(land);
+    for (const auto& path : land_) painter.drawPath(path);
     QPen pen(coast);pen.setWidthF(1);pen.setCosmetic(true);painter.setPen(pen);painter.setBrush(Qt::NoBrush);
     painter.drawPath(coast_);painter.restore();
     if(route_visible_){painter.setPen(QPen(route,2));for(const auto& line:routeSegments())painter.drawLine(line);}

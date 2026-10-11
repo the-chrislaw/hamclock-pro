@@ -24,6 +24,7 @@ set_target_properties(hamclock-pro-editor PROPERTIES
 
 add_library(hamclock-world-map STATIC
     src/qt/world_map_widget.cpp
+    src/qt/land_fill_path.cpp
     src/map/path.cpp
     src/map/projection.cpp
     src/domain/geometry.cpp)
@@ -51,6 +52,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME qt-map-regression COMMAND qt-map-regression)
     set_tests_properties(qt-map-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-land-widget-regression tests/qt_land_widget_regression.cpp)
+    target_link_libraries(qt-land-widget-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-land-widget-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-land-widget-regression COMMAND qt-land-widget-regression)
+    set_tests_properties(qt-land-widget-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
 
 add_executable(hamclock-pro-map-preview MACOSX_BUNDLE

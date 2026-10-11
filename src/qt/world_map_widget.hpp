@@ -28,6 +28,7 @@ protected:
 private:
     void describe();
     QPainterPath coast_;
+    std::vector<QPainterPath> land_;
     std::optional<Location> de_, dx_;
     std::vector<Location> route_;
     QString summary_;

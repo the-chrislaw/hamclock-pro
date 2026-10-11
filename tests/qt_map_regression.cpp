@@ -40,13 +40,11 @@ int main(int argc,char** argv){
  map.clearEndpoints();map.setAppearance("light");map.show();app.processEvents();
  QImage image(map.size(),QImage::Format_ARGB32);map.render(&image);
  check(image.pixelColor(12,200)==QColor("#dce8eb"),"rendered light ocean");
- int coastline_pixels=0;
- for(int y=static_cast<int>(bounds.top())+2;y<static_cast<int>(bounds.bottom())-2;++y)
-  for(int x=static_cast<int>(bounds.left())+2;x<static_cast<int>(bounds.right())-2;++x)
-   if(image.pixelColor(x,y)!=QColor("#dce8eb"))++coastline_pixels;
- // Broad area bounds permit platform antialiasing variation while rejecting
- // an empty ocean or accidental solid land fill. No endpoint/route is present.
- check(coastline_pixels>1000 && coastline_pixels<60000,"real coastline present without invented solid fill");
+ auto geography_pixel=[&](double latitude,double longitude){const auto p=map.endpointPixel({latitude,longitude});return image.pixelColor(static_cast<int>(p.x()),static_cast<int>(p.y()));};
+ check(geography_pixel(20,20)==QColor("#d6ddce"),"Sahara has real land fill");
+ check(geography_pixel(0,-30)==QColor("#dce8eb"),"Atlantic remains ocean");
+ check(geography_pixel(42,51)==QColor("#dce8eb"),"Caspian interior hole remains ocean");
+ check(geography_pixel(-85,0)==QColor("#d6ddce"),"Antarctic polar closure remains land");
  map.setAppearance("dark");map.render(&image);check(image.pixelColor(12,200)==QColor("#374a51"),"rendered dark ocean");
  check(image.pixelColor(0,0)==QColor("#374a51"),"dark letterbox follows ocean rather than inherited light palette");
  QPalette palette;palette.setColor(QPalette::Window,QColor("#111111"));map.setPalette(palette);map.setAppearance("system");map.render(&image);
