@@ -6,7 +6,7 @@ CXXFLAGS += -std=c++17 -Wall -Wextra -Wpedantic
 LDLIBS += $(shell $(SDL_CONFIG) --libs)
 SOURCES := $(wildcard src/*.cpp src/app/*.cpp src/domain/*.cpp src/platform/*.cpp src/map/*.cpp)
 
-.PHONY: all check integration-check map-check land-check locator-check model-check verify preview clean
+.PHONY: all check integration-check map-check land-check locator-check model-check instrument-check verify preview clean
 all: build/hamclock-pro
 
 build/hamclock-pro: $(SOURCES) $(wildcard src/*.h src/*.hpp src/app/*.hpp src/domain/*.hpp src/platform/*.hpp src/map/*.hpp)
@@ -49,7 +49,19 @@ model-check: build/clock-state-regression build/spot-store-regression
 	./build/clock-state-regression
 	./build/spot-store-regression
 
-verify: check integration-check map-check locator-check land-check model-check
+build/instrument-catalog-regression: tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp -o $@
+
+build/instrument-snapshot-regression: tests/instrument_snapshot_regression.cpp src/app/instrument_snapshot.cpp src/app/instrument_snapshot.hpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp src/domain/clock_state.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/instrument_snapshot_regression.cpp src/app/instrument_snapshot.cpp src/app/instrument_catalog.cpp -o $@
+
+instrument-check: build/instrument-catalog-regression build/instrument-snapshot-regression
+	./build/instrument-catalog-regression
+	./build/instrument-snapshot-regression
+
+verify: check integration-check map-check locator-check land-check model-check instrument-check
 
 preview: build/hamclock-pro
 	./build/hamclock-pro --headless-frame build/dashboard.bmp
