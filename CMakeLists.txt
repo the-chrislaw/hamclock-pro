@@ -334,3 +334,14 @@ if(BUILD_TESTING)
     add_test(NAME qt-big-clock-dialog-regression COMMAND qt-big-clock-dialog-regression)
     set_tests_properties(qt-big-clock-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(de-clock-configuration-regression
+        tests/de_clock_configuration_regression.cpp src/app/de_clock_configuration.cpp
+        src/domain/geometry.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(de-clock-configuration-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME de-clock-configuration-regression COMMAND de-clock-configuration-regression)
+    set_tests_properties(de-clock-configuration-regression PROPERTIES TIMEOUT 15)
+endif()

@@ -73,7 +73,11 @@ build/big-clock-presentation-regression: tests/big_clock_presentation_regression
 	mkdir -p build
 	$(CXX) $(CXXFLAGS) tests/big_clock_presentation_regression.cpp src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp -o $@
 
-model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression build/stopwatch-presentation-regression build/countdown-state-regression build/countdown-presentation-regression build/countdown-service-regression build/big-clock-preferences-regression build/big-clock-presentation-regression
+build/de-clock-configuration-regression: tests/de_clock_configuration_regression.cpp src/app/de_clock_configuration.cpp src/app/de_clock_configuration.hpp src/domain/geometry.cpp src/domain/geometry.hpp src/domain/clock_state.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/de_clock_configuration_regression.cpp src/app/de_clock_configuration.cpp src/domain/geometry.cpp -o $@
+
+model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression build/stopwatch-presentation-regression build/countdown-state-regression build/countdown-presentation-regression build/countdown-service-regression build/big-clock-preferences-regression build/big-clock-presentation-regression build/de-clock-configuration-regression
 	./build/clock-state-regression
 	./build/spot-store-regression
 	./build/stopwatch-state-regression
@@ -83,6 +87,7 @@ model-check: build/clock-state-regression build/spot-store-regression build/stop
 	./build/countdown-service-regression
 	./build/big-clock-preferences-regression
 	./build/big-clock-presentation-regression
+	./build/de-clock-configuration-regression
 
 build/instrument-catalog-regression: tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp
 	mkdir -p build
