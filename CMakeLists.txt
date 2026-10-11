@@ -187,3 +187,13 @@ if(BUILD_TESTING)
     add_test(NAME noaa-kp-parser-regression COMMAND noaa-kp-parser-regression)
     set_tests_properties(noaa-kp-parser-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(stopwatch-state-regression
+        tests/stopwatch_state_regression.cpp src/domain/stopwatch_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(stopwatch-state-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME stopwatch-state-regression COMMAND stopwatch-state-regression)
+    set_tests_properties(stopwatch-state-regression PROPERTIES TIMEOUT 15)
+endif()

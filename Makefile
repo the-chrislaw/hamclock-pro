@@ -45,9 +45,14 @@ build/spot-store-regression: tests/spot_store_regression.cpp src/spots/spot_even
 	mkdir -p build
 	$(CXX) $(CXXFLAGS) -Isrc tests/spot_store_regression.cpp src/spots/spot_event.cpp src/spots/spot_store.cpp src/domain/geometry.cpp -o $@
 
-model-check: build/clock-state-regression build/spot-store-regression
+build/stopwatch-state-regression: tests/stopwatch_state_regression.cpp src/domain/stopwatch_state.cpp src/domain/stopwatch_state.hpp src/domain/clock_state.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/stopwatch_state_regression.cpp src/domain/stopwatch_state.cpp -o $@
+
+model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression
 	./build/clock-state-regression
 	./build/spot-store-regression
+	./build/stopwatch-state-regression
 
 build/instrument-catalog-regression: tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp
 	mkdir -p build
