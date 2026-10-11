@@ -98,7 +98,6 @@ endif()
 add_executable(hamclock-pro-dashboard MACOSX_BUNDLE
     src/qt/dashboard_main.cpp
     src/qt/station_dashboard.cpp
-    src/qt/dashboard_appearance.cpp
     src/qt/station_editor_dialog.cpp
     src/qt/editor_appearance.cpp
     src/app/station_edit.cpp
@@ -115,7 +114,6 @@ if(BUILD_TESTING)
     add_executable(qt-dashboard-regression
         tests/qt_dashboard_regression.cpp
         src/qt/station_dashboard.cpp
-    src/qt/dashboard_appearance.cpp
         src/qt/station_editor_dialog.cpp
         src/qt/editor_appearance.cpp
         src/app/station_edit.cpp
@@ -207,4 +205,23 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME stopwatch-presentation-regression COMMAND stopwatch-presentation-regression)
     set_tests_properties(stopwatch-presentation-regression PROPERTIES TIMEOUT 15)
+endif()
+
+add_library(hamclock-stopwatch-dialog STATIC
+    src/qt/stopwatch_dialog.cpp src/qt/dashboard_appearance.cpp
+    src/app/stopwatch_presentation.cpp src/domain/stopwatch_state.cpp)
+target_link_libraries(hamclock-stopwatch-dialog PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-stopwatch-dialog PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-stopwatch-dialog)
+if(BUILD_TESTING)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-stopwatch-dialog)
+    add_executable(qt-stopwatch-dialog-regression tests/qt_stopwatch_dialog_regression.cpp)
+    target_link_libraries(qt-stopwatch-dialog-regression PRIVATE hamclock-stopwatch-dialog)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-stopwatch-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-stopwatch-dialog-regression COMMAND qt-stopwatch-dialog-regression)
+    set_tests_properties(qt-stopwatch-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()

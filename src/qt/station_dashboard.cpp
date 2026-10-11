@@ -1,5 +1,6 @@
 #include "station_dashboard.hpp"
 #include "station_editor_dialog.hpp"
+#include "stopwatch_dialog.hpp"
 #include "dashboard_appearance.hpp"
 #include "world_map_widget.hpp"
 #include "../app/station_view.hpp"
@@ -35,6 +36,7 @@ QString coordinate_text(Location location){return QString("%1° %2, %3° %4").ar
 }
 StationDashboard::StationDashboard(const StationSettings& initial,const std::string& path,QWidget* parent):QDialog(parent),settings_(initial),path_(path){
  (void)make_station_view(initial);if(path.empty()||path.find('\0')!=std::string::npos)throw std::invalid_argument("Explicit dashboard settings path required");
+ stopwatch_clock_.start();
  setObjectName("stationDashboard");setWindowTitle("HamClock Pro · Station dashboard");setAccessibleName("Station dashboard");resize(800,480);
  outer_=new QVBoxLayout(this);outer_->setContentsMargins(12,8,12,8);outer_->setSpacing(8);
  auto* masthead=new QWidget(this);masthead->setObjectName("dashboardMasthead");masthead->setFixedHeight(44);
@@ -44,7 +46,9 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  edit->setAccessibleDescription("Open station settings. Dashboard updates only after a successful save.");header->addWidget(edit);
  header->addWidget(label("Appearance","caption",masthead,true));appearance_=new QComboBox(masthead);appearance_->setObjectName("dashboardAppearance");
  appearance_->addItem("System","system");appearance_->addItem("Light","light");appearance_->addItem("Dark","dark");appearance_->setMinimumHeight(44);appearance_->setAccessibleName("Appearance preview");
- appearance_->setAccessibleDescription("Preview appearance. Save your preference in station settings.");header->addWidget(appearance_);outer_->addWidget(masthead);
+ appearance_->setAccessibleDescription("Preview appearance. Save your preference in station settings.");header->addWidget(appearance_);
+ auto* stopwatch=new QPushButton("Stopwatch",masthead);stopwatch->setObjectName("dashboardStopwatch");stopwatch->setMinimumSize(96,44);stopwatch->setFocusPolicy(Qt::StrongFocus);stopwatch->setAccessibleName("Open stopwatch");
+ stopwatch->setAccessibleDescription("Open the stopwatch. Closing its window preserves running elapsed time. Timers are not saved when the application exits.");header->addWidget(stopwatch);outer_->addWidget(masthead);
  body_=new QHBoxLayout;body_->setSpacing(12);
  sidebar_=new QFrame(this);sidebar_->setObjectName("stationSidebar");sidebar_->setProperty("dashboardCard",true);sidebar_->setFixedWidth(166);
  auto* side=new QVBoxLayout(sidebar_);side->setContentsMargins(0,0,0,0);side->setSpacing(0);
@@ -82,8 +86,9 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  path_layout->addWidget(distance_);path_layout->addWidget(bearing_);path_layout->addStretch();map_area->addWidget(path_row);
  route_summary_=value_label("dashboardRouteSummary","Computed route summary",map_card,"caption");route_summary_->setProperty("dashboardSecondary",true);map_area->addWidget(route_summary_);work->addWidget(map_card,1);body_->addWidget(workspace,1);outer_->addLayout(body_,1);
  auto* status=label("Offline station tools · Natural Earth 110m · Equirectangular coastline","caption",this,true);status->setObjectName("dashboardStatus");outer_->addWidget(status);
- QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,route_toggle_);
+ QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,stopwatch);QWidget::setTabOrder(stopwatch,route_toggle_);
  QObject::connect(edit,&QPushButton::clicked,this,[this](){editStation();});
+ QObject::connect(stopwatch,&QPushButton::clicked,this,[this](){showStopwatch();});
  QObject::connect(appearance_,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this](int){const auto mode=appearance_->currentData().toString().toStdString();apply_dashboard_appearance(*this,mode);map_->setAppearance(mode);});
  QObject::connect(route_toggle_,&QPushButton::toggled,this,[this](bool visible){route_visible_=visible;map_->setRouteVisible(visible);route_toggle_->setText(visible?"Hide paths":"Show paths");route_summary_->setAccessibleDescription(map_->accessibleDescription());});
  refreshStation();adaptLayout();clock_timer_=new QTimer(this);clock_timer_->setObjectName("dashboardClockTimer");clock_timer_->setInterval(1000);
@@ -100,6 +105,20 @@ void StationDashboard::refreshStation(){
  QSignalBlocker blocked(appearance_);appearance_->setCurrentIndex(appearance_->findData(QString::fromStdString(settings_.appearance)));apply_dashboard_appearance(*this,settings_.appearance);
 }
 void StationDashboard::editStation(){auto* origin=findChild<QPushButton*>("dashboardEditStation");auto saved=show_station_editor(this,path_,settings_,false);if(saved){settings_=std::move(*saved);refreshStation();}if(origin)origin->setFocus();}
+void StationDashboard::showStopwatch(){
+ auto* origin=findChild<QPushButton*>("dashboardStopwatch");
+ try {
+  StopwatchDialog dialog(stopwatch_state_,stopwatch_presentation_,
+      [this](){return MonotonicNanoseconds{stopwatch_clock_.nsecsElapsed()};},
+      appearance_->currentData().toString().toStdString(),this);
+  dialog.exec();
+ } catch(const std::exception&) {
+  auto* status=findChild<QLabel*>("dashboardStatus");
+  if(status){status->setText("Stopwatch could not open. Station settings are unchanged.");status->setAccessibleName(status->text());}
+ }
+ activateWindow();
+ if(origin)origin->setFocus();
+}
 void StationDashboard::resizeEvent(QResizeEvent* event){QDialog::resizeEvent(event);if(body_&&clock_&&sidebar_&&instruments_)adaptLayout();}
 void StationDashboard::adaptLayout(){
  const bool large=width()>=1050;outer_->setContentsMargins(large?32:12,large?26:8,large?32:12,large?20:8);outer_->setSpacing(large?16:8);body_->setSpacing(large?16:12);sidebar_->setFixedWidth(large?190:166);instruments_->setFixedHeight(large?175:122);

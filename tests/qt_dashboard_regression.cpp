@@ -1,4 +1,5 @@
 #include "../src/qt/station_dashboard.hpp"
+#include "../src/qt/stopwatch_dialog.hpp"
 #include "../src/qt/world_map_widget.hpp"
 #include "../src/app/station_view.hpp"
 #include <QApplication>
@@ -96,6 +97,8 @@ int main(int argc,char** argv){
     auto* map_card=dashboard.findChild<QFrame*>("dashboardMapCard");
     auto* appearance=dashboard.findChild<QComboBox*>("dashboardAppearance");
     auto* paths=dashboard.findChild<QPushButton*>("dashboardRouteToggle");
+    auto* stopwatch=dashboard.findChild<QPushButton*>("dashboardStopwatch");
+    check(stopwatch && stopwatch->minimumHeight()>=44 && stopwatch->minimumWidth()>=44,"reachable touch-sized stopwatch entry");
     check(sidebar && sidebar->isAncestorOf(utc_label),"UTC clock belongs to grouped station sidebar");
     for(const char* name:{"dashboardFluxPaneState","dashboardPropagationPaneState","dashboardSunPaneState","dashboardSpaceWeatherPaneState"})
         check(text(name)=="Unavailable","unimplemented instruments state unavailable explicitly");
@@ -111,9 +114,44 @@ int main(int argc,char** argv){
         auto* utility=dashboard.findChild<QLabel*>("dashboardSpaceWeatherPaneState");check(utility->fontMetrics().horizontalAdvance(utility->text())<=utility->width(),"utility unavailable state remains unclipped");
         check(map->mapBounds().width()>100 && map->mapBounds().height()>50,"real geography remains usable at both sizes");
     }
+    // Exercise the actual dashboard entry and caller-owned timer across two
+    // modal lifetimes; these event-loop checks are distinct from injected view tests.
+    QString held_elapsed;
+    bool first_open=false, second_open=false;
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::StopwatchDialog*>(QApplication::activeModalWidget());
+        first_open=dialog!=nullptr;check(first_open,"dashboard opens actual stopwatch dialog");
+        if(!dialog)return;
+        check(dialog->perform(hamclock::StopwatchControl::Run),"dashboard stopwatch starts");
+        QTimer::singleShot(80,dialog,[&,dialog](){
+            check(dialog->perform(hamclock::StopwatchControl::Lap),"dashboard stopwatch holds display");
+            auto* elapsed=dialog->findChild<QLabel*>("stopwatchElapsed");
+            held_elapsed=elapsed?elapsed->text():QString();
+            check(!held_elapsed.isEmpty(),"dashboard stopwatch has held value");
+            dialog->reject();
+        });
+    });
+    stopwatch->click();app.processEvents();
+    check(first_open && QApplication::focusWidget()==stopwatch,"stopwatch closes and returns dashboard focus");
+    QEventLoop closed_wait;QTimer::singleShot(90,&closed_wait,&QEventLoop::quit);closed_wait.exec();
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::StopwatchDialog*>(QApplication::activeModalWidget());
+        second_open=dialog!=nullptr;check(second_open,"dashboard reopens stopwatch");
+        if(!dialog)return;
+        auto* elapsed=dialog->findChild<QLabel*>("stopwatchElapsed");
+        check(elapsed && elapsed->text()==held_elapsed,"held display survives closing and reopening");
+        check(dialog->perform(hamclock::StopwatchControl::Run),"Run releases hold after reopening");
+        check(elapsed && elapsed->text()>held_elapsed,"shared running time includes time with dialog closed");
+        check(dialog->perform(hamclock::StopwatchControl::Reset),"dashboard stopwatch resets explicitly");
+        dialog->reject();
+    });
+    stopwatch->click();app.processEvents();
+    check(second_open,"second stopwatch lifecycle observed");
     auto key=[&](int code,Qt::KeyboardModifiers modifiers=Qt::NoModifier){auto* focused=QApplication::focusWidget();QKeyEvent event(QEvent::KeyPress,code,modifiers);if(focused)QApplication::sendEvent(focused,&event);app.processEvents();};
     edit->setFocus();key(Qt::Key_Tab);check(QApplication::focusWidget()==appearance,"keyboard reaches appearance after Edit station");
-    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after appearance");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==stopwatch,"keyboard reaches stopwatch after appearance");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after stopwatch");
+    key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==stopwatch,"reverse keyboard path returns to stopwatch");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==appearance,"reverse keyboard path returns to appearance");
     const auto preserved=bytes(path);const auto app_palette=QApplication::palette();
     auto theme=[&](const char* mode){appearance->setCurrentIndex(appearance->findData(mode));app.processEvents();app.processEvents();};
