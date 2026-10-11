@@ -7,6 +7,7 @@
 #include <iostream>
 #include <new>
 #include <stdexcept>
+#include <type_traits>
 
 namespace { std::size_t allocation_count = 0; }
 void* operator new(std::size_t size) {
@@ -213,12 +214,42 @@ int main() {
     }
 
     settings = preferences(); input = {{utc, de}, std::nullopt, SyncStatus::Unknown};
-    // SyncStatus is an existing non-fixed enum with values 0..2: 3 is an
-    // in-range non-enumerator. Avoid undefined out-of-range enum conversions.
+    // SyncStatus is scoped, with fixed implicit int underlying type. Any int
+    // value is representable as this enum, but only its three named values are
+    // valid for this product contract. See C++ draft [dcl.enum]/5,8 and
+    // [expr.static.cast]/8; unnamed representable values are not cast UB.
+    static_assert(std::is_same_v<std::underlying_type_t<SyncStatus>, int>);
     for (unsigned value = 0; value < 4; ++value) {
         input.synchronization = static_cast<SyncStatus>(value);
         check(rejects([&] { present_big_clock_digital(settings, input); }) == (value == 3),
-              "known sync enums accepted, in-range unknown enum rejected");
+              "known sync enums accepted, representable unnamed enum rejected");
+    }
+    // Unknown int extremes must reject on every source/selection path, even
+    // missing/hidden civil data or an unsupported analog desire. Neither input
+    // evidence nor the full preference value may be rewritten on rejection.
+    for (const int value : {INT_MIN, -1, 255, INT_MAX}) {
+        for (unsigned mask = 0; mask < 16; ++mask) {
+            for (const bool preview : {false, true}) {
+                for (const auto zone : {BigClockZone::Utc, BigClockZone::De}) {
+                    for (const auto face : {BigClockFace::Digital, BigClockFace::Analog}) {
+                        auto wanted = preferences(); wanted.zone = zone; wanted.face = face;
+                        BigClockDigitalInput unknown{
+                            {(mask & 1U) ? std::optional<BigClockCivilTime>{utc} : std::nullopt,
+                             (mask & 2U) ? std::optional<BigClockCivilTime>{de} : std::nullopt},
+                            std::nullopt, static_cast<SyncStatus>(value)};
+                        if (preview) unknown.preview = BigClockCivilTimes{
+                            (mask & 4U) ? std::optional<BigClockCivilTime>{preview_utc} : std::nullopt,
+                            (mask & 8U) ? std::optional<BigClockCivilTime>{preview_de} : std::nullopt};
+                        const auto before = unknown;
+                        const auto before_preferences = wanted;
+                        check(rejects([&] { present_big_clock_digital(wanted, unknown); }),
+                              "representable unknown int sync values reject even on missing/hidden/analog paths");
+                        check(same_input(unknown, before) && same_preferences(wanted, before_preferences),
+                              "unknown sync rejection preserves all inputs and desires");
+                    }
+                }
+            }
+        }
     }
     input.synchronization = SyncStatus::Unknown;
     for (unsigned value = 0; value < 256; ++value) {
