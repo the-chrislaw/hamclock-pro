@@ -65,7 +65,11 @@ build/countdown-service-regression: tests/countdown_service_regression.cpp src/a
 	mkdir -p build
 	$(CXX) $(CXXFLAGS) tests/countdown_service_regression.cpp src/app/countdown_service.cpp src/app/countdown_presentation.cpp src/domain/countdown_state.cpp -o $@
 
-model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression build/stopwatch-presentation-regression build/countdown-state-regression build/countdown-presentation-regression build/countdown-service-regression
+build/big-clock-preferences-regression: tests/big_clock_preferences_regression.cpp src/app/big_clock_preferences.cpp src/app/big_clock_preferences.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/big_clock_preferences_regression.cpp src/app/big_clock_preferences.cpp -o $@
+
+model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression build/stopwatch-presentation-regression build/countdown-state-regression build/countdown-presentation-regression build/countdown-service-regression build/big-clock-preferences-regression
 	./build/clock-state-regression
 	./build/spot-store-regression
 	./build/stopwatch-state-regression
@@ -73,6 +77,7 @@ model-check: build/clock-state-regression build/spot-store-regression build/stop
 	./build/countdown-state-regression
 	./build/countdown-presentation-regression
 	./build/countdown-service-regression
+	./build/big-clock-preferences-regression
 
 build/instrument-catalog-regression: tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp
 	mkdir -p build

@@ -282,3 +282,13 @@ if(BUILD_TESTING)
     add_test(NAME qt-countdown-dialog-regression COMMAND qt-countdown-dialog-regression)
     set_tests_properties(qt-countdown-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(big-clock-preferences-regression
+        tests/big_clock_preferences_regression.cpp src/app/big_clock_preferences.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(big-clock-preferences-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME big-clock-preferences-regression COMMAND big-clock-preferences-regression)
+    set_tests_properties(big-clock-preferences-regression PROPERTIES TIMEOUT 15)
+endif()

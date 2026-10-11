@@ -1,0 +1,11 @@
+# Big Clock preferences — CB0 validation
+
+October 11, 2026. This increment adds original, bounded in-memory preferences and capability classification. It does not render or activate Big Clock, persist settings, obtain weather, convert station civil time, arm alarms or start timers.
+
+Explicit caller settings preserve nine fields, including independent DE-weather and space-weather desires and Analog with a 24-hour preference. No original or product defaults are invented. Invalid preference or capability enums are rejected, including unrequested capabilities. Complete candidate validation precedes replacement; rejected replacement preserves existing settings. Caller-supplied Available means an implementation capability, not current/live data, accurate time, armed alarms, licensing or accessibility approval.
+
+The author and independent auditor reran 258,293 permanent checks with strict C++17 warnings and ASan/UBSan. An independent temporary hostile harness passed 21 allocation/ownership checks. Tests cover all 512 valid settings combinations against all 64 capability combinations, every underlying byte spelling of each enum, individual field changes and copied-state independence. Exact frozen source hashes are in workstreams/big-clock-preferences-audit.md.
+
+Root integrated the permanent executable into CMake/CTest and Make model-check. Root local configure/build, all 23 CTest targets and make verify passed. The independent auditor also configured and built in a fresh isolated directory, passed all 23 CTest targets in 7.77 seconds, and passed make verify in a separate temporary copy. The scoped validation document was independently cross-checked. No new UI is activated by this code.
+
+No UI changed in this increment, so no new native UI observation is claimed. The existing countdown UI was independently audited and computer tested in the preceding private draft #27; that evidence does not prove Big Clock functionality. Qt 6.4 minimum, Pi 3/Pi 4, physical touch, screen-reader behavior and full final-original HamClock feature parity remain separate requirements. Source quality/time validity, DE timezone decisions, weather freshness, simultaneous original weather behavior, rendering and persistence require subsequent reviewed contracts.
