@@ -1,0 +1,11 @@
+# Offline estimated-Kp decoder validation
+
+October 11, 2026. This increment adds an original, bounded decoder for the current NOAA estimated-Kp object-array syntax. It produces owned raw records; it does not fetch or display live readings. The current provider format and separate remaining semantic/reuse questions are documented in workstreams/noaa-solar-provider-contract.md.
+
+The decoder preserves raw civil timestamps, supplied zero and explicit missing null. It rejects malformed JSON numbers, duplicate and escape-equivalent keys, malformed Unicode, invalid calendar dates, unsupported legacy row arrays and exceeded byte/row/depth/member/key/number limits. Unknown fields are ignored only after the same bounded syntax checks. Integer metadata requires lexical integer spelling; double precision limitations and allocation exception propagation are explicit in the header. An input description is not proof of authenticity or rights.
+
+Root configured and built the local native project after the author froze source. All 15 CTest tests and the executable verification suite passed. The independent reviewer reran the original 104 permanent checks and 48 separate adversarial probes under strict warnings and address/undefined-behavior sanitizers. The reviewer caught Qt's acceptance of invalid numeric spellings during development; explicit original JSON number grammar fixed the finding before final approval. See workstreams/noaa-kp-parser-audit.md for final source hashes and independent whole-build results.
+
+The new static library links existing QtCore only. It is not linked into the dashboard and adds no transport, polling, file persistence or UI behavior. There is therefore no new computer-control UI acceptance claim for this increment; previous native map validation is separate. Real captured provider fixtures are not bundled; tests are original synthetic inputs.
+
+Observed validation uses macOS and installed Qt 6.11.2. Qt 6.4 and physical Pi 3/Pi 4 have not been tested. Source-specific reuse/attribution, explicit time-zone interpretation, three-hour interval/freshness rules and quality semantics must be reviewed before readings can be promoted to a live observation or used in a production widget. No full original HamClock parity, hardware support, accessibility compliance or release claim follows from these parser tests.
