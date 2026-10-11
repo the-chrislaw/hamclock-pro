@@ -373,3 +373,15 @@ if(BUILD_TESTING)
     add_test(NAME qt-de-clock-display-snapshot-regression COMMAND qt-de-clock-display-snapshot-regression)
     set_tests_properties(qt-de-clock-display-snapshot-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-settings-dialog-regression
+        tests/qt_de_clock_settings_dialog_regression.cpp src/qt/de_clock_settings_dialog.cpp
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp)
+    target_link_libraries(qt-de-clock-settings-dialog-regression PRIVATE hamclock-dashboard-appearance)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-settings-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-settings-dialog-regression COMMAND qt-de-clock-settings-dialog-regression)
+    set_tests_properties(qt-de-clock-settings-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
