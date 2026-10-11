@@ -225,3 +225,14 @@ if(BUILD_TESTING)
     add_test(NAME qt-stopwatch-dialog-regression COMMAND qt-stopwatch-dialog-regression)
     set_tests_properties(qt-stopwatch-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
+
+# Pure injected countdown model only; no UI, scheduler or hardware activation.
+if(BUILD_TESTING)
+    add_executable(countdown-state-regression
+        tests/countdown_state_regression.cpp src/domain/countdown_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(countdown-state-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME countdown-state-regression COMMAND countdown-state-regression)
+    set_tests_properties(countdown-state-regression PROPERTIES TIMEOUT 15)
+endif()
