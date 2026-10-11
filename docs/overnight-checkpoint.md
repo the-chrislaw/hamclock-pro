@@ -307,3 +307,21 @@ Manual adapter header93c97e41f84c08e17d6b0d3d80bf70962852341753d96fe5b1f0b3296a9
 Deadline 23:09:23 UTC. Git and live agents inspected; draft32 remains the existing base. The final pure DE configuration source/build/document hashes are unchanged and all prior 27-target and independent checks remain valid. Publish only that verified scope as a private draft stacked32. No repeated testing is required without changes.
 
 Next queued manual DE civil adapter author froze header93c97e41/cpp422ec478/test1f17af29 after 162 strict ASan/UBSan checks under three host timezone settings. Root explicitly reactivated resumed_map_audit for actual source/test and hostile-probe review in its exclusive report; no shared file overlap. Automatic remains unresolved, fixed offset provenance distinct from actual UTC, and UI/persistence/Pi/minimum Qt gates remain separate. Root next action after publication: collect this independent source gate, integrate its standalone regression, and run fresh full build checks.
+
+### 22:53 UTC — validated DE settings published
+
+Private OPEN draft #33 https://github.com/the-chrislaw/hamclock-pro/pull/33, branch feature/de-clock-configuration, exact local/remote head663e6814d9062978e133fae8cfd1b9626bcf2357, base test/scoped-enum-boundaries (#32). Attached and privacy/draft/head verified. All recorded independent and root 27-target gates apply; no native/runtime conversion was activated. Nothing merged or released.
+
+Next manual civil adapter source audit is actively running with the same exclusive reviewer. Root inspected the frozen implementation: validation, actual-source range, checked signed arithmetic and display range all precede bounded Qt calendar decoding. Await the actual independent gate before standalone shared-build integration. Writer is completed and can be explicitly reactivated for fixes or final report cross-check. Next queued work remains manual conversion validation, then a separately reviewed caller context binding and native configuration design; no automatic backend or UI activation is presumed.
+
+## October 11, 22:54 UTC — manual conversion validation batch
+
+Deadline 23:14:23 UTC. Existing private draft33 and local head663e6814 verified unchanged. Same frozen manual adapter files reused, with source gate passed: author162 checks under three host zones, independent162 permanent +3,326 oracle checks under separate host zones. Root owns only standalone CMake wiring, validation/checkpoint and Git. Reviewer resumed_map_audit owns its new audit; author resumed_model_audit retains the frozen source/test. No competing files or native activation.
+
+Next actions: configure/build all28 targets and make verify; independent fresh full build and shared wiring review; root scoped validation and independent final document gate. Only then publish a private draft stacked33. Automatic mapping, persistence, caller context binding and native configuration remain queued separately. No GUI changes in this increment, so no new native observations are claimed.
+
+### 22:57 UTC — manual conversion private-draft gate passed
+
+Frozen source/header/test unchanged; standalone CMake6958f790 gate passes. Author162 strict ASan/UBSan checks, independent162 plus3,326 oracle checks, root28CTest/make verify, independently fresh28CTest9.08s pass. Final independent audit43c3fc8cf5ca73702bfe52a565077dd9455783b2ae603aa9983dab1a75d487ff and root validation1332d0c4f97ba8afc98e0a66d0fef21dc6ac3a422c79017e4e28b3e62ff1b31c scoped gate passed. No native/runtime activation or new GUI observation; automatic mapping/persistence/Pi/minimum Qt/defensive conversion fault remain separate.
+
+Stage only standalone CMake, new manual Qt adapter header/source/regression, its independent audit/root validation and checkpoint; exclude wider research and next header proposals. Publish private draft34 stacked33, attach and verify. Next author resumed_model_audit is actively evaluating a minimal caller-context binding proposal in exclusive new src/app/de_clock_civil_snapshot.hpp only; it may report redundancy rather than write a premature service. Implementation requires separate independent API gate; no shared edits permitted. Root owns Git/build/checkpoint.

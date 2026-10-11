@@ -345,3 +345,17 @@ if(BUILD_TESTING)
     add_test(NAME de-clock-configuration-regression COMMAND de-clock-configuration-regression)
     set_tests_properties(de-clock-configuration-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-manual-civil-adapter-regression
+        tests/qt_de_clock_manual_civil_adapter_regression.cpp
+        src/qt/de_clock_manual_civil_adapter.cpp src/qt/big_clock_civil_adapter.cpp
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp
+        src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+    target_link_libraries(qt-de-clock-manual-civil-adapter-regression PRIVATE Qt6::Core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-manual-civil-adapter-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-manual-civil-adapter-regression COMMAND qt-de-clock-manual-civil-adapter-regression)
+    set_tests_properties(qt-de-clock-manual-civil-adapter-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
+endif()
