@@ -292,3 +292,14 @@ if(BUILD_TESTING)
     add_test(NAME big-clock-preferences-regression COMMAND big-clock-preferences-regression)
     set_tests_properties(big-clock-preferences-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(big-clock-presentation-regression
+        tests/big_clock_presentation_regression.cpp src/app/big_clock_presentation.cpp
+        src/app/big_clock_preferences.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(big-clock-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME big-clock-presentation-regression COMMAND big-clock-presentation-regression)
+    set_tests_properties(big-clock-presentation-regression PROPERTIES TIMEOUT 15)
+endif()
