@@ -197,3 +197,14 @@ if(BUILD_TESTING)
     add_test(NAME stopwatch-state-regression COMMAND stopwatch-state-regression)
     set_tests_properties(stopwatch-state-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(stopwatch-presentation-regression
+        tests/stopwatch_presentation_regression.cpp
+        src/app/stopwatch_presentation.cpp src/domain/stopwatch_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(stopwatch-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME stopwatch-presentation-regression COMMAND stopwatch-presentation-regression)
+    set_tests_properties(stopwatch-presentation-regression PROPERTIES TIMEOUT 15)
+endif()

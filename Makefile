@@ -49,10 +49,15 @@ build/stopwatch-state-regression: tests/stopwatch_state_regression.cpp src/domai
 	mkdir -p build
 	$(CXX) $(CXXFLAGS) tests/stopwatch_state_regression.cpp src/domain/stopwatch_state.cpp -o $@
 
-model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression
+build/stopwatch-presentation-regression: tests/stopwatch_presentation_regression.cpp src/app/stopwatch_presentation.cpp src/app/stopwatch_presentation.hpp src/domain/stopwatch_state.cpp src/domain/stopwatch_state.hpp src/domain/clock_state.hpp
+	mkdir -p build
+	$(CXX) $(CXXFLAGS) tests/stopwatch_presentation_regression.cpp src/app/stopwatch_presentation.cpp src/domain/stopwatch_state.cpp -o $@
+
+model-check: build/clock-state-regression build/spot-store-regression build/stopwatch-state-regression build/stopwatch-presentation-regression
 	./build/clock-state-regression
 	./build/spot-store-regression
 	./build/stopwatch-state-regression
+	./build/stopwatch-presentation-regression
 
 build/instrument-catalog-regression: tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp src/app/instrument_catalog.hpp
 	mkdir -p build
