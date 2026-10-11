@@ -1,6 +1,7 @@
 #include "../src/qt/station_dashboard.hpp"
 #include "../src/qt/stopwatch_dialog.hpp"
 #include "../src/qt/countdown_dialog.hpp"
+#include "../src/qt/big_clock_dialog.hpp"
 #include "../src/qt/world_map_widget.hpp"
 #include "../src/app/station_view.hpp"
 #include <QApplication>
@@ -180,11 +181,47 @@ int main(int argc,char** argv){
     });
     countdown->click();app.processEvents();
     check(countdown_second,"second countdown modal lifecycle observed");
+    auto* big_clock=dashboard.findChild<QPushButton*>("dashboardBigClock");
+    check(big_clock && big_clock->height()>=44,"Big Clock has a named touch-sized entry");
+    if(!big_clock)return 1;
+    bool big_clock_first=false,big_clock_second=false;
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::BigClockDialog*>(QApplication::activeModalWidget());
+        big_clock_first=dialog!=nullptr;check(big_clock_first,"dashboard opens real Big Clock modal");
+        if(!dialog)return;
+        const auto& initial_view=dialog->lastView();
+        check(initial_view.status==hamclock::BigClockDigitalStatus::Ready &&
+              initial_view.synchronization==hamclock::SyncStatus::Unknown &&
+              initial_view.basis==hamclock::BigClockDisplayBasis::Actual,
+              "operating-system UTC is available without fabricated synchronization");
+        auto preferences=dialog->preferences();preferences.zone=hamclock::BigClockZone::De;
+        preferences.hour_format=hamclock::BigClockHourFormat::Twelve;preferences.show_seconds=false;
+        check(dialog->setPreferences(preferences),"Big Clock accepts session-only desired display choices");
+        check(dialog->lastView().status==hamclock::BigClockDigitalStatus::MissingSelectedTime &&
+              dialog->lastView().time_text[0]=='\0',"missing DE conversion never silently falls back to UTC");
+        dialog->reject();
+    });
+    big_clock->click();app.processEvents();
+    check(big_clock_first && QApplication::focusWidget()==big_clock,"Big Clock exit restores entry focus");
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::BigClockDialog*>(QApplication::activeModalWidget());
+        big_clock_second=dialog!=nullptr;check(big_clock_second,"dashboard reopens Big Clock session");
+        if(!dialog)return;
+        check(dialog->preferences().zone==hamclock::BigClockZone::De &&
+              dialog->preferences().hour_format==hamclock::BigClockHourFormat::Twelve &&
+              !dialog->preferences().show_seconds,"Big Clock desired options survive view closure");
+        auto preferences=dialog->preferences();preferences.zone=hamclock::BigClockZone::Utc;
+        check(dialog->setPreferences(preferences),"explicit UTC restores available clock source");
+        dialog->reject();
+    });
+    big_clock->click();app.processEvents();check(big_clock_second,"second Big Clock modal observed");
     auto key=[&](int code,Qt::KeyboardModifiers modifiers=Qt::NoModifier){auto* focused=QApplication::focusWidget();QKeyEvent event(QEvent::KeyPress,code,modifiers);if(focused)QApplication::sendEvent(focused,&event);app.processEvents();};
     edit->setFocus();key(Qt::Key_Tab);check(QApplication::focusWidget()==appearance,"keyboard reaches appearance after Edit station");
     key(Qt::Key_Tab);check(QApplication::focusWidget()==stopwatch,"keyboard reaches stopwatch after appearance");
     key(Qt::Key_Tab);check(QApplication::focusWidget()==countdown,"keyboard reaches countdown after stopwatch");
-    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after countdown");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==big_clock,"keyboard reaches Big Clock after countdown");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after Big Clock");
+    key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==big_clock,"reverse keyboard path returns to Big Clock");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==countdown,"reverse keyboard path returns to countdown");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==stopwatch,"reverse keyboard path returns to stopwatch");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==appearance,"reverse keyboard path returns to appearance");

@@ -2,6 +2,8 @@
 #include "station_editor_dialog.hpp"
 #include "stopwatch_dialog.hpp"
 #include "countdown_dialog.hpp"
+#include "big_clock_dialog.hpp"
+#include "big_clock_civil_adapter.hpp"
 #include "dashboard_appearance.hpp"
 #include "world_map_widget.hpp"
 #include "../app/station_view.hpp"
@@ -45,13 +47,15 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  auto* brand=label("HamClock Pro","brand",masthead);header->addWidget(brand);header->addStretch();
  auto* edit=new QPushButton("Edit station",masthead);edit->setObjectName("dashboardEditStation");edit->setMinimumSize(104,44);edit->setFocusPolicy(Qt::StrongFocus);
  edit->setAccessibleDescription("Open station settings. Dashboard updates only after a successful save.");header->addWidget(edit);
- header->addWidget(label("Appearance","caption",masthead,true));appearance_=new QComboBox(masthead);appearance_->setObjectName("dashboardAppearance");
+ auto* appearance_caption=label("Appearance","caption",masthead,true);appearance_caption->setObjectName("dashboardAppearanceCaption");header->addWidget(appearance_caption);appearance_=new QComboBox(masthead);appearance_->setObjectName("dashboardAppearance");
  appearance_->addItem("System","system");appearance_->addItem("Light","light");appearance_->addItem("Dark","dark");appearance_->setMinimumHeight(44);appearance_->setAccessibleName("Appearance preview");
  appearance_->setAccessibleDescription("Preview appearance. Save your preference in station settings.");header->addWidget(appearance_);
  auto* stopwatch=new QPushButton("Stopwatch",masthead);stopwatch->setObjectName("dashboardStopwatch");stopwatch->setMinimumSize(96,44);stopwatch->setFocusPolicy(Qt::StrongFocus);stopwatch->setAccessibleName("Open stopwatch");
  stopwatch->setAccessibleDescription("Open the stopwatch. Closing its window preserves running elapsed time. Timers are not saved when the application exits.");header->addWidget(stopwatch);
  auto* countdown=new QPushButton("Countdown",masthead);countdown->setObjectName("dashboardCountdown");countdown->setMinimumSize(104,44);countdown->setFocusPolicy(Qt::StrongFocus);countdown->setAccessibleName("Open countdown");
- countdown->setAccessibleDescription("Open countdown controls. Initial duration is one minute. Closing preserves counting; timers are not saved when the application exits.");header->addWidget(countdown);outer_->addWidget(masthead);
+ countdown->setAccessibleDescription("Open countdown controls. Initial duration is one minute. Closing preserves counting; timers are not saved when the application exits.");header->addWidget(countdown);
+ auto* big_clock=new QPushButton("Big clock",masthead);big_clock->setObjectName("dashboardBigClock");big_clock->setMinimumSize(88,44);big_clock->setFocusPolicy(Qt::StrongFocus);big_clock->setAccessibleName("Open Big Clock");
+ big_clock->setAccessibleDescription("Open the operating-system UTC clock. Synchronization evidence and DE conversion are unavailable. Display options are session only.");header->addWidget(big_clock);outer_->addWidget(masthead);
  body_=new QHBoxLayout;body_->setSpacing(12);
  sidebar_=new QFrame(this);sidebar_->setObjectName("stationSidebar");sidebar_->setProperty("dashboardCard",true);sidebar_->setFixedWidth(166);
  auto* side=new QVBoxLayout(sidebar_);side->setContentsMargins(0,0,0,0);side->setSpacing(0);
@@ -89,14 +93,19 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  path_layout->addWidget(distance_);path_layout->addWidget(bearing_);path_layout->addStretch();map_area->addWidget(path_row);
  route_summary_=value_label("dashboardRouteSummary","Computed route summary",map_card,"caption");route_summary_->setProperty("dashboardSecondary",true);map_area->addWidget(route_summary_);work->addWidget(map_card,1);body_->addWidget(workspace,1);outer_->addLayout(body_,1);
  auto* status=label("Offline station tools · Natural Earth 110m · Equirectangular coastline","caption",this,true);status->setObjectName("dashboardStatus");outer_->addWidget(status);
- QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,stopwatch);QWidget::setTabOrder(stopwatch,countdown);QWidget::setTabOrder(countdown,route_toggle_);
+ QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,stopwatch);QWidget::setTabOrder(stopwatch,countdown);QWidget::setTabOrder(countdown,big_clock);QWidget::setTabOrder(big_clock,route_toggle_);
  QObject::connect(edit,&QPushButton::clicked,this,[this](){editStation();});
  QObject::connect(stopwatch,&QPushButton::clicked,this,[this](){showStopwatch();});
  QObject::connect(countdown,&QPushButton::clicked,this,[this](){showCountdown();});
+ QObject::connect(big_clock,&QPushButton::clicked,this,[this](){showBigClock();});
  QObject::connect(appearance_,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this](int){const auto mode=appearance_->currentData().toString().toStdString();apply_dashboard_appearance(*this,mode);map_->setAppearance(mode);});
  QObject::connect(route_toggle_,&QPushButton::toggled,this,[this](bool visible){route_visible_=visible;map_->setRouteVisible(visible);route_toggle_->setText(visible?"Hide paths":"Show paths");route_summary_->setAccessibleDescription(map_->accessibleDescription());});
  refreshStation();adaptLayout();clock_timer_=new QTimer(this);clock_timer_->setObjectName("dashboardClockTimer");clock_timer_->setInterval(1000);
- auto tick=[this](){const auto now=QDateTime::currentDateTimeUtc();update_value(clock_,now.toString("HH:mm:ss"));update_value(date_,now.toString("yyyy-MM-dd 'UTC'"));clock_->setAccessibleDescription("Operating-system UTC clock: "+now.toString(Qt::ISODate));};
+ auto tick=[this](){const auto now=QDateTime::currentDateTimeUtc();
+ const auto source=now.isValid()?std::optional<UtcSeconds>{UtcSeconds{now.toSecsSinceEpoch()}}:std::nullopt;
+ const auto converted=adapt_big_clock_utc_civil(source);
+ big_clock_input_=BigClockDigitalInput{{converted.civil,std::nullopt},std::nullopt,SyncStatus::Unknown};
+ update_value(clock_,now.isValid()?now.toString("HH:mm:ss"):QString("Unavailable"));update_value(date_,now.toString("yyyy-MM-dd 'UTC'"));clock_->setAccessibleDescription("Operating-system UTC clock: "+now.toString(Qt::ISODate));};
  QObject::connect(clock_timer_,&QTimer::timeout,this,tick);tick();clock_timer_->start();
 }
 void StationDashboard::refreshStation(){
@@ -137,9 +146,23 @@ void StationDashboard::showCountdown(){
  activateWindow();
  if(origin)origin->setFocus();
 }
+void StationDashboard::showBigClock(){
+ auto* origin=findChild<QPushButton*>("dashboardBigClock");
+ try {
+  BigClockDialog dialog(big_clock_preferences_,[this](){return big_clock_input_;},appearance_->currentData().toString().toStdString(),this);
+  dialog.setAccessibleDescription("Operating-system UTC source. Synchronization evidence unavailable; DE conversion is not implemented. Display preferences are session only.");
+  dialog.exec();
+  big_clock_preferences_=dialog.preferences();
+ } catch(const std::exception&) {
+  auto* status=findChild<QLabel*>("dashboardStatus");
+  if(status){status->setText("Big Clock could not open. Station settings are unchanged.");status->setAccessibleName(status->text());}
+ }
+ activateWindow();
+ if(origin)origin->setFocus();
+}
 void StationDashboard::resizeEvent(QResizeEvent* event){QDialog::resizeEvent(event);if(body_&&clock_&&sidebar_&&instruments_)adaptLayout();}
 void StationDashboard::adaptLayout(){
- const bool large=width()>=1050;outer_->setContentsMargins(large?32:12,large?26:8,large?32:12,large?20:8);outer_->setSpacing(large?16:8);body_->setSpacing(large?16:12);sidebar_->setFixedWidth(large?190:166);instruments_->setFixedHeight(large?175:122);
+ const bool large=width()>=1050;if(auto* caption=findChild<QLabel*>("dashboardAppearanceCaption"))caption->setVisible(large);outer_->setContentsMargins(large?32:12,large?26:8,large?32:12,large?20:8);outer_->setSpacing(large?16:8);body_->setSpacing(large?16:12);sidebar_->setFixedWidth(large?190:166);instruments_->setFixedHeight(large?175:122);
  for(auto* frame:findChildren<QFrame*>())if(frame->property("dashboardSection").toBool() && frame->layout()){frame->layout()->setContentsMargins(large?12:10,large?10:7,large?12:10,large?10:7);frame->layout()->setSpacing(large?3:2);}
  for(auto* item:findChildren<QLabel*>()){const auto role=item->property("dashboardRole").toString();if(role.isEmpty())continue;QFont font=item->font();int size=large?13:12;
   if(role=="brand")size=large?17:15;else if(role=="clock")size=large?36:30;else if(role=="callsign")size=large?27:23;else if(role=="location")size=large?17:14;else if(role=="caption")size=large?12:11;else if(role=="unavailable")size=large?14:12;
