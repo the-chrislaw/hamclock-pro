@@ -1,10 +1,12 @@
 #include "../src/qt/station_dashboard.hpp"
 #include "../src/qt/stopwatch_dialog.hpp"
+#include "../src/qt/countdown_dialog.hpp"
 #include "../src/qt/world_map_widget.hpp"
 #include "../src/app/station_view.hpp"
 #include <QApplication>
 #include <QAccessible>
 #include <QComboBox>
+#include <QSpinBox>
 #include <QDateTime>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -98,6 +100,8 @@ int main(int argc,char** argv){
     auto* appearance=dashboard.findChild<QComboBox*>("dashboardAppearance");
     auto* paths=dashboard.findChild<QPushButton*>("dashboardRouteToggle");
     auto* stopwatch=dashboard.findChild<QPushButton*>("dashboardStopwatch");
+    auto* countdown=dashboard.findChild<QPushButton*>("dashboardCountdown");
+    check(countdown && countdown->minimumHeight()>=44 && countdown->minimumWidth()>=44,"reachable touch-sized countdown entry");
     check(stopwatch && stopwatch->minimumHeight()>=44 && stopwatch->minimumWidth()>=44,"reachable touch-sized stopwatch entry");
     check(sidebar && sidebar->isAncestorOf(utc_label),"UTC clock belongs to grouped station sidebar");
     for(const char* name:{"dashboardFluxPaneState","dashboardPropagationPaneState","dashboardSunPaneState","dashboardSpaceWeatherPaneState"})
@@ -147,10 +151,41 @@ int main(int argc,char** argv){
     });
     stopwatch->click();app.processEvents();
     check(second_open,"second stopwatch lifecycle observed");
+    bool countdown_first=false,countdown_second=false;
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::CountdownDialog*>(QApplication::activeModalWidget());
+        countdown_first=dialog!=nullptr;check(countdown_first,"dashboard opens actual countdown dialog");
+        if(!dialog)return;
+        auto* minutes=dialog->findChild<QSpinBox*>("countdownMinutes");
+        check(minutes && minutes->value()==1,"countdown initial replacement duration is explicit one minute");
+        if(minutes)minutes->setValue(2);
+        check(dialog->perform(hamclock::CountdownControl::SetAndReset),"countdown explicit configuration applies");
+        check(dialog->perform(hamclock::CountdownControl::Run),"dashboard countdown starts");
+        check(dialog->perform(hamclock::CountdownControl::Pause),"dashboard countdown pauses");
+        dialog->reject();
+    });
+    countdown->click();app.processEvents();
+    check(countdown_first && QApplication::focusWidget()==countdown,"countdown closes and restores dashboard focus");
+    QTimer::singleShot(0,&dashboard,[&](){
+        auto* dialog=dynamic_cast<hamclock::CountdownDialog*>(QApplication::activeModalWidget());
+        countdown_second=dialog!=nullptr;check(countdown_second,"dashboard reopens shared countdown");
+        if(!dialog)return;
+        auto* configured=dialog->findChild<QLabel*>("countdownConfigured");
+        auto* run=dialog->findChild<QPushButton*>("countdownRun");
+        check(configured && configured->text().contains("00:02:00"),"configured countdown survives view closure");
+        check(run && run->text()=="Resume","paused countdown survives view closure");
+        check(dialog->perform(hamclock::CountdownControl::Run),"reopened countdown resumes");
+        check(dialog->perform(hamclock::CountdownControl::Reset),"reopened countdown explicitly resets");
+        dialog->reject();
+    });
+    countdown->click();app.processEvents();
+    check(countdown_second,"second countdown modal lifecycle observed");
     auto key=[&](int code,Qt::KeyboardModifiers modifiers=Qt::NoModifier){auto* focused=QApplication::focusWidget();QKeyEvent event(QEvent::KeyPress,code,modifiers);if(focused)QApplication::sendEvent(focused,&event);app.processEvents();};
     edit->setFocus();key(Qt::Key_Tab);check(QApplication::focusWidget()==appearance,"keyboard reaches appearance after Edit station");
     key(Qt::Key_Tab);check(QApplication::focusWidget()==stopwatch,"keyboard reaches stopwatch after appearance");
-    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after stopwatch");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==countdown,"keyboard reaches countdown after stopwatch");
+    key(Qt::Key_Tab);check(QApplication::focusWidget()==paths,"keyboard reaches map path control after countdown");
+    key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==countdown,"reverse keyboard path returns to countdown");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==stopwatch,"reverse keyboard path returns to stopwatch");
     key(Qt::Key_Backtab,Qt::ShiftModifier);check(QApplication::focusWidget()==appearance,"reverse keyboard path returns to appearance");
     const auto preserved=bytes(path);const auto app_palette=QApplication::palette();

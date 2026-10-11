@@ -1,6 +1,7 @@
 #include "station_dashboard.hpp"
 #include "station_editor_dialog.hpp"
 #include "stopwatch_dialog.hpp"
+#include "countdown_dialog.hpp"
 #include "dashboard_appearance.hpp"
 #include "world_map_widget.hpp"
 #include "../app/station_view.hpp"
@@ -48,7 +49,9 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  appearance_->addItem("System","system");appearance_->addItem("Light","light");appearance_->addItem("Dark","dark");appearance_->setMinimumHeight(44);appearance_->setAccessibleName("Appearance preview");
  appearance_->setAccessibleDescription("Preview appearance. Save your preference in station settings.");header->addWidget(appearance_);
  auto* stopwatch=new QPushButton("Stopwatch",masthead);stopwatch->setObjectName("dashboardStopwatch");stopwatch->setMinimumSize(96,44);stopwatch->setFocusPolicy(Qt::StrongFocus);stopwatch->setAccessibleName("Open stopwatch");
- stopwatch->setAccessibleDescription("Open the stopwatch. Closing its window preserves running elapsed time. Timers are not saved when the application exits.");header->addWidget(stopwatch);outer_->addWidget(masthead);
+ stopwatch->setAccessibleDescription("Open the stopwatch. Closing its window preserves running elapsed time. Timers are not saved when the application exits.");header->addWidget(stopwatch);
+ auto* countdown=new QPushButton("Countdown",masthead);countdown->setObjectName("dashboardCountdown");countdown->setMinimumSize(104,44);countdown->setFocusPolicy(Qt::StrongFocus);countdown->setAccessibleName("Open countdown");
+ countdown->setAccessibleDescription("Open countdown controls. Initial duration is one minute. Closing preserves counting; timers are not saved when the application exits.");header->addWidget(countdown);outer_->addWidget(masthead);
  body_=new QHBoxLayout;body_->setSpacing(12);
  sidebar_=new QFrame(this);sidebar_->setObjectName("stationSidebar");sidebar_->setProperty("dashboardCard",true);sidebar_->setFixedWidth(166);
  auto* side=new QVBoxLayout(sidebar_);side->setContentsMargins(0,0,0,0);side->setSpacing(0);
@@ -86,9 +89,10 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  path_layout->addWidget(distance_);path_layout->addWidget(bearing_);path_layout->addStretch();map_area->addWidget(path_row);
  route_summary_=value_label("dashboardRouteSummary","Computed route summary",map_card,"caption");route_summary_->setProperty("dashboardSecondary",true);map_area->addWidget(route_summary_);work->addWidget(map_card,1);body_->addWidget(workspace,1);outer_->addLayout(body_,1);
  auto* status=label("Offline station tools · Natural Earth 110m · Equirectangular coastline","caption",this,true);status->setObjectName("dashboardStatus");outer_->addWidget(status);
- QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,stopwatch);QWidget::setTabOrder(stopwatch,route_toggle_);
+ QWidget::setTabOrder(edit,appearance_);QWidget::setTabOrder(appearance_,stopwatch);QWidget::setTabOrder(stopwatch,countdown);QWidget::setTabOrder(countdown,route_toggle_);
  QObject::connect(edit,&QPushButton::clicked,this,[this](){editStation();});
  QObject::connect(stopwatch,&QPushButton::clicked,this,[this](){showStopwatch();});
+ QObject::connect(countdown,&QPushButton::clicked,this,[this](){showCountdown();});
  QObject::connect(appearance_,QOverload<int>::of(&QComboBox::currentIndexChanged),this,[this](int){const auto mode=appearance_->currentData().toString().toStdString();apply_dashboard_appearance(*this,mode);map_->setAppearance(mode);});
  QObject::connect(route_toggle_,&QPushButton::toggled,this,[this](bool visible){route_visible_=visible;map_->setRouteVisible(visible);route_toggle_->setText(visible?"Hide paths":"Show paths");route_summary_->setAccessibleDescription(map_->accessibleDescription());});
  refreshStation();adaptLayout();clock_timer_=new QTimer(this);clock_timer_->setObjectName("dashboardClockTimer");clock_timer_->setInterval(1000);
@@ -115,6 +119,20 @@ void StationDashboard::showStopwatch(){
  } catch(const std::exception&) {
   auto* status=findChild<QLabel*>("dashboardStatus");
   if(status){status->setText("Stopwatch could not open. Station settings are unchanged.");status->setAccessibleName(status->text());}
+ }
+ activateWindow();
+ if(origin)origin->setFocus();
+}
+void StationDashboard::showCountdown(){
+ auto* origin=findChild<QPushButton*>("dashboardCountdown");
+ try {
+  CountdownDialog dialog(countdown_service_,
+      [this](){return MonotonicNanoseconds{stopwatch_clock_.nsecsElapsed()};},
+      appearance_->currentData().toString().toStdString(),this);
+  dialog.exec();
+ } catch(const std::exception&) {
+  auto* status=findChild<QLabel*>("dashboardStatus");
+  if(status){status->setText("Countdown could not open. Station settings are unchanged.");status->setAccessibleName(status->text());}
  }
  activateWindow();
  if(origin)origin->setFocus();

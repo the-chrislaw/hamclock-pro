@@ -1,6 +1,7 @@
 #pragma once
 #include "../platform/settings.hpp"
 #include "../app/stopwatch_presentation.hpp"
+#include "../app/countdown_service.hpp"
 #include <QElapsedTimer>
 #include <QDialog>
 #include <string>
@@ -14,7 +15,7 @@ public:
 protected:
  void resizeEvent(QResizeEvent*) override;
 private:
- void refreshStation();void editStation();void adaptLayout();void showStopwatch();
+ void refreshStation();void editStation();void adaptLayout();void showStopwatch();void showCountdown();
  StationSettings settings_;std::string path_;
  QLabel *callsign_=nullptr,*de_grid_=nullptr,*dx_grid_=nullptr,*de_coordinates_=nullptr,*dx_coordinates_=nullptr;
  QLabel *distance_=nullptr,*bearing_=nullptr,*route_summary_=nullptr,*clock_=nullptr,*date_=nullptr;
@@ -26,5 +27,7 @@ private:
  QElapsedTimer stopwatch_clock_;
  StopwatchState stopwatch_state_{MonotonicNanoseconds{0}};
  StopwatchPresentation stopwatch_presentation_;
+ // Initial one-minute duration is an explicit replacement default, session only.
+ CountdownService countdown_service_{ElapsedNanoseconds{kCountdownMinimumNanoseconds},MonotonicNanoseconds{0}};
 };
 }
