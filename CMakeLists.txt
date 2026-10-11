@@ -236,3 +236,14 @@ if(BUILD_TESTING)
     add_test(NAME countdown-state-regression COMMAND countdown-state-regression)
     set_tests_properties(countdown-state-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(countdown-presentation-regression
+        tests/countdown_presentation_regression.cpp
+        src/app/countdown_presentation.cpp src/domain/countdown_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(countdown-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME countdown-presentation-regression COMMAND countdown-presentation-regression)
+    set_tests_properties(countdown-presentation-regression PROPERTIES TIMEOUT 15)
+endif()

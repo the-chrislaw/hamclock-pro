@@ -1,0 +1,25 @@
+# Independent countdown presentation audit
+
+October11,2026. Reviewer owns only this report. Writer owns new app countdown presentation header/source/test; root owns build/Git/integration. Header must pass independent gate beforecpp. No domain/frozenresearch/report/sharedfile changes, dependencies, native UI, persistence, radio or wallclock activation.
+
+Previously verified manual minimum/restart behavior and countdown-ui research support a CU0 API proposal only. Display rounding is an explicit replacement policy: positive remaining values round up to seconds in Running and Paused, so a positive paused fraction cannot appear elapsed. Bounded quotient/remainder arithmetic avoids overflowing ceilingaddition. Expired remains Expired at zero after pending acknowledgment; configured duration and phase/pending text remain truthful. No original undocumented format/parity or service/nativeUI claims follow.
+
+## Concrete API gate
+
+Initial stored-view class was unnecessary for this latch-free slice; requested stateless conversion matching root scope. Corrected header independently read beforecpp, **explicit API gate passes**: immutable snapshot to fully initialized owned raw/display/status/affordance values; complete phase/configured/remaining/runID/pending invariants; ceilpositive seconds in Running/Paused and configured text; zero only for truly zero duration, no24hourwrap, max9bytes through168hours. Validation is structural, not sourcehistory/service-lifetime proof; dismiss metadata creates no acknowledgment authority. Caller must prepare returned view before its own service commit. No internal storage or stateful guarantee inferred.
+
+## Actual source and executable gate
+
+**Source/build gate passes**, pending root validation-document crosscheck. Actual stateless validator checks configured model bounds, remaining0..configured then exhaustive phase invariants before formatting. Fully initialized aggregate retains raw durations and identity; pending alone drives dismiss affordance only after structural validation ensures Expired. Expired acknowledgedfalse remainszero/Timeelapsed, no activation or invented authority. Ceil quotient/remainder intermediate bounded by7days, formatting atmost9bytes/168hours with no24hourwrap. Constinput never modified; owned returned strings cannot alias source or priorviews. Original code, no copied third-party implementation introduced; source provenance audit is scoped and not legal certification.
+
+Independent strict C++17 warning-as-error ASan/UBSan **77 permanent checks pass**; separate **34 independent probes pass** covering independently formattedceil nanosecond/second/minute/hour/day/cap boundaries, Paused1ns positive display, expiredpendingtrue/false and ownedviews, negative/extreme rejected duration. Additional global-new fault injection on the allocating pending-status string throws bad_alloc and preserves immutableinput/priorcallerview. No sanitizer failures. Caller service must still prepare returned value before committing its own state; this stateless function cannot prove future service transaction/lifetime correctness.
+
+Root pure standalone CMake target with15s timeout and Make explicit header/source dependencies/model-check compile/run independently reviewed. Fresh separate configure/build `/private/tmp/hamclock-resumed-land-audit/countdown-presentation-cmake` passes **all20CTest**, zero failures,5.64seconds. No dependencies/native countdown activation/UI/IO/service or persistence added. No computer-control acceptance claimed; that belongs to later native increment.
+
+Frozen SHA256 header `a8748fd8d66217b84f8a41e4e87d5d0db8d29652f1f64aafba6f9c4546948f4c`; cpp `3e424091d41bacccb068c4cdada8017617e57eb341d8b0dd94302f82d087dd0b`; permanenttest `b9bf0eada7736d13de3b40193f8af617ed517c7d90ad7e2bd13b8bce00775031`; CMake `a852c07801dbcd8baaa2f19b9ea16b8e98cde5a0c16ec38c2d076a6928c4fdca`; Make `589a026b63923e9d7824e6583e66c6cdd47f64ab8314a6609dc8de9921eecafc`. Whole fresh checks executed against these values.
+
+Native countdown/notification/ack authority, service instanceguards/reentrancy, runtime/persistence/audio/physicaltouch/Pi/minQt/suspend, originalundocumentedformat/parity/fullaccessibility/legalcertification remain outside/untested. Next action is root scopedvalidationcrosscheck then boundedprivatepublication and a separately reviewed sharedservice token/lifetimeAPI; do not imply future service approval from pure conversion tests.
+
+## Final validation-document gate
+
+Root scopedvalidation independently reread after evidence correction:77permanent and34independent strictsanitizer probes are separate from additional non-sanitized global-new allocationfault injection; all20fresh5.64s versus root3.66s distinguishes runners. Source/snapshot/display/ownership/noauthority/nonnative limits matchactualtests. **Final bounded CU0 publication gate passes.** Nextsharedservice scope is supported only as a concreteAPIproposal requiring pre-cpp lifetime/configurationepoch/run-token/exhaustion/transaction review; no futureimplementation/native/sound/default/persistence policy approved by this report.
