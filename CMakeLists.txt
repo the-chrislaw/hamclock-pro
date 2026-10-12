@@ -27,7 +27,8 @@ add_library(hamclock-world-map STATIC
     src/qt/land_fill_path.cpp
     src/map/path.cpp
     src/map/projection.cpp
-    src/domain/geometry.cpp)
+    src/domain/geometry.cpp
+    src/domain/solar_position.cpp)
 target_link_libraries(hamclock-world-map PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-world-map PRIVATE -Wall -Wextra -Wpedantic)
@@ -52,6 +53,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME qt-map-regression COMMAND qt-map-regression)
     set_tests_properties(qt-map-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-map-terminator-regression tests/qt_map_terminator_regression.cpp)
+    target_link_libraries(qt-map-terminator-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-terminator-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-terminator-regression COMMAND qt-map-terminator-regression)
+    set_tests_properties(qt-map-terminator-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
 
 if(BUILD_TESTING)
