@@ -43,7 +43,7 @@ Turn the pieces that already exist into one working screen.
 
 - Wire the DE clock settings dialog into Big Clock → Options. Apply the two corrections in `docs/workstreams/de-native-integration-plan.md`. Fix the disabled offset field not looking disabled.
 - DE local time with real time zones and daylight saving (P1 in `docs/parity-next.md`). Use the OS tz database through Qt's `QTimeZone`; don't hand-roll DST rules.
-- Day/night terminator and subsolar point on the map (computed offline; no data feed needed).
+- Day/night terminator and subsolar point on the map (computed offline; no data feed needed). **Slice 1 done:** `src/domain/solar_position` (subsolar point, elevation, terminator latitude, tested against Meeus). Next: draw the night shade and subsolar marker on the map.
 - ~~Retire the SDL2 executable~~ Done: CLI tools moved to `hamclock-pro-cli`, all checks in CTest.
 
 **Done when:** someone can set their station, see correct UTC and local time across a DST change, and watch the terminator move, on a Mac.
@@ -119,7 +119,7 @@ From the F01–F30 inventory in Codex's `outputs/hamclock-pro-feature-audit.md`.
 | F08 Space weather | Partial: offline Kp parser only | M4 |
 | F09 Solar imagery | Not started | After 1.0 |
 | F10 DE/DX weather | Not started | After 1.0 |
-| F11 Maps, grayline | Partial: coastlines, land fill, great-circle path; no terminator | M1 |
+| F11 Maps, grayline | Partial: coastlines, land fill, great-circle path; solar position math done, terminator not drawn yet | M1 |
 | F12 Zones, cities, prefixes | Not started | After 1.0 |
 | F13 DX cluster | Spot model only | M4 |
 | F14 Live spots | Spot model only | After 1.0 |
