@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qt:
+    name: Qt build and tests (${{ matrix.config.name }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: debug, flags: "" }
+          - { name: asan-ubsan, flags: "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build g++ qt6-base-dev python3
+      - name: Configure
+        run: cmake -S . -B build-ci -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="${{ matrix.config.flags }}"
+      - name: Build
+        run: cmake --build build-ci
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build-ci --output-on-failure
+
+  make-verify:
+    name: make verify (unit and CLI checks)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends g++ make libsdl2-dev python3
+      - name: Verify
+        run: make verify
