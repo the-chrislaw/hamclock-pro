@@ -1,0 +1,88 @@
+name: Release builds
+
+# Every push to main publishes fresh downloadable builds as the rolling
+# "latest" pre-release. Tagged versions (v*) get their own release.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  raspberry-pi:
+    name: Raspberry Pi OS / Debian Bookworm arm64 (.deb)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+      - name: Build package in arm64 Bookworm container
+        run: |
+          version="0.1.0~git$(date -u +%Y%m%d).${GITHUB_SHA::7}"
+          [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF_NAME#v}"
+          docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src debian:bookworm bash -euxc "
+            apt-get update
+            apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev dpkg-dev file
+            cmake -S . -B build-pi -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCPACK_PACKAGE_VERSION=$version
+            cmake --build build-pi -j\$(nproc)
+            cd build-pi && cpack -G DEB
+          "
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-raspberry-pi-arm64
+          path: build-pi/*.deb
+
+  macos:
+    name: macOS (Apple silicon app zip)
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        run: brew install qt
+      - name: Build
+        run: |
+          cmake -S . -B build-mac -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+          cmake --build build-mac -j"$(sysctl -n hw.ncpu)"
+      - name: Bundle Qt into the dashboard app and zip
+        run: |
+          cd build-mac
+          "$(brew --prefix qt)/bin/macdeployqt" hamclock-pro-dashboard.app
+          ditto -c -k --keepParent hamclock-pro-dashboard.app hamclock-pro-dashboard-macos-arm64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-macos-arm64
+          path: build-mac/hamclock-pro-dashboard-macos-arm64.zip
+
+  publish:
+    name: Publish release
+    needs: [raspberry-pi, macos]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -l dist
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            gh release create "$GITHUB_REF_NAME" dist/* --title "HamClock Pro $GITHUB_REF_NAME" --generate-notes
+          else
+            gh release delete latest --cleanup-tag --yes || true
+            gh release create latest dist/* --target "$GITHUB_SHA" --prerelease \
+              --title "Latest development build" \
+              --notes "Automatic build of main at ${GITHUB_SHA::7}. Development preview: not feature complete, not hardware-validated. Raspberry Pi: sudo apt install ./hamclock-pro_*_arm64.deb, then run hamclock-pro-dashboard --station PATH. macOS: unzip and open the app (unsigned; right-click > Open)."
+          fi
