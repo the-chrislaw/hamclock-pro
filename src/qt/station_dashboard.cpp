@@ -20,6 +20,7 @@
 #include <QVBoxLayout>
 #include <QVariant>
 #include <stdexcept>
+#include <algorithm>
 #include <utility>
 #include <cmath>
 namespace hamclock {
@@ -168,5 +169,11 @@ void StationDashboard::adaptLayout(){
   if(role=="brand")size=large?17:15;else if(role=="clock")size=large?36:30;else if(role=="callsign")size=large?27:23;else if(role=="location")size=large?17:14;else if(role=="caption")size=large?12:11;else if(role=="unavailable")size=large?14:12;
   font.setPixelSize(size);font.setBold(role=="brand"||role=="callsign");item->setFont(font);
  }
+ // Platform fonts differ (e.g. DejaVu on Raspberry Pi OS is wider than macOS
+ // system text), so size the narrow utility pane from its actual state text.
+ constexpr int kUtilityPaneMinimumWidth=104;
+ auto* weather=findChild<QWidget*>("dashboardSpaceWeatherPane");auto* weather_state=findChild<QLabel*>("dashboardSpaceWeatherPaneState");
+ if(weather && weather_state && weather->layout()){const auto margins=weather->layout()->contentsMargins();
+  weather->setFixedWidth(std::max(kUtilityPaneMinimumWidth,weather_state->fontMetrics().horizontalAdvance(weather_state->text())+margins.left()+margins.right()));}
 }
 }
