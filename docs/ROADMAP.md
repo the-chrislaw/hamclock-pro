@@ -4,9 +4,9 @@ Written October 12, 2026. This is the single plan from today's state to a 1.0 re
 
 ## Where we are
 
-- **Code:** C++17, Qt 6 dashboard plus an earlier SDL2 experiment. 30 CTest suites pass locally on macOS; `make verify` passes.
-- **Branches:** `main` holds only the README and license. All work is in 35 open draft PRs stacked one on another (#1 → #35), plus `wip/de-clock-settings-dialog` on top of #35. Nothing is merged.
-- **CI:** none. Tests only run on whichever machine someone builds on.
+- **Code:** C++17, Qt 6 only (the SDL2 experiment was retired October 12). 33 CTest suites pass on macOS and in CI on Ubuntu.
+- **Branches:** the 35-PR stack was merged into `main` via #36 on October 12 (M0).
+- **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job.
 - **Hardware:** never run on a Raspberry Pi.
 - **Design:** the approved look is `design/dashboard.html` and the refined mockups; the native Qt dashboard does not match it yet (`docs/native-approved-design-gap.md`).
 
@@ -44,7 +44,7 @@ Turn the pieces that already exist into one working screen.
 - Wire the DE clock settings dialog into Big Clock → Options. Apply the two corrections in `docs/workstreams/de-native-integration-plan.md`. Fix the disabled offset field not looking disabled.
 - DE local time with real time zones and daylight saving (P1 in `docs/parity-next.md`). Use the OS tz database through Qt's `QTimeZone`; don't hand-roll DST rules.
 - Day/night terminator and subsolar point on the map (computed offline; no data feed needed).
-- Retire the SDL2 executable, or mark it unmaintained, so there's one UI to keep working.
+- ~~Retire the SDL2 executable~~ Done: CLI tools moved to `hamclock-pro-cli`, all checks in CTest.
 
 **Done when:** someone can set their station, see correct UTC and local time across a DST change, and watch the terminator move, on a Mac.
 
@@ -144,8 +144,8 @@ From the F01–F30 inventory in Codex's `outputs/hamclock-pro-feature-audit.md`.
 
 These block the milestone shown. Each needs a short written answer in this file or an issue.
 
-1. **M0:** OK to merge the stacked drafts into `main` as-is after a quick review, rather than re-auditing each one?
-2. **M1:** Drop the SDL2 build and go Qt-only?
+1. ~~**M0:** Merge the stacked drafts after a quick review?~~ Yes (Oct 12).
+2. ~~**M1:** Drop the SDL2 build and go Qt-only?~~ Yes (Oct 12).
 3. **M3:** Which Pi OS image and display exactly (official 7" v1 or v2, or another)?
 4. **M4:** Data sources for 1.0: NOAA SWPC for space weather? Which DX cluster node by default, or user must enter one?
 5. **M5:** Project name and whether to ask the original HamClock author before using "HamClock".
