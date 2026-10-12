@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(HamClockProStationEditor VERSION 0.1.0 LANGUAGES CXX)
+project(HamClockPro VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -404,3 +404,19 @@ if(BUILD_TESTING)
     add_test(NAME map-import-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/map_import_regression.py)
     set_tests_properties(cli-self-test cli-regression map-import-regression PROPERTIES TIMEOUT 60 ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 endif()
+
+# Installation and packaging (used by .github/workflows/release.yml).
+include(GNUInstallDirs)
+install(TARGETS hamclock-pro-dashboard hamclock-pro-editor hamclock-pro-map-preview hamclock-pro-cli
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    BUNDLE DESTINATION .)
+install(FILES LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
+set(CPACK_PACKAGE_NAME hamclock-pro)
+set(CPACK_PACKAGE_VENDOR "HamClock Pro contributors")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amateur radio world-time and station dashboard (development preview)")
+set(CPACK_PACKAGE_CONTACT "https://github.com/the-chrislaw/hamclock-pro")
+set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+set(CPACK_DEBIAN_PACKAGE_SECTION hamradio)
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+include(CPack)
