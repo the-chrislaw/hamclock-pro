@@ -104,6 +104,7 @@ StationDashboard::StationDashboard(const StationSettings& initial,const std::str
  refreshStation();adaptLayout();clock_timer_=new QTimer(this);clock_timer_->setObjectName("dashboardClockTimer");clock_timer_->setInterval(1000);
  auto tick=[this](){const auto now=QDateTime::currentDateTimeUtc();
  const auto source=now.isValid()?std::optional<UtcSeconds>{UtcSeconds{now.toSecsSinceEpoch()}}:std::nullopt;
+ if(source)map_->setSolarTime(*source);else map_->clearSolarTime();
  const auto converted=adapt_big_clock_utc_civil(source);
  big_clock_input_=BigClockDigitalInput{{converted.civil,std::nullopt},std::nullopt,SyncStatus::Unknown};
  update_value(clock_,now.isValid()?now.toString("HH:mm:ss"):QString("Unavailable"));update_value(date_,now.toString("yyyy-MM-dd 'UTC'"));clock_->setAccessibleDescription("Operating-system UTC clock: "+now.toString(Qt::ISODate));};

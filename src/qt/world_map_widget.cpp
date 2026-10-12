@@ -62,6 +62,28 @@ void WorldMapWidget::setAppearance(const std::string& mode) {
     appearance_=mode;update();
 }
 void WorldMapWidget::setRouteVisible(bool visible) {route_visible_=visible;describe();update();}
+void WorldMapWidget::setSolarTime(UtcSeconds utc) {
+    // The Sun moves 0.25 degrees a minute; repaint at most once per minute.
+    const auto minute=utc.value/60;
+    if(sun_ && minute==solar_minute_)return;
+    solar_minute_=minute;sun_=subsolar_point({minute*60});update();
+}
+void WorldMapWidget::clearSolarTime() {if(!sun_)return;sun_.reset();update();}
+std::optional<QPointF> WorldMapWidget::subsolarPixel() const {
+    if(!sun_)return std::nullopt;
+    return endpointPixel({sun_->latitude_deg,sun_->longitude_deg});
+}
+QPolygonF WorldMapWidget::nightPolygon() const {
+    QPolygonF polygon;
+    if(!sun_)return polygon;
+    const auto bounds=mapBounds();
+    auto point=[&](double lon,double lat){return QPointF(bounds.left()+(lon+180.0)/360.0*bounds.width(),bounds.top()+(90.0-lat)/180.0*bounds.height());};
+    // Night is on the side of the terminator away from the Sun's hemisphere.
+    const bool night_south=sun_->latitude_deg>=0;
+    for(int lon=-180;lon<=180;++lon)polygon<<point(lon,terminator_latitude_deg(*sun_,lon));
+    polygon<<point(180,night_south?-90:90)<<point(-180,night_south?-90:90);
+    return polygon;
+}
 QRectF WorldMapWidget::mapBounds() const {
     const double available_width=std::max(0,width()-16), available_height=std::max(0,height()-16);
     const double w=std::min(available_width,available_height*2.0), h=w/2.0;
@@ -115,6 +137,12 @@ void WorldMapWidget::paintEvent(QPaintEvent*) {
     for (const auto& path : land_) painter.drawPath(path);
     QPen pen(coast);pen.setWidthF(1);pen.setCosmetic(true);painter.setPen(pen);painter.setBrush(Qt::NoBrush);
     painter.drawPath(coast_);painter.restore();
+    if(sun_){
+        painter.setPen(Qt::NoPen);painter.setBrush(QColor(0,0,0,dark?90:55));painter.drawPolygon(nightPolygon());
+        const auto sun=*subsolarPixel();const QColor sun_color(dark?"#f2c14e":"#d68f00");
+        painter.setPen(QPen(sun_color,2));painter.setBrush(Qt::NoBrush);painter.drawEllipse(sun,5,5);
+        painter.drawLine(QPointF(sun.x()-8,sun.y()),QPointF(sun.x()+8,sun.y()));painter.drawLine(QPointF(sun.x(),sun.y()-8),QPointF(sun.x(),sun.y()+8));
+    }
     if(route_visible_){painter.setPen(QPen(route,2));for(const auto& line:routeSegments())painter.drawLine(line);}
     if(de_){
         painter.setPen(QPen(route,2));painter.setBrush(sea);

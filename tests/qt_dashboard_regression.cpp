@@ -88,13 +88,14 @@ int main(int argc,char** argv){
     check(QAccessible::queryAccessibleInterface(utc_label)->text(QAccessible::Name).contains(utc_label->text()),
           "actual accessible clock includes initial UTC value");
     check(clock.isValid() && std::abs(clock.secsTo(now))<=2 && text("utcDate").endsWith("UTC"),"clock presents actual UTC time");
-    const auto clock_before=text("utcClock");PaintCounter counter;map->installEventFilter(&counter);
+    const auto clock_before=text("utcClock");const auto minute_before=QDateTime::currentSecsSinceEpoch()/60;PaintCounter counter;map->installEventFilter(&counter);
     QEventLoop clock_wait;QTimer::singleShot(2100,&clock_wait,&QEventLoop::quit);clock_wait.exec();
     check(text("utcClock")!=clock_before,"clock updates on its timer");
     check(QAccessible::queryAccessibleInterface(utc_label)->text(QAccessible::Name).contains(utc_label->text()) &&
           !QAccessible::queryAccessibleInterface(utc_label)->text(QAccessible::Name).contains(clock_before),
           "actual accessible clock updates with timer value");
-    check(counter.paints==0,"clock timer does not repaint map");map->removeEventFilter(&counter);
+    // The night shade legitimately repaints once when the UTC minute rolls over.
+    check(counter.paints==0||QDateTime::currentSecsSinceEpoch()/60!=minute_before,"clock timer does not repaint map");map->removeEventFilter(&counter);
     auto* sidebar=dashboard.findChild<QFrame*>("stationSidebar");
     auto* instruments=dashboard.findChild<QFrame*>("dashboardInstruments");
     auto* map_card=dashboard.findChild<QFrame*>("dashboardMapCard");
