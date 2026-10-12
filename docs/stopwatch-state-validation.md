@@ -1,0 +1,11 @@
+# Offline stopwatch state validation
+
+October 11, 2026. This original pure model supplies monotonic start, stop, resume, reset and bounded cumulative/interval laps. It uses injected unit-tagged clock values and fixed 64-lap storage, with no heap allocation on successful transitions, network, scheduler or operating-system clock changes. Constructing standard exceptions on rejected operations may allocate.
+
+Elapsed time advances while Running, remains frozen while Stopped and excludes stopped intervals on Resume. Repeated commands have explicit behavior. Reversed time, invalid command, wrong phase, exceeded lap capacity and overflow reject atomically, including preserving the last observed clock. Reset validates clock order and can discard an otherwise unrepresentable running interval. Suspend behavior depends on the injected clock's advancement; this model does not detect or compensate for suspension.
+
+Author strict C++17 warning-as-error address/undefined-behavior sanitizer tests passed 174 checks. Independent source review and 132 hostile probes passed, including a wide-integer oracle over signed timestamp boundaries, pause/resume, capacity and failure atomicity. Root native configure/build and all 16 CTest tests passed; make verify compiled and ran the new model regression alongside existing executable regressions. The independent fresh whole-build result and exact source hashes are recorded in workstreams/stopwatch-state-audit.md.
+
+This increment changes no native interface and claims no new computer-control acceptance. Original HamClock Lap freezes the displayed value while counting continues; that needs a separate presentation latch/control adapter before native parity can be claimed. The model's bounded lap history is a replacement policy, not proof of the original UI's behavior. Countdown, alarms, daily/civil recurrence, Big Clock, display preview, persistence and touch controls remain separate work.
+
+No copied HamClock implementation or third-party code was introduced. This scoped source/provenance review is not full legal certification. Native tests ran on macOS; actual Pi 3/Pi 4, minimum Qt version, performance and full accessibility/feature parity remain unverified. The pure stopwatch itself adds no Qt dependency.

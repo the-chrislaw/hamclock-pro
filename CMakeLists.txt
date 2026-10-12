@@ -1,0 +1,387 @@
+cmake_minimum_required(VERSION 3.16)
+project(HamClockProStationEditor VERSION 0.1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
+
+add_executable(hamclock-pro-editor MACOSX_BUNDLE
+    src/qt/station_editor.cpp
+    src/qt/station_editor_dialog.cpp
+    src/qt/editor_appearance.cpp
+    src/app/station_edit.cpp
+    src/app/station_view.cpp
+    src/domain/geometry.cpp
+    src/platform/settings.cpp)
+target_link_libraries(hamclock-pro-editor PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-editor PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(hamclock-pro-editor PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.stationeditor
+    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Station Editor")
+
+add_library(hamclock-world-map STATIC
+    src/qt/world_map_widget.cpp
+    src/qt/land_fill_path.cpp
+    src/map/path.cpp
+    src/map/projection.cpp
+    src/domain/geometry.cpp)
+target_link_libraries(hamclock-world-map PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-world-map PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(qt-appearance-regression tests/qt_appearance_regression.cpp src/qt/editor_appearance.cpp)
+    target_link_libraries(qt-appearance-regression PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-appearance-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-appearance-regression COMMAND qt-appearance-regression)
+    set_tests_properties(qt-appearance-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-map-regression tests/qt_map_regression.cpp)
+    target_link_libraries(qt-map-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-regression COMMAND qt-map-regression)
+    set_tests_properties(qt-map-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-land-widget-regression tests/qt_land_widget_regression.cpp)
+    target_link_libraries(qt-land-widget-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-land-widget-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-land-widget-regression COMMAND qt-land-widget-regression)
+    set_tests_properties(qt-land-widget-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+add_executable(hamclock-pro-map-preview MACOSX_BUNDLE
+    src/qt/map_preview.cpp
+    src/qt/editor_appearance.cpp
+    src/app/station_view.cpp
+    src/platform/settings.cpp)
+target_link_libraries(hamclock-pro-map-preview PRIVATE hamclock-world-map)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-map-preview PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(hamclock-pro-map-preview PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.mappreview
+    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Map Preview")
+
+if(BUILD_TESTING)
+    add_executable(qt-station-dialog-regression
+        tests/qt_station_dialog_regression.cpp
+        src/qt/station_editor_dialog.cpp
+        src/qt/editor_appearance.cpp
+        src/app/station_edit.cpp
+        src/app/station_view.cpp
+        src/platform/settings.cpp
+        src/domain/geometry.cpp)
+    target_link_libraries(qt-station-dialog-regression PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-station-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-station-dialog-regression COMMAND qt-station-dialog-regression)
+    add_test(NAME qt-station-dialog-mac-layout COMMAND qt-station-dialog-regression --mac-button-layout)
+    set_tests_properties(qt-station-dialog-regression qt-station-dialog-mac-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+add_executable(hamclock-pro-dashboard MACOSX_BUNDLE
+    src/qt/dashboard_main.cpp
+    src/qt/station_dashboard.cpp
+    src/qt/station_editor_dialog.cpp
+    src/qt/editor_appearance.cpp
+    src/app/station_edit.cpp
+    src/app/station_view.cpp
+    src/platform/settings.cpp)
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-world-map)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-dashboard PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+set_target_properties(hamclock-pro-dashboard PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.dashboard
+    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Dashboard")
+if(BUILD_TESTING)
+    add_executable(qt-dashboard-regression
+        tests/qt_dashboard_regression.cpp
+        src/qt/station_dashboard.cpp
+        src/qt/station_editor_dialog.cpp
+        src/qt/editor_appearance.cpp
+        src/app/station_edit.cpp
+        src/app/station_view.cpp
+        src/platform/settings.cpp)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-dashboard-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-dashboard-regression COMMAND qt-dashboard-regression)
+    set_tests_properties(qt-dashboard-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(locator-input-regression tests/locator_input_regression.cpp src/domain/locator_input.cpp src/domain/geometry.cpp)
+    add_executable(locator-boundary-regression tests/locator_boundary_regression.cpp src/domain/locator_input.cpp src/domain/geometry.cpp src/domain/tests.cpp)
+    foreach(target locator-input-regression locator-boundary-regression)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+            target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+        endif()
+        add_test(NAME ${target} COMMAND ${target})
+        set_tests_properties(${target} PROPERTIES TIMEOUT 15)
+    endforeach()
+endif()
+
+if(BUILD_TESTING)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME land-import-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/land_import_regression.py)
+    set_tests_properties(land-import-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(clock-state-regression tests/clock_state_regression.cpp src/domain/clock_state.cpp)
+    add_executable(instrument-catalog-regression tests/instrument_catalog_regression.cpp src/app/instrument_catalog.cpp)
+    add_executable(instrument-snapshot-regression tests/instrument_snapshot_regression.cpp src/app/instrument_snapshot.cpp src/app/instrument_catalog.cpp)
+    add_executable(spot-store-regression tests/spot_store_regression.cpp src/spots/spot_event.cpp src/spots/spot_store.cpp src/domain/geometry.cpp)
+    target_include_directories(spot-store-regression PRIVATE src)
+    foreach(target clock-state-regression spot-store-regression instrument-catalog-regression instrument-snapshot-regression)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+            target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+        endif()
+        add_test(NAME ${target} COMMAND ${target})
+        set_tests_properties(${target} PROPERTIES TIMEOUT 15)
+    endforeach()
+endif()
+
+if(BUILD_TESTING)
+    add_executable(land-fill-regression tests/land_fill_regression.cpp src/qt/land_fill_path.cpp)
+    target_link_libraries(land-fill-regression PRIVATE Qt6::Core Qt6::Gui)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(land-fill-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME land-fill-regression COMMAND land-fill-regression)
+    set_tests_properties(land-fill-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+# Offline provider syntax decoding only; no transport or dashboard feed wiring.
+add_library(hamclock-noaa-kp STATIC src/providers/noaa_kp_parser.cpp)
+target_link_libraries(hamclock-noaa-kp PUBLIC Qt6::Core)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-noaa-kp PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+if(BUILD_TESTING)
+    add_executable(noaa-kp-parser-regression tests/noaa_kp_parser_regression.cpp)
+    target_link_libraries(noaa-kp-parser-regression PRIVATE hamclock-noaa-kp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(noaa-kp-parser-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME noaa-kp-parser-regression COMMAND noaa-kp-parser-regression)
+    set_tests_properties(noaa-kp-parser-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(stopwatch-state-regression
+        tests/stopwatch_state_regression.cpp src/domain/stopwatch_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(stopwatch-state-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME stopwatch-state-regression COMMAND stopwatch-state-regression)
+    set_tests_properties(stopwatch-state-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(stopwatch-presentation-regression
+        tests/stopwatch_presentation_regression.cpp
+        src/app/stopwatch_presentation.cpp src/domain/stopwatch_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(stopwatch-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME stopwatch-presentation-regression COMMAND stopwatch-presentation-regression)
+    set_tests_properties(stopwatch-presentation-regression PROPERTIES TIMEOUT 15)
+endif()
+
+add_library(hamclock-dashboard-appearance STATIC src/qt/dashboard_appearance.cpp)
+target_link_libraries(hamclock-dashboard-appearance PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-dashboard-appearance PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+add_library(hamclock-stopwatch-dialog STATIC
+    src/qt/stopwatch_dialog.cpp
+    src/app/stopwatch_presentation.cpp src/domain/stopwatch_state.cpp)
+target_link_libraries(hamclock-stopwatch-dialog PUBLIC hamclock-dashboard-appearance)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-stopwatch-dialog PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-stopwatch-dialog)
+if(BUILD_TESTING)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-stopwatch-dialog)
+    add_executable(qt-stopwatch-dialog-regression tests/qt_stopwatch_dialog_regression.cpp)
+    target_link_libraries(qt-stopwatch-dialog-regression PRIVATE hamclock-stopwatch-dialog)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-stopwatch-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-stopwatch-dialog-regression COMMAND qt-stopwatch-dialog-regression)
+    set_tests_properties(qt-stopwatch-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+# Pure injected countdown model only; no UI, scheduler or hardware activation.
+if(BUILD_TESTING)
+    add_executable(countdown-state-regression
+        tests/countdown_state_regression.cpp src/domain/countdown_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(countdown-state-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME countdown-state-regression COMMAND countdown-state-regression)
+    set_tests_properties(countdown-state-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(countdown-presentation-regression
+        tests/countdown_presentation_regression.cpp
+        src/app/countdown_presentation.cpp src/domain/countdown_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(countdown-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME countdown-presentation-regression COMMAND countdown-presentation-regression)
+    set_tests_properties(countdown-presentation-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(countdown-service-regression
+        tests/countdown_service_regression.cpp src/app/countdown_service.cpp
+        src/app/countdown_presentation.cpp src/domain/countdown_state.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(countdown-service-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME countdown-service-regression COMMAND countdown-service-regression)
+    set_tests_properties(countdown-service-regression PROPERTIES TIMEOUT 15)
+endif()
+
+add_library(hamclock-countdown-dialog STATIC
+    src/qt/countdown_dialog.cpp src/app/countdown_service.cpp
+    src/app/countdown_presentation.cpp src/domain/countdown_state.cpp)
+target_link_libraries(hamclock-countdown-dialog PUBLIC hamclock-dashboard-appearance)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-countdown-dialog PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-countdown-dialog)
+if(BUILD_TESTING)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-countdown-dialog)
+    add_executable(qt-countdown-dialog-regression tests/qt_countdown_dialog_regression.cpp)
+    target_link_libraries(qt-countdown-dialog-regression PRIVATE hamclock-countdown-dialog)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-countdown-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-countdown-dialog-regression COMMAND qt-countdown-dialog-regression)
+    set_tests_properties(qt-countdown-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(big-clock-preferences-regression
+        tests/big_clock_preferences_regression.cpp src/app/big_clock_preferences.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(big-clock-preferences-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME big-clock-preferences-regression COMMAND big-clock-preferences-regression)
+    set_tests_properties(big-clock-preferences-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(big-clock-presentation-regression
+        tests/big_clock_presentation_regression.cpp src/app/big_clock_presentation.cpp
+        src/app/big_clock_preferences.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(big-clock-presentation-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME big-clock-presentation-regression COMMAND big-clock-presentation-regression)
+    set_tests_properties(big-clock-presentation-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-big-clock-civil-adapter-regression
+        tests/qt_big_clock_civil_adapter_regression.cpp src/qt/big_clock_civil_adapter.cpp
+        src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+    target_link_libraries(qt-big-clock-civil-adapter-regression PRIVATE Qt6::Core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-big-clock-civil-adapter-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-big-clock-civil-adapter-regression COMMAND qt-big-clock-civil-adapter-regression)
+    set_tests_properties(qt-big-clock-civil-adapter-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
+endif()
+
+add_library(hamclock-big-clock-dialog STATIC
+    src/qt/big_clock_dialog.cpp src/qt/big_clock_civil_adapter.cpp
+    src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+target_link_libraries(hamclock-big-clock-dialog PUBLIC hamclock-dashboard-appearance)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-big-clock-dialog PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-big-clock-dialog)
+if(BUILD_TESTING)
+    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-big-clock-dialog)
+    add_executable(qt-big-clock-dialog-regression tests/qt_big_clock_dialog_regression.cpp)
+    target_link_libraries(qt-big-clock-dialog-regression PRIVATE hamclock-big-clock-dialog)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-big-clock-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-big-clock-dialog-regression COMMAND qt-big-clock-dialog-regression)
+    set_tests_properties(qt-big-clock-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(de-clock-configuration-regression
+        tests/de_clock_configuration_regression.cpp src/app/de_clock_configuration.cpp
+        src/domain/geometry.cpp)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(de-clock-configuration-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME de-clock-configuration-regression COMMAND de-clock-configuration-regression)
+    set_tests_properties(de-clock-configuration-regression PROPERTIES TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-manual-civil-adapter-regression
+        tests/qt_de_clock_manual_civil_adapter_regression.cpp
+        src/qt/de_clock_manual_civil_adapter.cpp src/qt/big_clock_civil_adapter.cpp
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp
+        src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+    target_link_libraries(qt-de-clock-manual-civil-adapter-regression PRIVATE Qt6::Core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-manual-civil-adapter-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-manual-civil-adapter-regression COMMAND qt-de-clock-manual-civil-adapter-regression)
+    set_tests_properties(qt-de-clock-manual-civil-adapter-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-display-snapshot-regression
+        tests/qt_de_clock_display_snapshot_regression.cpp src/qt/de_clock_display_snapshot.cpp
+        src/qt/de_clock_manual_civil_adapter.cpp src/qt/big_clock_civil_adapter.cpp
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp
+        src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+    target_link_libraries(qt-de-clock-display-snapshot-regression PRIVATE Qt6::Core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-display-snapshot-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-display-snapshot-regression COMMAND qt-de-clock-display-snapshot-regression)
+    set_tests_properties(qt-de-clock-display-snapshot-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-settings-dialog-regression
+        tests/qt_de_clock_settings_dialog_regression.cpp src/qt/de_clock_settings_dialog.cpp
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp)
+    target_link_libraries(qt-de-clock-settings-dialog-regression PRIVATE hamclock-dashboard-appearance)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-settings-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-settings-dialog-regression COMMAND qt-de-clock-settings-dialog-regression)
+    set_tests_properties(qt-de-clock-settings-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()

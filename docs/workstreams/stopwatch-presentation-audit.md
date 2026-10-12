@@ -1,0 +1,29 @@
+# Independent stopwatch presentation audit
+
+October 11, 2026. Reviewer owns only this report. No source, shared build, Git, dependencies or native UI changes. Concrete API/source and independent executable/build gates completed below.
+
+## Verified documentary scope
+
+Independently rechecked the [HamClock 4.22 guide, printed page 11 / PDF page 13](https://qsl.net/g6nhu/hamclock/hamclockkey-4.22.pdf#page=13). Its stopwatch section specifies hundredths display, starting/resuming, stopping both count and display, and Lap holding display while count continues. A presentation latch is necessary beyond the already verified pure state's lap history. Color and Exit remain UI work. The manual does not establish release gesture, repeated-lap/reset-running semantics or numeric limits; replacement policies must be explicit, not presented as original parity. Broader alarm and civil-time/DST proposals remain unapproved research.
+
+CP0 scope is an original pure offline snapshot/latch/formatter adapter. No native timer, Qt interface, real-clock execution, persistence, alarm, countdown, hardware or complete original parity claim follows.
+
+## Concrete API review
+
+Header read before cpp. API gate approved subject to clarifying the lower-Running elapsed threshold while held: compare explicitly to the held displayed value, or document an additional ordering policy. Reviewed signed64 nonnegative elapsed, truncate-to-centisecond owned format (16 bytes maximum, no daily wrap), complete 64-slot/lap invariant validation, owned copied view, named Hold/Release and automatic release on Stop/Idle. Repeated Hold keeps first latch while actual/lap values refresh. No intervening transition history is inferred. All validation/copies/formatting must precede a statically nonthrowing commit and return move to preserve every stored field on exceptions. These are explicit replacement policies, not evidence of undocumented original gestures. Actual source/test gate pending.
+
+## Final source and executable gate
+
+**Bounded CP0 source gate passes; no blocking finding.** Header now explicitly compares incoming held Running elapsed with the stored displayed latch, not the last actual snapshot. Earlier actual snapshots at or above that latch are deliberately accepted; no original chronological-history claim follows. Candidate validation covers enum, nonnegative elapsed, cap, exact one-based lap numbering, ordered totals within elapsed, matching intervals and zero unused cells. Short-circuit ordering validates totals before nonnegative signed subtraction. Formatter divisions are bounded and never add near the signed maximum. Hold does not modify supplied model state; refresh updates actual/lap status separately from display. Stop/Idle clear the latch according to the reviewed replacement contract.
+
+Each refresh/apply prepares its candidate and returned owning copy before swapping stored state; nothrow swappability and return move construction are statically asserted. No caller aliases survive and returned mutation cannot affect storage. No original code or third-party implementation introduced; scoped source provenance is not full legal certification.
+
+Independent strict C++17 `-Wall -Wextra -Wpedantic -Werror` ASan/UBSan rerun: **85 permanent checks pass**. Separate temporary **90 independent checks pass**, including independently formatted signed-limit/centisecond/hour boundaries, all64 unused-slot corruption rejection, held threshold, repeated Hold/Release, Stop/Idle release and owning-copy mutation. No failures or sanitizer diagnostics.
+
+Additional global allocation-failure injection confirms that `bad_alloc` during rejected-input exception construction preserves all stored fields. Maximum16-byte successful refresh on the installed macOS libc++ performs zero heap allocations (small-string storage), so this host cannot dynamically trigger a successful-format/copy allocation failure through that valid input. Those paths were structurally reviewed through precommit preparation and nothrow assertions; a different standard library with allocating16-byte strings remains an unexecuted portability case. No blanket claim that successful allocation-failure paths were fault-injected is made.
+
+Reviewed root CMake standalone target (no added dependency,15-second timeout) and Make explicit header dependencies/model-check execution. Fresh independent scratch configuration/build `/private/tmp/hamclock-resumed-land-audit/presentation-cmake` builds all targets; **all17CTest tests pass**, zero failures,6.06seconds. Root separately reports full make verification. No shared build mutation, native app launch or UI acceptance performed by this reviewer.
+
+Frozen SHA256: header `604deee94a3b016cc46c8d290208a005d99ce976ed48d877b53240b81ac046f0`; cpp `1cc7e574bdec77438772c998246ff189b8d08de5ff4f6e7c8cc88e0f9af22c59`; test `8b4d03da3b25029c6e12fe90e5ca491156fd44e31f35596afec69933a960b52e`; CMake `700efadb321d792118a756782557c27f256fac21289d8a9d1ced01d27aaa6048`; Make `d71fa1277fcfb80c9dcfa6a26b4fdf91309a1a349979805ce3281ab0a4e4d092`. Rechecked after tests.
+
+Root `docs/stopwatch-presentation-validation.md` independently read: counts, ownership, named policies, formatter bounds and source/UI/hardware limits agree. Its allocation guarantee is supported structurally; injection limits are explicitly deferred to this audit. **Final bounded publication gate passes.** Exact next action is a separately reviewed native control/view API consuming the shared domain and presentation models, then meaningful executable and actual computer-control QA. Color/Exit/control integration, original release behavior, countdown/alarms, physical Pi3/Pi4/touch, minimum toolchain and full accessibility/parity/legal certification remain unverified. Broader alarm/DST research is not promoted here.

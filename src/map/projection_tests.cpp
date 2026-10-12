@@ -1,0 +1,47 @@
+#include "projection.hpp"
+#include "coastline.hpp"
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+namespace hamclock {
+int run_map_tests() {
+    int failures = 0;
+    auto check = [&](bool pass, const char* name) { if (!pass) { ++failures; std::cerr << "Map test failed: " << name << '\n'; } };
+    auto near = [](double a, double b) { return std::abs(a-b) < 1e-12; };
+    const auto origin = map_project_equirectangular({0,0});
+    check(near(origin.x,.5) && near(origin.y,.5), "origin");
+    check(near(map_project_equirectangular({90,-180}).y,0), "north pole");
+    check(near(map_project_equirectangular({-90,180}).x,0) && near(map_project_equirectangular({-90,180}).y,1), "south pole and seam");
+    for (const Location p : {Location{37.7749,-122.4194},Location{-89,179.99},Location{90,0},Location{0,-180}}) {
+        const auto result = map_unproject_equirectangular(map_project_equirectangular(p));
+        check(near(result.latitude,p.latitude) && near(result.longitude,p.longitude), "round trip");
+    }
+    check(map_project_equirectangular({0,std::nextafter(180.0,0.0)}).x < 1.0, "exclusive east endpoint");
+    check(map_unproject_equirectangular({1,.5}).longitude == -180, "inverse right edge");
+    const auto east = map_split_equirectangular({10,170},{30,-170});
+    check(east.count == 2 && near(east.segments[0].second.x,1) && near(east.segments[1].first.x,0) && near(east.segments[0].second.y,70.0/180), "east dateline");
+    const auto west = map_split_equirectangular({30,-170},{10,170});
+    check(west.count == 2 && near(west.segments[0].second.x,0) && near(west.segments[1].first.x,1) && near(west.segments[0].second.y,70.0/180), "west dateline");
+    check(map_split_equirectangular({0,-10},{10,10}).count == 1, "normal segment");
+    const auto seam = map_split_equirectangular({0,180},{10,170});
+    check(seam.count == 2 && std::isfinite(seam.segments[0].second.y), "endpoint on seam");
+    for (const Location p : {Location{91,0}, Location{0,181}, Location{std::numeric_limits<double>::quiet_NaN(),0}, Location{0,std::numeric_limits<double>::infinity()}}) {
+        bool rejected = false; try { (void)map_project_equirectangular(p); } catch (const std::invalid_argument&) { rejected = true; }
+        check(rejected, "invalid geographic input");
+    }
+    for (const MapPoint p : {MapPoint{-0.01,0},MapPoint{0,1.01},MapPoint{std::numeric_limits<double>::quiet_NaN(),0}}) {
+        bool rejected = false; try { (void)map_unproject_equirectangular(p); } catch (const std::invalid_argument&) { rejected = true; }
+        check(rejected, "invalid normalized input");
+    }
+    check(coastline_point_count > 1000 && coastline_point_count <= 100000 && coastline_part_count <= 10000, "coastline counts");
+    std::size_t next = 0;
+    for (const auto part : coastline_parts) {
+        check(part.start == next && part.count >= 2 && part.start <= coastline_point_count && part.count <= coastline_point_count - part.start, "coastline part bounds");
+        next = static_cast<std::size_t>(part.start) + part.count;
+    }
+    check(next == coastline_point_count, "coastline coverage");
+    for (const auto p : coastline_points) check(valid_location({p.latitude,p.longitude}), "coastline coordinate");
+    return failures;
+}
+}
