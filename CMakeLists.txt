@@ -385,3 +385,22 @@ if(BUILD_TESTING)
     add_test(NAME qt-de-clock-settings-dialog-regression COMMAND qt-de-clock-settings-dialog-regression)
     set_tests_properties(qt-de-clock-settings-dialog-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
+
+# Offline command-line tools (replaces the retired SDL2 executable).
+add_executable(hamclock-pro-cli
+    src/cli_main.cpp src/app/commands.cpp
+    src/app/station_view.cpp src/app/station_view_tests.cpp
+    src/app/pane_controls.cpp src/app/pane_controls_tests.cpp
+    src/app/station_edit.cpp src/app/station_edit_tests.cpp
+    src/platform/settings.cpp src/platform/settings_tests.cpp
+    src/map/projection.cpp src/map/projection_tests.cpp src/map/path.cpp src/map/path_tests.cpp
+    src/domain/geometry.cpp src/domain/tests.cpp)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-pro-cli PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+if(BUILD_TESTING)
+    add_test(NAME cli-self-test COMMAND hamclock-pro-cli --self-test)
+    add_test(NAME cli-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_regression.py $<TARGET_FILE:hamclock-pro-cli>)
+    add_test(NAME map-import-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/map_import_regression.py)
+    set_tests_properties(cli-self-test cli-regression map-import-regression PROPERTIES TIMEOUT 60 ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
+endif()

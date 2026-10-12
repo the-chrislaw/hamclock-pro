@@ -1,85 +1,55 @@
 # HamClock Pro
 
-Original native Raspberry Pi dashboard foundation. Development preview only: this is not yet a HamClock replacement and does not establish feature parity with original HamClock 4.22.
+Original native Raspberry Pi dashboard for amateur radio: world time, station geometry, map, and (planned) space weather and spots. Development preview only: this is not yet a HamClock replacement and does not establish feature parity with original HamClock 4.22. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan to 1.0.
 
-## Build
+## Build and test
 
-Requires a C++17 compiler, GNU make, SDL2 development headers/library, and `sdl2-config`. On Raspberry Pi OS, use distribution packages `build-essential` and `libsdl2-dev`.
-
-```sh
-make
-make check
-make integration-check
-make map-check
-make preview
-./build/hamclock-pro
-```
-
-The application uses a resizable native window with an 800 × 480 logical canvas. Escape closes it. Pane values remain illustrative; the map now uses real Natural Earth coastlines in an equirectangular projection. No radio control, incoming network service, live data provider, telemetry, or privileged runtime is implemented.
-
-Use Tab/Shift-Tab or Left/Right to focus a pane, then Enter or Space to cycle its illustrative selection. A visible outline marks focus. Mouse selection remains available. These controls do not provide a native screen-reader interface; the accessibility-tree work remains pending.
-
-The native window still uses the earlier experimental visual style, which was rejected for the product. The accepted softer design is in `design/dashboard.html`; open it locally to inspect System/Light/Dark appearance, text enlargement and touch controls. It contains illustrative readings and is not the native runtime.
-
-## Targets and validation
-
-First user test target: Pi 4 with a seven-inch touchscreen. Pi 3 remains a required target; Zero 2 W is an intended target and original Zero W is exploratory. Local compilation is not evidence of Raspberry Pi compatibility or performance. Each supported board needs real display, input, startup, CPU and memory measurements before release.
-
-The accepted HTML design study offers System (default), Light and Dark appearance. System follows the computer preference. Larger text and optional touch controls are available in the study; these are not yet ported to the native application. Local browser control is requested but not implemented; SSH is an operating-system administration path, not an application feature.
-
-## First station calculations
-
-Original offline calculations now provide Maidenhead locators, spherical great-circle distance and initial short/long path bearings. They are available through the command line, not yet through the station editor:
+Requires CMake 3.16+, a C++17 compiler, Qt 6.4+ (Core, Gui, Widgets) and Python 3 for the development tests. On Raspberry Pi OS or Ubuntu: `sudo apt install build-essential cmake qt6-base-dev python3`. On macOS with Homebrew: `brew install cmake qt`.
 
 ```sh
-./build/hamclock-pro --calculate 37.7749 -122.4194 51.5074 -0.1278
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
 ```
 
-Inputs are signed decimal latitude/longitude in degrees. Invalid or non-finite coordinates are rejected. Coincident and antipodal locations return an explicit status and null bearings. Distances use a mean-radius spherical Earth approximation; they are not surveyed ellipsoidal distances. Domain and input validation checks run with `make check`.
+CI runs the same build and tests on Ubuntu, plus an AddressSanitizer/UBSan build (`.github/workflows/ci.yml`). Local compilation is not evidence of Raspberry Pi compatibility or performance.
 
-Station configuration can also be saved and inspected explicitly:
+## Programs
+
+On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro-dashboard.app/Contents/MacOS/hamclock-pro-dashboard`; elsewhere they are plain binaries in `build/`.
+
+| Program | Purpose |
+|---|---|
+| `hamclock-pro-dashboard --station PATH` | Main native dashboard: UTC, DE/DX, real map with land fill, Big Clock, stopwatch, countdown. Edit station saves through the shared dialog. |
+| `hamclock-pro-editor --station PATH` or `--new-station PATH` | Standalone station editor. Save validates and persists; Cancel discards. New-file saves refuse an existing destination. |
+| `hamclock-pro-map-preview --station PATH` | Read-only map preview with station grids and short-path route. |
+| `hamclock-pro-cli` | Offline command-line tools (below). |
+
+Use a private directory you control for station files. Instrument panes without a data provider are explicitly marked unavailable; no simulated reading is presented as live. No radio control, incoming network service, live data provider or telemetry is implemented.
+
+### Command-line tools
 
 ```sh
-./build/hamclock-pro --save-station ./station.conf N0CALL 0 0 51.5 -0.1 system
-./build/hamclock-pro --load-station ./station.conf
+./build/hamclock-pro-cli --calculate 37.7749 -122.4194 51.5074 -0.1278
+./build/hamclock-pro-cli --save-station ./station.conf N0CALL 0 0 51.5 -0.1 system
+./build/hamclock-pro-cli --load-station ./station.conf
+./build/hamclock-pro-cli --self-test
 ```
 
-Use a private directory you control; a valid save replaces the selected regular file. Launch `./build/hamclock-pro --station ./station.conf` to load that explicit file into the native display. It shows callsign, DE/DX locators, spherical distance, initial true bearing and a sampled short great-circle route. A separate Qt station-editor prototype is in local validation; appearance is not applied by this experimental SDL renderer. Invalid/corrupt input produces an error before opening the display instead of silently replacing it with defaults. See `docs/station-settings.md` for format, file permissions, atomic-save behavior and limitations. `make integration-check` uses Python 3 to exercise the actual executable, including failure preservation; Python is not required by the application at runtime.
+`--calculate` prints JSON with Maidenhead locators, spherical great-circle distance and initial short/long path bearings. Inputs are signed decimal degrees; invalid or non-finite coordinates are rejected. Coincident and antipodal locations return an explicit status and null bearings. Distances use a mean-radius spherical Earth, not surveyed ellipsoidal distances. A route represents geometry, not predicted propagation.
 
-For a reproducible offline station frame, use `./build/hamclock-pro --station ./station.conf --headless-frame ./build/station.bmp`. Coincident/antipodal bearings are explicitly undefined; antipodal routes are not drawn. A route represents geometry, not predicted propagation or radio coverage.
+A valid save atomically replaces the selected regular file with mode 0600; symlinks and corrupt files are refused without modification. See `docs/station-settings.md` for the format and limitations.
 
-The station-edit draft model supports bounded intermediate input, strict validation and cancel without saving. It is exercised by `make check` and is wired to the separate Qt dialog prototype. Its callsign policy remains provisional; the final-original manual must define parity rather than treating these input limits as original behavior.
+## Targets
 
-SDL2 is the installed renderer used for this first executable experiment. Framework selection remains provisional until target-hardware measurements are available. Do not add dependencies, external graphics or fonts without recording their origin and license.
+First user test target: Pi 4 with a seven-inch touchscreen. Pi 3 is a required target; Zero 2 W is intended and original Zero W exploratory. Each supported board needs real display, input, startup, CPU and memory measurements before release.
 
-See `docs/` for review findings and feature work. Original application source is MIT licensed; SDL2 and system components retain their own licenses. Distribution dependency notices and name clearance remain release gates.
+The accepted visual design is `design/dashboard.html` (System/Light/Dark, larger text, touch controls). The native dashboard follows its composition but does not yet match it fully; see `docs/native-approved-design-gap.md`.
 
-Bundled Natural Earth 110m coastline data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md`. The map is a generalized global coastline, not a navigation chart; other HamClock projections, filled land, terminator and station overlays remain pending.
+## Data, licensing and provenance
 
-`make verify` runs the native unit checks, executable regression checks, and offline malformed-input checks for the coastline importer. The importer tests create synthetic files in temporary directories and do not download geographic data. UI and Pi hardware checks remain separate.
+Application source is MIT licensed. Qt and system components retain their own licenses; distribution dependency notices and name clearance remain release gates. Do not add dependencies, external graphics or fonts without recording their origin and license.
 
-## Optional Qt station editor (development prototype)
+Bundled Natural Earth 110m coastline and land data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md` and `docs/land-provenance.md`. The build-time importers `tools/import_coastline.py` and `tools/import_land.py` work offline from a supplied archive; their malformed-input regressions run in CTest and never download data. The map is generalized, not a navigation chart.
 
-Requires approved Qt 6.4 or later Core/Gui/Widgets development packages and CMake. The SDL build remains independent.
-
-```sh
-cmake -S . -B build/qt -DCMAKE_PREFIX_PATH=/path/to/qtbase
-cmake --build build/qt
-ctest --test-dir build/qt --output-on-failure
-```
-
-On macOS the binary is `build/qt/hamclock-pro-editor.app/Contents/MacOS/hamclock-pro-editor`; other platforms use `build/qt/hamclock-pro-editor`. Pass `--station PATH` to edit a valid file or `--new-station PATH` for an unsaved draft. Save validates and persists; Cancel discards edits. New-file saves refuse any existing destination. Use a private directory you control.
-
-This editor has no dashboard or on-screen keyboard. Actual native Save, invalid-input and Cancel checks have passed locally; theme repair, rendered-widget regressions and independent review now pass. See `docs/qt-editor.md` and `docs/computer-validation.md`. Qt and its dependencies retain separate licensing obligations; distribution packaging, assistive-technology and Pi testing remain release gates.
-
-The same optional CMake build now also provides `hamclock-pro-map-preview --station PATH` (inside its `.app/Contents/MacOS/` directory on macOS). This read-only native preview shows real coastlines, saved station grids, calculated short-path distance/bearing and a seam-safe route. System/Light/Dark and Show short path affect the preview only. Its map/keyboard/theme behavior was computer-tested locally; Pi, touch and full accessibility validation remain pending.
-
-## Softer native station dashboard (development increment)
-
-The optional CMake build also produces `hamclock-pro-dashboard --station PATH` (inside its `.app/Contents/MacOS/` directory on macOS). Use an existing valid private station file. This native slice shows actual UTC, saved DE/DX coordinates and grids, computed short-path readings, and licensed real coastlines. Edit station opens the shared dialog; successful Save refreshes the dashboard and saved System/Light/Dark appearance. Cancel and validation/write failures preserve the current station.
-
-Local computer-control checks and independent unit/executable audits passed for this increment. It is not the full accepted dashboard or final-original feature parity; Pi/touch, deployment licenses, assistive-software and other release checks remain pending. Details: `docs/qt-dashboard.md`, `docs/qt-dashboard-audit.md`, `docs/computer-validation.md`.
-
-The native dashboard now follows the approved grouped home-screen composition: station/UTC sidebar, top instrument strip, and a dominant map card in warm Light or slate Dark. Instrument providers that are not implemented are explicitly marked unavailable. The masthead appearance control previews System/Light/Dark without saving; persist your preference through Edit station. Keyboard route visibility, Save/Cancel/error flows and compact/enlarged native screens were computer-tested locally. This is a partial implementation, with real unfilled coastlines and no live instrument service. See `docs/native-shell-audit.md` and `docs/computer-validation.md`.
-
-`make land-check` runs 27 offline synthetic polygon-import regressions, also included in `make verify` and CTest. The original build-time `tools/import_land.py ARCHIVE OUTPUT` accepts a bounded offline ZIP with one root `ne_110m_land.shp`, preserves explicit rings/records and winding, and emits C++ geometry with the source digest. It does not download data or classify/repair topology. No real land asset or filled-map renderer is included yet; actual asset verification and geometric rendering are separate gates. Python 3 is required for development tests (CMake discovers it only when BUILD_TESTING is enabled), not the operational dashboard. See `docs/land-import-audit.md`.
+Review findings, specs and validation notes for each feature are in `docs/`.

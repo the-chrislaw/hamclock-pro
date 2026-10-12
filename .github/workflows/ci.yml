@@ -36,15 +36,3 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: ctest --test-dir build-ci --output-on-failure
-
-  make-verify:
-    name: make verify (unit and CLI checks)
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends g++ make libsdl2-dev python3
-      - name: Verify
-        run: make verify
