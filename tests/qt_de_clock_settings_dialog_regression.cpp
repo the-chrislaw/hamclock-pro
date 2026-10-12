@@ -136,6 +136,9 @@ int main(int argc,char** argv){
         check(draft(themed)->palette().color(QPalette::Text)==themed.palette().color(QPalette::Text) && draft(themed)->styleSheet().contains(themed.palette().color(QPalette::Base).name()),"offset text/base/selection palette explicitly local");
         const auto image=mode(themed)->grab().toImage();int ink=0;for(int y=mode(themed)->height()/2-5;y<=mode(themed)->height()/2+5;++y)for(int x=mode(themed)->width()-22;x<mode(themed)->width()-5;++x)if(image.pixelColor(x,y)==themed.palette().color(QPalette::Text))++ink;
         check(ink>=8 && mode(themed)->view()->sizeHintForRow(0)>=44,"rendered mode disclosure ink and popup touch row");
+        mode(themed)->setCurrentIndex(1);app.processEvents();const auto enabled_fill=draft(themed)->grab().toImage().pixelColor(draft(themed)->width()-6,draft(themed)->height()/2);
+        mode(themed)->setCurrentIndex(0);app.processEvents();const auto disabled_fill=draft(themed)->grab().toImage().pixelColor(draft(themed)->width()-6,draft(themed)->height()/2);
+        check(!draft(themed)->isEnabled() && disabled_fill!=enabled_fill,"disabled Automatic offset field renders visibly different from an editable field");
         auto font=themed.font();font.setPointSize(20);themed.setFont(font);themed.resize(800,480);app.processEvents();check(scroll->horizontalScrollBar()->maximum()==0 && draft(themed)->height()>=draft(themed)->sizeHint().height(),"enlarged font fits/scrolls at seven-inch candidate geometry");
     }}
     QApplication::setPalette(original_palette);app.processEvents();

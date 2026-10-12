@@ -135,9 +135,14 @@ class OffsetAppearance final : public QObject {
         const auto base = colors.color(QPalette::Base).name(), ink = colors.color(QPalette::Text).name();
         const auto canvas = colors.color(QPalette::Window).name(), accent = colors.color(QPalette::Highlight).name();
         const auto selected = colors.color(QPalette::HighlightedText).name();
+        // Disabled (Automatic) offset: canvas fill and half-strength ink so it
+        // does not read as editable; the stylesheet otherwise hides Qt's dimming.
+        const auto window = colors.color(QPalette::Window), text = colors.color(QPalette::Text);
+        const auto muted = QColor((window.red() + text.red()) / 2, (window.green() + text.green()) / 2,
+                                  (window.blue() + text.blue()) / 2).name();
         for (auto* field : dialog_.findChildren<QLineEdit*>()) {
             field->setPalette(colors);
-            field->setStyleSheet(QString("QLineEdit {background:%1;color:%2;border:1px solid %2;border-radius:7px;padding:7px;selection-background-color:%3;selection-color:%4;} QLineEdit:focus {border:2px solid %3;}").arg(base,ink,accent,selected));
+            field->setStyleSheet(QString("QLineEdit {background:%1;color:%2;border:1px solid %2;border-radius:7px;padding:7px;selection-background-color:%3;selection-color:%4;} QLineEdit:focus {border:2px solid %3;} QLineEdit:disabled {background:%5;color:%6;border:1px dashed %6;}").arg(base,ink,accent,selected,canvas,muted));
         }
         for (auto* field : dialog_.findChildren<QComboBox*>()) {
             field->setPalette(colors); field->view()->setPalette(colors);
