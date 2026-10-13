@@ -49,9 +49,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install Qt (desktop host tools + iOS)
         run: |
-          pip3 install aqtinstall
-          python3 -m aqt install-qt mac desktop "$IOS_QT_VERSION" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
-          python3 -m aqt install-qt mac ios "$IOS_QT_VERSION" ios --outputdir "$HOME/Qt"
+          python3 -m venv "$RUNNER_TEMP/aqt"
+          "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
+          AQT="$RUNNER_TEMP/aqt/bin/aqt"
+          "$AQT" install-qt mac desktop "$IOS_QT_VERSION" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
+          "$AQT" install-qt mac ios "$IOS_QT_VERSION" ios --outputdir "$HOME/Qt"
           brew install ninja
       - name: Configure
         run: |
