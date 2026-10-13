@@ -7,6 +7,7 @@
 #include "../platform/settings.hpp"
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 namespace hamclock {
 
@@ -24,6 +25,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(int clusterPort READ clusterPort NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
+    // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
+    Q_PROPERTY(QStringList panes READ panes NOTIFY panesChanged)
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
@@ -48,6 +51,12 @@ public:
     QString stationPath() const { return station_path_; }
     QString loadError() const { return load_error_; }
 
+    static constexpr int kPaneSlots = 3;
+    QStringList panes() const;
+    // Returns an empty string or a user-facing error.
+    Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
+    Q_INVOKABLE void resetPanes();
+
     void setAppearance(const QString& appearance);
     // Validate and save; returns an empty string or a user-facing error.
     Q_INVOKABLE QString saveStation(const QString& callsign, double de_lat, double de_lon,
@@ -62,6 +71,7 @@ signals:
     void appearanceChanged();
     void optionsChanged();
     void accountsChanged();
+    void panesChanged();
 
 private:
     void loadOptions();
@@ -73,6 +83,7 @@ private:
     bool configured_ = false;
     QString cluster_host_;
     int cluster_port_ = 7300;
+    QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
 };
 

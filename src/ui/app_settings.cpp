@@ -69,6 +69,42 @@ void AppSettings::loadOptions() {
     cluster_host_ = ini.value("cluster/host").toString().left(kMaxHostLength);
     const int port = ini.value("cluster/port", 7300).toInt();
     cluster_port_ = port > 0 && port < 65536 ? port : 7300;
+    static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
+    panes_ = QStringList();
+    for (int slot = 0; slot < kPaneSlots; ++slot) {
+        const auto id = ini.value(QString("panes/slot%1").arg(slot)).toString();
+        panes_ << (id == "none" || valid_id.match(id).hasMatch() ? id : QString());
+    }
+}
+
+QStringList AppSettings::panes() const {
+    static const QStringList defaults{"spaceweather", "solarwind", "dxcluster"};
+    QStringList result;
+    for (int slot = 0; slot < kPaneSlots; ++slot)
+        result << (slot < panes_.size() && !panes_[slot].isEmpty() ? panes_[slot] : defaults[slot]);
+    return result;
+}
+
+QString AppSettings::setPane(int slot, const QString& widget_id) {
+    static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
+    if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
+    if (!valid_id.match(widget_id).hasMatch()) return "Unknown widget.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue(QString("panes/slot%1").arg(slot), widget_id);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the pane choice.";
+    while (panes_.size() < kPaneSlots) panes_ << QString();
+    panes_[slot] = widget_id;
+    emit panesChanged();
+    return {};
+}
+
+void AppSettings::resetPanes() {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.remove("panes");
+    ini.sync();
+    panes_.clear();
+    emit panesChanged();
 }
 
 QString AppSettings::saveCluster(const QString& host, int port) {
