@@ -27,3 +27,13 @@ Screenshot taken with `grim` over SSH (kept out of the repo).
   - Default settings folder was `~/.config/hamclock-pro/hamclock-pro/` (organization and app name both set), so an existing station file was not found and the app opened in Settings. Now `~/.config/hamclock-pro/`.
 - **Layout issues on the real screen (area A):** large gap under Space weather (cards of different heights in one row); Kp bars clipped at the bottom; world map below the fold at 1024×600, reachable only by scrolling.
 - **Not yet checked:** touch scrolling feel, Settings by touch, TV.
+
+## 2026-10-13 20:34 UTC: one-page layout (PR #70) on the Pi 4 + 7-inch 1024×600
+
+- **Build:** `0.1.0~git20261013201738.cb6aa40`, installed by the new hourly auto-updater (version scheme fix confirmed: apt upgraded cleanly).
+- **Good:** no scrolling; station column, three panes with ▾ choosers (Space weather, Solar wind, DX cluster) and the world map all on one screen.
+- **Fit problems at 1024×600 (compact layouts needed, per the contract's one-page rule):**
+  - Space weather (area B): X-ray value clipped at the right edge ("B6…"); three metrics do not fit the pane width.
+  - Solar wind (area B): the IMF Bz section is cut off at the bottom of the pane.
+  - World map (area A): the map does not fill its card; wide empty margins left and right at this size.
+  - DX cluster (area C): "Not configured…" status text truncated; consider a short "Tap to set up" in compact panes.
