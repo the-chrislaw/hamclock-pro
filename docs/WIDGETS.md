@@ -147,8 +147,8 @@ Map items owned by other areas (each starts once G2/G3 merge, using only the ove
 - C: DX cluster, PSKReporter/RBN/WSPR and POTA/SOTA spots on the map with paths from DE.
 - D: satellite path and footprint, NCDXF beacon markers.
 - B: DRAP and Aurora map styles; MUF-RT style if a terms-checked source exists (KC2G candidate).
-- E: Clouds and weather styles (direct, terms-checked sources only).
-- H: quake and other hazard markers.
+- E: Clouds and weather styles (direct, terms-checked sources only), and a weather popup when DE/DX is set by tapping the map (as in the original).
+- H: storm positions with forecast tracks (NHC), quake markers sized by magnitude, and other hazard markers; the hazard panes stay as the detailed list view.
 
 ### H. Hazards and events (owns `src/widgets/quakes*`, `storms*`, `lightning*`, `fires*`, `marine*`, `firewx*`, `nets*`) — split from E on Oct 13
 Takes over E8 and E13. Each feed: check terms first and record them in the roadmap's Data source policy.
