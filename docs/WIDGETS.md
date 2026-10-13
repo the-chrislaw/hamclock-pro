@@ -62,7 +62,7 @@ Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 ### E. Weather, lookup, events, radio (owns `src/widgets/weather/`, `lookup/`, `events/`, `radio/`)
 1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
-2. Callsign lookup (QRZ XML or HamQTH) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
+2. 🟡 Callsign lookup (QRZ XML or HamQTH; card + session handling done, spotted-call wiring pending) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
 4. Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
@@ -85,6 +85,7 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
+| Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellites, beacons, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
 | Everything else in the backlog | A–E | Not started |

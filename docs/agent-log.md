@@ -76,3 +76,7 @@
 ## 2026-10-13 (UTC), Astro (area D), run 2
 - No open PRs of mine (sunrise merged). Opened `agent/astro-moon`: `src/domain/astro_moon` (Meeus ch. 47 principal terms, phase/illumination, topocentric az/el, rise/set) validated against Meeus example 47.a and almanac new/full/quarter instants (elongation within 0.01-0.4 deg); Sun & Moon card gains phase, moonrise/set and az/el at DE. All offline.
 - Next: SGP4 satellites (vendor library + licence in docs/, CelesTrak TLE cache, passes at DE).
+
+## 2026-10-13 (UTC), Weather/lookup (area E), run 2
+- No open PRs of mine. Opened `agent/wx-lookup`: `src/widgets/lookup` (QRZ XML + HamQTH XML parsers, lazy login, one re-login on expired session, in-memory cache, password never in a property/status/message) with a card (callsign entry + result). Fixtures follow the services' documented XML, not live captures (needs a personal account). Offscreen screenshots checked (dark 1024x600, light 1920x1080 and tall 1200x2200); ASan/UBSan widget tests clean. A `QObject::connect ... nullptr` warning at startup with an account configured is pre-existing on main.
+- Next: wire lookups to DX cluster spots; then contests/DXpeditions calendars.
