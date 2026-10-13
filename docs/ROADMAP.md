@@ -145,6 +145,7 @@ Owner decision (Oct 12):
 - **Weather:** Open-Meteo `api.open-meteo.com/v1/forecast` (no key). Free for non-commercial use under CC BY 4.0: show "Weather by Open-Meteo.com" (the card status line does). Limits: 10,000 calls/day; we poll two points every 15 min (192/day). Coordinates are sent rounded to 0.01°. Terms: https://open-meteo.com/en/terms. If the project ever charges for the app, a commercial plan or key is needed: owner decision.
 - **Callsign lookup:** QRZ.com XML (`xmldata.qrz.com`, needs the user's own account; full data needs an XML subscription; session key is valid ~24 h, we re-login once on expiry) or HamQTH (`hamqth.com/xml.php`, free account). Only user-typed calls are looked up, once per call per run (in-memory cache), never in bulk and never scraped. Credentials stay C++-only in the owner-only credentials file; URLs are never logged or shown. Terms: https://www.qrz.com/XML/current_spec.html and https://www.hamqth.com/developers.php.
 - **Earthquakes:** USGS GeoJSON summary feed `earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson` (M2.5+, past day). US-government public domain, no key; credit USGS. Feed is rebuilt every minute and USGS asks clients not to poll faster than that; we poll every 5 min. Terms: https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits and https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php. The widget shows the feed build time as data age.
+- **Solar imagery:** NASA SDO latest images `sdo.gsfc.nasa.gov/assets/img/latest/latest_512_{0193,0304,HMIIC}.jpg` (512 px). NASA imagery is public domain; credit "NASA/SDO and the AIA, EVE and HMI science teams" (https://sdo.gsfc.nasa.gov/data/ and https://www.nasa.gov/nasa-brand-center/images-and-media/). The assets refresh about every 15 minutes, so only the shown channel is polled, every 15 min, with an honest User-Agent. The card shows download age (the image itself is typically ~15 min older) and rejects bodies that do not decode as an image. Reachable from the sandbox: not checked; the fixture is a one-time capture.
 - **Tropical storms:** NHC active-storm index `www.nhc.noaa.gov/CurrentStorms.json` (Atlantic and East/Central Pacific; JTWC for the West Pacific is not covered yet). NOAA/NWS government data, public domain, no key; credit NHC (https://www.weather.gov/disclaimer, https://www.nhc.noaa.gov/about.shtml). The index changes only with advisories (every 3-6 h), so we poll every 30 min with an honest User-Agent. The widget shows the advisory issuance time. Checked reachable from the sandbox on 2026-10-13.
 - Identify the app honestly in requests (User-Agent with name, version and project URL).
 
@@ -162,7 +163,7 @@ From the F01–F30 inventory in Codex's `outputs/hamclock-pro-feature-audit.md`.
 | F06 EME | Not started | After 1.0 |
 | F07 Propagation, bands | Not started | After 1.0 |
 | F08 Space weather | Live: Kp, SFI, X-ray, solar wind, Bz, SSN, trends | WIDGETS B |
-| F09 Solar imagery | Not started | After 1.0 |
+| F09 Solar imagery | Done (`solarimage` widget) | 1.0 |
 | F10 DE/DX weather | Live: current conditions (Open-Meteo) | WIDGETS E |
 | F11 Maps, grayline | Partial: coastlines, land fill, great-circle path; night shade and subsolar marker drawn | M1 |
 | F12 Zones, cities, prefixes | Not started | After 1.0 |

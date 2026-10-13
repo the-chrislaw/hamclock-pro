@@ -60,7 +60,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 2. ✅ Solar wind speed/density and Bz (SWPC `json/rtsw/*_1m.json`; the old `products/solar-wind/*` URLs are gone), with sparkline history.
 3. ✅ Sunspot number and 30-day solar flux trend chart; Kp 3-day bar chart (`solartrend`: SWPC `f107_cm_flux.json`, `observed-solar-cycle-indices.json`, `noaa-planetary-k-index-forecast.json`; polled every 6 h / 12 h / 30 min).
 4. ✅ Band conditions (F07): day/night HF band outlook computed from SFI/Kp/A (model documented in `bands/band_outlook.hpp`; `bands` widget). Optional KC2G MUF map not done.
-5. Solar imagery (F09): NASA SDO latest images (AIA 193/304, HMI), cached, tap to cycle.
+5. ✅ Solar imagery (F09): NASA SDO latest images (AIA 193/304, HMI), cached, tap to cycle (`solarimage`).
 6. NOAA alerts/watches feed for storms and radio blackouts.
 
 **Audit additions (B):**
@@ -196,6 +196,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
 | Band conditions: HF day/night outlook from SFI/Kp/A (local heuristic, not VOACAP) | B | **Live** |
+| Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellites, beacons, EME not started) |
