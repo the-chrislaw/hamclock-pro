@@ -67,7 +67,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 3. ✅ Sunspot number and 30-day solar flux trend chart; Kp 3-day bar chart (`solartrend`: SWPC `f107_cm_flux.json`, `observed-solar-cycle-indices.json`, `noaa-planetary-k-index-forecast.json`; polled every 6 h / 12 h / 30 min).
 4. ✅ Band conditions (F07): day/night HF band outlook computed from SFI/Kp/A (model documented in `bands/band_outlook.hpp`; `bands` widget). Optional KC2G MUF map not done.
 5. ✅ Solar imagery (F09): NASA SDO latest images (AIA 193/304, HMI), cached, tap to cycle (`solarimage`).
-6. NOAA alerts/watches feed for storms and radio blackouts.
+6. ✅ NOAA alerts/watches/warnings feed for storms and radio blackouts (`solaralerts`: SWPC `products/alerts.json`, newest message per product, cancellations, expired warnings and old alerts dropped).
 
 **Audit additions (B):**
 7. DRAP pane and DRAP map style.
@@ -203,6 +203,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
 | Band conditions: HF day/night outlook from SFI/Kp/A (local heuristic, not VOACAP) | B | **Live** |
 | Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
+| Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellite pane, EME not started) |
