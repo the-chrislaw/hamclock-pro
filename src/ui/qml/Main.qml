@@ -60,15 +60,18 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: Theme.pad
         anchors.topMargin: 0
-        contentHeight: window.compact ? content.implicitHeight : height
-        interactive: window.compact
+        contentHeight: Math.max(height, content.implicitHeight)
+        interactive: contentHeight > height
+        flickableDirection: Flickable.VerticalFlick
+        maximumFlickVelocity: 6000 * Theme.scale
+        flickDeceleration: 2500
         clip: true
         boundsBehavior: Flickable.StopAtBounds
 
         GridLayout {
             id: content
             width: scroller.width
-            height: window.compact ? implicitHeight : scroller.height
+            height: Math.max(scroller.height, implicitHeight)
             columns: window.compact ? 1 : 2
             columnSpacing: Theme.gap
             rowSpacing: Theme.gap
@@ -115,7 +118,8 @@ ApplicationWindow {
                     property bool showPath: true
                     Layout.fillWidth: true
                     Layout.fillHeight: !window.compact
-                    Layout.preferredHeight: window.compact ? width / 2 + Theme.touch : -1
+                    // Always at least a full 2:1 map; the page scrolls when widgets push it down.
+                    Layout.preferredHeight: width / 2 + Theme.touch + Theme.pad
                     WorldMap {
                         // Keep the 2:1 map shape and centre it, so it fills the card
                         // instead of drawing its own letterbox margins.
