@@ -56,6 +56,11 @@ DeClockConfiguration make_de_clock_zone_configuration(std::string_view iana_id) 
     return configuration;
 }
 
+DeClockConfiguration de_clock_configuration_for_saved_zone(std::string_view saved_zone) {
+    if (saved_zone.empty()) return DeClockConfiguration{DeClockMode::Automatic, std::nullopt, {}};
+    return make_de_clock_zone_configuration(saved_zone);
+}
+
 void validate_de_clock_configuration(const DeClockConfiguration& configuration,
                                      const DeClockOffsetPolicy& policy) {
     if (policy.minimum.value > policy.maximum.value) {

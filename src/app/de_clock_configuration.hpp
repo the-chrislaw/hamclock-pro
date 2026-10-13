@@ -31,6 +31,9 @@ struct DeClockConfiguration {
 // Automatic configuration carrying a zone id; throws invalid_argument if the id
 // is empty, too long or has characters outside the allowed set.
 DeClockConfiguration make_de_clock_zone_configuration(std::string_view iana_id);
+// Startup desire from a saved station zone: empty -> plain Automatic, otherwise
+// make_de_clock_zone_configuration (throws invalid_argument on a malformed id).
+DeClockConfiguration de_clock_configuration_for_saved_zone(std::string_view saved_zone);
 std::string_view de_clock_zone_id(const DeClockConfiguration&) noexcept;
 
 // Validate policy even for Automatic: minimum<=maximum. Validate known mode,

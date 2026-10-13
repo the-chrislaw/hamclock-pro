@@ -36,3 +36,8 @@
 - No open PRs or issues; #45 already merged.
 - Opened `agent/de-persist`: optional `de_zone` in the station settings file (legacy files still load; bad ids rejected), station editor preserves it.
 - Next: feed saved zone into the dashboard DE configuration; DE dialog from Big Clock -> Options; then go-public prep.
+
+## 2026-10-13 (UTC), run 6
+- Merged #47 (Trixie/Bookworm x arm64/armhf packages) and #48 (qt6-wayland dependency, first Pi 4 run) after green CI.
+- Opened `agent/de-load-zone`: `de_clock_configuration_for_saved_zone` (saved `de_zone` -> startup DE configuration) + tests.
+- Next: dashboard shows DE local time from it; DE dialog from Big Clock -> Options; then go-public prep.
