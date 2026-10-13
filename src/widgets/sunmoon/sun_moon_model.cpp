@@ -33,6 +33,18 @@ SunSummary summarize_sun(UtcSeconds now, double lat, double lon) {
     return out;
 }
 
+MoonSummary summarize_moon(UtcSeconds now, double lat, double lon) {
+    MoonSummary out;
+    const MoonPhase phase = moon_phase(now);
+    out.phase = phase.name;
+    out.illumination = QString("%1%").arg(qRound(phase.illuminated * 100));
+    if (const auto rise = next_moon_event(now, MoonEventKind::Rise, lat, lon)) out.next_rise = hhmm(*rise);
+    if (const auto set = next_moon_event(now, MoonEventKind::Set, lat, lon)) out.next_set = hhmm(*set);
+    const MoonHorizontal h = moon_horizontal(now, lat, lon);
+    out.position = QString("Az %1° El %2°").arg(qRound(h.azimuth_deg) % 360).arg(qRound(h.elevation_deg));
+    return out;
+}
+
 SunMoonModel::SunMoonModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("sunmoon", "Sun & Moon", parent), settings_(context.settings) {
     timer_.setInterval(60 * 1000);
@@ -46,6 +58,7 @@ void SunMoonModel::recompute() {
     if (!settings_ || !settings_->configured()) {
         has_station_ = false;
         de_ = dx_ = {};
+        moon_ = {};
         setState("unconfigured", "Set your station location in Settings");
         emit changed();
         return;
@@ -53,6 +66,7 @@ void SunMoonModel::recompute() {
     const UtcSeconds t{now().toSecsSinceEpoch()};
     de_ = summarize_sun(t, settings_->deLatitude(), settings_->deLongitude());
     dx_ = summarize_sun(t, settings_->dxLatitude(), settings_->dxLongitude());
+    moon_ = summarize_moon(t, settings_->deLatitude(), settings_->deLongitude());
     has_station_ = true;
     setState("live", "Computed offline from the system clock", now());
     emit changed();

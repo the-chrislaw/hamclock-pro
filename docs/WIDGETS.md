@@ -55,7 +55,7 @@ Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
-2. Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
+2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
 3. Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
