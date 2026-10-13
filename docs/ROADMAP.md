@@ -86,7 +86,9 @@ Source policy is decided (see "Data source policy"); M4 is unblocked. Each furth
 
 ### M5: 1.0 release (M)
 
-- One-command install/update (apt repository or `.deb` + script) for arm64 and armhf; uninstall leaves no system changes.
+- **Two install options** (owner decision, Oct 13):
+  - **Ready-made SD card image** for most users: Raspberry Pi OS Lite with HamClock Pro preinstalled, booting straight into the dashboard in kiosk mode (no desktop). Built in CI with Raspberry Pi's `pi-gen`, published per release for 64-bit and 32-bit, flashable with Raspberry Pi Imager. Needs an on-screen first-run setup (Wi-Fi, callsign, location, time zone) and a self-update path.
+  - **Package install** for existing Pi OS systems: one-command install/update (apt repository or `.deb` + script) for arm64 and armhf; desktop or kiosk mode; uninstall leaves no system changes.
 - Measurement pass across the supported tier; fix or document limits for best-effort boards.
 - Third-party notices (Qt LGPL via dynamic linking, Natural Earth, data sources). Name stays "HamClock Pro" with the independence notice.
 - User guide: install, first-run setup, desktop vs. kiosk mode, TV setup (overscan, remote), troubleshooting.
