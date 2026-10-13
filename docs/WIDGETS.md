@@ -205,4 +205,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane only, track overlay waits for area G's API; JTWC not yet) | H | **Live** |
 | NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
 | On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; pane only, no map overlay or filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
+| Host sensors: CPU temperature from sysfs thermal zones (shows Set up/unconfigured when no sensor; no BME280, Wi-Fi or disk history yet; not on the default dashboard) | E | Partial |
 | Everything else in the backlog | A–E | Not started |
