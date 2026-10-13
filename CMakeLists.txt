@@ -431,6 +431,9 @@ set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_SECTION hamradio)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+# Qt platform plugins are loaded at runtime, so shlibdeps cannot see them.
+# Raspberry Pi OS desktops are Wayland; without this the app cannot start.
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-wayland")
 include(CPack)
 
 if(BUILD_TESTING)

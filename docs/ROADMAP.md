@@ -8,7 +8,7 @@ Written October 12, 2026. This is the single plan from today's state to a 1.0 re
 - **Branches:** the 35-PR stack was merged into `main` via #36 on October 12 (M0).
 - **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job.
 - **Releases:** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release.
-- **Hardware:** never run on a Raspberry Pi yet. Owner reference setups: Pi 4 + generic 7-inch HDMI touchscreen, and a TV over HDMI.
+- **Hardware:** first real run on a Pi 4 + 7-inch 1024×600 screen on Oct 13: installs and runs at 0.6 % CPU / 84 MB; see `docs/hardware-validation.md`. Owner reference setups: Pi 4 + generic 7-inch HDMI touchscreen, and a TV over HDMI.
 - **Design:** the approved look is `design/dashboard.html` and the refined mockups; the native Qt dashboard does not match it yet (`docs/native-approved-design-gap.md`).
 
 ## Definition of 1.0
@@ -66,6 +66,7 @@ Follow `docs/native-approved-design-gap.md`: station-first left card, three inst
 - **Reference setups (owner):** Pi 4 + generic 7-inch HDMI touchscreen; Pi 4 + TV over HDMI. Touch input via evdev/libinput in kiosk mode; check touch calibration on generic panels.
 - Measure CPU, memory, startup time and frame rate on each setup; record in `docs/hardware-validation.md`. Repeat on a Pi 3 and Zero 2 W when available (community testers welcome).
 - Touch-only pass (every control ≥ 44 px) and remote/keyboard-only pass; decide whether an on-screen keyboard is needed for callsign entry.
+- From the first Pi run: start fullscreen by default on small screens (and a `--fullscreen`/`--windowed` option), and let the map use the full card width instead of letterboxing at 1024×600.
 
 **Done when:** the owner uses it for a day on both reference setups without a crash, and the 64-bit and 32-bit packages install cleanly on a fresh Pi OS image.
 
