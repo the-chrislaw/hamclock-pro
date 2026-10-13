@@ -192,4 +192,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellites, beacons, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
+| Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane only; map overlay waits for area G's API) | H | **Live** |
 | Everything else in the backlog | A–E | Not started |
