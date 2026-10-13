@@ -5,7 +5,7 @@
 #include "station_model.hpp"
 #include "../net/polled_source.hpp"
 #include "../widgets/widget_registry.hpp"
-#include <QApplication>
+#include <QGuiApplication>
 #include <QCommandLineParser>
 #include <QDir>
 #include <QFile>
@@ -49,10 +49,10 @@ hamclock::Transport offline_transport() {
 } // namespace
 
 int main(int argc, char** argv) {
-    QApplication app(argc, argv); // QApplication: the map renders via a QWidget
-    QApplication::setApplicationName("hamclock-pro");
+    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
+    QGuiApplication::setApplicationName("hamclock-pro");
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QApplication::setApplicationVersion("0.1.0");
+    QGuiApplication::setApplicationVersion("0.1.0");
 
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");
