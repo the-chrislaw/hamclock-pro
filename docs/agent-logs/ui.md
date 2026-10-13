@@ -11,3 +11,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #89 (docs, area G priorities). #73 still has merge conflicts and is not an agent/ui branch; left alone.
 - `Theme.dense` (window <= 1280x720): no header bar, pad/gap/radius roughly halved, narrower station column, station clock fits its column, Settings button moved into the station card. Tap anywhere on a pane opens the chooser; horizontal swipe steps through widgets (including empty). Checked by screenshots at 800x480, 1024x600, 1920x1080; ctest 64/64. Not validated on a device.
 - Next: long-press widget options, per-slot rotation, per-widget `compact` audit.
+
+## 2026-10-13 (hourly run, 3)
+- Merged #99 (area G map core, CI green). #100 (area H) still had the iPad check running; #73 was already stale.
+- Long-press on a pane opens `PaneOptions` (change widget, next, previous, empty, reset all panes). ctest 71/71; screenshots rendered at 1024x600 and 800x480. ASan/UBSan left to CI (QML-only change). Not validated on a device.
+- Next: per-slot rotation, per-widget `compact` audit.

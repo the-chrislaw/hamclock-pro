@@ -8,6 +8,7 @@ Item {
     property int index: 0
     readonly property string choice: appSettings.panes[index]
     signal chooseRequested(int slot)
+    signal optionsRequested(int slot)
 
     // Step to the next (+1) or previous (-1) widget in registry order; "none" sits
     // between the last and first widget so a swipe can also empty the pane.
@@ -38,6 +39,8 @@ Item {
     // Tap anywhere on the pane to change it; swipe sideways to step. Handlers are
     // passive so widgets and the title button keep working.
     TapHandler { onTapped: slot.chooseRequested(slot.index) }
+    // Long-press opens the pane options (a long press does not also emit tapped).
+    TapHandler { longPressThreshold: 0.6; onLongPressed: slot.optionsRequested(slot.index) }
     DragHandler {
         target: null
         xAxis.enabled: true

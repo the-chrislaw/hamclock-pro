@@ -84,7 +84,9 @@ ApplicationWindow {
                 Layout.maximumHeight: Layout.preferredHeight
                 Layout.minimumHeight: Layout.preferredHeight
                 spacing: Theme.gap
+                function slotAt(i) { return paneRepeater.itemAt(i) }
                 Repeater {
+                    id: paneRepeater
                     model: 3
                     PaneSlot {
                         index: modelData
@@ -94,6 +96,10 @@ ApplicationWindow {
                         onChooseRequested: function (slotIndex) {
                             paneChooser.slot = slotIndex
                             paneChooser.open()
+                        }
+                        onOptionsRequested: function (slotIndex) {
+                            paneOptions.slot = slotIndex
+                            paneOptions.open()
                         }
                     }
                 }
@@ -118,6 +124,12 @@ ApplicationWindow {
     }
 
     PaneChooser { id: paneChooser; parent: window.contentItem }
+    PaneOptions {
+        id: paneOptions
+        parent: window.contentItem
+        onChangeRequested: function (slotIndex) { paneChooser.slot = slotIndex; paneChooser.open() }
+        onStepRequested: function (slotIndex, direction) { paneRow.slotAt(slotIndex).step(direction) }
+    }
 
     Rectangle {
         id: settingsLayer
