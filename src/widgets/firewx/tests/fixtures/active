@@ -1,0 +1,21 @@
+{
+ "type": "FeatureCollection",
+ "title": "Current watches, warnings, and advisories (captured 2026-10-13 23:51Z, fire-weather events only)",
+ "updated": "2026-10-13T23:50:56+00:00",
+ "features": [
+  {
+   "properties": {
+    "id": "urn:oid:2.49.0.1.840.0.7f08d3fa3959319a9f023ef0ad1d7625ca506071.001.1",
+    "areaDesc": "Tehachapi Area; Fort Tejon",
+    "sent": "2026-10-13T09:50:00-07:00",
+    "onset": "2026-10-15T06:00:00-07:00",
+    "expires": "2026-10-13T18:00:00-07:00",
+    "ends": "2026-10-16T22:00:00-07:00",
+    "severity": "Severe",
+    "event": "Fire Weather Watch",
+    "senderName": "NWS Hanford CA",
+    "headline": "Fire Weather Watch issued October 13 at 9:50AM PDT until October 16 at 10:00PM PDT by NWS Hanford CA"
+   }
+  }
+ ]
+}
