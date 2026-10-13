@@ -95,7 +95,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
 3. Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
-4. NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
+4. ✅ (schedule + pane; map markers wait for area G's overlay API) NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
 **Audit additions (D):**
@@ -193,4 +193,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellites, beacons, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane only; map overlay waits for area G's API) | H | **Live** |
+| NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
 | Everything else in the backlog | A–E | Not started |
