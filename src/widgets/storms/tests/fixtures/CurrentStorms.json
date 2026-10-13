@@ -1,0 +1,40 @@
+{
+ "activeStorms": [
+  {
+   "id": "ep212026",
+   "binNumber": "EP1",
+   "name": "Trudy",
+   "classification": "TS",
+   "intensity": "35",
+   "pressure": "1005",
+   "latitudeNumeric": 10.6,
+   "longitudeNumeric": -96.5,
+   "movementDir": 320,
+   "movementSpeed": 8,
+   "lastUpdate": "2026-10-13T21:00:00.000Z",
+   "publicAdvisory": {
+    "advNum": "002",
+    "issuance": "2026-10-13T21:00:00.000Z",
+    "url": "https://www.nhc.noaa.gov/text/MIATCPEP1.shtml"
+   }
+  },
+  {
+   "id": "ep202026",
+   "binNumber": "EP5",
+   "name": "Simon",
+   "classification": "HU",
+   "intensity": "80",
+   "pressure": "977",
+   "latitudeNumeric": 20.2,
+   "longitudeNumeric": -107.5,
+   "movementDir": 260,
+   "movementSpeed": 2,
+   "lastUpdate": "2026-10-13T21:00:00.000Z",
+   "publicAdvisory": {
+    "advNum": "026",
+    "issuance": "2026-10-13T21:00:00.000Z",
+    "url": "https://www.nhc.noaa.gov/text/MIATCPEP5.shtml"
+   }
+  }
+ ]
+}
