@@ -1,0 +1,96 @@
+// Weather widget: Open-Meteo parser and model, offline.
+// Fixture `forecast` is a real Open-Meteo response captured 2026-10-13 17:30 UTC
+// for 37.77,-122.42.
+#include "../weather_model.hpp"
+#include "../weather_parse.hpp"
+#include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QTemporaryDir>
+#include <QTimeZone>
+#include <QTimer>
+#include <iostream>
+
+namespace {
+int checks = 0, failures = 0;
+void check(bool ok, const char* label) {
+    ++checks;
+    if (!ok) { ++failures; std::cerr << "FAIL: " << label << '\n'; }
+}
+} // namespace
+
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    using namespace hamclock;
+    if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
+    QFile file(QDir(argv[1]).filePath("forecast"));
+    check(file.open(QIODevice::ReadOnly), "fixture readable");
+    const QByteArray body = file.readAll();
+
+    const auto c = weather::parse_current(body);
+    check(c && c->temperature_c == 15.7 && c->humidity_pct == 61, "temperature and humidity");
+    check(c && c->wind_kmh == 7.9 && c->wind_dir_deg == 344 && c->weather_code == 0 && c->is_day, "wind, code, day");
+    check(weather::compass_point(344) == "NNW" && weather::compass_point(0) == "N" &&
+          weather::compass_point(360) == "N" && weather::compass_point(348) == "NNW" &&
+          weather::compass_point(349) == "N" && weather::compass_point(90) == "E", "compass rose edges");
+    check(weather::wmo_description(0) == "Clear sky" && weather::wmo_description(95) == "Thunderstorm" &&
+          weather::wmo_description(42) == "Unknown", "WMO descriptions");
+    check(weather::celsius_to_fahrenheit(100) == 212 && weather::celsius_to_fahrenheit(-40) == -40, "F conversion");
+    check(weather::request_url(37.7749, -122.4194).contains("latitude=37.77&longitude=-122.42"), "url rounds");
+
+    for (const char* bad : {"", "{}", "[", "{\"latitude\":1,\"longitude\":1,\"current\":{}}",
+                            "{\"latitude\":1,\"longitude\":1,\"current\":{\"temperature_2m\":\"15\",\"relative_humidity_2m\":5,\"wind_speed_10m\":1,\"wind_direction_10m\":1,\"weather_code\":0}}",
+                            "{\"latitude\":1,\"longitude\":1,\"current\":{\"temperature_2m\":999,\"relative_humidity_2m\":5,\"wind_speed_10m\":1,\"wind_direction_10m\":1,\"weather_code\":0}}"})
+        check(!weather::parse_current(bad), "malformed weather rejected");
+
+    // Model: DE = fixture location, DX far away (server answers for the fixture point, so rejected).
+    QTemporaryDir dir;
+    AppSettings settings(dir.filePath("station.conf"), dir.path());
+    WidgetContext context;
+    context.settings = &settings;
+    int requests = 0;
+    bool fail_all = false;
+    context.transport = [&](const QUrl&, FetchDone done) {
+        ++requests;
+        FetchResult r;
+        if (fail_all) r.error = "Host unreachable";
+        else { r.http_status = 200; r.body = body; }
+        QTimer::singleShot(0, [done, r] { done(r); });
+    };
+    WeatherModel model(context);
+    const auto now = QDateTime(QDate(2026, 10, 13), QTime(17, 40), QTimeZone::utc());
+    model.setClock([&] { return now; });
+    model.start();
+    for (int i = 0; i < 10; ++i) app.processEvents();
+    check(model.state() == "unconfigured" && requests == 0, "no station -> unconfigured, no requests");
+
+    check(settings.saveStation("N0CALL", 37.77, -122.42, 51.5, -0.1, "").isEmpty(), "station saved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(requests == 2, "one request per end");
+    check(model.deSource() && model.dxSource(), "sources built");
+    for (auto* s : {model.deSource(), model.dxSource()}) s->setClock([&] { return now; });
+    model.deSource()->refreshNow();
+    model.dxSource()->refreshNow();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.deTemp() == "15.7 °C" && model.deWind() == "NNW 8 km/h", "DE values");
+    check(model.deSummary() == "Clear sky", "DE summary");
+    check(model.dxTemp().isEmpty(), "response for another place never shown at DX");
+    check(model.state() == "stale", "one end missing -> not live");
+
+    // Moving DX to the fixture location makes it valid; both fresh -> live.
+    check(settings.saveStation("N0CALL", 37.77, -122.42, 37.76, -122.41, "").isEmpty(), "DX moved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    for (auto* s : {model.deSource(), model.dxSource()}) s->setClock([&] { return now; });
+    check(model.dxTemp() == "15.7 °C" && model.state() == "live", "both ends fresh -> live");
+
+    fail_all = true;
+    model.setClock([&] { return now.addSecs(3 * 3600); });
+    for (auto* s : {model.deSource(), model.dxSource()}) { s->setClock([&] { return now.addSecs(3 * 3600); }); s->refreshNow(); }
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.state() == "stale" && model.deTemp() == "15.7 °C", "outage keeps last value, marked stale");
+
+    std::cout << "Weather: " << checks << " checks, " << failures << " failures\n";
+    return failures ? 1 : 0;
+}

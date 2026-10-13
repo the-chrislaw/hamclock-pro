@@ -60,7 +60,7 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
 ### E. Weather, lookup, events, radio (owns `src/widgets/weather/`, `lookup/`, `events/`, `radio/`)
-1. DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
+1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
 2. Callsign lookup (QRZ XML or HamQTH) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
 4. Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
@@ -75,4 +75,5 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (no map overlay or filters yet; shows Not configured until a cluster host is set) |
 | Sun rise/set, day length at DE and DX (offline) | D | Working (moon, satellites, beacons, EME not started) |
+| DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
 | Everything else in the backlog | A–E | Not started |

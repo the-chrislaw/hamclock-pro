@@ -133,6 +133,7 @@ Owner decision (Oct 12):
 - **Space weather:** NOAA SWPC JSON products (US government public data, no key). Each clock fetches directly from the source; there is no project-run relay server. Polite polling: Kp and X-ray every 5–15 minutes, solar flux a few times a day. Cache to disk, show data age, and show an offline state rather than stale-as-live or invented values.
 - **DX cluster:** no default node. The user enters node and callsign; "Not connected" until then.
 - **Later feeds** (PSKReporter, CelesTrak TLEs, propagation, weather, imagery): check terms of use and polling limits and record them here before coding. Online VOACAP requires a prior agreement.
+- **Weather:** Open-Meteo `api.open-meteo.com/v1/forecast` (no key). Free for non-commercial use under CC BY 4.0: show "Weather by Open-Meteo.com" (the card status line does). Limits: 10,000 calls/day; we poll two points every 15 min (192/day). Coordinates are sent rounded to 0.01°. Terms: https://open-meteo.com/en/terms. If the project ever charges for the app, a commercial plan or key is needed: owner decision.
 - Identify the app honestly in requests (User-Agent with name, version and project URL).
 
 ## Status by feature family
