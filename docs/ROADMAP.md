@@ -134,6 +134,9 @@ Displays: any HDMI or DSI display from 800×480 to 4K; touch optional; keyboard/
 
 ## Data source policy
 
+Note from the feature audit (Oct 13): the original gets almost all feeds pre-processed from its author's backend server (map images for DRAP/MUF/VOACAP/clouds, contests, DXpeditions, cities, hazards). HamClock Pro does not use that server; every such feature needs a direct, terms-checked public source (e.g. NOAA SWPC products, NASA GIBS imagery) or an offline open-source model (for VOACAP-style predictions). Record each choice here before coding.
+
+
 Owner decision (Oct 12):
 
 - **Space weather:** NOAA SWPC JSON products (US government public data, no key). Each clock fetches directly from the source; there is no project-run relay server. Polite polling: Kp and X-ray every 5–15 minutes, solar flux a few times a day. Cache to disk, show data age, and show an offline state rather than stale-as-live or invented values.
@@ -152,13 +155,13 @@ From the F01–F30 inventory in Codex's `outputs/hamclock-pro-feature-audit.md`.
 | F01 Callsign, station coordinates | Partial: editor, validation, saved settings | M1 |
 | F02 Clocks, time zones | Partial: UTC, Big Clock, stopwatch, countdown, manual DE offset | M1 |
 | F03 Maidenhead locator | Partial: encode/decode with boundary tests | M1 |
-| F04 Sun, Moon | Not started | After 1.0 |
+| F04 Sun, Moon | Partial: sunrise/sunset and day length (widget) | WIDGETS D |
 | F05 Satellites | Not started | After 1.0 |
 | F06 EME | Not started | After 1.0 |
 | F07 Propagation, bands | Not started | After 1.0 |
-| F08 Space weather | Partial: offline Kp parser only | M4 |
+| F08 Space weather | Live: Kp, SFI, X-ray, solar wind, Bz, SSN, trends | WIDGETS B |
 | F09 Solar imagery | Not started | After 1.0 |
-| F10 DE/DX weather | Not started | After 1.0 |
+| F10 DE/DX weather | Live: current conditions (Open-Meteo) | WIDGETS E |
 | F11 Maps, grayline | Partial: coastlines, land fill, great-circle path; night shade and subsolar marker drawn | M1 |
 | F12 Zones, cities, prefixes | Not started | After 1.0 |
 | F13 DX cluster | Spot model only | M4 |

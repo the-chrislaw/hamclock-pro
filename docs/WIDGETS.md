@@ -41,6 +41,19 @@ Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed
 6. Pane rotation (F26): user chooses which widgets show in which slot; layout saved.
 7. Kiosk: systemd unit + `--fullscreen`, eglfs instructions; on-screen keyboard decision.
 
+### A. (audit additions, Oct 13; see docs/FEATURE-AUDIT.md)
+8. Pane system parity (refines A0): 4 panes plus optional PANE_0 overlay on the DE/DX area; each pane has its own set of widgets, rotation 5/10/30/60 s, forward/back stepping, category picker (Space Wx, DX & Contest, Weather, Sky & Space, Station & Sensors, Other); saved layout.
+9. Map styles and projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4× with recenter/reset; tap popup Set DE / Set DX; selectable base styles that rotate every 20/60/90/120 s; colour-scale legends.
+10. Map overlays: Tropics, lat/lng, Maidenhead (fields and 4-char), azimuth rings, CQ and ITU zones, cities (tap snaps to city), country borders and US states, DE antipode, sublunar point, long-path drawing, gray display mode.
+11. Hover/long-press info box: lat/lng, grid, prefix/country, distance/bearing, local mean time, weather, details of the object under the pointer.
+12. DE/DX panels: DE formats (All info, Simple analog, Calendar, Annotated analog, Digital 12/24 h), DX time zone (auto/manual), sunrise/set "in/ago" vs "at", SP/LP toggle, true or magnetic bearing (WMM), units Imperial/Metric/British.
+13. Callsign banner: call / rotating titles / ON AIR text, fg/bg colours, rainbow option.
+14. Clocks: auxiliary time (Date, DOY, JD, MJD, Sidereal, Solar, UNIX), change-time ("time travel") menu, date order and week start, daily and one-time alarms (sound, optional GPIO), Big Clock option parity (LST, +digital, numbers, coloured hands, DE WX, Space WX, satellite).
+15. Kiosk management: brightness min/max, light-sensor auto-dim where available, daily on/off schedule per weekday, idle blanking, screen lock, restart/exit/reboot/shutdown menu, per-action passwords via the credential store.
+16. Saved configurations (save/restore/update/delete/rename) and demo mode.
+17. Colour editor: SP/LP path, satellite 1/2, grid, rotator, per-band colours, borders, states; dashed/thick.
+18. Remote API (F28, after a security review): read-only and read-write endpoints matching the original `get_*.txt`/`set_*` names where practical, remote screenshot, mobile status page, live view.
+
 ### B. Space weather and solar (owns `src/widgets/spaceweather/`, `solar*`, `bands*`)
 1. ✅ Kp, solar flux, X-ray class (NOAA SWPC) — the reference widget.
 2. ✅ Solar wind speed/density and Bz (SWPC `json/rtsw/*_1m.json`; the old `products/solar-wind/*` URLs are gone), with sparkline history.
@@ -49,12 +62,33 @@ Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed
 5. Solar imagery (F09): NASA SDO latest images (AIA 193/304, HMI), cached, tap to cycle.
 6. NOAA alerts/watches feed for storms and radio blackouts.
 
+**Audit additions (B):**
+7. DRAP pane and DRAP map style.
+8. Aurora pane, Aurora map style, and automatic switch to the Aurora/DRAP map when activity is high.
+9. DST (Disturbance) pane.
+10. NOAA R/S/G scales pane.
+11. X-ray 24 h history plot.
+12. Space-weather stats ranked by impact.
+13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
+14. HamQSL (N0NBH) HF and VHF condition panes (check terms first).
+15. Tropo map style (check source terms first).
+
 ### C. Spots (owns `src/widgets/dxcluster/`, `pskreporter/`, `ota/`, `src/net/telnet*`)
 1. DX cluster (F13): telnet client (DXSpider/AR-Cluster/CC-Cluster), callsign login, reconnect/backoff, spot parser, spot list card, spots on the map, band/mode filters.
 2. PSKReporter (F14): reception reports for your callsign (respect its query-rate limits), map overlay.
 3. POTA and SOTA activator spots (public APIs).
 4. Watch lists (F16): highlight callsigns/prefixes/DXCC entities; alert badge.
 5. Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table.
+
+**Audit additions (C):**
+6. WSPR and RBN in Live Spots: of DE / by DE, by call or grid, max distance or count, band statistics, map paths.
+7. More On-The-Air programmes (WWFF, IOTA, GMA, LLOTA, WWTOTA, TOWERS, WWBOTA) with age/sort/mode/band filters.
+8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent).
+12. UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
+13. Cluster login with SSID and native commands after login.
+14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
+15. ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
+16. IOTA reference names and xOTA markers parsed from comments.
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
@@ -63,12 +97,30 @@ Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed
 4. NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
+**Audit additions (D):**
+6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
+7. Satellite rise/set alert; maximum TLE age; user-supplied TLE.
+8. hams.at upcoming activations pane. 9. Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
+12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
+
 ### E. Weather, lookup, events, radio (owns `src/widgets/weather/`, `lookup/`, `events/`, `radio/`)
 1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
 2. 🟡 Callsign lookup (QRZ XML or HamQTH; card + session handling done, spotted-call wiring pending) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
 4. Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
+
+**Audit additions (E):**
+6. Weather parity: humidity, pressure and trend, clouds, city, DX time zone; brief weather popup on new DE/DX.
+7. Weather and clouds map styles; Windy and WEFAX links.
+8. Hazard panes and map overlays: quakes (USGS), tropical storms (NHC/JTWC), NWS marine and fire-weather warnings, lightning with range rings, active fires (NASA FIRMS); check each feed's terms first.
+9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
+10. Rotator pane (rotctld) that can track the selected satellite or DX.
+11. BME280 environment panes (temperature, pressure, humidity, dew point; corrections); CPU temperature, Wi-Fi RSSI and disk-use history.
+12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
+13. NetLogger active nets pane.
+14. GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
+15. PiAware ADS-B link.
 
 ### F. Apple platforms: macOS and iPad (owns `src/platform/apple*`, `src/platform/credential_store*`, `cmake/Apple*.cmake`, `.github/workflows/apple.yml`, `packaging/apple/`)
 Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.0 work is under way. The agent sandbox cannot run Xcode, so every change is verified on GitHub's macOS runners via `apple.yml`.
@@ -77,6 +129,9 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 3. macOS app polish: app icon, Info.plist (name, version, category), universal (arm64 + x86_64) build, `.dmg`; signing and notarization steps wired but skipped until the owner provides an Apple Developer ID (open "Owner input needed: Apple Developer account").
 4. iPad: iOS CMake target, safe-area and orientation handling, touch-first layout check at iPad sizes (1180×820, 1366×1024), app lifecycle (pause polling and the DX cluster connection in background, resume cleanly), no QtWidgets dependency (requires area A's QPainter map renderer, backlog A4).
 5. App Store readiness: privacy manifest, no private APIs, attribution screen for data sources (NOAA, NASA, Natural Earth, Open-Meteo…), TestFlight upload once the owner's account exists.
+
+**Audit additions (F):**
+6. Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
 
 ## Settings and accounts parity (checked against the original's setup.cpp, Oct 13)
 
