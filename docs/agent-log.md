@@ -26,3 +26,8 @@
 - No open PRs or issues; #43 already merged.
 - Opened `agent/de-zone-config`: optional IANA zone id in `DeClockConfiguration` (fixed array, allocation-free) + display snapshot uses `adapt_de_clock_zone_civil` for Automatic+zone; unknown zone stays unresolved.
 - Next: zone id field in DE settings dialog; DE dialog from Big Clock -> Options; then go-public prep.
+
+## 2026-10-13 (UTC), run 4
+- No open PRs or issues; #44 already merged.
+- Opened `agent/de-dialog-zone`: IANA zone id field in the DE settings dialog (Automatic mode, validated against the tz database) + regression tests; rendered offscreen at 800x480..1920x1080 light/dark.
+- Next: persist DE configuration; DE dialog from Big Clock -> Options; then go-public prep.

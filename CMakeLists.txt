@@ -389,7 +389,7 @@ endif()
 if(BUILD_TESTING)
     add_executable(qt-de-clock-settings-dialog-regression
         tests/qt_de_clock_settings_dialog_regression.cpp src/qt/de_clock_settings_dialog.cpp
-        src/app/de_clock_configuration.cpp src/domain/geometry.cpp)
+        src/app/de_clock_configuration.cpp src/domain/geometry.cpp src/qt/de_time_zone.cpp)
     target_link_libraries(qt-de-clock-settings-dialog-regression PRIVATE hamclock-dashboard-appearance)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(qt-de-clock-settings-dialog-regression PRIVATE -Wall -Wextra -Wpedantic)
