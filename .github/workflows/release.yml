@@ -20,28 +20,41 @@ concurrency:
 
 jobs:
   raspberry-pi:
-    name: Raspberry Pi OS / Debian Bookworm arm64 (.deb)
+    name: Raspberry Pi OS ${{ matrix.release }} ${{ matrix.arch }} (.deb)
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        # Trixie is the current Raspberry Pi OS; Bookworm is "Legacy".
+        # armhf covers 32-bit Raspberry Pi OS on Pi 2/3/4/Zero 2.
+        release: [trixie, bookworm]
+        arch: [arm64, armhf]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
-      - name: Build package in arm64 Bookworm container
+          platforms: arm64,arm
+      - name: Build package in ${{ matrix.release }} ${{ matrix.arch }} container
         run: |
           version="0.1.0~git$(date -u +%Y%m%d).${GITHUB_SHA::7}"
           [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF_NAME#v}"
-          docker run --rm --platform linux/arm64 -v "$PWD":/src -w /src debian:bookworm bash -euxc "
+          platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
+          docker run --rm --platform "$platform" -v "$PWD":/src -w /src debian:${{ matrix.release }} bash -euxc "
             apt-get update
             apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev dpkg-dev file
             cmake -S . -B build-pi -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCPACK_PACKAGE_VERSION=$version
             cmake --build build-pi -j\$(nproc)
             cd build-pi && cpack -G DEB
           "
+          # Same package version for every OS release; name files so they don't collide.
+          for deb in build-pi/*.deb; do
+            sudo mv "$deb" "${deb%_${{ matrix.arch }}.deb}_${{ matrix.release }}_${{ matrix.arch }}.deb"
+          done
+          ls -l build-pi/*.deb
       - uses: actions/upload-artifact@v4
         with:
-          name: hamclock-pro-raspberry-pi-arm64
+          name: hamclock-pro-raspberry-pi-${{ matrix.release }}-${{ matrix.arch }}
           path: build-pi/*.deb
 
   macos:
@@ -88,5 +101,5 @@ jobs:
             gh release delete latest --cleanup-tag --yes || true
             gh release create latest dist/* --target "$GITHUB_SHA" --prerelease \
               --title "Latest development build" \
-              --notes "Automatic build of main at ${GITHUB_SHA::7}. Development preview: not feature complete, not hardware-validated. Raspberry Pi: sudo apt install ./hamclock-pro_*_arm64.deb, then run hamclock-pro-dashboard --station PATH. macOS: unzip and open the app (unsigned; right-click > Open)."
+              --notes "Automatic build of main at ${GITHUB_SHA::7}. Development preview: not feature complete, not hardware-validated. Raspberry Pi: pick the file matching your OS (trixie = current Raspberry Pi OS, bookworm = Legacy) and architecture (arm64 = 64-bit, armhf = 32-bit), then sudo apt install ./hamclock-pro_*.deb, then run hamclock-pro-dashboard --station PATH. macOS: unzip and open the app (unsigned; right-click > Open)."
           fi
