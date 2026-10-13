@@ -1,5 +1,7 @@
 #include "de_clock_display_snapshot.hpp"
+#include "de_clock_zone_civil_adapter.hpp"
 #include <stdexcept>
+#include <string>
 
 namespace hamclock {
 DeClockDisplaySnapshot make_de_clock_display_snapshot(
@@ -21,7 +23,19 @@ DeClockDisplaySnapshot make_de_clock_display_snapshot(
         throw std::invalid_argument("Unknown DE display synchronization evidence");
     }
     const auto utc = adapt_big_clock_utc_civil(actual_source);
-    const auto de = adapt_de_clock_manual_civil(configuration.configuration, configuration.offset_policy, actual_source);
+    auto de = adapt_de_clock_manual_civil(configuration.configuration, configuration.offset_policy, actual_source);
+    // Automatic with a zone id: DST-aware civil time from the OS tz database.
+    // An unknown zone or failed conversion stays AutomaticUnresolved (no UTC or
+    // host-local fallback).
+    if (configuration.configuration.mode == DeClockMode::Automatic && actual_source &&
+        configuration.configuration.zone_id[0] != '\0') {
+        const auto zoned = adapt_de_clock_zone_civil(
+            std::string(de_clock_zone_id(configuration.configuration)), actual_source);
+        if (zoned.status == DeClockZoneCivilStatus::Ready && zoned.civil) {
+            de.status = DeClockManualCivilStatus::Ready;
+            de.civil = zoned.civil;
+        }
+    }
     const BigClockDigitalInput digital{
         {utc.status == BigClockUtcCivilStatus::Ready ? utc.civil : std::nullopt,
          de.status == DeClockManualCivilStatus::Ready ? de.civil : std::nullopt},

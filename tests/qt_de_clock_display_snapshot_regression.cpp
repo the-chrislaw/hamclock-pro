@@ -154,6 +154,22 @@ int main() {
     check(present_big_clock_digital(de_pref, auto_display.digital).status == BigClockDigitalStatus::MissingSelectedTime &&
           present_big_clock_digital(utc_pref, auto_display.digital).status == BigClockDigitalStatus::Ready,
           "selected missing automatic DE never borrows UTC despite synchronized source evidence");
+    {
+        // 2024-07-01 12:00:00 UTC (EDT, UTC-4) -> 08:00 New York; 2024-01-15 12:00 UTC (EST) -> 07:00.
+        DeClockConfigurationState zoned(make_de_clock_zone_configuration("America/New_York"), policy, {40.7, -74.0});
+        const auto summer = make_de_clock_display_snapshot(zoned.snapshot(), UtcSeconds{1719835200}, SyncStatus::Synchronized);
+        check(summer.de.status == DeClockManualCivilStatus::Ready && summer.de.civil && summer.de.civil->hour == 8 &&
+              summer.digital.actual.de && summer.digital.actual.de->hour == 8, "zone Automatic DE shows EDT in July");
+        const auto winter = make_de_clock_display_snapshot(zoned.snapshot(), UtcSeconds{1705320000}, SyncStatus::Synchronized);
+        check(winter.de.civil && winter.de.civil->hour == 7, "zone Automatic DE shows EST in January");
+        check(!summer.de.manual_offset && summer.de.desired_mode == DeClockMode::Automatic, "zone result is not a manual offset");
+        const auto none = make_de_clock_display_snapshot(zoned.snapshot(), std::nullopt, SyncStatus::Unknown);
+        check(none.de.status == DeClockManualCivilStatus::MissingSource && !none.digital.actual.de, "missing source stays unavailable");
+        DeClockConfigurationState unknown(make_de_clock_zone_configuration("Mars/Olympus"), policy, {0, 0});
+        const auto bad = make_de_clock_display_snapshot(unknown.snapshot(), UtcSeconds{0}, SyncStatus::Synchronized);
+        check(bad.de.status == DeClockManualCivilStatus::AutomaticUnresolved && !bad.digital.actual.de,
+              "unknown zone never falls back to UTC or host zone");
+    }
     std::cout << checks << " DE display snapshot checks, " << failures << " failures\n";
     return failures == 0 ? 0 : 1;
 }

@@ -2,7 +2,10 @@
 
 #include "../domain/clock_state.hpp"
 #include "../domain/geometry.hpp"
+#include <array>
+#include <cstddef>
 #include <optional>
+#include <string_view>
 
 namespace hamclock {
 enum class DeClockMode { Automatic, ManualOffset };
@@ -12,13 +15,23 @@ struct DeClockOffsetPolicy {
     UtcOffsetSeconds minimum;
     UtcOffsetSeconds maximum;
 };
+// Fixed storage keeps snapshots allocation-free and trivially copyable.
+constexpr std::size_t kDeClockZoneIdBytes = 64; // Includes the terminating NUL.
 struct DeClockConfiguration {
     // Desire only: Automatic never means resolved/available/correct DE time.
     DeClockMode mode;
     // Present exactly for ManualOffset; Automatic with retained offset rejects.
     // Integer seconds, no rounding/step inference or automatic DST adjustment.
     std::optional<UtcOffsetSeconds> manual_offset;
+    // Optional IANA zone id (e.g. "America/New_York"), Automatic mode only.
+    // NUL-terminated, zero-padded, characters [A-Za-z0-9_+-/]; empty = none.
+    // Shape only: whether the OS tz database knows it is decided at conversion.
+    std::array<char, kDeClockZoneIdBytes> zone_id{};
 };
+// Automatic configuration carrying a zone id; throws invalid_argument if the id
+// is empty, too long or has characters outside the allowed set.
+DeClockConfiguration make_de_clock_zone_configuration(std::string_view iana_id);
+std::string_view de_clock_zone_id(const DeClockConfiguration&) noexcept;
 
 // Validate policy even for Automatic: minimum<=maximum. Validate known mode,
 // exact mode/payload relationship and manual offset within explicit bounds.

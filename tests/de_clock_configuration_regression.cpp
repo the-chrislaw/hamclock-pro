@@ -6,6 +6,7 @@
 #include <limits>
 #include <new>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 
 static_assert(!std::is_copy_constructible_v<hamclock::DeClockConfigurationState>);
@@ -100,7 +101,7 @@ int main() {
         rejected(state, [&] { state.replace(invalid); }, "representable unknown fixed-int mode rejected without undefined enum cast");
         invalid_construction([&] { DeClockConfigurationState bad(invalid, policy, {0,0}); }, "constructor rejects unknown desired mode");
     }
-    for (const DeClockConfiguration invalid : {
+    for (const DeClockConfiguration& invalid : {
              DeClockConfiguration{DeClockMode::Automatic, UtcOffsetSeconds{0}},
              DeClockConfiguration{DeClockMode::ManualOffset, std::nullopt},
              DeClockConfiguration{DeClockMode::ManualOffset, UtcOffsetSeconds{-4}},
@@ -109,7 +110,7 @@ int main() {
              DeClockConfiguration{DeClockMode::ManualOffset, UtcOffsetSeconds{std::numeric_limits<std::int64_t>::max()}}}) {
         rejected(state, [&] { state.replace(invalid); }, "invalid payload or outside-caller-bound offset rejected atomically");
     }
-    for (const auto configuration : {automatic, DeClockConfiguration{DeClockMode::ManualOffset, UtcOffsetSeconds{0}}}) {
+    for (const auto& configuration : {automatic, DeClockConfiguration{DeClockMode::ManualOffset, UtcOffsetSeconds{0}}}) {
         invalid_construction([&] { DeClockConfigurationState bad(configuration, {{1},{-1}}, {0,0}); },
                              "reversed policy rejected even for automatic desire");
     }
@@ -160,6 +161,28 @@ int main() {
     } catch (const std::bad_alloc&) { heap_free = false; }
     allocation::deny = false;
     check(heap_free && allocation::attempts == 0, "constructor snapshot changed and unchanged successful operations allocate zero heap storage");
+    {
+        // Zone id desire: Automatic only, bounded shape, allocation-free value.
+        DeClockConfigurationState zoned(make_de_clock_zone_configuration("America/New_York"), policy, {0, 0});
+        check(de_clock_zone_id(zoned.snapshot().configuration) == "America/New_York" &&
+              zoned.snapshot().configuration.mode == DeClockMode::Automatic,
+              "Automatic configuration carries a validated IANA zone id");
+        check(zoned.replace(make_de_clock_zone_configuration("America/New_York")).result == DeClockConfigurationResult::Unchanged,
+              "same zone id is Unchanged");
+        check(zoned.replace(make_de_clock_zone_configuration("Europe/London")).result == DeClockConfigurationResult::Applied &&
+              zoned.snapshot().configuration_revision == 2, "different zone id is Applied and bumps revision");
+        check(zoned.replace({DeClockMode::Automatic, std::nullopt}).result == DeClockConfigurationResult::Applied,
+              "clearing the zone id is a change");
+        rejected(zoned, [&] { DeClockConfiguration c{DeClockMode::ManualOffset, UtcOffsetSeconds{0}};
+                              c.zone_id[0] = 'X'; zoned.replace(c); }, "manual offset must not retain a zone id");
+        rejected(zoned, [&] { make_de_clock_zone_configuration(""); }, "empty zone id rejected by builder");
+        rejected(zoned, [&] { make_de_clock_zone_configuration("Bad Zone"); }, "space in zone id rejected");
+        rejected(zoned, [&] { make_de_clock_zone_configuration(std::string(kDeClockZoneIdBytes, 'A')); },
+                 "zone id without room for NUL rejected");
+        rejected(zoned, [&] { DeClockConfiguration c{DeClockMode::Automatic, std::nullopt};
+                              c.zone_id[0] = 'A'; c.zone_id[1] = 0; c.zone_id[2] = 'B'; zoned.replace(c); },
+                 "non-canonical bytes after the terminator rejected");
+    }
     std::cout << checks << " DE configuration checks, " << failures << " failures\n";
     return failures == 0 ? 0 : 1;
 }

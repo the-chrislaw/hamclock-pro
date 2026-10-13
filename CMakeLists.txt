@@ -375,7 +375,7 @@ endif()
 if(BUILD_TESTING)
     add_executable(qt-de-clock-display-snapshot-regression
         tests/qt_de_clock_display_snapshot_regression.cpp src/qt/de_clock_display_snapshot.cpp
-        src/qt/de_clock_manual_civil_adapter.cpp src/qt/big_clock_civil_adapter.cpp
+        src/qt/de_clock_manual_civil_adapter.cpp src/qt/de_clock_zone_civil_adapter.cpp src/qt/de_time_zone.cpp src/qt/big_clock_civil_adapter.cpp
         src/app/de_clock_configuration.cpp src/domain/geometry.cpp
         src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
     target_link_libraries(qt-de-clock-display-snapshot-regression PRIVATE Qt6::Core)
