@@ -85,3 +85,8 @@
 - Merged #64, #65, #67, #68 (docs/fix, all green). #60 left: its macOS/iPad checks were cancelled.
 - Opened `agent/ui-onepage`: dashboard is one non-scrolling page (station column, three pane slots, map); tap/Enter on a pane title opens a chooser (keyboard/remote navigable); choices saved in `options.ini` (`AppSettings.panes`, tested). `Card` now clips, and exposes `compact`/`chooser`/`fillBody`. Checked offscreen light/dark at 800x480, 1024x600, 1280x800, 1920x1080; the popup itself was not rendered offscreen, only loaded without QML errors. Space weather's card is clipped at small sizes until it gets a `compact` layout (area B).
 - Next: per-slot rotation interval, `compact` layouts for existing cards, location lookup (A0b).
+
+## 2026-10-13 (UTC), UI shell (area A), run 3
+- Merged #69, #71, #72 (docs/CI, all green). #73 was still in CI; #60 still has cancelled macOS/iPad checks (left alone).
+- Opened `agent/ui-compact`: world map now fills its item (the legacy widget's fixed 8 px margin is absorbed in `MapItem`, 2:1 size forced to even pixels so no 1 px black edge). Checked offscreen light/dark at 800x480, 1024x600, 1920x1080; ASan/UBSan tests clean. Cards are wider than 2:1 so side margins remain by design.
+- Next: `compact` layout support in Card for B/C cards (see hardware-validation fit list), per-slot rotation, #73 dense-layout items.

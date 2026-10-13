@@ -106,9 +106,9 @@ ApplicationWindow {
                     // Keep the 2:1 map shape and centre it, so it fills the card
                     // instead of drawing its own letterbox margins.
                     readonly property real available: Math.max(40, mapCard.height - Theme.touch - Theme.pad)
-                    width: Math.min(parent.width, available * 2)
+                    width: Math.floor(Math.min(parent.width, available * 2) / 2) * 2
                     height: width / 2
-                    x: (parent.width - width) / 2
+                    x: Math.round((parent.width - width) / 2)
                     dark: Theme.dark
                     showPath: mapCard.showPath
                 }
