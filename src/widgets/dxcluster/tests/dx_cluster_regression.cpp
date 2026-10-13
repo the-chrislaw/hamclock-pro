@@ -100,6 +100,25 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 
+    // Filters: the list shows only matching spots; clearing restores them.
+    emit model.client().lineReceived(lines[0]); // 20m CW (list is full of 40m FT8)
+    check(model.spotCount() == DxSpotList::kCapacity && model.totalCount() == DxSpotList::kCapacity, "unfiltered count");
+    model.setBandFilter("20m");
+    check(model.spotCount() == 1 && model.totalCount() == DxSpotList::kCapacity, "band filter hides other bands");
+    check(list->data(list->index(0), DxSpotList::DxRole) == "K1ABC", "filtered row is the 20m spot");
+    model.setModeFilter("FT8");
+    check(model.spotCount() == 0, "band and mode combine");
+    emit model.client().lineReceived(lines[1]);
+    check(model.spotCount() == 0, "new non-matching spot stays hidden");
+    model.setBandFilter("");
+    check(model.spotCount() == DxSpotList::kCapacity - 1, "mode filter alone (the CW spot is hidden)");
+    model.setModeFilter("");
+    check(model.spotCount() == DxSpotList::kCapacity && model.bandFilter().isEmpty(), "cleared");
+    check(DxClusterModel::bandChoices().first() == "" && DxClusterModel::bandChoices().contains("20m") &&
+          DxClusterModel::modeChoices().contains("FT8"), "choices offered");
+    model.setBandFilter("bogus");
+    check(model.bandFilter().isEmpty(), "unknown band ignored");
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

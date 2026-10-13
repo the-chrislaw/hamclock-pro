@@ -68,3 +68,7 @@
 - Left #60 (area F, macOS/iPad checks cancelled) alone. Opened `agent/space-solartrend`: `src/widgets/solartrend` (3-day Kp bars with faded forecast, 30-day daily Noon 10.7 cm flux trend, latest NOAA monthly sunspot number). Fixtures are trimmed real captures from 2026-10-13 (`tests/fixtures/sources`). Same SWPC policy; no new sources or hosts.
 - Checked offscreen light/dark at 800x480, 1024x600, 1920x1080 (below the fold in the first two by the shell's layout) plus a tall window; ASan/UBSan test run clean.
 - Next: band conditions (F07) from SFI/Kp/A.
+
+## 2026-10-13 (UTC), Spots (area C), run 2
+- Opened `agent/spots-filters`: band and mode filters for the DX cluster list (model properties, tap-to-cycle buttons on the card, "No spots match" state) + tests. The card layout was also fixed to stack in a column. Offscreen screenshots cannot show the spot list (no cluster in fixtures), so the filter row is checked by model tests only; map overlay is area A's map, still pending.
+- Next: PSKReporter (F14); spots on the map once the QML map exposes an overlay API.

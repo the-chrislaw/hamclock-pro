@@ -84,7 +84,7 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
-| DX cluster: telnet client, spot parser, spot list card | C | Partial (no map overlay or filters yet; shows Not configured until a cluster host is set) |
+| DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
 | Sun rise/set, day length at DE and DX (offline) | D | Working (moon, satellites, beacons, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
 | Everything else in the backlog | A–E | Not started |
