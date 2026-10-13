@@ -10,7 +10,7 @@ After the first Pi run the owner judged the scope too narrow and the Qt Widgets 
 
 - **Code:** C++17, Qt 6 only (the SDL2 experiment was retired October 12). 33 CTest suites pass on macOS and in CI on Ubuntu.
 - **Branches:** the 35-PR stack was merged into `main` via #36 on October 12 (M0).
-- **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job.
+- **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job. The repository went **public on October 13** (free Actions minutes); `main` is protected and requires both CI checks before merge.
 - **Releases:** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release.
 - **Hardware:** first real run on a Pi 4 + 7-inch 1024×600 screen on Oct 13: installs and runs at 0.6 % CPU / 84 MB; see `docs/hardware-validation.md`. Owner reference setups: Pi 4 + generic 7-inch HDMI touchscreen, and a TV over HDMI.
 - **Design:** the approved look is `design/dashboard.html` and the refined mockups; the native Qt dashboard does not match it yet (`docs/native-approved-design-gap.md`).
