@@ -100,7 +100,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
-3. 🟡 (SGP4 propagation, look angles and pass search done and tested; TLE download, pane and map track next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
+3. 🟡 (SGP4, look angles, pass search, TLE download and a next-passes pane done; map track and the user's choice of up to two satellites next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. ✅ (schedule + pane; map markers wait for area G's overlay API) NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
@@ -206,11 +206,12 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
-| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellite pane, EME not started) |
+| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover; no forecast, pressure trend or popup yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane only; map overlay waits for area G's API) | H | **Live** |
 | Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane only, track overlay waits for area G's API; JTWC not yet) | H | **Live** |
 | NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, no region filter or map overlay yet; fire-weather Red Flag pane not yet) | H | **Live** |
+| Satellites: next passes at DE for popular amateur birds (ISS, SO-50, AO-7, FO-29, AO-73, RS-44, AO-91, AO-85) from CelesTrak TLEs (daily, cached) via vendored SGP4; peak elevation >= 10 deg; no map track, sky plot, alerts or TLE-age limit yet | D | Partial (not on the default dashboard; fixture is a real capture) |
 | NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
 | On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; pane only, no map overlay or filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
 | Host sensors: CPU temperature from sysfs thermal zones (shows Set up/unconfigured when no sensor; no BME280, Wi-Fi or disk history yet; not on the default dashboard) | E | Partial |
