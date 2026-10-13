@@ -118,4 +118,11 @@ if(BUILD_TESTING)
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    # Every registered widget renders in the first pane at the smallest size without QML warnings.
+    foreach(id ${widget_ids})
+        add_test(NAME qml-pane-${id} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/pane-config-${id}
+            --pane 1=${id} --screenshot ${CMAKE_CURRENT_BINARY_DIR}/pane-${id}.png --size 800x480)
+        set_tests_properties(qml-pane-${id} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/pane-cache-${id}")
+    endforeach()
 endif()
