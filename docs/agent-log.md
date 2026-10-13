@@ -90,3 +90,8 @@
 - Merged #69, #71, #72 (docs/CI, all green). #73 was still in CI; #60 still has cancelled macOS/iPad checks (left alone).
 - Opened `agent/ui-compact`: world map now fills its item (the legacy widget's fixed 8 px margin is absorbed in `MapItem`, 2:1 size forced to even pixels so no 1 px black edge). Checked offscreen light/dark at 800x480, 1024x600, 1920x1080; ASan/UBSan tests clean. Cards are wider than 2:1 so side margins remain by design.
 - Next: `compact` layout support in Card for B/C cards (see hardware-validation fit list), per-slot rotation, #73 dense-layout items.
+
+## 2026-10-13 (UTC), Space weather (area B), run 3
+- No open PRs of mine. #73 (area A docs) has merge conflicts, #75 was still in CI; left alone. Opened `agent/space-bands`: `src/widgets/bands` (HF day/night band outlook from SFI/Kp/A; heuristic documented in `band_outlook.hpp`, labelled "Estimated", not VOACAP). Reuses the existing SWPC Kp and 10 cm flux products at the same cadence (no new sources); the A index comes from `a_running` in the Kp product. Day/night follows the Sun at DE.
+- Checked offscreen light/dark at 800x480, 1024x600, 1920x1080: only the compact layout (band + current-period condition) was exercised, since the pane slot is always compact; the full table layout has not been rendered. ASan/UBSan tests clean.
+- Next: solar imagery (SDO), then NOAA alerts feed.
