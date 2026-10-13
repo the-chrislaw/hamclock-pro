@@ -443,3 +443,16 @@ if(BUILD_TESTING)
     add_test(NAME qt-de-time-zone-regression COMMAND qt-de-time-zone-regression)
     set_tests_properties(qt-de-time-zone-regression PROPERTIES TIMEOUT 15)
 endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-de-clock-zone-civil-adapter-regression
+        tests/qt_de_clock_zone_civil_adapter_regression.cpp
+        src/qt/de_clock_zone_civil_adapter.cpp src/qt/de_time_zone.cpp src/qt/big_clock_civil_adapter.cpp
+        src/domain/geometry.cpp src/app/big_clock_presentation.cpp src/app/big_clock_preferences.cpp)
+    target_link_libraries(qt-de-clock-zone-civil-adapter-regression PRIVATE Qt6::Core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-de-clock-zone-civil-adapter-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-de-clock-zone-civil-adapter-regression COMMAND qt-de-clock-zone-civil-adapter-regression)
+    set_tests_properties(qt-de-clock-zone-civil-adapter-regression PROPERTIES ENVIRONMENT "TZ=UTC" TIMEOUT 15)
+endif()
