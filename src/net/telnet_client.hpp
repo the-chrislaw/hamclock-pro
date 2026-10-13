@@ -7,7 +7,9 @@
 #include <QByteArray>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QTimer>
+#include <algorithm>
 #include <chrono>
 #include <functional>
 #include <memory>
@@ -36,7 +38,8 @@ public:
     Q_ENUM(State)
     TelnetClient(TelnetSocketFactory factory, QObject* parent = nullptr);
 
-    void start(const QString& host, int port, const QString& login);
+    // `commands` are sent one per line, once, right after the cluster's first post-login output.
+    void start(const QString& host, int port, const QString& login, const QStringList& commands = {});
     void stop();
     State state() const { return state_; }
     int consecutiveFailures() const { return failures_; }
@@ -45,6 +48,9 @@ public:
     // Stateless helpers, public for tests.
     static QByteArray strip_negotiation(QByteArray& pending, QByteArray& replies);
     static bool looks_like_login_prompt(const QString& partial_line);
+    // Keeps the commands that are safe to send unattended: printable ASCII, <= 80 chars, at most 8, and
+    // none that publish to the cluster (dx, announce, talk, say, ...); this client is receive-only.
+    static QStringList sanitize_commands(const QStringList& commands);
 
 signals:
     void stateChanged(State state);
@@ -60,6 +66,7 @@ private:
     TelnetSocket* socket_ = nullptr;
     QTimer retry_;
     QString host_, login_;
+    QStringList commands_;
     int port_ = 0;
     State state_ = State::Idle;
     QByteArray raw_;       // bytes possibly ending in a partial IAC sequence
@@ -67,5 +74,21 @@ private:
     bool login_sent_ = false;
     int failures_ = 0;
 };
+
+// Header-only so settings code can filter without linking the client.
+inline QStringList TelnetClient::sanitize_commands(const QStringList& commands) {
+    static const QStringList publishing{"dx", "announce", "ann", "talk", "say", "shout", "send", "reply", "wx", "wcy", "wwv"};
+    QStringList out;
+    for (const QString& raw : commands) {
+        const QString cmd = raw.trimmed();
+        if (cmd.isEmpty() || cmd.size() > 80 || out.size() >= 8) continue;
+        const bool printable = std::all_of(cmd.begin(), cmd.end(), [](QChar c) { return c.unicode() >= 32 && c.unicode() < 127; });
+        const QString verb = cmd.section(' ', 0, 0).toLower();
+        const QString root = verb.section('/', 0, 0);
+        if (!printable || publishing.contains(root)) continue;
+        out << cmd;
+    }
+    return out;
+}
 
 } // namespace hamclock

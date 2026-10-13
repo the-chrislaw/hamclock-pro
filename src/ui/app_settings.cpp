@@ -1,4 +1,5 @@
 #include "app_settings.hpp"
+#include "../net/telnet_client.hpp"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -69,6 +70,9 @@ void AppSettings::loadOptions() {
     cluster_host_ = ini.value("cluster/host").toString().left(kMaxHostLength);
     const int port = ini.value("cluster/port", 7300).toInt();
     cluster_port_ = port > 0 && port < 65536 ? port : 7300;
+    const int ssid = ini.value("cluster/ssid", 0).toInt();
+    cluster_ssid_ = ssid >= 0 && ssid <= 99 ? ssid : 0;
+    cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -121,6 +125,22 @@ QString AppSettings::saveCluster(const QString& host, int port) {
     cluster_host_ = trimmed;
     cluster_port_ = port;
     emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveClusterLogin(int ssid, const QString& commands) {
+    if (ssid < 0 || ssid > 99) return "SSID must be 0 (none) to 99.";
+    const auto wanted = commands.split('\n', Qt::SkipEmptyParts);
+    const auto kept = TelnetClient::sanitize_commands(wanted);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("cluster/ssid", ssid);
+    ini.setValue("cluster/commands", kept);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save cluster login.";
+    cluster_ssid_ = ssid;
+    cluster_commands_ = kept;
+    emit optionsChanged();
+    if (kept.size() < wanted.size()) return QString("Saved; %1 command(s) skipped (only short receive-only commands are allowed).").arg(wanted.size() - kept.size());
     return {};
 }
 

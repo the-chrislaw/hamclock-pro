@@ -160,7 +160,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | Original setting | Purpose | Owner | Status |
 |---|---|---|---|
 | Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Partial: decimal only; add DMS and grid entry (see A0b) |
-| DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port only |
+| DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port, login SSID (1–99) and receive-only post-login commands done; watch list and UDP/multicast missing |
 | **HamAlert.org** telnet login + password | Personal spot alerts | C | Missing |
 | **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Missing |
 | **hams.at API key** | Personalised satellite pass info | D | Missing |

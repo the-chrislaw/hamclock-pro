@@ -119,9 +119,20 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
                     RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: clusterSsid; label: "SSID (0 = none)"; text: appSettings.clusterSsid; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                        FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
+                    }
+                    RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save cluster"; primary: true
-                                    onClicked: clusterError.text = appSettings.saveCluster(clusterHost.text, parseInt(clusterPort.text) || 0) }
+                                    onClicked: {
+                                        clusterError.text = appSettings.saveCluster(clusterHost.text, parseInt(clusterPort.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveClusterLogin(parseInt(clusterSsid.text) || 0, clusterCmds.text.split(";").join("\n"))
+                                    } }
                     }
                 }
             }

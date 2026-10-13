@@ -23,6 +23,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
     Q_PROPERTY(QString clusterHost READ clusterHost NOTIFY optionsChanged)
     Q_PROPERTY(int clusterPort READ clusterPort NOTIFY optionsChanged)
+    Q_PROPERTY(int clusterSsid READ clusterSsid NOTIFY optionsChanged)
+    Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
@@ -43,6 +45,9 @@ public:
     const StationSettings& station() const { return station_; }
     QString clusterHost() const { return cluster_host_; }
     int clusterPort() const { return cluster_port_; }
+    int clusterSsid() const { return cluster_ssid_; }                  // 0 = none, else 1-99
+    QStringList clusterCommands() const { return cluster_commands_; } // sent after login
+    QString clusterCommandsText() const { return cluster_commands_.join('\n'); }
     QString lookupService() const { return lookup_service_; }
     QString lookupUser() const { return lookup_user_; }
     bool hasLookupPassword() const { return !lookup_password_.isEmpty(); }
@@ -62,6 +67,8 @@ public:
     Q_INVOKABLE QString saveStation(const QString& callsign, double de_lat, double de_lon,
                                     double dx_lat, double dx_lon, const QString& de_zone);
     Q_INVOKABLE QString saveCluster(const QString& host, int port);
+    // SSID 0-99 (0 = none); commands one per line, filtered to receive-only commands.
+    Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -83,6 +90,8 @@ private:
     bool configured_ = false;
     QString cluster_host_;
     int cluster_port_ = 7300;
+    int cluster_ssid_ = 0;
+    QStringList cluster_commands_;
     QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
 };
