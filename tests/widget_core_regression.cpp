@@ -152,6 +152,21 @@ int main(int argc, char** argv) {
         reloaded.clearAccount();
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
     }
+    {
+        // Pane slots: defaults, validation, persistence.
+        QTemporaryDir pane_dir;
+        AppSettings panes({}, pane_dir.path());
+        const auto defaults = panes.panes();
+        check(defaults == QStringList({"spaceweather", "solarwind", "dxcluster"}), "default pane arrangement");
+        check(!panes.setPane(3, "weather").isEmpty() && !panes.setPane(-1, "weather").isEmpty(), "slot out of range rejected");
+        check(!panes.setPane(0, "bad id;").isEmpty(), "malformed widget id rejected");
+        check(panes.setPane(1, "weather").isEmpty() && panes.panes()[1] == "weather", "pane choice applied");
+        check(panes.setPane(2, "none").isEmpty() && panes.panes()[2] == "none", "pane can be left empty");
+        AppSettings again({}, pane_dir.path());
+        check(again.panes() == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
+        again.resetPanes();
+        check(again.panes() == defaults, "panes reset to default");
+    }
 
     std::cout << "Widget core: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

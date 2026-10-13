@@ -51,7 +51,7 @@ hamclock::Transport offline_transport() {
 int main(int argc, char** argv) {
     QApplication app(argc, argv); // QApplication: the map renders via a QWidget
     QApplication::setApplicationName("hamclock-pro");
-    QApplication::setOrganizationName("hamclock-pro");
+    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
     QApplication::setApplicationVersion("0.1.0");
 
     QCommandLineParser parser;
@@ -67,7 +67,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption screenshot("screenshot", "Render once to PNG and exit.", "png");
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
-    for (const auto& option : {station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme})
+    const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
+    for (const auto& option : {station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     parser.process(app);
 
@@ -83,6 +84,17 @@ int main(int argc, char** argv) {
 
     hamclock::WidgetRegistry registry;
     hamclock::register_all_widgets(registry, context);
+    for (const auto& assignment : parser.values(pane)) {
+        const auto parts = assignment.split('=');
+        bool number_ok = false;
+        const int slot = parts.value(0).toInt(&number_ok) - 1;
+        const auto problem = parts.size() == 2 && number_ok && registry.model(parts[1])
+            ? settings.setPane(slot, parts[1]) : QString("Unknown widget or pane.");
+        if (!problem.isEmpty()) {
+            std::fprintf(stderr, "--pane %s: %s\n", qPrintable(assignment), qPrintable(problem));
+            return 2;
+        }
+    }
     hamclock::StationModel station_model(settings);
     hamclock::MapItem::setSettings(&settings);
 

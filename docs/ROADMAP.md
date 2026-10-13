@@ -10,7 +10,7 @@ After the first Pi run the owner judged the scope too narrow and the Qt Widgets 
 
 - **Code:** C++17, Qt 6 only (the SDL2 experiment was retired October 12). 33 CTest suites pass on macOS and in CI on Ubuntu.
 - **Branches:** the 35-PR stack was merged into `main` via #36 on October 12 (M0).
-- **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job.
+- **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job. The repository went **public on October 13** (free Actions minutes); `main` is protected and requires both CI checks before merge.
 - **Releases:** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release.
 - **Hardware:** first real run on a Pi 4 + 7-inch 1024×600 screen on Oct 13: installs and runs at 0.6 % CPU / 84 MB; see `docs/hardware-validation.md`. Owner reference setups: Pi 4 + generic 7-inch HDMI touchscreen, and a TV over HDMI.
 - **Design:** the approved look is `design/dashboard.html` and the refined mockups; the native Qt dashboard does not match it yet (`docs/native-approved-design-gap.md`).
@@ -134,12 +134,17 @@ Displays: any HDMI or DSI display from 800×480 to 4K; touch optional; keyboard/
 
 ## Data source policy
 
+Note from the feature audit (Oct 13): the original gets almost all feeds pre-processed from its author's backend server (map images for DRAP/MUF/VOACAP/clouds, contests, DXpeditions, cities, hazards). HamClock Pro does not use that server; every such feature needs a direct, terms-checked public source (e.g. NOAA SWPC products, NASA GIBS imagery) or an offline open-source model (for VOACAP-style predictions). Record each choice here before coding.
+
+
 Owner decision (Oct 12):
 
 - **Space weather:** NOAA SWPC JSON products (US government public data, no key). Each clock fetches directly from the source; there is no project-run relay server. Polite polling: Kp and X-ray every 5–15 minutes, solar flux a few times a day. Cache to disk, show data age, and show an offline state rather than stale-as-live or invented values.
 - **DX cluster:** no default node. The user enters node and callsign; "Not connected" until then.
 - **Later feeds** (PSKReporter, CelesTrak TLEs, propagation, weather, imagery): check terms of use and polling limits and record them here before coding. Online VOACAP requires a prior agreement.
 - **Weather:** Open-Meteo `api.open-meteo.com/v1/forecast` (no key). Free for non-commercial use under CC BY 4.0: show "Weather by Open-Meteo.com" (the card status line does). Limits: 10,000 calls/day; we poll two points every 15 min (192/day). Coordinates are sent rounded to 0.01°. Terms: https://open-meteo.com/en/terms. If the project ever charges for the app, a commercial plan or key is needed: owner decision.
+- **Callsign lookup:** QRZ.com XML (`xmldata.qrz.com`, needs the user's own account; full data needs an XML subscription; session key is valid ~24 h, we re-login once on expiry) or HamQTH (`hamqth.com/xml.php`, free account). Only user-typed calls are looked up, once per call per run (in-memory cache), never in bulk and never scraped. Credentials stay C++-only in the owner-only credentials file; URLs are never logged or shown. Terms: https://www.qrz.com/XML/current_spec.html and https://www.hamqth.com/developers.php.
+- **Earthquakes:** USGS GeoJSON summary feed `earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson` (M2.5+, past day). US-government public domain, no key; credit USGS. Feed is rebuilt every minute and USGS asks clients not to poll faster than that; we poll every 5 min. Terms: https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits and https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php. The widget shows the feed build time as data age.
 - Identify the app honestly in requests (User-Agent with name, version and project URL).
 
 ## Status by feature family
@@ -151,13 +156,13 @@ From the F01–F30 inventory in Codex's `outputs/hamclock-pro-feature-audit.md`.
 | F01 Callsign, station coordinates | Partial: editor, validation, saved settings | M1 |
 | F02 Clocks, time zones | Partial: UTC, Big Clock, stopwatch, countdown, manual DE offset | M1 |
 | F03 Maidenhead locator | Partial: encode/decode with boundary tests | M1 |
-| F04 Sun, Moon | Not started | After 1.0 |
+| F04 Sun, Moon | Partial: sunrise/sunset and day length (widget) | WIDGETS D |
 | F05 Satellites | Not started | After 1.0 |
 | F06 EME | Not started | After 1.0 |
 | F07 Propagation, bands | Not started | After 1.0 |
-| F08 Space weather | Partial: offline Kp parser only | M4 |
+| F08 Space weather | Live: Kp, SFI, X-ray, solar wind, Bz, SSN, trends | WIDGETS B |
 | F09 Solar imagery | Not started | After 1.0 |
-| F10 DE/DX weather | Not started | After 1.0 |
+| F10 DE/DX weather | Live: current conditions (Open-Meteo) | WIDGETS E |
 | F11 Maps, grayline | Partial: coastlines, land fill, great-circle path; night shade and subsolar marker drawn | M1 |
 | F12 Zones, cities, prefixes | Not started | After 1.0 |
 | F13 DX cluster | Spot model only | M4 |

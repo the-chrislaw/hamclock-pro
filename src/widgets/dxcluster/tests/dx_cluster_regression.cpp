@@ -100,6 +100,43 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 
+    // Filters: the list shows only matching spots; clearing restores them.
+    emit model.client().lineReceived(lines[0]); // 20m CW (list is full of 40m FT8)
+    check(model.spotCount() == DxSpotList::kCapacity && model.totalCount() == DxSpotList::kCapacity, "unfiltered count");
+    model.setBandFilter("20m");
+    check(model.spotCount() == 1 && model.totalCount() == DxSpotList::kCapacity, "band filter hides other bands");
+    check(list->data(list->index(0), DxSpotList::DxRole) == "K1ABC", "filtered row is the 20m spot");
+    model.setModeFilter("FT8");
+    check(model.spotCount() == 0, "band and mode combine");
+    emit model.client().lineReceived(lines[1]);
+    check(model.spotCount() == 0, "new non-matching spot stays hidden");
+    model.setBandFilter("");
+    check(model.spotCount() == DxSpotList::kCapacity - 1, "mode filter alone (the CW spot is hidden)");
+    model.setModeFilter("");
+    check(model.spotCount() == DxSpotList::kCapacity && model.bandFilter().isEmpty(), "cleared");
+    check(DxClusterModel::bandChoices().first() == "" && DxClusterModel::bandChoices().contains("20m") &&
+          DxClusterModel::modeChoices().contains("FT8"), "choices offered");
+    model.setBandFilter("bogus");
+    check(model.bandFilter().isEmpty(), "unknown band ignored");
+
+    // Login SSID and post-login commands.
+    check(DxClusterModel::cluster_login("k1abc", 0) == "K1ABC" && DxClusterModel::cluster_login("K1ABC", 7) == "K1ABC-7" &&
+          DxClusterModel::cluster_login("K1ABC", 100) == "K1ABC" && DxClusterModel::cluster_login("", 5).isEmpty(), "SSID login");
+    const auto kept = TelnetClient::sanitize_commands({"set/skimmer", " sh/dx 10 ", "DX K1ABC 14025 test", "announce hi",
+                                                        "set/name \x01x", "", QString(90, 'a')});
+    check(kept == QStringList({"set/skimmer", "sh/dx 10"}), "only receive-only commands kept");
+    check(TelnetClient::sanitize_commands(QStringList(20, "sh/dx")).size() == 8, "at most 8 commands");
+    sockets.clear();
+    client.start("cluster.example", 7300, "K1ABC-7", {"set/skimmer", "dx K1ABC 14025 x"});
+    emit sockets[0]->connected();
+    emit sockets[0]->dataReceived("login: ");
+    check(sockets[0]->written == "K1ABC-7\r\n", "SSID sent as login");
+    emit sockets[0]->dataReceived("Hello K1ABC-7\r\n");
+    check(sockets[0]->written == "K1ABC-7\r\nset/skimmer\r\n", "commands sent once after login, spot posting refused");
+    emit sockets[0]->dataReceived("more\r\n");
+    check(sockets[0]->written == "K1ABC-7\r\nset/skimmer\r\n", "commands not repeated");
+    client.stop();
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

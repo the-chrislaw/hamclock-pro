@@ -13,6 +13,8 @@ struct Current {
     int wind_dir_deg = 0;
     int weather_code = 0;                // WMO code
     bool is_day = true;
+    std::optional<double> pressure_hpa;  // mean sea level; absent if the service omits it
+    std::optional<int> cloud_pct;
 };
 
 // Open-Meteo `current` block (units: °C, %, km/h, degrees). Anything missing,

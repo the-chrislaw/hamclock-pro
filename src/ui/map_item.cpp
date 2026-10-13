@@ -9,6 +9,7 @@ namespace hamclock {
 namespace {
 AppSettings* g_settings = nullptr;
 constexpr int kSolarRefreshMs = 30000;
+constexpr int kWidgetMargin = 8;
 }
 
 void MapItem::setSettings(AppSettings* settings) { g_settings = settings; }
@@ -68,8 +69,12 @@ void MapItem::syncStation() {
 void MapItem::paint(QPainter* painter) {
     const QSize size(static_cast<int>(width()), static_cast<int>(height()));
     if (size.isEmpty()) return;
-    if (map_->size() != size) map_->resize(size);
-    map_->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
+    // The widget keeps a fixed 8 px margin on every side; grow it by that
+    // margin and shift it out so the map itself fills this item.
+    const QSize widget_size = size + QSize(2 * kWidgetMargin, 2 * kWidgetMargin);
+    if (map_->size() != widget_size) map_->resize(widget_size);
+    painter->setClipRect(QRect(QPoint(), size));
+    map_->render(painter, QPoint(-kWidgetMargin, -kWidgetMargin), QRegion(), QWidget::DrawChildren);
 }
 
 } // namespace hamclock

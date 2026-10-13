@@ -79,11 +79,12 @@ bool TelnetClient::looks_like_login_prompt(const QString& partial_line) {
            s.endsWith("your call:") || s.endsWith("please enter your call:");
 }
 
-void TelnetClient::start(const QString& host, int port, const QString& login) {
+void TelnetClient::start(const QString& host, int port, const QString& login, const QStringList& commands) {
     stop();
     host_ = host.trimmed();
     port_ = port;
     login_ = login.trimmed();
+    commands_ = sanitize_commands(commands);
     for (const QChar c : login_) // the login goes onto the wire: no control characters or spaces
         if (!(c.isLetterOrNumber() && c.unicode() < 128) && c != '/' && c != '-') return; // stays Idle
     if (host_.isEmpty() || login_.isEmpty() || port_ <= 0 || port_ > 65535) return; // stays Idle
@@ -119,7 +120,11 @@ void TelnetClient::on_data(const QByteArray& data) {
         QByteArray line = text_.left(newline);
         text_.remove(0, newline + 1);
         if (line.endsWith('\r')) line.chop(1);
-        if (state_ == State::LoggingIn && login_sent_) { failures_ = 0; set_state(State::Online); }
+        if (state_ == State::LoggingIn && login_sent_) {
+            failures_ = 0;
+            set_state(State::Online);
+            for (const QString& cmd : commands_) socket_->write(cmd.toLatin1() + "\r\n");
+        }
         emit lineReceived(QString::fromLatin1(line));
     }
     if (text_.size() > kMaxLineBytes) text_.clear(); // hostile endless line

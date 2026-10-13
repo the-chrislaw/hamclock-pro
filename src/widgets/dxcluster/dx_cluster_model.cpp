@@ -5,7 +5,7 @@ namespace hamclock {
 
 QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() < 0 || index.row() >= rowCount()) return {};
-    const auto& s = spots_[size_t(index.row())];
+    const auto& s = spots_[size_t(shown_[size_t(index.row())])];
     switch (role) {
     case DxRole: return s.dx;
     case SpotterRole: return s.spotter;
@@ -23,15 +23,58 @@ QHash<int, QByteArray> DxSpotList::roleNames() const {
             {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}};
 }
 
+void DxSpotList::rebuild() {
+    shown_.clear();
+    for (size_t i = 0; i < spots_.size(); ++i)
+        if (matches(spots_[i])) shown_.push_back(int(i));
+}
+
+void DxSpotList::set_filter(const QString& band, const QString& mode) {
+    beginResetModel();
+    band_ = band;
+    mode_ = mode;
+    rebuild();
+    endResetModel();
+}
+
 void DxSpotList::add(const dxcluster::DxSpot& spot) {
-    beginInsertRows({}, 0, 0);
+    beginResetModel(); // at most kCapacity rows, so a reset is cheap and keeps indexes simple
     spots_.push_front(spot);
-    endInsertRows();
-    if (int(spots_.size()) > kCapacity) {
-        beginRemoveRows({}, kCapacity, kCapacity);
-        spots_.pop_back();
-        endRemoveRows();
-    }
+    if (int(spots_.size()) > kCapacity) spots_.pop_back();
+    rebuild();
+    endResetModel();
+}
+
+QStringList DxClusterModel::bandChoices() {
+    return {"", "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m"};
+}
+
+QStringList DxClusterModel::modeChoices() { return {"", "CW", "SSB", "FT8", "FT4", "RTTY"}; }
+
+void DxClusterModel::setBandFilter(const QString& band) {
+    if (!bandChoices().contains(band) || band == band_filter_) return;
+    band_filter_ = band;
+    list_.set_filter(band_filter_, mode_filter_);
+    emit filterChanged();
+    emit countChanged();
+}
+
+void DxClusterModel::setModeFilter(const QString& mode) {
+    if (!modeChoices().contains(mode) || mode == mode_filter_) return;
+    mode_filter_ = mode;
+    list_.set_filter(band_filter_, mode_filter_);
+    emit filterChanged();
+    emit countChanged();
+}
+
+void DxClusterModel::cycleBandFilter() {
+    const auto c = bandChoices();
+    setBandFilter(c[(c.indexOf(band_filter_) + 1) % c.size()]);
+}
+
+void DxClusterModel::cycleModeFilter() {
+    const auto c = modeChoices();
+    setModeFilter(c[(c.indexOf(mode_filter_) + 1) % c.size()]);
 }
 
 DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
@@ -41,10 +84,17 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
 }
 
+QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
+    const QString call = callsign.trimmed().toUpper();
+    if (call.isEmpty() || ssid < 1 || ssid > 99) return call;
+    return call + '-' + QString::number(ssid);
+}
+
 void DxClusterModel::start() {
     const QString host = settings_ ? settings_->clusterHost() : QString();
-    const QString call = settings_ ? settings_->callsign() : QString();
-    client_.start(host, settings_ ? settings_->clusterPort() : 0, call);
+    const QString call = cluster_login(settings_ ? settings_->callsign() : QString(), settings_ ? settings_->clusterSsid() : 0);
+    client_.start(host, settings_ ? settings_->clusterPort() : 0, call,
+                  settings_ ? settings_->clusterCommands() : QStringList());
     if (client_.state() == TelnetClient::State::Idle)
         setState("unconfigured", host.isEmpty() ? "Not configured: set a cluster host in Settings"
                                                 : "Not configured: set your callsign in Settings");

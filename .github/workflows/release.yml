@@ -16,7 +16,10 @@ permissions:
 
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a running release: merges arrive faster than builds finish,
+  # so cancelling meant no release ever completed. GitHub keeps only the newest
+  # pending run queued behind the running one.
+  cancel-in-progress: false
 
 jobs:
   raspberry-pi:
@@ -37,7 +40,8 @@ jobs:
           platforms: arm64,arm
       - name: Build package in ${{ matrix.release }} ${{ matrix.arch }} container
         run: |
-          version="0.1.0~git$(date -u +%Y%m%d).${GITHUB_SHA::7}"
+          # Date AND time so same-day builds upgrade cleanly (hash alone sorts arbitrarily).
+          version="0.1.0~git$(date -u +%Y%m%d%H%M%S).${GITHUB_SHA::7}"
           [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF_NAME#v}"
           platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
           docker run --rm --platform "$platform" -v "$PWD":/src -w /src debian:${{ matrix.release }} bash -euxc "

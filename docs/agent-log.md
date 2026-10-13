@@ -63,3 +63,35 @@
 - Merged #55 (docs, green). #57 was still in CI.
 - Opened `agent/ui-scroll`: with four widgets the wide layout clipped the cards and pushed the world map off-screen with no way to reach it; the page now scrolls in wide mode too and the map keeps a 2:1 size. Checked 800x480 offscreen screenshot only; map is below the fold there.
 - Next: equal-height widget rows (gap under Space weather), pressed/focus states, TV focus order.
+
+## 2026-10-13 (UTC), Space weather (area B), run 2
+- Left #60 (area F, macOS/iPad checks cancelled) alone. Opened `agent/space-solartrend`: `src/widgets/solartrend` (3-day Kp bars with faded forecast, 30-day daily Noon 10.7 cm flux trend, latest NOAA monthly sunspot number). Fixtures are trimmed real captures from 2026-10-13 (`tests/fixtures/sources`). Same SWPC policy; no new sources or hosts.
+- Checked offscreen light/dark at 800x480, 1024x600, 1920x1080 (below the fold in the first two by the shell's layout) plus a tall window; ASan/UBSan test run clean.
+- Next: band conditions (F07) from SFI/Kp/A.
+
+## 2026-10-13 (UTC), Spots (area C), run 2
+- Opened `agent/spots-filters`: band and mode filters for the DX cluster list (model properties, tap-to-cycle buttons on the card, "No spots match" state) + tests. The card layout was also fixed to stack in a column. Offscreen screenshots cannot show the spot list (no cluster in fixtures), so the filter row is checked by model tests only; map overlay is area A's map, still pending.
+- Next: PSKReporter (F14); spots on the map once the QML map exposes an overlay API.
+
+## 2026-10-13 (UTC), Astro (area D), run 2
+- No open PRs of mine (sunrise merged). Opened `agent/astro-moon`: `src/domain/astro_moon` (Meeus ch. 47 principal terms, phase/illumination, topocentric az/el, rise/set) validated against Meeus example 47.a and almanac new/full/quarter instants (elongation within 0.01-0.4 deg); Sun & Moon card gains phase, moonrise/set and az/el at DE. All offline.
+- Next: SGP4 satellites (vendor library + licence in docs/, CelesTrak TLE cache, passes at DE).
+
+## 2026-10-13 (UTC), Weather/lookup (area E), run 2
+- No open PRs of mine. Opened `agent/wx-lookup`: `src/widgets/lookup` (QRZ XML + HamQTH XML parsers, lazy login, one re-login on expired session, in-memory cache, password never in a property/status/message) with a card (callsign entry + result). Fixtures follow the services' documented XML, not live captures (needs a personal account). Offscreen screenshots checked (dark 1024x600, light 1920x1080 and tall 1200x2200); ASan/UBSan widget tests clean. A `QObject::connect ... nullptr` warning at startup with an account configured is pre-existing on main.
+- Next: wire lookups to DX cluster spots; then contests/DXpeditions calendars.
+
+## 2026-10-13 (UTC), UI shell (area A), run 2
+- Merged #64, #65, #67, #68 (docs/fix, all green). #60 left: its macOS/iPad checks were cancelled.
+- Opened `agent/ui-onepage`: dashboard is one non-scrolling page (station column, three pane slots, map); tap/Enter on a pane title opens a chooser (keyboard/remote navigable); choices saved in `options.ini` (`AppSettings.panes`, tested). `Card` now clips, and exposes `compact`/`chooser`/`fillBody`. Checked offscreen light/dark at 800x480, 1024x600, 1280x800, 1920x1080; the popup itself was not rendered offscreen, only loaded without QML errors. Space weather's card is clipped at small sizes until it gets a `compact` layout (area B).
+- Next: per-slot rotation interval, `compact` layouts for existing cards, location lookup (A0b).
+
+## 2026-10-13 (UTC), UI shell (area A), run 3
+- Merged #69, #71, #72 (docs/CI, all green). #73 was still in CI; #60 still has cancelled macOS/iPad checks (left alone).
+- Opened `agent/ui-compact`: world map now fills its item (the legacy widget's fixed 8 px margin is absorbed in `MapItem`, 2:1 size forced to even pixels so no 1 px black edge). Checked offscreen light/dark at 800x480, 1024x600, 1920x1080; ASan/UBSan tests clean. Cards are wider than 2:1 so side margins remain by design.
+- Next: `compact` layout support in Card for B/C cards (see hardware-validation fit list), per-slot rotation, #73 dense-layout items.
+
+## 2026-10-13 (UTC), Space weather (area B), run 3
+- No open PRs of mine. #73 (area A docs) has merge conflicts, #75 was still in CI; left alone. Opened `agent/space-bands`: `src/widgets/bands` (HF day/night band outlook from SFI/Kp/A; heuristic documented in `band_outlook.hpp`, labelled "Estimated", not VOACAP). Reuses the existing SWPC Kp and 10 cm flux products at the same cadence (no new sources); the A index comes from `a_running` in the Kp product. Day/night follows the Sun at DE.
+- Checked offscreen light/dark at 800x480, 1024x600, 1920x1080: only the compact layout (band + current-period condition) was exercised, since the pane slot is always compact; the full table layout has not been rendered. ASan/UBSan tests clean.
+- Next: solar imagery (SDO), then NOAA alerts feed.
