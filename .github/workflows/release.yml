@@ -16,7 +16,10 @@ permissions:
 
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a running release: merges arrive faster than builds finish,
+  # so cancelling meant no release ever completed. GitHub keeps only the newest
+  # pending run queued behind the running one.
+  cancel-in-progress: false
 
 jobs:
   raspberry-pi:
