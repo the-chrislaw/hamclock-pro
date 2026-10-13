@@ -63,3 +63,8 @@
 - Merged #55 (docs, green). #57 was still in CI.
 - Opened `agent/ui-scroll`: with four widgets the wide layout clipped the cards and pushed the world map off-screen with no way to reach it; the page now scrolls in wide mode too and the map keeps a 2:1 size. Checked 800x480 offscreen screenshot only; map is below the fold there.
 - Next: equal-height widget rows (gap under Space weather), pressed/focus states, TV focus order.
+
+## 2026-10-13 (UTC), Space weather (area B), run 2
+- Left #60 (area F, macOS/iPad checks cancelled) alone. Opened `agent/space-solartrend`: `src/widgets/solartrend` (3-day Kp bars with faded forecast, 30-day daily Noon 10.7 cm flux trend, latest NOAA monthly sunspot number). Fixtures are trimmed real captures from 2026-10-13 (`tests/fixtures/sources`). Same SWPC policy; no new sources or hosts.
+- Checked offscreen light/dark at 800x480, 1024x600, 1920x1080 (below the fold in the first two by the shell's layout) plus a tall window; ASan/UBSan test run clean.
+- Next: band conditions (F07) from SFI/Kp/A.
