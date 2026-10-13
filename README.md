@@ -2,6 +2,9 @@
 
 Original native Raspberry Pi dashboard for amateur radio: world time, station geometry, map, and (planned) space weather and spots. Development preview only: this is not yet a HamClock replacement and does not establish feature parity with original HamClock 4.22. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan to 1.0.
 
+> **Independent project.** HamClock Pro is an original, independently developed application. It is not affiliated with, endorsed by, or derived from the code of the original HamClock or its authors. Data comes directly from public sources such as NOAA SWPC, NASA SDO, Open-Meteo, POTA, SOTA, PSKReporter and CelesTrak; see `docs/ROADMAP.md` (Data source policy).
+
+
 ## Build and test
 
 Requires CMake 3.16+, a C++17 compiler, Qt 6.4+ (Core, Gui, Widgets) and Python 3 for the development tests. On Raspberry Pi OS or Ubuntu: `sudo apt install build-essential cmake qt6-base-dev python3`. On macOS with Homebrew: `brew install cmake qt`.
