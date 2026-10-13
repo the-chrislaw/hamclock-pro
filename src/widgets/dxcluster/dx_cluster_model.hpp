@@ -13,7 +13,7 @@ namespace hamclock {
 class DxSpotList : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole };
+    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole };
     using QAbstractListModel::QAbstractListModel;
     int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(shown_.size()); }
     int totalCount() const { return int(spots_.size()); }
@@ -21,6 +21,8 @@ public:
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
     void add(const dxcluster::DxSpot& spot);
+    void set_watch(const QStringList& entries); // re-evaluates every stored spot
+    int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
     static constexpr int kCapacity = 50;
 private:
     bool matches(const dxcluster::DxSpot& s) const {
@@ -30,6 +32,9 @@ private:
     std::vector<int> shown_;              // indexes into spots_ passing the filter
     void rebuild();
     QString band_, mode_;
+    QStringList watch_;
+    std::vector<char> is_watched_; // parallel to spots_
+    int watched_ = 0;
 };
 
 class DxClusterModel : public WidgetModel {
@@ -37,6 +42,7 @@ class DxClusterModel : public WidgetModel {
     Q_PROPERTY(QObject* spots READ spots CONSTANT)
     Q_PROPERTY(int spotCount READ spotCount NOTIFY countChanged)
     Q_PROPERTY(int totalCount READ totalCount NOTIFY countChanged)
+    Q_PROPERTY(int watchedCount READ watchedCount NOTIFY countChanged)
     Q_PROPERTY(QString bandFilter READ bandFilter WRITE setBandFilter NOTIFY filterChanged)
     Q_PROPERTY(QString modeFilter READ modeFilter WRITE setModeFilter NOTIFY filterChanged)
 public:
@@ -45,6 +51,8 @@ public:
     QObject* spots() { return &list_; }
     int spotCount() const { return list_.rowCount(); }
     int totalCount() const { return list_.totalCount(); }
+    int watchedCount() const { return list_.watchedCount(); }
+    void refreshWatchList(); // re-reads the watch list from settings
     QString bandFilter() const { return band_filter_; }
     QString modeFilter() const { return mode_filter_; }
     // Unknown values are ignored; "" shows everything.
