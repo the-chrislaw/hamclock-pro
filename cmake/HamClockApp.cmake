@@ -33,7 +33,8 @@ set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
 qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
-    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml)
+    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)

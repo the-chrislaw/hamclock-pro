@@ -80,3 +80,8 @@
 ## 2026-10-13 (UTC), Weather/lookup (area E), run 2
 - No open PRs of mine. Opened `agent/wx-lookup`: `src/widgets/lookup` (QRZ XML + HamQTH XML parsers, lazy login, one re-login on expired session, in-memory cache, password never in a property/status/message) with a card (callsign entry + result). Fixtures follow the services' documented XML, not live captures (needs a personal account). Offscreen screenshots checked (dark 1024x600, light 1920x1080 and tall 1200x2200); ASan/UBSan widget tests clean. A `QObject::connect ... nullptr` warning at startup with an account configured is pre-existing on main.
 - Next: wire lookups to DX cluster spots; then contests/DXpeditions calendars.
+
+## 2026-10-13 (UTC), UI shell (area A), run 2
+- Merged #64, #65, #67, #68 (docs/fix, all green). #60 left: its macOS/iPad checks were cancelled.
+- Opened `agent/ui-onepage`: dashboard is one non-scrolling page (station column, three pane slots, map); tap/Enter on a pane title opens a chooser (keyboard/remote navigable); choices saved in `options.ini` (`AppSettings.panes`, tested). `Card` now clips, and exposes `compact`/`chooser`/`fillBody`. Checked offscreen light/dark at 800x480, 1024x600, 1280x800, 1920x1080; the popup itself was not rendered offscreen, only loaded without QML errors. Space weather's card is clipped at small sizes until it gets a `compact` layout (area B).
+- Next: per-slot rotation interval, `compact` layouts for existing cards, location lookup (A0b).
