@@ -1,0 +1,81 @@
+name: Apple
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apple-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Qt for iOS/macOS used by the iOS job. Shared code must still build on Qt 6.4.
+  IOS_QT_VERSION: "6.8.3"
+
+jobs:
+  macos:
+    name: macOS build and tests
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install qt ninja
+      - name: Configure
+        run: cmake -S . -B build-mac -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+      - name: Build
+        run: cmake --build build-mac
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --test-dir build-mac --output-on-failure
+      - name: Package app
+        run: ditto -c -k --keepParent build-mac/hamclock-pro.app hamclock-pro-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-macos-unsigned
+          path: hamclock-pro-macos.zip
+
+  ios-simulator:
+    name: iPad Simulator build
+    runs-on: macos-14
+    # Informational until the Qt Widgets dependency is removed (area A, QPainter
+    # map renderer); a failure here does not block merges yet.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt (desktop host tools + iOS)
+        run: |
+          pip3 install aqtinstall
+          python3 -m aqt install-qt mac desktop "$IOS_QT_VERSION" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
+          python3 -m aqt install-qt mac ios "$IOS_QT_VERSION" ios --outputdir "$HOME/Qt"
+          brew install ninja
+      - name: Configure
+        run: |
+          "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-ios -G Xcode \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" \
+            -DBUILD_TESTING=OFF
+      - name: Build
+        run: |
+          cmake --build build-ios --config Debug --target hamclock-pro -- \
+            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
+      - name: Screenshot in iPad Simulator
+        run: |
+          APP=$(find build-ios -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
+          UDID=$(xcrun simctl list devices available | grep -m1 'iPad' | grep -oE '[0-9A-F-]{36}')
+          xcrun simctl boot "$UDID"
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl launch "$UDID" org.hamclockpro.app
+          sleep 15
+          xcrun simctl io "$UDID" screenshot ipad.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ipad-simulator-screenshot
+          path: ipad.png
+          if-no-files-found: ignore
