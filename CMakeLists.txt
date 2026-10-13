@@ -22,8 +22,9 @@ set_target_properties(hamclock-pro-editor PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.stationeditor
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Station Editor")
 
-add_library(hamclock-world-map STATIC
-    src/qt/world_map_widget.cpp
+# QtGui-only map core (renderer, viewport, projection, land geometry): no
+# QtWidgets, so the Qt Quick app and the iPad build depend on this alone.
+add_library(hamclock-map-core STATIC
     src/qt/land_fill_path.cpp
     src/map/path.cpp
     src/map/projection.cpp
@@ -31,8 +32,12 @@ add_library(hamclock-world-map STATIC
     src/map/map_renderer.cpp
     src/domain/geometry.cpp
     src/domain/solar_position.cpp)
-target_link_libraries(hamclock-world-map PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
+target_link_libraries(hamclock-map-core PUBLIC Qt6::Core Qt6::Gui)
+# Legacy QWidget map used by the old dashboard/preview tools only.
+add_library(hamclock-world-map STATIC src/qt/world_map_widget.cpp)
+target_link_libraries(hamclock-world-map PUBLIC hamclock-map-core Qt6::Widgets)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(hamclock-map-core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(hamclock-world-map PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 

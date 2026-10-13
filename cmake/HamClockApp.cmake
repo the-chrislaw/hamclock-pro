@@ -11,7 +11,7 @@ add_library(hamclock-widget-core STATIC
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
     src/platform/settings.cpp)
-target_link_libraries(hamclock-widget-core PUBLIC hamclock-world-map Qt6::Core Qt6::Network)
+target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 
 # All widget models are compiled into this library by hamclock_add_widget().
@@ -26,7 +26,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/app/station_view.cpp
     src/qt/de_time_zone.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/widgets_generated.cpp)
-target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2 Qt6::Widgets)
+target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2)
 set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.app
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
