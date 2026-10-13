@@ -16,3 +16,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Verified by offline tests and offscreen screenshots at 800x480 and 1920x1080 (compact card fits); not validated on device. The sample fixture is a one-time capture; reachability of sdo.gsfc.nasa.gov from the sandbox was not checked.
 - Next: backlog 6 (NOAA alerts/watches feed), then 11 (X-ray 24 h plot).
 - Note: PR #73 (docs, not mine) currently has merge conflicts and was left alone.
+
+## 2026-10-13 (UTC): NOAA space alerts (backlog 6)
+
+- New `solaralerts` widget ("Space alerts"): SWPC `products/alerts.json` polled every 10 min. Shows only what is in force: newest message per product code, cancellations drop their product, warnings until their end time, alerts/summaries for 24 h, watches for 48 h. Empty list from fresh data reads "Nothing in force"; no data reads loading/offline. Expiry follows the clock between fetches.
+- Compact card shows two rows, full card five with kind/issued/until. Checked by offscreen screenshots at 800x480, 1024x600, 1920x1080 (a time-shifted copy of the fixture was used to see rows); not validated on device.
+- Next: 11 (X-ray 24 h plot), then 10 (NOAA R/S/G scales) and 9 (DST).
