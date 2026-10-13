@@ -55,20 +55,28 @@ jobs:
           "$AQT" install-qt mac desktop "$IOS_QT_VERSION" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
           "$AQT" install-qt mac ios "$IOS_QT_VERSION" ios --outputdir "$HOME/Qt"
           brew install ninja
-      - name: Configure
+      - name: Configure (device SDK)
         run: |
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-ios -G Xcode \
-            -DCMAKE_OSX_SYSROOT=iphonesimulator \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" \
             -DBUILD_TESTING=OFF
-      - name: Build
+      - name: Build (compile and link check, unsigned)
         run: |
           cmake --build build-ios --config Debug --target hamclock-pro -- \
-            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
-      - name: Screenshot in iPad Simulator
+            -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+      # Simulator: Qt's prebuilt QML resource objects are device-only in this kit
+      # ("building for iOS-simulator, but linking object built for iOS"), so the
+      # Simulator build/screenshot is attempted separately and is informational.
+      - name: Simulator build and screenshot (experimental)
+        continue-on-error: true
         run: |
-          APP=$(find build-ios -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
+          "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
+          cmake --build build-sim --config Debug --target hamclock-pro -- \
+            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
+          APP=$(find build-sim -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
           UDID=$(xcrun simctl list devices available | grep -m1 'iPad' | grep -oE '[0-9A-F-]{36}')
           xcrun simctl boot "$UDID"
           xcrun simctl install "$UDID" "$APP"
