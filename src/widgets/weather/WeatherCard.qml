@@ -11,14 +11,14 @@ Card {
             label: "DE weather"
             available: root.widget && root.widget.deTemp.length > 0
             value: available ? root.widget.deTemp : ""
-            caption: available ? root.widget.deSummary + " · " + root.widget.deWind : ""
+            caption: available ? root.widget.deSummary + " · " + root.widget.deWind + "\n" + root.widget.deAir : ""
             Layout.fillWidth: true
         }
         Metric {
             label: "DX weather"
             available: root.widget && root.widget.dxTemp.length > 0
             value: available ? root.widget.dxTemp : ""
-            caption: available ? root.widget.dxSummary + " · " + root.widget.dxWind : ""
+            caption: available ? root.widget.dxSummary + " · " + root.widget.dxWind + "\n" + root.widget.dxAir : ""
             Layout.fillWidth: true
         }
     }
