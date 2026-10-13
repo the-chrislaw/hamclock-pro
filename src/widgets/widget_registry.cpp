@@ -7,8 +7,15 @@ namespace hamclock {
 WidgetRegistry::WidgetRegistry(QObject* parent) : QAbstractListModel(parent) {}
 
 void WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
-    if (!model || info.id.isEmpty() || !info.card.isValid()) throw std::invalid_argument("Incomplete widget");
-    if (this->model(info.id)) throw std::invalid_argument("Duplicate widget id");
+    // The registry owns the model even when it rejects it, so callers never leak.
+    if (!model || info.id.isEmpty() || !info.card.isValid()) {
+        delete model;
+        throw std::invalid_argument("Incomplete widget");
+    }
+    if (this->model(info.id)) {
+        delete model;
+        throw std::invalid_argument("Duplicate widget id");
+    }
     model->setParent(this);
     const auto position = std::upper_bound(entries_.begin(), entries_.end(), info.order,
         [](int order, const Entry& entry) { return order < entry.info.order; });
