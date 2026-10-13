@@ -136,11 +136,19 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 
 ### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
 Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
-1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox).
-2. Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
-3. Overlays: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, cities (licensed data), borders and US states, DE antipode, sublunar point, long-path drawing, gray mode, colour-scale legends.
-4. Overlay API: a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance.
-5. Map styles framework: selectable base styles with rotation 20/60/90/120 s and automatic space-weather style; individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
+**Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
+1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox). Keep the PR small; land it before anything else.
+2. Overlay API (moved up): a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance, plus great-circle path drawing from DE. Document it in `docs/map-overlays.md` with one worked example. Areas B, C, D, E and H start their map items as soon as this merges.
+3. Map styles framework (moved up): selectable base styles with rotation 20/60/90/120 s and automatic space-weather style, and a colour-scale legend. Individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
+4. Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
+5. Grids and zones: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, borders and US states, cities (licensed data), DE antipode, sublunar point, long-path drawing, gray mode.
+
+Map items owned by other areas (each starts once G2/G3 merge, using only the overlay/styles API; G reviews nothing, the API is the contract):
+- C: DX cluster, PSKReporter/RBN/WSPR and POTA/SOTA spots on the map with paths from DE.
+- D: satellite path and footprint, NCDXF beacon markers.
+- B: DRAP and Aurora map styles; MUF-RT style if a terms-checked source exists (KC2G candidate).
+- E: Clouds and weather styles (direct, terms-checked sources only).
+- H: quake and other hazard markers.
 
 ### H. Hazards and events (owns `src/widgets/quakes*`, `storms*`, `lightning*`, `fires*`, `marine*`, `firewx*`, `nets*`) — split from E on Oct 13
 Takes over E8 and E13. Each feed: check terms first and record them in the roadmap's Data source policy.
