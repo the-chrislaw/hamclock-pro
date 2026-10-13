@@ -52,7 +52,7 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 5. Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table.
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
-1. Sun rise/set at DE and DX, day length, grayline times (offline).
+1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
 3. Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
@@ -73,4 +73,5 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 | World map, day/night, path | A | Working (QML, rendered via legacy widget) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (no map overlay or filters yet; shows Not configured until a cluster host is set) |
+| Sun rise/set, day length at DE and DX (offline) | D | Working (moon, satellites, beacons, EME not started) |
 | Everything else in the backlog | A–E | Not started |
