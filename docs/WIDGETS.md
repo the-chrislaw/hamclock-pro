@@ -20,6 +20,7 @@ src/widgets/<id>/
 - **No internet in the agent sandbox:** outside websites return 403 there. Build fixtures from the real samples in `tests/fixtures/sources/` (see its README). If a source you need has no sample, do not invent one: open or update the issue `Owner input needed: data samples` listing the exact URLs, and work on another item meanwhile.
 - **Portable code:** the same sources build for Raspberry Pi, macOS and iPadOS. No QtWidgets in new code; Linux/Pi-only and Apple-only code lives behind small interfaces in `src/platform/`; no shelling out, no hard-coded paths (use `QStandardPaths`); network code must tolerate the app being suspended (iPad) and reconnect on resume.
 - **One page, no scrolling (owner requirement, Oct 13):** like the original HamClock, the whole dashboard fits on one screen at every size from 800×480 to 4K, with no scrolling. The layout is a fixed grid of **slots** (station/clock column, a row of panes, the map, optional side panes). Each slot shows one widget; the user taps or selects a pane's title to choose which widget it shows (the original's pane menu), with optional auto-rotation. Every widget card must therefore render fully inside its slot at the smallest size: provide a compact layout (key numbers first, details hidden or shortened), never overflow, never require scrolling. Lists (spots) show as many rows as fit.
+- **Logs:** each area appends to its own `docs/agent-logs/<area>.md` (ui, space, spots, astro, wx, apple, map, hazards, qa), never to a shared file, so parallel PRs do not conflict. `docs/agent-log.md` is the historical log up to Oct 13 and is read-only. In the Status table, edit only your own area's rows.
 - **States:** call `setState()` / `trackSource()` so the card shows `live`, `stale` (with age), `loading`, `offline` or `unconfigured`. Never show an invented or stale-as-live value; missing values render as "—" (`Metric { available: false }`).
 - **Settings and accounts:** read from `context.settings` (`AppSettings`). New settings go in `AppSettings` and `SettingsPage.qml` (UI area owns those files; other areas request additions in their PR description or add a small, separate field-only change). Passwords are C++-only, never QML properties.
 - **UI:** build from `Card`, `Metric`, `StatusBadge`, `AppButton`, `FormField` and `Theme` tokens. Touch targets ≥ `Theme.touch`; everything reachable by keyboard (TV remote); text scales with `Theme.scale`. Cards sit in clipped dashboard slots: read `Card.compact` (true in a small slot) and show key numbers only when it is set. The shell sets `Card.chooser` so the title opens the pane chooser; any widget id can be placed in any slot, whatever its registered `area`.
@@ -28,7 +29,7 @@ src/widgets/<id>/
 
 ## Areas and backlog
 
-Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
+Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
 
 ### A. UI shell and design (owns `src/ui/`, `cmake/HamClockApp.cmake`, `docs/WIDGETS.md` contract section)
 0. 🟡 **Top priority: one-page slot layout** (done: no scrolling, three pane slots, chooser, choices saved; pending: per-slot rotation, side panes, `compact` layouts in each widget card). Remove page scrolling. Build the fixed slot grid (station column + pane row + map, scaling from 800×480 to 4K), a pane chooser (tap pane title → list of widgets; keyboard/remote accessible), per-slot choice saved in settings, optional rotation interval per slot. Default arrangement at 1024×600: station column left, three panes on top (Space weather, Solar wind, DX cluster), map filling the rest. Verify by screenshots at 800×480, 1024×600, 1280×800, 1920×1080 that nothing is clipped and nothing scrolls. Real-screen issues to fix: docs/hardware-validation.md.
@@ -132,6 +133,25 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 
 **Audit additions (F):**
 6. Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
+
+### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
+Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
+1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox).
+2. Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
+3. Overlays: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, cities (licensed data), borders and US states, DE antipode, sublunar point, long-path drawing, gray mode, colour-scale legends.
+4. Overlay API: a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance.
+5. Map styles framework: selectable base styles with rotation 20/60/90/120 s and automatic space-weather style; individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
+
+### H. Hazards and events (owns `src/widgets/quakes*`, `storms*`, `lightning*`, `fires*`, `marine*`, `firewx*`, `nets*`) — split from E on Oct 13
+Takes over E8 and E13. Each feed: check terms first and record them in the roadmap's Data source policy.
+1. Earthquakes (USGS feeds): pane + map overlay.
+2. Tropical storms (NHC/JTWC): pane + track overlay.
+3. NWS marine warnings and fire-weather (Red Flag) warnings: panes.
+4. Lightning with range rings from DE, active fires (NASA FIRMS): overlays/badges.
+5. NetLogger active nets pane.
+
+### QA. Quality reviewer (no feature ownership; writes only `docs/agent-logs/qa.md`, `docs/hardware-validation.md` notes and GitHub issues)
+Runs every 4 hours: reviews PRs merged since its last run, builds main, renders screenshots at 800×480 and 1024×600 (light/dark) with all widget fixtures, compares behaviour against the original (docs/FEATURE-AUDIT.md) and the contract (one page, no clipping, compact panes, honest states, portability), and opens a focused GitHub issue per problem labelled `qa` with the owning area in the title (e.g. "[B] Space weather X-ray clipped at 1024x600"). Agents treat open `qa` issues in their area as top of their backlog. Never edits feature code.
 
 ## Settings and accounts parity (checked against the original's setup.cpp, Oct 13)
 
