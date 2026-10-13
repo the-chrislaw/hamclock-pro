@@ -35,6 +35,15 @@ void validate(const StationSettings& settings) {
     if (settings.appearance != "system" && settings.appearance != "light" &&
         settings.appearance != "dark")
         throw std::invalid_argument("Invalid appearance");
+    if (!settings.de_zone.empty()) {
+        if (settings.de_zone.size() > 63) throw std::invalid_argument("DE zone id too long");
+        for (const unsigned char c : settings.de_zone)
+            if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+                  c == '_' || c == '+' || c == '-' || c == '/'))
+                throw std::invalid_argument("Invalid DE zone id character");
+        if (settings.de_zone.find("..") != std::string::npos)
+            throw std::invalid_argument("Invalid DE zone id");
+    }
 }
 void validate_path(const std::string& path) {
     if (path.empty() || path.find('\0') != std::string::npos)
@@ -72,16 +81,21 @@ StationSettings parse(const std::string& data) {
         const auto key = line.substr(0, equal);
         if (key != "version" && key != "de_lat" && key != "de_lon" &&
             key != "dx_lat" && key != "dx_lon" && key != "callsign" &&
-            key != "appearance")
+            key != "appearance" && key != "de_zone")
             throw std::invalid_argument("Unknown settings field");
         if (!fields.emplace(key, line.substr(equal + 1)).second)
             throw std::invalid_argument("Duplicate settings field");
     }
-    if (fields.size() != 7 || fields.at("version") != "1")
+    const bool has_zone = fields.count("de_zone") != 0;
+    if (fields.size() != (has_zone ? 8u : 7u) || fields.count("appearance") == 0 ||
+        fields.count("version") == 0 || fields.at("version") != "1")
         throw std::invalid_argument("Missing settings field or unsupported version");
+    if (has_zone && fields.at("de_zone").empty())
+        throw std::invalid_argument("Empty DE zone field");
     StationSettings settings{{number(fields.at("de_lat")), number(fields.at("de_lon"))},
                              {number(fields.at("dx_lat")), number(fields.at("dx_lon"))},
-                             fields.at("callsign"), fields.at("appearance")};
+                             fields.at("callsign"), fields.at("appearance"),
+                             has_zone ? fields.at("de_zone") : std::string()};
     validate(settings);
     return settings;
 }
@@ -106,6 +120,7 @@ void save_impl(const std::string& path, const StationSettings& settings, bool re
            << "\nde_lon=" << settings.de.longitude << "\ndx_lat=" << settings.dx.latitude
            << "\ndx_lon=" << settings.dx.longitude << "\ncallsign=" << settings.callsign
            << "\nappearance=" << settings.appearance << '\n';
+    if (!settings.de_zone.empty()) output << "de_zone=" << settings.de_zone << '\n';
     const std::string data = output.str();
     std::string pattern = path + ".tmp.XXXXXX";
     std::vector<char> temporary(pattern.begin(), pattern.end());

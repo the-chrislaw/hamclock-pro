@@ -31,3 +31,8 @@
 - No open PRs or issues; #44 already merged.
 - Opened `agent/de-dialog-zone`: IANA zone id field in the DE settings dialog (Automatic mode, validated against the tz database) + regression tests; rendered offscreen at 800x480..1920x1080 light/dark.
 - Next: persist DE configuration; DE dialog from Big Clock -> Options; then go-public prep.
+
+## 2026-10-13 (UTC), run 5
+- No open PRs or issues; #45 already merged.
+- Opened `agent/de-persist`: optional `de_zone` in the station settings file (legacy files still load; bad ids rejected), station editor preserves it.
+- Next: feed saved zone into the dashboard DE configuration; DE dialog from Big Clock -> Options; then go-public prep.

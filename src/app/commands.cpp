@@ -79,7 +79,7 @@ int settings_command(int argc, char** argv) {
             };
             StationSettings settings{{coordinate(argv[4]), coordinate(argv[5])},
                                      {coordinate(argv[6]), coordinate(argv[7])},
-                                     bounded(argv[3], 16), bounded(argv[8], 6)};
+                                     bounded(argv[3], 16), bounded(argv[8], 6), ""};
             save_settings(argv[2], settings);
             std::puts("Station settings saved");
         } else {
