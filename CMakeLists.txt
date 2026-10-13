@@ -430,6 +430,7 @@ if(BUILD_TESTING)
 endif()
 
 include(cmake/HamClockApp.cmake)
+include(cmake/AppleBundle.cmake)
 
 # Installation and packaging (used by .github/workflows/release.yml).
 include(GNUInstallDirs)

@@ -35,10 +35,21 @@ jobs:
         run: ctest --test-dir build-mac --output-on-failure
       - name: Package app
         run: ditto -c -k --keepParent build-mac/hamclock-pro.app hamclock-pro-macos.zip
+      - name: Check Info.plist
+        run: |
+          plutil -lint build-mac/hamclock-pro.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" build-mac/hamclock-pro.app/Contents/Info.plist
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build-mac/hamclock-pro.app/Contents/Info.plist
+      - name: Build unsigned dmg
+        run: |
+          macdeployqt build-mac/hamclock-pro.app -dmg
+          mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-macos-unsigned
-          path: hamclock-pro-macos.zip
+          path: |
+            hamclock-pro-macos.zip
+            hamclock-pro-macos-unsigned.dmg
 
   ios-simulator:
     name: iPad Simulator build
