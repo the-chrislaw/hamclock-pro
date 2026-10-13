@@ -40,6 +40,8 @@ jobs:
           plutil -lint build-mac/hamclock-pro.app/Contents/Info.plist
           /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" build-mac/hamclock-pro.app/Contents/Info.plist
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build-mac/hamclock-pro.app/Contents/Info.plist
+          test -s build-mac/hamclock-pro.app/Contents/Resources/AppIcon.icns
+          file build-mac/hamclock-pro.app/Contents/Resources/AppIcon.icns
       - name: Build unsigned dmg
         run: |
           macdeployqt build-mac/hamclock-pro.app -dmg
