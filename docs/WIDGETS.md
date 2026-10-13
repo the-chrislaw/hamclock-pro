@@ -78,6 +78,31 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 4. iPad: iOS CMake target, safe-area and orientation handling, touch-first layout check at iPad sizes (1180×820, 1366×1024), app lifecycle (pause polling and the DX cluster connection in background, resume cleanly), no QtWidgets dependency (requires area A's QPainter map renderer, backlog A4).
 5. App Store readiness: privacy manifest, no private APIs, attribution screen for data sources (NOAA, NASA, Natural Earth, Open-Meteo…), TestFlight upload once the owner's account exists.
 
+## Settings and accounts parity (checked against the original's setup.cpp, Oct 13)
+
+Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some items postdate 4.22). Every setting below needs a place in Settings (area A owns the page; each area adds its own fields with minimal, separate changes) and works offline-safe when empty.
+
+| Original setting | Purpose | Owner | Status |
+|---|---|---|---|
+| Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Partial: decimal only; add DMS and grid entry (see A0b) |
+| DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port only |
+| **HamAlert.org** telnet login + password | Personal spot alerts | C | Missing |
+| **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Missing |
+| **hams.at API key** | Personalised satellite pass info | D | Missing |
+| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd planned) |
+| NTP server | Time source | E | Missing |
+| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio planned) |
+| PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
+| ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
+| Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
+| BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (sensors planned) |
+| Brightness dim/bright %, display schedule | Display | A | Planned (F27) |
+| Mercator map centre longitude; colour choices | Map/appearance | A | Missing |
+| Local passwords guarding restart/exit/unlock/new DE-DX/configurations | Kiosk protection | A | Missing |
+| QRZ/HamQTH lookup | *Not in original*: our addition | E | Planned |
+
+Credentials (HamAlert password, hams.at key, lookup password) are C++-only and stored by the credential store (owner-only file, Keychain on Apple), never shown back or logged.
+
 ## Status
 
 | Widget | Area | State |
