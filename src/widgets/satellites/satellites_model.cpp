@@ -1,0 +1,91 @@
+#include "satellites_model.hpp"
+#include "../../net/polled_source.hpp"
+#include "../../ui/app_settings.hpp"
+#include <QTimeZone>
+#include <QVariantMap>
+#include <algorithm>
+
+namespace hamclock {
+namespace {
+using namespace std::chrono_literals;
+// CelesTrak asks for at most one download per group per 2 h; we fetch daily.
+constexpr PollPolicy kPolicy{24h, 72h, 6h};
+constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle";
+constexpr double kMinElevation = 10.0;
+constexpr double kHorizonSeconds = 24 * 3600;
+constexpr int kMaxRows = 5;
+// Popular FM/linear birds; matched against the TLE name.
+const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "FO-29", "AO-73", "RS-44", "AO-91", "AO-85"};
+} // namespace
+
+QString satellite_short_name(const QString& tle_name) {
+    const QString name = tle_name.trimmed();
+    const int open = name.lastIndexOf('(');
+    const int close = name.lastIndexOf(')');
+    if (open >= 0 && close > open + 1 && name.contains("ZARYA") == false) return name.mid(open + 1, close - open - 1);
+    if (name.contains("ZARYA")) return "ISS";
+    const int amp = name.indexOf(" &");
+    return amp > 0 ? name.left(amp) : name;
+}
+
+SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
+    : WidgetModel("satellites", "Satellites", parent), settings_(context.settings),
+      source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)) {
+    trackSource(*source_, "CelesTrak");
+    connect(source_, &PolledSource::updated, this, &SatellitesModel::load);
+    timer_.setInterval(30 * 1000);
+    connect(&timer_, &QTimer::timeout, this, &SatellitesModel::recompute);
+    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &SatellitesModel::recompute);
+}
+
+void SatellitesModel::start() { source_->start(); timer_.start(); }
+
+void SatellitesModel::load() {
+    tles_.clear();
+    for (const Tle& t : parse_tle_set(source_->body().toStdString())) {
+        const QString name = QString::fromStdString(t.name);
+        for (const char* key : kTracked)
+            if (name.contains(QLatin1String(key))) { tles_.push_back(t); break; }
+    }
+    recompute();
+}
+
+void SatellitesModel::recompute() {
+    rows_.clear();
+    if (tles_.empty() || !settings_ || !settings_->configured()) {
+        emit changed();
+        return;
+    }
+    const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
+    const double t = static_cast<double>(now().toSecsSinceEpoch());
+    struct Row { Tle tle; SatPass pass; };
+    std::vector<Row> found;
+    for (const Tle& tle : tles_) {
+        SatellitePropagator p(tle);
+        if (!p.valid()) continue;
+        // Start a few minutes back so a pass in progress is still listed.
+        const auto passes = p.passes(obs, t - 900, kHorizonSeconds + 900, kMinElevation, 3);
+        for (const SatPass& pass : passes)
+            if (static_cast<double>(pass.los) > t) { found.push_back({tle, pass}); break; }
+    }
+    std::sort(found.begin(), found.end(), [](const Row& a, const Row& b) { return a.pass.aos < b.pass.aos; });
+    if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
+    for (const Row& r : found) {
+        const qint64 until = r.pass.aos - static_cast<qint64>(t);
+        QString when;
+        if (until <= 0) when = "now";
+        else if (until < 90 * 60) when = QString("in %1 min").arg((until + 30) / 60);
+        else when = QDateTime::fromSecsSinceEpoch(r.pass.aos, QTimeZone::utc()).toString("HH:mm") + "Z";
+        rows_.append(QVariantMap{{"name", satellite_short_name(QString::fromStdString(r.tle.name))},
+                                 {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)}, {"live", until <= 0}});
+    }
+    emit changed();
+}
+
+void register_widget_satellites(WidgetRegistry& registry, const WidgetContext& context) {
+    auto* model = new SatellitesModel(context);
+    registry.add({"satellites", "Satellites", QUrl("qrc:/widgets/satellites/SatellitesCard.qml"), "strip", 70}, model);
+    QTimer::singleShot(0, model, &SatellitesModel::start);
+}
+
+} // namespace hamclock
