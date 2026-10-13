@@ -7,26 +7,27 @@ Written October 12, 2026. This is the single plan from today's state to a 1.0 re
 - **Code:** C++17, Qt 6 only (the SDL2 experiment was retired October 12). 33 CTest suites pass on macOS and in CI on Ubuntu.
 - **Branches:** the 35-PR stack was merged into `main` via #36 on October 12 (M0).
 - **CI:** GitHub Actions builds and tests every PR on Ubuntu, including an ASan/UBSan job.
-- **Hardware:** never run on a Raspberry Pi.
+- **Releases:** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release.
+- **Hardware:** never run on a Raspberry Pi yet. Owner reference setups: Pi 4 + generic 7-inch HDMI touchscreen, and a TV over HDMI.
 - **Design:** the approved look is `design/dashboard.html` and the refined mockups; the native Qt dashboard does not match it yet (`docs/native-approved-design-gap.md`).
 
 ## Definition of 1.0
 
-A Pi 4 with the official 7-inch touchscreen boots straight into HamClock Pro and shows, with real data and no simulated readings:
+HamClock Pro installs with one command on any supported Raspberry Pi (see "Platform targets"), boots straight into the dashboard on any display from a 7-inch touchscreen to a 4K TV, and shows, with real data and no simulated readings:
 
 - UTC and DE local time, DE/DX stations with locator, distance and bearing
 - the world map with land fill, day/night terminator and the DE→DX path
 - space weather (Kp, solar flux, X-ray) and a working DX cluster spot list
 - a settings screen that saves and restores everything above
-- the approved visual design in light and dark, usable by touch alone
+- the approved visual design in light and dark, scaling cleanly to the screen, usable by touch alone or by keyboard/remote alone
 
-It must also install and update with one documented command, and run acceptably on a Pi 3. Everything else in original HamClock 4.22 is post-1.0.
+It must run both inside a desktop session and directly on the display without a desktop (Pi OS Lite), and run acceptably on a Pi 3 and Zero 2 W. Everything else in original HamClock 4.22 is post-1.0.
 
 ## Milestones
 
 Sizes are relative effort: S = days, M = 1–2 weeks, L = several weeks. They assume one main developer with AI agents.
 
-### M0: Consolidate (S), do first
+### M0: Consolidate (S) — done October 12
 
 Get one healthy `main` before writing more features.
 
@@ -45,6 +46,7 @@ Turn the pieces that already exist into one working screen.
 - DE local time with real time zones and daylight saving (P1 in `docs/parity-next.md`). Use the OS tz database through Qt's `QTimeZone`; don't hand-roll DST rules.
 - Day/night terminator and subsolar point on the map (computed offline; no data feed needed). **Done:** `src/domain/solar_position` (tested against Meeus) and the night shade + subsolar marker on the map, refreshed once a minute from the OS UTC clock.
 - ~~Retire the SDL2 executable~~ Done: CLI tools moved to `hamclock-pro-cli`, all checks in CTest.
+- **Go public (owner decision, Oct 12):** at the end of M1, run an open-source sanitizer pass (secrets, personal paths, internal notes), add an "independent project, not affiliated with the original HamClock" notice to the README, then the owner flips the repo to public. After that, enable branch protection requiring CI on `main` and switch Pi builds to native Arm runners.
 
 **Done when:** someone can set their station, see correct UTC and local time across a DST change, and watch the terminator move, on a Mac.
 
@@ -52,34 +54,38 @@ Turn the pieces that already exist into one working screen.
 
 Follow `docs/native-approved-design-gap.md`: station-first left card, three instrument panes plus space-weather strip, rounded map card, semantic light/dark tokens, fixed type scale. Panes without data show a clear "not available yet" state.
 
-**Done when:** side-by-side screenshots of native vs. the approved mockup at 800×480 and 1280×800 are signed off by the owner.
+- **Resolution independence:** layout and type scale from 800×480 up to 3840×2160 with no fixed pixel layouts; also check common small panels (1024×600) and 720p/1080p TVs.
+- **TV mode:** large type, overscan-safe margins (configurable inset), and every function reachable by keyboard or remote (arrow keys, Enter, Back/Escape); touch is optional, never required.
 
-### M3: First run on a Pi 4 (S–M)
+**Done when:** side-by-side screenshots of native vs. the approved mockup at 800×480, 1024×600, 1280×800 and 1920×1080 are signed off by the owner, and a full keyboard-only pass succeeds.
 
-- Build on Raspberry Pi OS (Bookworm, 64-bit), Qt 6 from distro packages.
-- Fullscreen kiosk launch at boot (systemd user service or autostart).
-- Measure CPU, memory, startup time and frame rate; record them in `docs/`.
-- Touch-only pass: every control reachable and at least 44 px; decide whether an on-screen keyboard is needed for callsign entry.
+### M3: Runs on real Pis and screens (M)
 
-**Done when:** the owner uses it on the Pi 4 touchscreen for a day without a crash or needing a keyboard.
+- **Builds:** add a 32-bit `armhf` `.deb` (Bookworm) next to the arm64 one in the release workflow; keep a best-effort ARMv6 build for Pi 1 / Zero W.
+- **Two run modes:** inside a desktop session (Wayland/X11), and kiosk without a desktop via Qt's `eglfs` (fallback `linuxfb`) platform, launched at boot by a systemd service. Document both.
+- **Reference setups (owner):** Pi 4 + generic 7-inch HDMI touchscreen; Pi 4 + TV over HDMI. Touch input via evdev/libinput in kiosk mode; check touch calibration on generic panels.
+- Measure CPU, memory, startup time and frame rate on each setup; record in `docs/hardware-validation.md`. Repeat on a Pi 3 and Zero 2 W when available (community testers welcome).
+- Touch-only pass (every control ≥ 44 px) and remote/keyboard-only pass; decide whether an on-screen keyboard is needed for callsign entry.
+
+**Done when:** the owner uses it for a day on both reference setups without a crash, and the 64-bit and 32-bit packages install cleanly on a fresh Pi OS image.
 
 ### M4: Live data (L)
 
-Each feed needs a recorded decision on source, terms of use and polling rate *before* coding (see "Decisions needed").
+Source policy is decided (see "Data source policy"); M4 is unblocked. Each further feed needs the same recorded check of terms and polling rate before coding.
 
 1. **Space weather:** NOAA SWPC JSON for Kp (parser exists), solar flux, X-ray. Cache to disk; show age and an offline state.
-2. **DX cluster:** telnet client to a user-chosen node with callsign login; feed the existing `spot_store`. Plot spots on the map.
+2. **DX cluster:** telnet client to a user-entered node with callsign login; no default node, show "Not connected" until configured. Setup may list a few well-known public nodes as suggestions. Feed the existing `spot_store`. Plot spots on the map.
 3. **Data plumbing shared by both:** one fetch scheduler, backoff, timeouts, and stale/error/offline states in the UI.
 
 **Done when:** a 24-hour soak test on the Pi with Wi-Fi drops shows correct recovery and no memory growth.
 
 ### M5: 1.0 release (M)
 
-- Install/update script or `.deb`; uninstall leaves no system changes.
-- Pi 3 measurement pass; fix or document limits.
-- Third-party notices (Qt LGPL, Natural Earth, data sources). Settle the project name (does "HamClock" in the name need permission?).
-- User guide: install, first-run setup, troubleshooting.
-- Tag `v1.0.0`, publish the repo publicly.
+- One-command install/update (apt repository or `.deb` + script) for arm64 and armhf; uninstall leaves no system changes.
+- Measurement pass across the supported tier; fix or document limits for best-effort boards.
+- Third-party notices (Qt LGPL via dynamic linking, Natural Earth, data sources). Name stays "HamClock Pro" with the independence notice.
+- User guide: install, first-run setup, desktop vs. kiosk mode, TV setup (overscan, remote), troubleshooting.
+- Tag `v1.0.0`.
 
 ## After 1.0
 
@@ -102,6 +108,27 @@ Rough order, highest value first. Each item is one PR-sized feature or a short s
 | 13 | ADIF import (F15), watch lists (F16), news feeds (F24) | |
 | 14 | Saved configurations, pane rotation (F25, F26), diagnostics/updates (F29) | |
 | 15 | EME planning (F06) | |
+
+## Platform targets
+
+Owner decision (Oct 12): it should run on every Raspberry Pi model and any screen; many users run it on a TV. Support is tiered by how it is tested, not by what is allowed.
+
+| Tier | Boards / OS | Commitment |
+|---|---|---|
+| Supported | Pi 5, Pi 4, Pi 3B/3B+, Zero 2 W on 64-bit Raspberry Pi OS (Bookworm) | Built and tested for every release |
+| Supported (32-bit) | Same boards on 32-bit Raspberry Pi OS | `armhf` package from the same code |
+| Best effort | Pi 1, Pi Zero W (ARMv6, 512 MB) | Built; may be slow; community-tested |
+
+Displays: any HDMI or DSI display from 800×480 to 4K; touch optional; keyboard/remote always sufficient. Run modes: desktop session or kiosk (`eglfs`/`linuxfb`) on Pi OS Lite. Development builds for macOS and desktop Linux continue.
+
+## Data source policy
+
+Owner decision (Oct 12):
+
+- **Space weather:** NOAA SWPC JSON products (US government public data, no key). Each clock fetches directly from the source; there is no project-run relay server. Polite polling: Kp and X-ray every 5–15 minutes, solar flux a few times a day. Cache to disk, show data age, and show an offline state rather than stale-as-live or invented values.
+- **DX cluster:** no default node. The user enters node and callsign; "Not connected" until then.
+- **Later feeds** (PSKReporter, CelesTrak TLEs, propagation, weather, imagery): check terms of use and polling limits and record them here before coding. Online VOACAP requires a prior agreement.
+- Identify the app honestly in requests (User-Agent with name, version and project URL).
 
 ## Status by feature family
 
@@ -146,14 +173,16 @@ These block the milestone shown. Each needs a short written answer in this file 
 
 1. ~~**M0:** Merge the stacked drafts after a quick review?~~ Yes (Oct 12).
 2. ~~**M1:** Drop the SDL2 build and go Qt-only?~~ Yes (Oct 12).
-3. **M3:** Which Pi OS image and display exactly (official 7" v1 or v2, or another)?
-4. **M4:** Data sources for 1.0: NOAA SWPC for space weather? Which DX cluster node by default, or user must enter one?
-5. **M5:** Project name and whether to ask the original HamClock author before using "HamClock".
-6. **M5:** Licence stays MIT? Public repo at 1.0, or earlier?
+3. ~~**M3:** Which Pi OS image and display?~~ All Pi models, any display including TVs; tiers in "Platform targets" (Oct 12).
+4. ~~**M4:** Data sources?~~ NOAA SWPC direct, no default DX cluster node; see "Data source policy" (Oct 12).
+5. ~~**M5:** Project name?~~ Keep "HamClock Pro", with an independent-project notice (Oct 12).
+6. ~~**M5:** Licence and visibility?~~ Stay MIT; go public at the end of M1 after a sanitizer pass (Oct 12).
+
+No owner decisions are currently open. New questions go in GitHub issues titled "Owner input needed: …".
 
 ## Working agreements
 
-- **One writer at a time.** Either Codex or Claude Code works in a given branch, never both. The Codex checkout at `~/Documents/Codex/2026-10-02/…/hamclock-pro` still has uncommitted copies of the DE settings work; retire it or reset it to `main` after M0.
+- **One writer at a time.** The scheduled Claude agent and interactive sessions work through PRs; the old Codex checkout (`~/Documents/Codex/2026-10-02/…/hamclock-pro`) is retired and must not push.
 - **Lighter process per feature:** one short spec section, code, tests, one independent review, and an on-screen check for UI changes. Put findings in the PR description instead of separate audit files. Keep `docs/overnight-checkpoint.md` as a short log, not the place where decisions live.
 - **PRs target `main`** and stay small; CI must be green before merge.
 - **No simulated data shown as live.** Unavailable panes say so.
