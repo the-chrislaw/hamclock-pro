@@ -1,0 +1,67 @@
+#include "sun_moon_model.hpp"
+#include "../../ui/app_settings.hpp"
+#include <QDateTime>
+#include <QTimeZone>
+
+namespace hamclock {
+namespace {
+QString hhmm(UtcSeconds t) {
+    return QDateTime::fromSecsSinceEpoch(t.value, QTimeZone::utc()).toString("HH:mm") + " UTC";
+}
+} // namespace
+
+SunSummary summarize_sun(UtcSeconds now, double lat, double lon) {
+    SunSummary out;
+    const std::int64_t day = now.value - ((now.value % 86400) + 86400) % 86400;
+    const auto today = sun_events_for_utc_day(day, lat, lon);
+    if (today.polar == PolarState::MidnightSun) out.note = "Midnight sun";
+    if (today.polar == PolarState::PolarNight) out.note = "Polar night";
+    if (const auto rise = next_sun_event(now, SunEventKind::Rise, lat, lon)) out.next_rise = hhmm(*rise);
+    if (const auto set = next_sun_event(now, SunEventKind::Set, lat, lon)) out.next_set = hhmm(*set);
+    // Day length: first rise followed by a set within today and tomorrow.
+    std::vector<SunEvent> events = today.events;
+    for (const auto& e : sun_events_for_utc_day(day + 86400, lat, lon).events) events.push_back(e);
+    for (std::size_t i = 0; i + 1 < events.size(); ++i) {
+        if (events[i].kind == SunEventKind::Rise && events[i + 1].kind == SunEventKind::Set) {
+            const auto minutes = (events[i + 1].time.value - events[i].time.value + 30) / 60;
+            out.day_length = QString("%1 h %2 min").arg(minutes / 60).arg(minutes % 60, 2, 10, QChar('0'));
+            break;
+        }
+    }
+    if (out.day_length.isEmpty() && today.polar == PolarState::MidnightSun) out.day_length = "24 h 00 min";
+    if (out.day_length.isEmpty() && today.polar == PolarState::PolarNight) out.day_length = "0 h 00 min";
+    return out;
+}
+
+SunMoonModel::SunMoonModel(const WidgetContext& context, QObject* parent)
+    : WidgetModel("sunmoon", "Sun & Moon", parent), settings_(context.settings) {
+    timer_.setInterval(60 * 1000);
+    connect(&timer_, &QTimer::timeout, this, &SunMoonModel::recompute);
+    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &SunMoonModel::recompute);
+}
+
+void SunMoonModel::start() { recompute(); timer_.start(); }
+
+void SunMoonModel::recompute() {
+    if (!settings_ || !settings_->configured()) {
+        has_station_ = false;
+        de_ = dx_ = {};
+        setState("unconfigured", "Set your station location in Settings");
+        emit changed();
+        return;
+    }
+    const UtcSeconds t{now().toSecsSinceEpoch()};
+    de_ = summarize_sun(t, settings_->deLatitude(), settings_->deLongitude());
+    dx_ = summarize_sun(t, settings_->dxLatitude(), settings_->dxLongitude());
+    has_station_ = true;
+    setState("live", "Computed offline from the system clock", now());
+    emit changed();
+}
+
+void register_widget_sunmoon(WidgetRegistry& registry, const WidgetContext& context) {
+    auto* model = new SunMoonModel(context);
+    registry.add({"sunmoon", "Sun & Moon", QUrl("qrc:/widgets/sunmoon/SunMoonCard.qml"), "strip", 50}, model);
+    QTimer::singleShot(0, model, &SunMoonModel::start);
+}
+
+} // namespace hamclock

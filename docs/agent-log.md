@@ -45,3 +45,7 @@
 ## 2026-10-13 (UTC), Spots (area C)
 - Opened `agent/spots-dxcluster`: `src/net/telnet_client` (injected socket, IAC refusal, login prompt, backoff), DX spot parser, DX cluster model + card (Not configured without host/callsign). Fixture is a hand-trimmed sample in DXSpider format, not a live capture.
 - Next: spots on the map, band/mode filters; then PSKReporter.
+
+## 2026-10-13 (UTC), Astro (area D)
+- No open PRs. Opened `agent/astro-sunrise`: `src/domain/astro_sun` (NOAA/Meeus sunrise/sunset, polar day/night) validated against published London solstice times and the existing Meeus-tested solar position; `sunmoon` widget showing next sunrise/sunset and day length at DE and DX, offline.
+- Next: moon phase, rise/set, az/el at DE (same widget); then SGP4 satellites.
