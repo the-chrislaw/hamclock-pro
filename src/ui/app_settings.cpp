@@ -1,5 +1,6 @@
 #include "app_settings.hpp"
 #include "../net/telnet_client.hpp"
+#include "../widgets/watchlist/watch_match.hpp"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -73,6 +74,7 @@ void AppSettings::loadOptions() {
     const int ssid = ini.value("cluster/ssid", 0).toInt();
     cluster_ssid_ = ssid >= 0 && ssid <= 99 ? ssid : 0;
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
+    watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -185,5 +187,18 @@ QString AppSettings::saveAccount(const QString& service, const QString& user, co
 }
 
 void AppSettings::clearAccount() { saveAccount("none", {}, {}); }
+
+QString AppSettings::saveWatchList(const QString& entries) {
+    const auto wanted = entries.split(QRegularExpression("[\\s,;]+"), Qt::SkipEmptyParts);
+    const auto kept = watchlist::sanitize(wanted);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("watch/list", kept);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the watch list.";
+    watch_list_ = kept;
+    emit optionsChanged();
+    if (kept.size() < wanted.size()) return QString("Saved; %1 entry(ies) skipped (letters, digits, / * ? only; duplicates removed).").arg(wanted.size() - kept.size());
+    return {};
+}
 
 } // namespace hamclock

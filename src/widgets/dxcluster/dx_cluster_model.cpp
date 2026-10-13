@@ -1,5 +1,7 @@
 #include "dx_cluster_model.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../watchlist/watch_match.hpp"
+#include <algorithm>
 
 namespace hamclock {
 
@@ -14,13 +16,14 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     case ModeRole: return s.mode;
     case TimeRole: return s.time.toString("HH:mm") + "Z";
     case CommentRole: return s.comment;
+    case WatchedRole: return is_watched_[size_t(shown_[size_t(index.row())])] != 0;
     }
     return {};
 }
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}};
 }
 
 void DxSpotList::rebuild() {
@@ -40,9 +43,28 @@ void DxSpotList::set_filter(const QString& band, const QString& mode) {
 void DxSpotList::add(const dxcluster::DxSpot& spot) {
     beginResetModel(); // at most kCapacity rows, so a reset is cheap and keeps indexes simple
     spots_.push_front(spot);
-    if (int(spots_.size()) > kCapacity) spots_.pop_back();
+    is_watched_.insert(is_watched_.begin(), watchlist::matches(watch_, spot.dx));
+    if (int(spots_.size()) > kCapacity) {
+        spots_.pop_back();
+        is_watched_.pop_back();
+    }
+    watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     rebuild();
     endResetModel();
+}
+
+void DxSpotList::set_watch(const QStringList& entries) {
+    beginResetModel();
+    watch_ = entries;
+    is_watched_.assign(spots_.size(), 0);
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = watchlist::matches(watch_, spots_[i].dx);
+    watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
+    endResetModel();
+}
+
+void DxClusterModel::refreshWatchList() {
+    list_.set_watch(settings_ ? settings_->watchList() : QStringList());
+    emit countChanged();
 }
 
 QStringList DxClusterModel::bandChoices() {
@@ -82,6 +104,10 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
       client_(std::move(factory), this), list_(this) {
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
+    if (settings_) {
+        list_.set_watch(settings_->watchList());
+        connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::refreshWatchList);
+    }
 }
 
 QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {

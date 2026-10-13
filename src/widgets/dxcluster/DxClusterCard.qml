@@ -15,6 +15,13 @@ Card {
             AppButton { text: "Band: " + (widget.bandFilter || "all"); onClicked: widget.cycleBandFilter() }
             AppButton { text: "Mode: " + (widget.modeFilter || "all"); onClicked: widget.cycleModeFilter() }
             Item { Layout.fillWidth: true }
+            Text {
+                visible: widget.watchedCount > 0
+                text: "★ " + widget.watchedCount
+                color: Theme.accent
+                font.bold: true
+                font.pixelSize: Theme.fontBody
+            }
         }
         Text {
             visible: root.configured && widget.spotCount === 0
@@ -36,7 +43,7 @@ Card {
                 Text { text: model.time; color: Theme.secondary; font.pixelSize: Theme.fontBody }
                 Text { text: model.frequency; color: Theme.ink; font.pixelSize: Theme.fontBody; Layout.preferredWidth: Theme.fontBody * 5 }
                 Text { text: model.band; color: Theme.secondary; font.pixelSize: Theme.fontBody; Layout.preferredWidth: Theme.fontBody * 3 }
-                Text { text: model.dx; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody }
+                Text { text: (model.watched ? "★ " : "") + model.dx; color: model.watched ? Theme.accent : Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody }
                 Text { text: model.comment; color: Theme.secondary; font.pixelSize: Theme.fontBody; elide: Text.ElideRight; Layout.fillWidth: true }
             }
         }
