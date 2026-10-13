@@ -214,5 +214,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Satellites: next passes at DE for popular amateur birds (ISS, SO-50, AO-7, FO-29, AO-73, RS-44, AO-91, AO-85) from CelesTrak TLEs (daily, cached) via vendored SGP4; peak elevation >= 10 deg; no map track, sky plot, alerts or TLE-age limit yet | D | Partial (not on the default dashboard; fixture is a real capture) |
 | NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
 | On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; pane only, no map overlay or filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
-| Host sensors: CPU temperature from sysfs thermal zones (shows Set up/unconfigured when no sensor; no BME280, Wi-Fi or disk history yet; not on the default dashboard) | E | Partial |
+| Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; no BME280 or history yet; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |

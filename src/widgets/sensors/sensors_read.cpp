@@ -1,6 +1,8 @@
 #include "sensors_read.hpp"
 #include <QDir>
 #include <QFile>
+#include <QStorageInfo>
+#include <cmath>
 #include <algorithm>
 
 namespace hamclock::sensors {
@@ -32,6 +34,33 @@ std::optional<double> read_cpu_temp(const QString& thermal_root) {
         if (!fallback) fallback = t;
     }
     return fallback;
+}
+
+std::optional<int> parse_wireless_dbm(const QByteArray& text) {
+    const QList<QByteArray> lines = text.split('\n');
+    for (int i = 2; i < lines.size(); ++i) { // two header lines
+        const QByteArray line = lines[i].trimmed();
+        const int colon = line.indexOf(':');
+        if (colon <= 0) continue;
+        const QList<QByteArray> cols = line.mid(colon + 1).simplified().split(' ');
+        if (cols.size() < 3) continue; // status, link, level, ...
+        bool ok = false;
+        const double level = cols[2].toDouble(&ok);
+        if (!ok || level < -120 || level > 0) continue;
+        return int(std::lround(level));
+    }
+    return std::nullopt;
+}
+
+std::optional<int> read_wifi_dbm(const QString& path) {
+    QFile f(path);
+    return f.open(QIODevice::ReadOnly) ? parse_wireless_dbm(f.read(4096)) : std::nullopt;
+}
+
+std::optional<double> read_disk_used_fraction(const QString& path) {
+    const QStorageInfo info(path);
+    if (!info.isValid() || !info.isReady() || info.bytesTotal() <= 0) return std::nullopt;
+    return 1.0 - double(info.bytesAvailable()) / double(info.bytesTotal());
 }
 
 } // namespace hamclock::sensors
