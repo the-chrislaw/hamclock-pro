@@ -9,3 +9,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-13 (UTC, second hourly run)
 - #94 (area D) and #73 (area A) are not mine; #94 CI was still running, #73 left alone. No open `qa` issues.
 - E5/E11 slice: new `sensors` widget, CPU temperature from sysfs thermal zones (prefers CPU-typed zone, validates range, reports unconfigured when absent). Tested against a fake thermal tree; not run on a Pi. Card is registered (pane chooser) but not on the default dashboard. Next: BME280 behind a platform interface, disk use, Wi-Fi RSSI; then weather pressure trend and E3 feeds (terms check).
+
+## 2026-10-13 (UTC, third hourly run)
+- #103 (area C, merge conflicts) and #104 (area D, CI running) are not mine; left alone. No open `qa` issues.
+- E11 slice: sensors card adds Wi-Fi signal (/proc/net/wireless parse) and root-disk use (QStorageInfo); metrics hide when absent. Tested with fake files, release + ASan/UBSan. Card is not on the default dashboard so no screenshot shows it; not run on a Pi. Next: BME280 behind a platform interface, then pressure trend, E3 feeds (terms check).

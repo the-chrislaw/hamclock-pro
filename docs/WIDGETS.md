@@ -213,5 +213,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, no region filter or map overlay yet; fire-weather Red Flag pane not yet) | H | **Live** |
 | NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
 | On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; pane only, no map overlay or filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
-| Host sensors: CPU temperature from sysfs thermal zones (shows Set up/unconfigured when no sensor; no BME280, Wi-Fi or disk history yet; not on the default dashboard) | E | Partial |
+| Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; no BME280 or history yet; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |

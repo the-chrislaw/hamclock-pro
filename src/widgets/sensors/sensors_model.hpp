@@ -12,21 +12,31 @@ class SensorsModel : public WidgetModel {
     Q_PROPERTY(bool hasCpuTemp READ hasCpuTemp NOTIFY changed)
     Q_PROPERTY(QString cpuTemp READ cpuTemp NOTIFY changed)
     Q_PROPERTY(QString cpuNote READ cpuNote NOTIFY changed)
+    Q_PROPERTY(bool hasWifi READ hasWifi NOTIFY changed)
+    Q_PROPERTY(QString wifi READ wifi NOTIFY changed)
+    Q_PROPERTY(bool hasDisk READ hasDisk NOTIFY changed)
+    Q_PROPERTY(QString disk READ disk NOTIFY changed)
 public:
-    explicit SensorsModel(const WidgetContext& context, QString thermal_root = "/sys/class/thermal",
+    explicit SensorsModel(const WidgetContext& context, QString thermal_root = "/sys/class/thermal", QString wireless_path = "/proc/net/wireless",
+                          QString disk_path = "/",
                           QObject* parent = nullptr);
     void start();
     bool hasCpuTemp() const { return temp_.has_value(); }
     QString cpuTemp() const;
     QString cpuNote() const;
+    bool hasWifi() const { return wifi_.has_value(); }
+    QString wifi() const;
+    bool hasDisk() const { return disk_.has_value(); }
+    QString disk() const;
 public slots:
     void refresh();
 signals:
     void changed();
 private:
-    QString root_;
+    QString root_, wireless_, diskPath_;
     QTimer timer_;
-    std::optional<double> temp_;
+    std::optional<double> temp_, disk_;
+    std::optional<int> wifi_;
 };
 
 void register_widget_sensors(WidgetRegistry& registry, const WidgetContext& context);
