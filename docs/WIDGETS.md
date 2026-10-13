@@ -70,7 +70,7 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 
 | Widget | Area | State |
 |---|---|---|
-| Station + clocks + DE local time | A | Working (QML) |
+| Station + clocks + DE local time | A | Working (QML); dashboard page scrolls (touch flick) when widgets exceed the screen, map keeps a full 2:1 size |
 | World map, day/night, path | A | Working (QML, rendered via legacy widget) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |

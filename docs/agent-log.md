@@ -58,3 +58,8 @@
 ## 2026-10-13 (UTC), Space weather (area B)
 - No open PRs. Opened `agent/space-solarwind`: `src/widgets/solarwind` (SWPC RTSW wind + mag 1-min feeds; active spacecraft only, null/-9999 fill rejected; 1 h sparklines; stale when the newest observation is >15 min old even if the download is fresh). Fixtures are trimmed real captures from 2026-10-13. Same SWPC policy as the existing widget, polled every 2 min.
 - Next: sunspot number + 30-day flux trend chart, Kp 3-day bars.
+
+## 2026-10-13 (UTC), UI shell (area A)
+- Merged #55 (docs, green). #57 was still in CI.
+- Opened `agent/ui-scroll`: with four widgets the wide layout clipped the cards and pushed the world map off-screen with no way to reach it; the page now scrolls in wide mode too and the map keeps a 2:1 size. Checked 800x480 offscreen screenshot only; map is below the fold there.
+- Next: equal-height widget rows (gap under Space weather), pressed/focus states, TV focus order.
