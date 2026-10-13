@@ -41,3 +41,7 @@
 - Merged #47 (Trixie/Bookworm x arm64/armhf packages) and #48 (qt6-wayland dependency, first Pi 4 run) after green CI.
 - Opened `agent/de-load-zone`: `de_clock_configuration_for_saved_zone` (saved `de_zone` -> startup DE configuration) + tests.
 - Next: dashboard shows DE local time from it; DE dialog from Big Clock -> Options; then go-public prep.
+
+## 2026-10-13 (UTC), Spots (area C)
+- Opened `agent/spots-dxcluster`: `src/net/telnet_client` (injected socket, IAC refusal, login prompt, backoff), DX spot parser, DX cluster model + card (Not configured without host/callsign). Fixture is a hand-trimmed sample in DXSpider format, not a live capture.
+- Next: spots on the map, band/mode filters; then PSKReporter.

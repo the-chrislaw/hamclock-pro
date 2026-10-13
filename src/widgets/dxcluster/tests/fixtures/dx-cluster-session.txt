@@ -1,0 +1,5 @@
+Hand-trimmed sample in the DXSpider "DX de" line format (not a live capture; no cluster
+was contacted). Spot lines below this header are prefixed by a marker for the test.
+SPOT|DX de W3LPL:     14025.0  K1ABC       CW 25 dB 18 WPM CQ             1234Z FN20
+SPOT|DX de DL1XYZ-#:  7074.5   JA1NUT      FT8 -12 dB                     1229Z PM95
+SPOT|DX de N2WQ:      144174.0 G4ABC       FT8                            1231Z
