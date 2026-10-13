@@ -84,10 +84,17 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
 }
 
+QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
+    const QString call = callsign.trimmed().toUpper();
+    if (call.isEmpty() || ssid < 1 || ssid > 99) return call;
+    return call + '-' + QString::number(ssid);
+}
+
 void DxClusterModel::start() {
     const QString host = settings_ ? settings_->clusterHost() : QString();
-    const QString call = settings_ ? settings_->callsign() : QString();
-    client_.start(host, settings_ ? settings_->clusterPort() : 0, call);
+    const QString call = cluster_login(settings_ ? settings_->callsign() : QString(), settings_ ? settings_->clusterSsid() : 0);
+    client_.start(host, settings_ ? settings_->clusterPort() : 0, call,
+                  settings_ ? settings_->clusterCommands() : QStringList());
     if (client_.state() == TelnetClient::State::Idle)
         setState("unconfigured", host.isEmpty() ? "Not configured: set a cluster host in Settings"
                                                 : "Not configured: set your callsign in Settings");

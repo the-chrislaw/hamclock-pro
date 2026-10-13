@@ -52,6 +52,8 @@ public:
     Q_INVOKABLE void setModeFilter(const QString& mode);
     Q_INVOKABLE void cycleBandFilter();
     Q_INVOKABLE void cycleModeFilter();
+    // Callsign plus optional -SSID (1-99); empty when the callsign is empty.
+    static QString cluster_login(const QString& callsign, int ssid);
     static QStringList bandChoices();
     static QStringList modeChoices();
     TelnetClient& client() { return client_; }
