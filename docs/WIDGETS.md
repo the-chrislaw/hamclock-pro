@@ -18,6 +18,7 @@ src/widgets/<id>/
 - **Register** with `void hamclock::register_widget_<id>(WidgetRegistry&, const WidgetContext&)`: create the model, `registry.add({id, title, QUrl("qrc:/widgets/<id>/<Card>.qml"), area, order}, model)`, start it with `QTimer::singleShot(0, …)`. `area` is `"strip"` (card row above the map), `"side"` or `"wide"` (full-width panel under the map). Adding a widget never edits root CMake or `Main.qml`.
 - **Data:** use `PolledSource` (`src/net/polled_source.hpp`) with `context.transport` for every HTTP fetch: https only, honest User-Agent, backoff, disk cache. Parse in pure functions tested on fixtures. Long-lived connections (DX cluster telnet) get their own class with the same injected-transport idea; no test may touch the internet.
 - **No internet in the agent sandbox:** outside websites return 403 there. Build fixtures from the real samples in `tests/fixtures/sources/` (see its README). If a source you need has no sample, do not invent one: open or update the issue `Owner input needed: data samples` listing the exact URLs, and work on another item meanwhile.
+- **Portable code:** the same sources build for Raspberry Pi, macOS and iPadOS. No QtWidgets in new code; Linux/Pi-only and Apple-only code lives behind small interfaces in `src/platform/`; no shelling out, no hard-coded paths (use `QStandardPaths`); network code must tolerate the app being suspended (iPad) and reconnect on resume.
 - **States:** call `setState()` / `trackSource()` so the card shows `live`, `stale` (with age), `loading`, `offline` or `unconfigured`. Never show an invented or stale-as-live value; missing values render as "—" (`Metric { available: false }`).
 - **Settings and accounts:** read from `context.settings` (`AppSettings`). New settings go in `AppSettings` and `SettingsPage.qml` (UI area owns those files; other areas request additions in their PR description or add a small, separate field-only change). Passwords are C++-only, never QML properties.
 - **UI:** build from `Card`, `Metric`, `StatusBadge`, `AppButton`, `FormField` and `Theme` tokens. Touch targets ≥ `Theme.touch`; everything reachable by keyboard (TV remote); text scales with `Theme.scale`.
@@ -26,7 +27,7 @@ src/widgets/<id>/
 
 ## Areas and backlog
 
-Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
+Each area (A–F): one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
 
 ### A. UI shell and design (owns `src/ui/`, `cmake/HamClockApp.cmake`, `docs/WIDGETS.md` contract section)
 1. Match `design/dashboard.html` closely: header, sidebar, card spacing, typography, map toolbar; smooth touch scrolling; pressed/focus states.
@@ -65,6 +66,14 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
 4. Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
+
+### F. Apple platforms: macOS and iPad (owns `src/platform/apple*`, `src/platform/credential_store*`, `cmake/Apple*.cmake`, `.github/workflows/apple.yml`, `packaging/apple/`)
+Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.0 work is under way. The agent sandbox cannot run Xcode, so every change is verified on GitHub's macOS runners via `apple.yml`.
+1. `apple.yml` CI: build and ctest on macOS (Homebrew Qt), and build the app for the iOS Simulator (Qt for iOS via `aqtinstall`, pinned version); upload the macOS app and a Simulator screenshot as artifacts.
+2. Credential store: `src/platform/credential_store` with macOS/iOS Keychain and a 0600-file fallback elsewhere; AppSettings uses it (coordinate with area A in the PR).
+3. macOS app polish: app icon, Info.plist (name, version, category), universal (arm64 + x86_64) build, `.dmg`; signing and notarization steps wired but skipped until the owner provides an Apple Developer ID (open "Owner input needed: Apple Developer account").
+4. iPad: iOS CMake target, safe-area and orientation handling, touch-first layout check at iPad sizes (1180×820, 1366×1024), app lifecycle (pause polling and the DX cluster connection in background, resume cleanly), no QtWidgets dependency (requires area A's QPainter map renderer, backlog A4).
+5. App Store readiness: privacy manifest, no private APIs, attribution screen for data sources (NOAA, NASA, Natural Earth, Open-Meteo…), TestFlight upload once the owner's account exists.
 
 ## Status
 

@@ -92,6 +92,10 @@ Source policy is decided (see "Data source policy"); M4 is unblocked. Each furth
 - User guide: install, first-run setup, desktop vs. kiosk mode, TV setup (overscan, remote), troubleshooting.
 - Tag `v1.0.0`.
 
+## Apple platforms (in parallel with the Pi work)
+
+Owner decision (Oct 13): a **macOS app** and an **iPad app** from the same Qt Quick code. Tracked as area F in [docs/WIDGETS.md](WIDGETS.md). Signing, notarization and App Store/TestFlight need an Apple Developer account (owner, $99/yr); until then the macOS app ships unsigned and the iPad app is built for the Simulator in CI. An iPhone layout is deferred until users ask for it.
+
 ## After 1.0
 
 Rough order, highest value first. Each item is one PR-sized feature or a short series.
