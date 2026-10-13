@@ -94,7 +94,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
-3. Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
+3. 🟡 (SGP4 propagation, look angles and pass search done and tested; TLE download, pane and map track next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. ✅ (schedule + pane; map markers wait for area G's overlay API) NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
@@ -199,7 +199,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters on the card; no map overlay yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
-| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellites, beacons, EME not started) |
+| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (satellite pane, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover; no forecast, pressure trend or popup yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane only; map overlay waits for area G's API) | H | **Live** |
 | Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane only, track overlay waits for area G's API; JTWC not yet) | H | **Live** |
