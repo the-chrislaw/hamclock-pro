@@ -48,7 +48,7 @@ Rectangle {
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
                 Layout.fillWidth: true
-                Layout.minimumHeight: card.chooser ? Theme.touch * 0.7 : 0
+                Layout.minimumHeight: card.chooser && !Theme.dense ? Theme.touch * 0.7 : 0
                 verticalAlignment: Text.AlignVCenter
                 Accessible.role: card.chooser ? Accessible.Button : Accessible.StaticText
                 Accessible.name: card.title + (card.chooser ? ", change widget" : "")

@@ -25,12 +25,15 @@ ApplicationWindow {
     // 1.0 on a 1024x600 panel; grows on TVs so text stays readable from the sofa.
     Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, 3)) }
 
+    Binding { target: Theme; property: "dense"; value: window.width <= 1280 && window.height <= 720 }
+
     Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
     header: Rectangle {
+        visible: !Theme.dense
         color: Theme.canvas
-        implicitHeight: Theme.touch + Theme.gap
+        implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: Theme.pad
@@ -58,14 +61,15 @@ ApplicationWindow {
         id: page
         anchors.fill: parent
         anchors.margins: Theme.pad
-        anchors.topMargin: 0
+        anchors.topMargin: Theme.dense ? Theme.pad : 0
         spacing: Theme.gap
 
         StationCard {
             id: stationCard
-            Layout.preferredWidth: Math.max(190 * Theme.scale, page.width * 0.22)
+            Layout.preferredWidth: Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.max(0, page.width * 0.22 - 190 * Theme.scale))
             Layout.fillHeight: true
             onSetupRequested: settingsLayer.visible = true
+            onSettingsRequested: settingsLayer.visible = true
         }
 
         ColumnLayout {

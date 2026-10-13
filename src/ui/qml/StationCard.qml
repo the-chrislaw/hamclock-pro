@@ -7,6 +7,7 @@ Card {
     id: root
     title: station.configured ? station.callsign : "Your station"
     signal setupRequested()
+    signal settingsRequested()
 
     ColumnLayout {
         width: parent.width
@@ -14,7 +15,11 @@ Card {
 
         ColumnLayout {
             spacing: 0
+            Layout.fillWidth: true
             Text {
+                Layout.fillWidth: true
+                fontSizeMode: Text.HorizontalFit
+                minimumPixelSize: Theme.fontValue
                 text: station.utcTime
                 color: Theme.ink
                 font.pixelSize: Theme.fontClock
@@ -74,6 +79,7 @@ Card {
         }
         ColumnLayout {
             visible: !station.configured
+            Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             Text {
                 text: "Add your callsign and location to see locators, paths and local time."
@@ -82,7 +88,13 @@ Card {
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
-            AppButton { text: "Set up station"; primary: true; onClicked: root.setupRequested() }
+            AppButton { text: "Set up"; primary: true; Layout.fillWidth: true; onClicked: root.setupRequested() }
+        }
+        AppButton {
+            visible: Theme.dense && station.configured
+            text: "⚙ Settings"
+            Layout.fillWidth: true
+            onClicked: root.settingsRequested()
         }
     }
 }

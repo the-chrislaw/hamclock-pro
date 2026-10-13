@@ -7,6 +7,8 @@ import QtQuick
 QtObject {
     property bool dark: false
     property real scale: 1
+    // Small panel (7-inch Pi, 800x480 to 1280x720): no header, tight spacing.
+    property bool dense: false
 
     readonly property color canvas: dark ? "#22282c" : "#eeede9"
     readonly property color surface: dark ? "#2b3236" : "#fafaf7"
@@ -22,9 +24,9 @@ QtObject {
     readonly property color warn: dark ? "#e6c06b" : "#9a6a00"
     readonly property color bad: dark ? "#ec8f86" : "#b3362b"
 
-    readonly property real radius: 14 * scale
-    readonly property real gap: 10 * scale
-    readonly property real pad: 14 * scale
+    readonly property real radius: (dense ? 8 : 14) * scale
+    readonly property real gap: (dense ? 5 : 10) * scale
+    readonly property real pad: (dense ? 7 : 14) * scale
     readonly property real touch: 44 * scale   // minimum touch target
 
     readonly property int fontCaption: Math.round(12 * scale)
