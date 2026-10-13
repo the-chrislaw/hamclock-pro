@@ -50,7 +50,7 @@ int main(int argc,char** argv){
     auto check=[&](bool pass,const char* name){++checks;if(!pass){++failures;std::cerr<<"Dashboard regression failed: "<<name<<'\n';}};
     const auto directory=temp.path()+"/station";QDir().mkpath(directory);
     const auto path=directory+"/settings.conf";
-    hamclock::StationSettings initial{{37.7749,-122.4194},{51.5074,-0.1278},"N0CALL","light"};
+    hamclock::StationSettings initial{{37.7749,-122.4194},{51.5074,-0.1278},"N0CALL","light",""};
     hamclock::save_settings(path.toStdString(),initial);
     hamclock::StationDashboard dashboard(initial,path.toStdString());dashboard.show();app.processEvents();
     auto* edit=dashboard.findChild<QPushButton*>("dashboardEditStation");
@@ -273,7 +273,7 @@ int main(int argc,char** argv){
         auto* message=dialog->findChild<QLabel*>("validationMessage");check(dialog->isVisible() && message && message->isVisible() && !message->text().isEmpty(),"invalid Save remains open with visible error");
         check(same(dashboard.stationSettings(),initial),"invalid Save leaves dashboard unchanged during modal");buttons(dialog)->button(QDialogButtonBox::Cancel)->click();});
     assert_view(initial);check(bytes(path)==original_bytes,"invalid Save preserves disk bytes");
-    const hamclock::StationSettings updated{{10,20},{30,40},"W1TEST","dark"};
+    const hamclock::StationSettings updated{{10,20},{30,40},"W1TEST","dark",""};
     modal([&](QDialog* dialog){change(dialog,"W1TEST","10","20","30","40","dark");buttons(dialog)->button(QDialogButtonBox::Save)->click();});
     assert_view(updated);check(same(hamclock::load_settings(path.toStdString()),updated),"successful Save refresh matches disk");
     const auto saved_bytes=bytes(path);

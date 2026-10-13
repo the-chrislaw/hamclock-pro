@@ -33,7 +33,7 @@ int main(int argc,char** argv){
  char pattern[]="/tmp/hamclock-dialog-XXXXXX";char* created=mkdtemp(pattern);
  if(!created){std::cerr<<"Cannot create dialog fixture directory\n";return 1;}
  const std::string directory(created),path=directory+"/station.conf";
- const hamclock::StationSettings initial{{37.7,-122.4},{51.5,-0.1},"N0CALL","system"};
+ const hamclock::StationSettings initial{{37.7,-122.4},{51.5,-0.1},"N0CALL","system",""};
  auto run=[&](const std::string& target,bool creating,const std::function<void(QDialog*)>& action){
   QTimer::singleShot(0,&app,[&](){
    auto* dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget());

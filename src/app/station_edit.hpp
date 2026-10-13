@@ -14,6 +14,7 @@ public:
     void cancel();
     StationSettings validated() const;
 private:
+    std::string de_zone_; // Not editable here; carried through so saving keeps it.
     std::array<std::string, 6> original_;
     std::array<std::string, 6> draft_;
 };

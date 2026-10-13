@@ -38,7 +38,7 @@ double decimal(const std::string& value) {
     return result;
 }
 }
-StationEdit::StationEdit(const StationSettings& settings) {
+StationEdit::StationEdit(const StationSettings& settings) : de_zone_(settings.de_zone) {
     (void)make_station_view(settings);
     original_ = {settings.callsign, text(settings.de.latitude), text(settings.de.longitude),
                  text(settings.dx.latitude), text(settings.dx.longitude), settings.appearance};
@@ -61,7 +61,7 @@ bool StationEdit::dirty() const { return draft_ != original_; }
 void StationEdit::cancel() { draft_ = original_; }
 StationSettings StationEdit::validated() const {
     StationSettings settings{{decimal(draft_[1]), decimal(draft_[2])},
-                             {decimal(draft_[3]), decimal(draft_[4])}, draft_[0], draft_[5]};
+                             {decimal(draft_[3]), decimal(draft_[4])}, draft_[0], draft_[5], de_zone_};
     (void)make_station_view(settings);
     return settings;
 }

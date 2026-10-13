@@ -14,12 +14,18 @@ int run_station_edit_tests() {
     };
     try {
         const StationSettings baseline{{std::numeric_limits<double>::min(), -122.41234567890123},
-                                      {51.5, -0.1}, "N0CALL/P", "system"};
+                                      {51.5, -0.1}, "N0CALL/P", "system", ""};
         StationEdit edit(baseline);
         const auto initial = edit.validated();
         check(!edit.dirty() && initial.de.latitude == baseline.de.latitude &&
               initial.de.longitude == baseline.de.longitude && initial.dx.latitude == baseline.dx.latitude &&
               initial.dx.longitude == baseline.dx.longitude, "exact baseline including minimum normal");
+        {
+            auto zoned = baseline; zoned.de_zone = "Europe/London";
+            StationEdit zone_edit(zoned);
+            check(zone_edit.set(StationField::Callsign, "N1TEST") &&
+                  zone_edit.validated().de_zone == "Europe/London", "station edit preserves DE zone");
+        }
         for (const char* bad : {"", "-", ".", "1e", "1e999", "inf", "NaN", " 1", "1 ", "0x1p2", "91", "1e-320"}) {
             check(edit.set(StationField::DeLatitude, bad) && edit.dirty() && rejected(edit), "invalid bounded draft retained");
             check(edit.get(StationField::DeLatitude) == bad, "validation does not mutate draft");

@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     try {
         if (creating) {
             require_new_destination(path);
-            initial = {{0,0},{0,0},"N0CALL","system"};
+            initial = {{0,0},{0,0},"N0CALL","system",""};
         } else initial = hamclock::load_settings(path);
     } catch (const std::exception& error) {
         std::cerr << "Station editor could not open settings: " << error.what() << '\n';

@@ -46,6 +46,27 @@ int run_settings_tests() {
             save_settings(path, changed);
             check(load_settings(path).appearance == appearance, "appearance round trip");
         }
+        // Optional DE IANA zone id: round trip, absent in legacy files, bad ids rejected.
+        {
+            check(load_settings(path).de_zone.empty(), "legacy file has no DE zone");
+            auto zoned = original; zoned.de_zone = "America/New_York";
+            save_settings(path, zoned);
+            check(load_settings(path).de_zone == "America/New_York", "DE zone round trip");
+            for (const char* bad : {"bad zone", "A=B", "../../etc", "Zone\n"}) {
+                auto invalid_zone = original; invalid_zone.de_zone = bad;
+                bool thrown = false;
+                try { save_settings(path, invalid_zone); } catch (const std::invalid_argument&) { thrown = true; }
+                check(thrown, "invalid DE zone rejected on save");
+            }
+            auto too_long = original; too_long.de_zone = std::string(64, 'A');
+            bool long_thrown = false;
+            try { save_settings(path, too_long); } catch (const std::invalid_argument&) { long_thrown = true; }
+            check(long_thrown, "overlong DE zone rejected on save");
+            check(load_settings(path).de_zone == "America/New_York", "failed zone saves keep prior file");
+            check(rejects_load(valid + "de_zone=bad zone\n"), "invalid DE zone rejected on load");
+            check(rejects_load(valid + "de_zone=\n"), "empty DE zone field rejected on load");
+            save_settings(path, original);
+        }
         auto normal = original;
         normal.de.latitude = std::numeric_limits<double>::min();
         save_settings(path, normal);

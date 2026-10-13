@@ -9,6 +9,9 @@ struct StationSettings {
     Location dx;
     std::string callsign;
     std::string appearance = "system";
+    // Optional IANA zone id for DE local time (e.g. "America/New_York"); empty = none.
+    // Shape-checked only (1-63 of [A-Za-z0-9_+-/]); the tz database decides validity.
+    std::string de_zone;
 };
 
 // Explicit caller-selected local path. Invalid data throws invalid_argument;
