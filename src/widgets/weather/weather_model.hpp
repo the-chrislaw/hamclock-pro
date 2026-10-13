@@ -18,6 +18,8 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString deTemp READ deTemp NOTIFY changed)
     Q_PROPERTY(QString deSummary READ deSummary NOTIFY changed)
     Q_PROPERTY(QString deWind READ deWind NOTIFY changed)
+    Q_PROPERTY(QString deAir READ deAir NOTIFY changed)
+    Q_PROPERTY(QString dxAir READ dxAir NOTIFY changed)
     Q_PROPERTY(QString dxTemp READ dxTemp NOTIFY changed)
     Q_PROPERTY(QString dxSummary READ dxSummary NOTIFY changed)
     Q_PROPERTY(QString dxWind READ dxWind NOTIFY changed)
@@ -29,6 +31,8 @@ public:
     QString deTemp() const { return temp(de_); }
     QString deSummary() const { return summary(de_); }
     QString deWind() const { return wind(de_); }
+    QString deAir() const { return air(de_); }
+    QString dxAir() const { return air(dx_); }
     QString dxTemp() const { return temp(dx_); }
     QString dxSummary() const { return summary(dx_); }
     QString dxWind() const { return wind(dx_); }
@@ -52,6 +56,7 @@ private:
     static QString temp(const End& e);
     static QString summary(const End& e);
     static QString wind(const End& e);
+    static QString air(const End& e);  // "61% RH · 1015 hPa · 20% cloud"
 
     WidgetContext context_;
     AppSettings* settings_;

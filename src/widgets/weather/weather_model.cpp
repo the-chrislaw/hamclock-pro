@@ -69,6 +69,14 @@ QString WeatherModel::wind(const End& e) {
     return QString("%1 %2 km/h").arg(weather::compass_point(e.now->wind_dir_deg)).arg(std::lround(e.now->wind_kmh));
 }
 
+QString WeatherModel::air(const End& e) {
+    if (!e.now) return {};
+    QStringList parts{QString("%1% RH").arg(e.now->humidity_pct)};
+    if (e.now->pressure_hpa) parts << QString("%1 hPa").arg(std::lround(*e.now->pressure_hpa));
+    if (e.now->cloud_pct) parts << QString("%1% cloud").arg(*e.now->cloud_pct);
+    return parts.join(" · ");
+}
+
 void WeatherModel::refreshState() {
     if (!hasStation()) { setState("unconfigured", "Set DE and DX locations in Settings"); return; }
     End* ends[] = {&de_, &dx_};

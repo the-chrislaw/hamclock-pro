@@ -29,6 +29,8 @@ std::optional<Current> parse_current(const QByteArray& body) {
     c.wind_dir_deg = static_cast<int>(std::lround(v)) % 360;
     if (!number(cur, "weather_code", 0, 99, v)) return std::nullopt;
     c.weather_code = static_cast<int>(v);
+    if (number(cur, "pressure_msl", 800, 1100, v)) c.pressure_hpa = v;
+    if (number(cur, "cloud_cover", 0, 100, v)) c.cloud_pct = static_cast<int>(std::lround(v));
     c.is_day = cur.value("is_day").toDouble(1) != 0;
     return c;
 }
@@ -70,7 +72,7 @@ double celsius_to_fahrenheit(double c) { return c * 9.0 / 5.0 + 32.0; }
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
-                   "weather_code,is_day&timezone=UTC")
+                   "weather_code,is_day,pressure_msl,cloud_cover&timezone=UTC")
         .arg(latitude, 0, 'f', 2).arg(longitude, 0, 'f', 2);
 }
 

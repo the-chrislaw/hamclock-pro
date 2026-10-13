@@ -11,6 +11,7 @@
 #include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -32,6 +33,11 @@ int main(int argc, char** argv) {
     const auto c = weather::parse_current(body);
     check(c && c->temperature_c == 15.7 && c->humidity_pct == 61, "temperature and humidity");
     check(c && c->wind_kmh == 7.9 && c->wind_dir_deg == 344 && c->weather_code == 0 && c->is_day, "wind, code, day");
+    check(c && !c->pressure_hpa && !c->cloud_pct, "optional fields absent in older response");
+    // Synthetic document (not a live capture): the optional pressure/cloud fields.
+    const auto full = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3,"pressure_msl":1015.4,"cloud_cover":87}})");
+    check(full && full->pressure_hpa && std::lround(*full->pressure_hpa) == 1015 && full->cloud_pct == 87, "pressure and cloud parsed");
     check(weather::compass_point(344) == "NNW" && weather::compass_point(0) == "N" &&
           weather::compass_point(360) == "N" && weather::compass_point(348) == "NNW" &&
           weather::compass_point(349) == "N" && weather::compass_point(90) == "E", "compass rose edges");
@@ -75,6 +81,7 @@ int main(int argc, char** argv) {
     model.dxSource()->refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.deTemp() == "15.7 °C" && model.deWind() == "NNW 8 km/h", "DE values");
+    check(model.deAir() == "61% RH", "air line without optional fields");
     check(model.deSummary() == "Clear sky", "DE summary");
     check(model.dxTemp().isEmpty(), "response for another place never shown at DX");
     check(model.state() == "stale", "one end missing -> not live");
