@@ -2,11 +2,13 @@
 #include "../qt/land_fill_path.hpp"
 #include "coastline.hpp"
 #include "land.hpp"
+#include "path.hpp"
 #include "projection.hpp"
 #include <QPainter>
 #include <QPolygonF>
 #include <QTransform>
 #include <algorithm>
+#include <exception>
 #include <iterator>
 #include <stdexcept>
 namespace hamclock {
@@ -108,6 +110,47 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                 if (view.height() < m.height() || view.width() < lw || !view.contains(item.first)) continue;
                 painter.drawText(QPointF(std::clamp(item.first.x() + 7, 0.0, view.width() - lw),
                                          std::clamp(item.first.y() - 7, double(m.ascent()), view.height())), item.second);
+            }
+        }
+        for (const auto& layer : scene.overlays) {
+            if (!layer.visible) continue;
+            const QRectF view(QPointF(), size);
+            std::vector<QPointF> anchors;
+            std::vector<const OverlayMarker*> labelled;
+            for (const auto& m : layer.markers) {
+                if (!valid_location(m.where)) continue;
+                const auto p = at(m.where);
+                if (m.path_from_de && scene.de) {
+                    try {
+                        const auto pts = map_short_path(*scene.de, m.where, 32);
+                        QPen pp(m.color, 1); pp.setStyle(Qt::DashLine);
+                        painter.setPen(pp);
+                        for (std::size_t i = 1; i < pts.size(); ++i) {
+                            const auto sp = map_split_equirectangular(pts[i - 1], pts[i]);
+                            for (std::size_t j = 0; j < sp.count; ++j)
+                                painter.drawLine(px(sp.segments[j].first.x, sp.segments[j].first.y),
+                                                 px(sp.segments[j].second.x, sp.segments[j].second.y));
+                        }
+                    } catch (const std::exception&) {} // antipodal: no path invented
+                }
+                if (!view.adjusted(-m.size_px, -m.size_px, m.size_px, m.size_px).contains(p)) continue;
+                painter.setPen(QPen(dark ? QColor("#10181b") : Qt::white, 1)); painter.setBrush(m.color);
+                const double r = m.size_px;
+                switch (m.shape) {
+                case OverlayShape::Dot: painter.drawEllipse(p, r, r); break;
+                case OverlayShape::Square: painter.drawRect(QRectF(p.x() - r, p.y() - r, 2 * r, 2 * r)); break;
+                case OverlayShape::Diamond: painter.drawPolygon(QPolygonF({{p.x(), p.y() - r}, {p.x() + r, p.y()}, {p.x(), p.y() + r}, {p.x() - r, p.y()}})); break;
+                case OverlayShape::Triangle: painter.drawPolygon(QPolygonF({{p.x(), p.y() - r}, {p.x() + r, p.y() + r}, {p.x() - r, p.y() + r}})); break;
+                }
+                if (!overlay_label_text(m, layer.labels).isEmpty()) { anchors.push_back(p); labelled.push_back(&m); }
+            }
+            const auto keep = select_labels(anchors, layer.min_label_distance_px);
+            const auto fm = painter.fontMetrics();
+            for (std::size_t i = 0; i < anchors.size(); ++i) {
+                if (!keep[i]) continue;
+                painter.setPen(dark ? QColor("#e6eef0") : QColor("#1b2a30"));
+                painter.drawText(QPointF(anchors[i].x() + labelled[i]->size_px + 3, anchors[i].y() + fm.ascent() / 2.0),
+                                 overlay_label_text(*labelled[i], layer.labels));
             }
         }
     }

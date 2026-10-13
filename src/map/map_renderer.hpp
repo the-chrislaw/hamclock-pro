@@ -4,6 +4,7 @@
 // usable on iPad/macOS without the widgets module.
 #include "../domain/geometry.hpp"
 #include "../domain/solar_position.hpp"
+#include "overlay.hpp"
 #include "viewport.hpp"
 #include <QPainterPath>
 #include <QSizeF>
@@ -17,6 +18,7 @@ struct MapScene {
     bool route_visible = true;
     std::optional<SubsolarPoint> sun;
     bool dark = false;
+    std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
 };
 class MapRenderer {
 public:

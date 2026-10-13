@@ -15,3 +15,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #97 (docs, green). #73 (not mine) still conflicts; left alone. #96/#98 still had CI running.
 - Not validated on device.
 - Next: G2 overlay API (`src/map/overlay.*`, `docs/map-overlays.md`) so areas B/C/D/E/H can start map items.
+
+## 2026-10-13 (UTC, run 3)
+
+- Merged #105 (wx sensors, green, auto-merge). #73 (docs, not mine) still conflicts; left alone.
+- G2 overlay API (PR agent/map-overlay-api): `src/map/overlay.*` (markers, layers, labels None/Prefix/Call/Dot, minimum label distance, optional DE path, process-wide `MapOverlays` registry), drawn by `MapRenderer` above DE/DX; `MapItem` listens and repaints (shared file touched minimally: `CMakeLists.txt` library/test lists). Docs and worked example in `docs/map-overlays.md`. Test: `qt-map-overlay-regression`.
+- Not validated on device.
+- Next: G3 map styles framework; then G4 projections.
