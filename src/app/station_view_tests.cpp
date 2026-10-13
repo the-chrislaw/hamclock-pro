@@ -16,7 +16,7 @@ int run_station_view_tests() {
         return false;
     };
     try {
-        const StationSettings east{{0, 0}, {0, 1}, "n0call/p", "system"};
+        const StationSettings east{{0, 0}, {0, 1}, "n0call/p", "system", {}};
         const auto view = make_station_view(east);
         check(view.callsign == "N0CALL/P" && view.de_grid == "JJ00AA" && view.dx_grid == "JJ00MA",
               "uppercase callsign and locators");
