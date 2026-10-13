@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QTimeZone>
 #include <QTimer>
 #include <cmath>
 #include <iostream>

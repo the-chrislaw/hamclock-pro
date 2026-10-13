@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QTimeZone>
 #include <QTimer>
 #include <iostream>
 #include <stdexcept>
