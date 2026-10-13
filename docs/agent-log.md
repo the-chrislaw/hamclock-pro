@@ -10,3 +10,8 @@
 - #39 (solar position) was already merged; no open PRs.
 - Opened `agent/map-terminator`: night shade + subsolar marker in `WorldMapWidget`, wired to the dashboard clock (repaints once per UTC minute). Dashboard regression relaxed only to allow that minute-rollover repaint.
 - Next: DE local time via QTimeZone; DE settings dialog from Big Clock -> Options.
+
+## 2026-10-13 (UTC)
+- Merged #41 (owner decisions: platforms, data sources, name, licence) after green CI.
+- Opened `agent/de-timezone`: `resolve_de_zone_offset` / `is_valid_de_zone_id` over QTimeZone + DST regression test (first slice of DE local time).
+- Next: wire zone offset into DE Automatic civil adapter and settings dialog (zone id field); then DE settings dialog from Big Clock -> Options.
