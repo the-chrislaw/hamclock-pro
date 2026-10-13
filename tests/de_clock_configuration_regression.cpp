@@ -183,6 +183,18 @@ int main() {
                               c.zone_id[0] = 'A'; c.zone_id[1] = 0; c.zone_id[2] = 'B'; zoned.replace(c); },
                  "non-canonical bytes after the terminator rejected");
     }
+    {
+        // Saved station zone (StationSettings::de_zone) -> startup desire.
+        check(de_clock_zone_id(de_clock_configuration_for_saved_zone("Asia/Tokyo")) == "Asia/Tokyo" &&
+              de_clock_configuration_for_saved_zone("Asia/Tokyo").mode == DeClockMode::Automatic,
+              "saved zone id becomes an Automatic zone configuration");
+        const auto none = de_clock_configuration_for_saved_zone("");
+        check(none.mode == DeClockMode::Automatic && !none.manual_offset && de_clock_zone_id(none).empty(),
+              "no saved zone gives plain Automatic");
+        bool threw = false;
+        try { de_clock_configuration_for_saved_zone("Bad Zone"); } catch (const std::invalid_argument&) { threw = true; }
+        check(threw, "malformed saved zone is rejected, not ignored");
+    }
     std::cout << checks << " DE configuration checks, " << failures << " failures\n";
     return failures == 0 ? 0 : 1;
 }
