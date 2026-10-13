@@ -20,6 +20,7 @@ jobs:
   macos:
     name: macOS build and tests
     runs-on: macos-14
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -45,16 +46,25 @@ jobs:
     # Informational until the Qt Widgets dependency is removed (area A, QPainter
     # map renderer); a failure here does not block merges yet.
     continue-on-error: true
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Cache Qt install
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Qt
+          key: qt-${{ runner.os }}-${{ env.IOS_QT_VERSION }}-desktop-ios-v1
       - name: Install Qt (desktop host tools + iOS)
+        if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
           python3 -m venv "$RUNNER_TEMP/aqt"
           "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
           AQT="$RUNNER_TEMP/aqt/bin/aqt"
           "$AQT" install-qt mac desktop "$IOS_QT_VERSION" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
           "$AQT" install-qt mac ios "$IOS_QT_VERSION" ios --outputdir "$HOME/Qt"
-          brew install ninja
+      - name: Install ninja
+        run: brew install ninja
       - name: Configure (device SDK)
         run: |
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-ios -G Xcode \
