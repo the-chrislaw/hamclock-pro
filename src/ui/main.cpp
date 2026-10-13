@@ -51,7 +51,7 @@ hamclock::Transport offline_transport() {
 int main(int argc, char** argv) {
     QApplication app(argc, argv); // QApplication: the map renders via a QWidget
     QApplication::setApplicationName("hamclock-pro");
-    QApplication::setOrganizationName("hamclock-pro");
+    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
     QApplication::setApplicationVersion("0.1.0");
 
     QCommandLineParser parser;
