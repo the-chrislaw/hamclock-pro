@@ -14,7 +14,7 @@ Location canonical_location(Location location) {
     return location;
 }
 bool same_configuration(const DeClockConfiguration& a, const DeClockConfiguration& b) noexcept {
-    return a.mode == b.mode && a.manual_offset.has_value() == b.manual_offset.has_value() &&
+    return a.mode == b.mode && a.zone_id == b.zone_id && a.manual_offset.has_value() == b.manual_offset.has_value() &&
            (!a.manual_offset || a.manual_offset->value == b.manual_offset->value);
 }
 DeClockConfigurationSnapshot initial_snapshot(const DeClockConfiguration& configuration,
@@ -22,18 +22,52 @@ DeClockConfigurationSnapshot initial_snapshot(const DeClockConfiguration& config
     validate_de_clock_configuration(configuration, policy);
     return {configuration, policy, canonical_location(location), 1, 1};
 }
+bool valid_zone_char(char c) noexcept {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+           c == '_' || c == '+' || c == '-' || c == '/';
+}
+void validate_zone_id(const std::array<char, kDeClockZoneIdBytes>& id) {
+    std::size_t length = 0;
+    while (length < id.size() && id[length] != '\0') {
+        if (!valid_zone_char(id[length])) throw std::invalid_argument("DE zone id has invalid characters");
+        ++length;
+    }
+    if (length == id.size()) throw std::invalid_argument("DE zone id is not NUL-terminated");
+    for (std::size_t i = length; i < id.size(); ++i) {
+        if (id[i] != '\0') throw std::invalid_argument("DE zone id has non-canonical padding");
+    }
+}
 } // namespace
+
+std::string_view de_clock_zone_id(const DeClockConfiguration& configuration) noexcept {
+    const auto& id = configuration.zone_id;
+    std::size_t length = 0;
+    while (length < id.size() && id[length] != '\0') ++length;
+    return {id.data(), length};
+}
+
+DeClockConfiguration make_de_clock_zone_configuration(std::string_view iana_id) {
+    if (iana_id.empty() || iana_id.size() >= kDeClockZoneIdBytes) {
+        throw std::invalid_argument("DE zone id empty or too long");
+    }
+    DeClockConfiguration configuration{DeClockMode::Automatic, std::nullopt, {}};
+    for (std::size_t i = 0; i < iana_id.size(); ++i) configuration.zone_id[i] = iana_id[i];
+    validate_zone_id(configuration.zone_id);
+    return configuration;
+}
 
 void validate_de_clock_configuration(const DeClockConfiguration& configuration,
                                      const DeClockOffsetPolicy& policy) {
     if (policy.minimum.value > policy.maximum.value) {
         throw std::invalid_argument("DE manual offset policy bounds are reversed");
     }
+    validate_zone_id(configuration.zone_id);
     switch (configuration.mode) {
     case DeClockMode::Automatic:
         if (configuration.manual_offset) throw std::invalid_argument("Automatic DE desire must not retain a manual offset");
         break;
     case DeClockMode::ManualOffset:
+        if (configuration.zone_id[0] != '\0') throw std::invalid_argument("Manual DE desire must not retain a zone id");
         if (!configuration.manual_offset || configuration.manual_offset->value < policy.minimum.value ||
             configuration.manual_offset->value > policy.maximum.value) {
             throw std::invalid_argument("Manual DE offset missing or outside explicit caller bounds");
