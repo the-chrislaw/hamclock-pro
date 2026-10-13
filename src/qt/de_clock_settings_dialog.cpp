@@ -1,5 +1,6 @@
 #include "de_clock_settings_dialog.hpp"
 #include "dashboard_appearance.hpp"
+#include "de_time_zone.hpp"
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QEvent>
@@ -26,7 +27,8 @@ namespace {
 static_assert(std::is_nothrow_copy_assignable_v<DeClockConfigurationSnapshot>);
 bool same_config(const DeClockConfiguration& a, const DeClockConfiguration& b) {
     return a.mode == b.mode && a.manual_offset.has_value() == b.manual_offset.has_value() &&
-        (!a.manual_offset || a.manual_offset->value == b.manual_offset->value);
+        (!a.manual_offset || a.manual_offset->value == b.manual_offset->value) &&
+        de_clock_zone_id(a) == de_clock_zone_id(b);
 }
 bool same_context(const DeClockConfigurationSnapshot& a, const DeClockConfigurationSnapshot& b) {
     return a.offset_policy.minimum.value == b.offset_policy.minimum.value &&
@@ -44,6 +46,10 @@ void validate_snapshot(const DeClockConfigurationSnapshot& snapshot) {
         snapshot.location_revision == 0 || snapshot.configuration_revision < snapshot.location_revision)
         throw std::invalid_argument("Invalid DE settings snapshot");
 }
+QString zone_text(const DeClockConfigurationSnapshot& snapshot) {
+    const auto id = de_clock_zone_id(snapshot.configuration);
+    return QString::fromLatin1(id.data(), static_cast<qsizetype>(id.size()));
+}
 QString offset_text(std::int64_t offset) {
     const auto magnitude = offset < 0 ? -offset : offset; // Validated ±86400 only.
     auto result = QString("%1%2:%3").arg(offset < 0 ? '-' : '+')
@@ -52,7 +58,12 @@ QString offset_text(std::int64_t offset) {
     return result;
 }
 QString current_text(const DeClockConfigurationSnapshot& snapshot) {
-    return snapshot.configuration.mode == DeClockMode::Automatic ? QString("Current setting: Automatic (unresolved)") :
+    if (snapshot.configuration.mode == DeClockMode::Automatic) {
+        const auto id = de_clock_zone_id(snapshot.configuration);
+        return id.empty() ? QString("Current setting: Automatic (unresolved)") :
+            QString("Current setting: Automatic, zone %1").arg(QString::fromLatin1(id.data(), static_cast<qsizetype>(id.size())));
+    }
+    return
         QString("Current setting: Manual fixed offset %1").arg(offset_text(snapshot.configuration.manual_offset->value));
 }
 UtcOffsetSeconds parse_offset(const QString& text) {
@@ -172,6 +183,7 @@ DeClockSettingsDialog::DeClockSettingsDialog(Getter getter, Apply apply, const s
     if(appearance!="system" && appearance!="light" && appearance!="dark")throw std::invalid_argument("Invalid appearance");
     const auto initial=getter_(); validate_snapshot(initial);
     const auto current=current_text(initial);
+    const auto zone_draft=zone_text(initial);
     const auto draft=initial.configuration.manual_offset?offset_text(initial.configuration.manual_offset->value):QString("+00:00");
     setObjectName("deClockSettingsDialog");setWindowTitle("DE time settings · HamClock Pro");setAccessibleName("DE time settings");resize(540,400);
     auto* outer=new QVBoxLayout(this);outer->setContentsMargins(16,12,16,12);
@@ -184,28 +196,30 @@ DeClockSettingsDialog::DeClockSettingsDialog(Getter getter, Apply apply, const s
     mode_=new OffsetCombo(body);mode_->setObjectName("deClockMode");mode_->addItems({"Automatic (unresolved)","Manual fixed offset"});mode_->setMinimumHeight(44);mode_->setFocusPolicy(Qt::StrongFocus);mode_->setAccessibleName("DE time mode");mode_->setItemDelegate(new OffsetDelegate(mode_));mode_label->setBuddy(mode_);
     auto* offset_label=label(body,"deClockOffsetLabel");offset_label->setText("Fixed offset ±HH:MM[:SS]");
     offset_=new OffsetLineEdit(body);offset_->setObjectName("deClockOffsetDraft");offset_->setMaxLength(kDeClockOffsetDraftCharacters);offset_->setMinimumHeight(44);offset_->setFocusPolicy(Qt::StrongFocus);offset_->setAccessibleName("Unapplied DE fixed offset");offset_->setAccessibleDescription("Signed ASCII hours, minutes and optional seconds. Range minus24 hours to plus24 hours. Apply explicitly.");offset_label->setBuddy(offset_);
-    grid->addWidget(mode_label,0,0);grid->addWidget(mode_,0,1);grid->addWidget(offset_label,1,0);grid->addWidget(offset_,1,1);layout->addLayout(grid);
+    grid->addWidget(mode_label,0,0);grid->addWidget(mode_,0,1);auto* zone_label=label(body,"deClockZoneLabel");zone_label->setText("Automatic zone (IANA id, e.g. America/New_York)");
+    zone_=new OffsetLineEdit(body);zone_->setObjectName("deClockZoneDraft");zone_->setMaxLength(static_cast<int>(kDeClockZoneIdBytes)-1);zone_->setMinimumHeight(44);zone_->setFocusPolicy(Qt::StrongFocus);zone_->setAccessibleName("Unapplied DE time zone id");zone_->setAccessibleDescription("IANA time zone id used for daylight-saving aware DE time in Automatic mode. Leave empty for none. Apply explicitly.");zone_label->setBuddy(zone_);
+    grid->addWidget(offset_label,1,0);grid->addWidget(offset_,1,1);grid->addWidget(zone_label,2,0);grid->addWidget(zone_,2,1);layout->addLayout(grid);
     error_=label(body,"deClockActionError");layout->addWidget(error_);error_->hide();layout->addStretch();scroll->setWidget(body);outer->addWidget(scroll,1);
     auto* footer=new QHBoxLayout;
     const auto button=[&](const char* text,const char* name){auto* item=new QPushButton(text,this);item->setObjectName(name);item->setAccessibleName(text);item->setMinimumSize(88,44);item->setFocusPolicy(Qt::StrongFocus);item->setAutoDefault(false);footer->addWidget(item);return item;};
     apply_button_=button("Apply","deClockApply");reload_button_=button("Reload","deClockReload");cancel_button_=button("Cancel","deClockCancel");outer->addLayout(footer);
-    setTabOrder(mode_,offset_);setTabOrder(offset_,apply_button_);setTabOrder(apply_button_,reload_button_);setTabOrder(reload_button_,cancel_button_);
-    connect(mode_,&QComboBox::currentIndexChanged,this,[this](int index){offset_->setEnabled(index==1);});
+    setTabOrder(mode_,offset_);setTabOrder(offset_,zone_);setTabOrder(zone_,apply_button_);setTabOrder(apply_button_,reload_button_);setTabOrder(reload_button_,cancel_button_);
+    connect(mode_,&QComboBox::currentIndexChanged,this,[this](int index){offset_->setEnabled(index==1);zone_->setEnabled(index==0);});
     connect(apply_button_,&QPushButton::clicked,this,[this](){applyNow();});connect(reload_button_,&QPushButton::clicked,this,[this](){reloadNow();});connect(cancel_button_,&QPushButton::clicked,this,&QDialog::reject);
-    connect(offset_,&QLineEdit::returnPressed,this,[this](){applyNow();});
+    connect(offset_,&QLineEdit::returnPressed,this,[this](){applyNow();});connect(zone_,&QLineEdit::returnPressed,this,[this](){applyNow();});
     apply_dashboard_appearance(*this,appearance);new OffsetAppearance(*this);
-    confirmed_=initial;draft_basis_=initial;mode_->setCurrentIndex(static_cast<int>(initial.configuration.mode));offset_->setText(draft);offset_->setEnabled(initial.configuration.mode==DeClockMode::ManualOffset);
+    confirmed_=initial;draft_basis_=initial;mode_->setCurrentIndex(static_cast<int>(initial.configuration.mode));offset_->setText(draft);offset_->setEnabled(initial.configuration.mode==DeClockMode::ManualOffset);zone_->setText(zone_draft);zone_->setEnabled(initial.configuration.mode==DeClockMode::Automatic);
 }
 const DeClockConfigurationSnapshot& DeClockSettingsDialog::lastConfirmed()const noexcept{return confirmed_;}
 bool DeClockSettingsDialog::confirmationStale()const noexcept{return stale_;}
 bool DeClockSettingsDialog::reloadNow() {
     if(updating_)return false;const QScopedValueRollback<bool> guard(updating_,true);
-    DeClockConfigurationSnapshot snapshot{};QString current,draft;bool prepared=false;
-    try{snapshot=getter_();validate_snapshot(snapshot);current=current_text(snapshot);draft=snapshot.configuration.manual_offset?offset_text(snapshot.configuration.manual_offset->value):QString("+00:00");prepared=true;}
+    DeClockConfigurationSnapshot snapshot{};QString current,draft,zone_draft;bool prepared=false;
+    try{snapshot=getter_();validate_snapshot(snapshot);current=current_text(snapshot);draft=snapshot.configuration.manual_offset?offset_text(snapshot.configuration.manual_offset->value):QString("+00:00");zone_draft=zone_text(snapshot);prepared=true;}
     catch(...){stale_=true;named_text(current_,"Unconfirmed: retained previous setting; Reload failed.");named_text(error_,"Could not reload DE settings. Your draft is unchanged.");error_->show();}
     if(!prepared)return false;
     confirmed_=snapshot;draft_basis_=snapshot;stale_=false;reconciliation_required_=false;
-    try{named_text(current_,current);const QSignalBlocker block(mode_);mode_->setCurrentIndex(static_cast<int>(snapshot.configuration.mode));offset_->setText(draft);offset_->setEnabled(snapshot.configuration.mode==DeClockMode::ManualOffset);error_->clear();error_->setAccessibleName({});error_->hide();}
+    try{named_text(current_,current);const QSignalBlocker block(mode_);mode_->setCurrentIndex(static_cast<int>(snapshot.configuration.mode));offset_->setText(draft);offset_->setEnabled(snapshot.configuration.mode==DeClockMode::ManualOffset);zone_->setText(zone_draft);zone_->setEnabled(snapshot.configuration.mode==DeClockMode::Automatic);error_->clear();error_->setAccessibleName({});error_->hide();}
     catch(...){stale_=true;reconciliation_required_=true;
         try{named_text(current_,"Unconfirmed: the current setting could not be rendered.");named_text(error_,"Reload to reconcile the owner state; no rollback is asserted.");error_->show();}catch(...){}
         throw;}
@@ -217,10 +231,14 @@ bool DeClockSettingsDialog::applyNow() {
     DeClockConfiguration desired{DeClockMode::Automatic,std::nullopt};QString requested_draft,requested_current;
     try{if(mode_->currentIndex()==1){desired.mode=DeClockMode::ManualOffset;desired.manual_offset=parse_offset(offset_->text());}
         else if(mode_->currentIndex()!=0)throw std::invalid_argument("Unknown mode draft");
+        else if(!zone_->text().isEmpty()){
+            const auto id=zone_->text().toStdString();
+            if(!is_valid_de_zone_id(id))throw std::invalid_argument("Unknown zone draft");
+            desired=make_de_clock_zone_configuration(id);}
         validate_de_clock_configuration(desired,draft_basis_.offset_policy);
         auto proposed=draft_basis_;proposed.configuration=desired;requested_current=current_text(proposed);
         requested_draft=desired.manual_offset?offset_text(desired.manual_offset->value):QString("+00:00");}
-    catch(...){named_text(error_,"Invalid draft. Use signed HH:MM or HH:MM:SS within ±24:00; no setting was applied.");error_->show();return false;}
+    catch(...){named_text(error_,"Invalid draft. Use signed HH:MM or HH:MM:SS within ±24:00, or a known IANA zone id; no setting was applied.");error_->show();return false;}
     DeClockSettingsApplyOutcome outcome{};
     try{outcome=apply_(desired,draft_basis_);}
     catch(...){named_text(error_,"Could not apply DE settings. This action was not committed.");error_->show();return false;}
@@ -234,7 +252,7 @@ bool DeClockSettingsDialog::applyNow() {
     try{
         named_text(current_,current);
         if(rejected){named_text(error_,"Setting was not applied: "+message+" Reload if the draft is based on older settings.");error_->show();return false;}
-        const QSignalBlocker block(mode_);mode_->setCurrentIndex(static_cast<int>(desired.mode));offset_->setText(draft);offset_->setEnabled(desired.mode==DeClockMode::ManualOffset);
+        const QSignalBlocker block(mode_);mode_->setCurrentIndex(static_cast<int>(desired.mode));offset_->setText(draft);offset_->setEnabled(desired.mode==DeClockMode::ManualOffset);zone_->setEnabled(desired.mode==DeClockMode::Automatic);
         if(outcome.status==DeClockSettingsApplyStatus::CommittedDisplayError){named_text(error_,"Setting WAS applied; clock display unavailable: "+message);error_->show();return false;}
         error_->clear();error_->setAccessibleName({});error_->hide();return true;
     }catch(...){stale_=true;reconciliation_required_=true;

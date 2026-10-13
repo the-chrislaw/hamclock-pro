@@ -153,7 +153,7 @@ private:
     bool reconciliation_required_ = false;
     bool updating_ = false;
     QComboBox* mode_ = nullptr;
-    QLineEdit* offset_ = nullptr;
+    QLineEdit *offset_ = nullptr, *zone_ = nullptr;
     QLabel *current_ = nullptr, *scope_ = nullptr, *error_ = nullptr;
     QPushButton *apply_button_ = nullptr, *reload_button_ = nullptr, *cancel_button_ = nullptr;
 };

@@ -21,7 +21,7 @@ namespace {
 using namespace hamclock;
 int checks=0,failures=0;
 void check(bool value,const char* label){++checks;if(!value){++failures;std::cerr<<"FAIL: "<<label<<'\n';}}
-bool same_config(const DeClockConfiguration& a,const DeClockConfiguration& b){return a.mode==b.mode && a.manual_offset.has_value()==b.manual_offset.has_value() && (!a.manual_offset || a.manual_offset->value==b.manual_offset->value);}
+bool same_config(const DeClockConfiguration& a,const DeClockConfiguration& b){return a.mode==b.mode && a.manual_offset.has_value()==b.manual_offset.has_value() && (!a.manual_offset || a.manual_offset->value==b.manual_offset->value) && de_clock_zone_id(a)==de_clock_zone_id(b);}
 bool same(const DeClockConfigurationSnapshot& a,const DeClockConfigurationSnapshot& b){return same_config(a.configuration,b.configuration) && a.offset_policy.minimum.value==b.offset_policy.minimum.value && a.offset_policy.maximum.value==b.offset_policy.maximum.value && a.location.latitude==b.location.latitude && a.location.longitude==b.location.longitude && a.configuration_revision==b.configuration_revision && a.location_revision==b.location_revision;}
 DeClockConfigurationSnapshot initial(){return {{DeClockMode::Automatic,std::nullopt},{{-86400},{86400}},{40,-73},1,1};}
 DeClockSettingsApplyOutcome outcome(DeClockSettingsApplyStatus status,const DeClockConfigurationSnapshot& snapshot,const char* reason=""){
@@ -44,6 +44,7 @@ struct Owner {
 template<class Action>bool invalid(Action action){try{action();}catch(const std::invalid_argument&){return true;}return false;}
 QLineEdit* draft(DeClockSettingsDialog& dialog){return dialog.findChild<QLineEdit*>("deClockOffsetDraft");}
 QComboBox* mode(DeClockSettingsDialog& dialog){return dialog.findChild<QComboBox*>("deClockMode");}
+QLineEdit* zone(DeClockSettingsDialog& dialog){return dialog.findChild<QLineEdit*>("deClockZoneDraft");}
 QLabel* error(DeClockSettingsDialog& dialog){return dialog.findChild<QLabel*>("deClockActionError");}
 QLabel* current(DeClockSettingsDialog& dialog){return dialog.findChild<QLabel*>("deClockCurrent");}
 } // namespace
@@ -142,5 +143,22 @@ int main(int argc,char** argv){
         auto font=themed.font();font.setPointSize(20);themed.setFont(font);themed.resize(800,480);app.processEvents();check(scroll->horizontalScrollBar()->maximum()==0 && draft(themed)->height()>=draft(themed)->sizeHint().height(),"enlarged font fits/scrolls at seven-inch candidate geometry");
     }}
     QApplication::setPalette(original_palette);app.processEvents();
+    {   // IANA zone id for Automatic mode (DST-aware DE civil time).
+        Owner zone_owner;DeClockSettingsDialog zd([&](){return zone_owner.get();},[&](const auto& d,const auto& e){return zone_owner.apply(d,e);},"light");
+        zd.show();app.processEvents();
+        check(zone(zd)!=nullptr && zone(zd)->isEnabled() && zone(zd)->minimumHeight()>=44 && zone(zd)->text().isEmpty(),"zone field exists, enabled for Automatic, 44 px tall, empty by default");
+        zone(zd)->setText("America/New_York");
+        check(zd.applyNow() && de_clock_zone_id(zone_owner.state.configuration)=="America/New_York" && zone_owner.state.configuration.mode==DeClockMode::Automatic && !zone_owner.state.configuration.manual_offset && zone_owner.state.configuration_revision==2,"valid zone applies as Automatic with zone id");
+        check(current(zd)->text().contains("America/New_York"),"current label names the applied zone");
+        const int before=zone_owner.applies;zone(zd)->setText("Not/AZone");
+        check(!zd.applyNow() && zone_owner.applies==before && error(zd)->isVisible() && zone(zd)->text()=="Not/AZone","unknown zone rejected without callback, raw draft kept");
+        zone(zd)->setText("bad zone!");check(!zd.applyNow() && zone_owner.applies==before,"malformed zone rejected without callback");
+        zone(zd)->setText("");check(zd.applyNow() && de_clock_zone_id(zone_owner.state.configuration).empty(),"empty zone clears the id");
+        zone(zd)->setText("Europe/London");check(zd.applyNow(),"zone set again");mode(zd)->setCurrentIndex(1);
+        check(!zone(zd)->isEnabled(),"zone field disabled in Manual mode");
+        draft(zd)->setText("+01:00");check(zd.applyNow() && de_clock_zone_id(zone_owner.state.configuration).empty(),"Manual applies without a zone id");
+        mode(zd)->setCurrentIndex(0);zone_owner.state.configuration=make_de_clock_zone_configuration("Asia/Tokyo");++zone_owner.state.configuration_revision;
+        check(zd.reloadNow() && zone(zd)->text()=="Asia/Tokyo","Reload shows the owner's zone id");
+    }
     std::cout<<"Qt DE settings: "<<checks<<" checks, "<<failures<<" failures\n";return failures?1:0;
 }
