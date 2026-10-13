@@ -54,3 +54,7 @@
 - Opened `agent/wx-openmeteo`: `src/widgets/weather` (Open-Meteo current conditions at DE and DX, strict parser, response-location check so a stale cache for an old station is never shown, unconfigured/stale/offline states). Fixture is the real response captured 2026-10-13 from #53's sample set.
 - #53 (not mine) was still in CI; left alone.
 - Next: callsign lookup (QRZ/HamQTH) session handling.
+
+## 2026-10-13 (UTC), Space weather (area B)
+- No open PRs. Opened `agent/space-solarwind`: `src/widgets/solarwind` (SWPC RTSW wind + mag 1-min feeds; active spacecraft only, null/-9999 fill rejected; 1 h sparklines; stale when the newest observation is >15 min old even if the download is fresh). Fixtures are trimmed real captures from 2026-10-13. Same SWPC policy as the existing widget, polled every 2 min.
+- Next: sunspot number + 30-day flux trend chart, Kp 3-day bars.

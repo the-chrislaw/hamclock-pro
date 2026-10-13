@@ -39,7 +39,7 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 
 ### B. Space weather and solar (owns `src/widgets/spaceweather/`, `solar*`, `bands*`)
 1. ✅ Kp, solar flux, X-ray class (NOAA SWPC) — the reference widget.
-2. Solar wind speed/density and Bz (SWPC `products/solar-wind/*`), with sparkline history.
+2. ✅ Solar wind speed/density and Bz (SWPC `json/rtsw/*_1m.json`; the old `products/solar-wind/*` URLs are gone), with sparkline history.
 3. Sunspot number and 30-day solar flux trend chart; Kp 3-day bar chart.
 4. Band conditions (F07): day/night HF band outlook computed from SFI/Kp/A (document the model), optionally KC2G MUF map if terms allow.
 5. Solar imagery (F09): NASA SDO latest images (AIA 193/304, HMI), cached, tap to cycle.
@@ -73,6 +73,7 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 | Station + clocks + DE local time | A | Working (QML) |
 | World map, day/night, path | A | Working (QML, rendered via legacy widget) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
+| Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (no map overlay or filters yet; shows Not configured until a cluster host is set) |
 | Sun rise/set, day length at DE and DX (offline) | D | Working (moon, satellites, beacons, EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature; no forecast yet) |
