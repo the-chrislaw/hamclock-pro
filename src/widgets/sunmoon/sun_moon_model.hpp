@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "../../domain/astro_sun.hpp"
+#include "../../domain/astro_moon.hpp"
 #include <QString>
 #include <QTimer>
 
@@ -14,6 +15,12 @@ struct SunSummary {
 };
 SunSummary summarize_sun(UtcSeconds now, double latitude_deg, double longitude_deg);
 
+// Moon phase, next rise/set and the current az/el at one station, offline.
+struct MoonSummary {
+    QString phase, illumination, next_rise, next_set, position; // empty = not available
+};
+MoonSummary summarize_moon(UtcSeconds now, double latitude_deg, double longitude_deg);
+
 class SunMoonModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(bool hasStation READ hasStation NOTIFY changed)
@@ -25,6 +32,11 @@ class SunMoonModel : public WidgetModel {
     Q_PROPERTY(QString dxSet READ dxSet NOTIFY changed)
     Q_PROPERTY(QString dxDay READ dxDay NOTIFY changed)
     Q_PROPERTY(QString dxNote READ dxNote NOTIFY changed)
+    Q_PROPERTY(QString moonPhase READ moonPhase NOTIFY changed)
+    Q_PROPERTY(QString moonIllumination READ moonIllumination NOTIFY changed)
+    Q_PROPERTY(QString moonRise READ moonRise NOTIFY changed)
+    Q_PROPERTY(QString moonSet READ moonSet NOTIFY changed)
+    Q_PROPERTY(QString moonPosition READ moonPosition NOTIFY changed)
 public:
     explicit SunMoonModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -39,6 +51,11 @@ public:
     QString dxSet() const { return dx_.next_set; }
     QString dxDay() const { return dx_.day_length; }
     QString dxNote() const { return dx_.note; }
+    QString moonPhase() const { return moon_.phase; }
+    QString moonIllumination() const { return moon_.illumination; }
+    QString moonRise() const { return moon_.next_rise; }
+    QString moonSet() const { return moon_.next_set; }
+    QString moonPosition() const { return moon_.position; }
 
 signals:
     void changed();
@@ -48,6 +65,7 @@ private:
     QTimer timer_;
     bool has_station_ = false;
     SunSummary de_, dx_;
+    MoonSummary moon_; // as seen from DE
 };
 
 void register_widget_sunmoon(WidgetRegistry& registry, const WidgetContext& context);

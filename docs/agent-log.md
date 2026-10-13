@@ -72,3 +72,7 @@
 ## 2026-10-13 (UTC), Spots (area C), run 2
 - Opened `agent/spots-filters`: band and mode filters for the DX cluster list (model properties, tap-to-cycle buttons on the card, "No spots match" state) + tests. The card layout was also fixed to stack in a column. Offscreen screenshots cannot show the spot list (no cluster in fixtures), so the filter row is checked by model tests only; map overlay is area A's map, still pending.
 - Next: PSKReporter (F14); spots on the map once the QML map exposes an overlay API.
+
+## 2026-10-13 (UTC), Astro (area D), run 2
+- No open PRs of mine (sunrise merged). Opened `agent/astro-moon`: `src/domain/astro_moon` (Meeus ch. 47 principal terms, phase/illumination, topocentric az/el, rise/set) validated against Meeus example 47.a and almanac new/full/quarter instants (elongation within 0.01-0.4 deg); Sun & Moon card gains phase, moonrise/set and az/el at DE. All offline.
+- Next: SGP4 satellites (vendor library + licence in docs/, CelesTrak TLE cache, passes at DE).
