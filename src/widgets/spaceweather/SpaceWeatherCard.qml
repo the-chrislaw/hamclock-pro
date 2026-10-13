@@ -4,7 +4,51 @@ import HamClock
 
 Card {
     id: root
+    // Compact slot: one line per value (label left, value right) so nothing is clipped.
+    Column {
+        visible: root.compact
+        width: parent.width
+        spacing: Theme.gap * 0.4
+        Repeater {
+            model: [
+                { label: "Kp", ok: root.widget && root.widget.hasKp,
+                  value: root.widget && root.widget.hasKp ? root.widget.kp.toFixed(1) + " " + root.widget.kpText : "",
+                  color: root.widget && root.widget.hasKp && root.widget.kp >= 5 ? Theme.bad
+                       : root.widget && root.widget.hasKp && root.widget.kp >= 4 ? Theme.warn : Theme.ink },
+                { label: "SFI", ok: root.widget && root.widget.hasSolarFlux,
+                  value: root.widget && root.widget.hasSolarFlux ? String(root.widget.solarFlux) : "", color: Theme.ink },
+                { label: "X-ray", ok: root.widget && root.widget.xrayClass.length > 0,
+                  value: root.widget ? root.widget.xrayClass : "",
+                  color: root.widget && root.widget.xrayClass[0] === "X" ? Theme.bad
+                       : root.widget && root.widget.xrayClass[0] === "M" ? Theme.warn : Theme.ink }
+            ]
+            Item {
+                required property var modelData
+                width: parent.width
+                height: Math.round(Theme.fontValue * 0.75) + 4 * Theme.scale
+                Text {
+                    text: modelData.label
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontCaption
+                    font.weight: Font.DemiBold
+                    font.capitalization: Font.AllUppercase
+                    anchors.baseline: valueText.baseline
+                }
+                Text {
+                    id: valueText
+                    x: 52 * Theme.scale
+                    width: parent.width - x
+                    text: modelData.ok ? modelData.value : "—"
+                    color: modelData.ok ? modelData.color : Theme.secondary
+                    font.pixelSize: Math.round(Theme.fontValue * 0.75)
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+            }
+        }
+    }
     RowLayout {
+        visible: !root.compact
         width: parent.width
         spacing: Theme.gap * 1.5
         Metric {
