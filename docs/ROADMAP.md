@@ -2,6 +2,10 @@
 
 Written October 12, 2026. This is the single plan from today's state to a 1.0 release. It replaces no evidence document; it orders the work. Detailed specs, audits and validation notes stay in `docs/` and `docs/workstreams/`.
 
+## Scope change (October 13)
+
+After the first Pi run the owner judged the scope too narrow and the Qt Widgets look dated. Decisions: **every widget works with live data**, the UI moves to **Qt Quick (QML)**, and work runs as **parallel agents, one per widget area**. The widget contract and the full backlog by area are in [docs/WIDGETS.md](WIDGETS.md), which now drives the work; the milestones below remain for platform, packaging and release.
+
 ## Where we are
 
 - **Code:** C++17, Qt 6 only (the SDL2 experiment was retired October 12). 33 CTest suites pass on macOS and in CI on Ubuntu.
@@ -17,11 +21,11 @@ HamClock Pro installs with one command on any supported Raspberry Pi (see "Platf
 
 - UTC and DE local time, DE/DX stations with locator, distance and bearing
 - the world map with land fill, day/night terminator and the DE→DX path
-- space weather (Kp, solar flux, X-ray) and a working DX cluster spot list
+- every widget in [docs/WIDGETS.md](WIDGETS.md) working with live data (space weather and solar, spots, astronomy and satellites, weather, lookup, events, radio)
 - a settings screen that saves and restores everything above
 - the approved visual design in light and dark, scaling cleanly to the screen, usable by touch alone or by keyboard/remote alone
 
-It must run both inside a desktop session and directly on the display without a desktop (Pi OS Lite), and run acceptably on a Pi 3 and Zero 2 W. Everything else in original HamClock 4.22 is post-1.0.
+It must run both inside a desktop session and directly on the display without a desktop (Pi OS Lite), and run acceptably on a Pi 3 and Zero 2 W. 
 
 ## Milestones
 

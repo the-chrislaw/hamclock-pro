@@ -42,7 +42,7 @@ jobs:
           platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
           docker run --rm --platform "$platform" -v "$PWD":/src -w /src debian:${{ matrix.release }} bash -euxc "
             apt-get update
-            apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev dpkg-dev file
+            apt-get install -y --no-install-recommends cmake g++ make qt6-base-dev qt6-declarative-dev dpkg-dev file
             cmake -S . -B build-pi -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCPACK_PACKAGE_VERSION=$version
             cmake --build build-pi -j\$(nproc)
             cd build-pi && cpack -G DEB
@@ -64,20 +64,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Qt
-        run: brew install qt
+        run: brew install qtbase qtdeclarative
       - name: Build
         run: |
-          cmake -S . -B build-mac -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+          cmake -S . -B build-mac -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DCMAKE_PREFIX_PATH="$(brew --prefix)"
           cmake --build build-mac -j"$(sysctl -n hw.ncpu)"
       - name: Bundle Qt into the dashboard app and zip
         run: |
           cd build-mac
-          "$(brew --prefix qt)/bin/macdeployqt" hamclock-pro-dashboard.app
-          ditto -c -k --keepParent hamclock-pro-dashboard.app hamclock-pro-dashboard-macos-arm64.zip
+          "$(brew --prefix)/bin/macdeployqt" hamclock-pro.app -qmldir=../src
+          ditto -c -k --keepParent hamclock-pro.app hamclock-pro-macos-arm64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-macos-arm64
-          path: build-mac/hamclock-pro-dashboard-macos-arm64.zip
+          path: build-mac/hamclock-pro-macos-arm64.zip
 
   publish:
     name: Publish release
@@ -101,5 +101,5 @@ jobs:
             gh release delete latest --cleanup-tag --yes || true
             gh release create latest dist/* --target "$GITHUB_SHA" --prerelease \
               --title "Latest development build" \
-              --notes "Automatic build of main at ${GITHUB_SHA::7}. Development preview: not feature complete, not hardware-validated. Raspberry Pi: pick the file matching your OS (trixie = current Raspberry Pi OS, bookworm = Legacy) and architecture (arm64 = 64-bit, armhf = 32-bit), then sudo apt install ./hamclock-pro_*.deb, then run hamclock-pro-dashboard --station PATH. macOS: unzip and open the app (unsigned; right-click > Open)."
+              --notes "Automatic build of main at ${GITHUB_SHA::7}. Development preview: not feature complete, not hardware-validated. Raspberry Pi: pick the file matching your OS (trixie = current Raspberry Pi OS, bookworm = Legacy) and architecture (arm64 = 64-bit, armhf = 32-bit), then sudo apt install ./hamclock-pro_*.deb, then run hamclock-pro. macOS: unzip and open the app (unsigned; right-click > Open)."
           fi

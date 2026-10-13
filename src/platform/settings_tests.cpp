@@ -27,7 +27,7 @@ int run_settings_tests() {
     };
     const std::string valid = "version=1\nde_lat=37.7\nde_lon=-122.4\ndx_lat=51.5\ndx_lon=-0.1\ncallsign=N0CALL/P\nappearance=system\n";
     try {
-        const StationSettings original{{37.71234567890123, -122.4}, {51.5, -0.1}, "N0CALL/P", "system"};
+        const StationSettings original{{37.71234567890123, -122.4}, {51.5, -0.1}, "N0CALL/P", "system", {}};
         save_new_settings(path, original);
         bool existing_new_rejected = false;
         auto replacement = original; replacement.callsign = "N1TEST";

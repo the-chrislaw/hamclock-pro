@@ -417,9 +417,11 @@ if(BUILD_TESTING)
     set_tests_properties(cli-self-test cli-regression map-import-regression PROPERTIES TIMEOUT 60 ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 endif()
 
+include(cmake/HamClockApp.cmake)
+
 # Installation and packaging (used by .github/workflows/release.yml).
 include(GNUInstallDirs)
-install(TARGETS hamclock-pro-dashboard hamclock-pro-editor hamclock-pro-map-preview hamclock-pro-cli
+install(TARGETS hamclock-pro hamclock-pro-dashboard hamclock-pro-editor hamclock-pro-map-preview hamclock-pro-cli
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     BUNDLE DESTINATION .)
 install(FILES LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
@@ -433,7 +435,7 @@ set(CPACK_DEBIAN_PACKAGE_SECTION hamradio)
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 # Qt platform plugins are loaded at runtime, so shlibdeps cannot see them.
 # Raspberry Pi OS desktops are Wayland; without this the app cannot start.
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-wayland")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "qt6-wayland, qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-layouts, qml6-module-qtquick-window, qml6-module-qtquick-templates, qml6-module-qtqml-workerscript")
 include(CPack)
 
 if(BUILD_TESTING)
