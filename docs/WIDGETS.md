@@ -72,4 +72,5 @@ Each area: one owner agent, branches `agent/<area>-<slug>`, files listed are exc
 | Station + clocks + DE local time | A | Working (QML) |
 | World map, day/night, path | A | Working (QML, rendered via legacy widget) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
+| DX cluster: telnet client, spot parser, spot list card | C | Partial (no map overlay or filters yet; shows Not configured until a cluster host is set) |
 | Everything else in the backlog | A–E | Not started |
