@@ -1,15 +1,13 @@
 #pragma once
-// QML map: renders the existing WorldMapWidget (land, coast, night shade,
-// subsolar point, DE/DX path) into a QQuickPaintedItem, so the map code is
-// shared with the legacy dashboard rather than duplicated.
+// QML map: paints land, coast, night shade, subsolar point and the DE/DX path
+// with the pure QPainter MapRenderer (no QtWidgets) and fills its whole item.
 #include <QQuickPaintedItem>
+#include "../map/map_renderer.hpp"
 #include <QTimer>
-#include <memory>
 
 namespace hamclock {
 
 class AppSettings;
-class WorldMapWidget;
 
 class MapItem : public QQuickPaintedItem {
     Q_OBJECT
@@ -22,9 +20,9 @@ public:
     // Must be called once from C++ before the item is shown (see main.cpp).
     static void setSettings(AppSettings* settings);
 
-    bool dark() const { return dark_; }
+    bool dark() const { return scene_.dark; }
     void setDark(bool dark);
-    bool showPath() const { return show_path_; }
+    bool showPath() const { return scene_.route_visible; }
     void setShowPath(bool show);
     void paint(QPainter* painter) override;
 
@@ -34,10 +32,9 @@ signals:
 
 private:
     void syncStation();
-    std::unique_ptr<WorldMapWidget> map_;
+    MapRenderer renderer_;
+    MapScene scene_;
     QTimer minute_timer_;
-    bool dark_ = false;
-    bool show_path_ = true;
 };
 
 } // namespace hamclock

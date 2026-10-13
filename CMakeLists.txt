@@ -27,6 +27,8 @@ add_library(hamclock-world-map STATIC
     src/qt/land_fill_path.cpp
     src/map/path.cpp
     src/map/projection.cpp
+    src/map/viewport.cpp
+    src/map/map_renderer.cpp
     src/domain/geometry.cpp
     src/domain/solar_position.cpp)
 target_link_libraries(hamclock-world-map PUBLIC Qt6::Core Qt6::Gui Qt6::Widgets)
@@ -73,6 +75,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME qt-land-widget-regression COMMAND qt-land-widget-regression)
     set_tests_properties(qt-land-widget-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-map-viewport-regression tests/qt_map_viewport_regression.cpp)
+    target_link_libraries(qt-map-viewport-regression PRIVATE hamclock-world-map)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-viewport-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-viewport-regression COMMAND qt-map-viewport-regression)
+    set_tests_properties(qt-map-viewport-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
 endif()
 
 add_executable(hamclock-pro-map-preview MACOSX_BUNDLE

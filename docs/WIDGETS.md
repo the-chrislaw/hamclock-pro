@@ -183,7 +183,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Widget | Area | State |
 |---|---|---|
 | Station + clocks + DE local time | A | Working (QML); dashboard page scrolls (touch flick) when widgets exceed the screen, map keeps a full 2:1 size |
-| World map, day/night, path | A | Working (QML, rendered via legacy widget) |
+| World map, day/night, path | G | Working (QML, pure QPainter renderer, no QtWidgets; fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |

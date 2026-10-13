@@ -1,6 +1,6 @@
 #include "map_item.hpp"
 #include "app_settings.hpp"
-#include "../qt/world_map_widget.hpp"
+#include "../map/path.hpp"
 #include <QDateTime>
 #include <QPainter>
 #include <exception>
@@ -9,22 +9,20 @@ namespace hamclock {
 namespace {
 AppSettings* g_settings = nullptr;
 constexpr int kSolarRefreshMs = 30000;
-constexpr int kWidgetMargin = 8;
 }
 
 void MapItem::setSettings(AppSettings* settings) { g_settings = settings; }
 
-MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent), map_(std::make_unique<WorldMapWidget>()) {
+MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     setAntialiasing(true);
     setOpaquePainting(true);
-    map_->setAttribute(Qt::WA_DontShowOnScreen);
-    map_->setAppearance("light");
     if (g_settings) {
         connect(g_settings, &AppSettings::stationChanged, this, &MapItem::syncStation);
         syncStation();
     }
     auto refresh_sun = [this] {
-        map_->setSolarTime({QDateTime::currentSecsSinceEpoch()});
+        // The Sun moves 0.25 degrees a minute; the minute-rounded position is plenty.
+        scene_.sun = subsolar_point({QDateTime::currentSecsSinceEpoch() / 60 * 60});
         update();
     };
     refresh_sun();
@@ -38,43 +36,42 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent), map_(std::make
 MapItem::~MapItem() = default;
 
 void MapItem::setDark(bool dark) {
-    if (dark == dark_) return;
-    dark_ = dark;
-    map_->setAppearance(dark ? "dark" : "light");
+    if (dark == scene_.dark) return;
+    scene_.dark = dark;
     emit darkChanged();
     update();
 }
 
 void MapItem::setShowPath(bool show) {
-    if (show == show_path_) return;
-    show_path_ = show;
-    map_->setRouteVisible(show);
+    if (show == scene_.route_visible) return;
+    scene_.route_visible = show;
     emit showPathChanged();
     update();
 }
 
 void MapItem::syncStation() {
-    if (!g_settings || !g_settings->configured()) {
-        map_->clearEndpoints();
-    } else {
+    scene_.de.reset();
+    scene_.dx.reset();
+    scene_.route.clear();
+    if (g_settings && g_settings->configured()) {
         try {
-            map_->setEndpoints(g_settings->station().de, g_settings->station().dx);
+            const auto& station = g_settings->station();
+            const auto result = geometry(station.de, station.dx);
+            scene_.de = station.de;
+            scene_.dx = station.dx;
+            if (result.status != BearingStatus::Antipodal) scene_.route = map_short_path(station.de, station.dx);
         } catch (const std::exception&) {
-            map_->clearEndpoints();
+            scene_.de.reset();
+            scene_.dx.reset();
+            scene_.route.clear();
         }
     }
     update();
 }
 
 void MapItem::paint(QPainter* painter) {
-    const QSize size(static_cast<int>(width()), static_cast<int>(height()));
-    if (size.isEmpty()) return;
-    // The widget keeps a fixed 8 px margin on every side; grow it by that
-    // margin and shift it out so the map itself fills this item.
-    const QSize widget_size = size + QSize(2 * kWidgetMargin, 2 * kWidgetMargin);
-    if (map_->size() != widget_size) map_->resize(widget_size);
-    painter->setClipRect(QRect(QPoint(), size));
-    map_->render(painter, QPoint(-kWidgetMargin, -kWidgetMargin), QRegion(), QWidget::DrawChildren);
+    if (width() <= 0 || height() <= 0) return;
+    renderer_.paint(*painter, QSizeF(width(), height()), scene_);
 }
 
 } // namespace hamclock
