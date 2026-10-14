@@ -75,3 +75,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Pass sky-plot data (backlog D6, domain slice): `SatellitePropagator::pass_track()` returns evenly spaced az/el samples from AOS to LOS; test checks sample count, endpoints on the horizon, azimuth range and peak vs the pass maximum (AO-7 fixture). No UI yet (sky plot in the DX panel is next).
 - Not mine: #220 had no CI results yet, #73 conflicting; left alone. No `[D]` QA issues.
 - Next: sky plot pane, fetch/cache transmitters, detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 14
+- Pass sky plot (backlog D6, UI slice): `SatellitesModel::skyTrack` (24 az/el samples of the first listed pass) and a polar plot in the Satellites card (north up, zenith centre, rings at 30/60 deg) shown only when the slot has room (width > 240 and height > 150 theme units); compact slots keep the text list. The DX panel is area A/G's, so the plot lives in the pane for now. Test checks sample range, endpoints at the 10 deg pass threshold and peak vs the pass maximum. Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device); ASan/UBSan clean for the model test.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues.
+- Next: fetch/cache transmitters, detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8), yearly grayline chart (D11).

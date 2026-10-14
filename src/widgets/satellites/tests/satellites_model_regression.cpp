@@ -11,6 +11,8 @@
 #include <QTimeZone>
 #include <QTimer>
 #include <QVariantMap>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -68,6 +70,20 @@ int main(int argc, char** argv) {
     }
     check(sane, "rows have name, time and 10-90 degree peak elevation");
 
+    {
+        const auto sky = model.skyTrack();
+        bool ok = sky.size() >= 2;
+        double peak = 0;
+        for (const auto& v : sky) {
+            const auto m = v.toMap();
+            ok = ok && m["az"].toDouble() >= 0 && m["az"].toDouble() <= 360 && m["el"].toDouble() >= -1 && m["el"].toDouble() <= 90;
+            peak = std::max(peak, m["el"].toDouble());
+        }
+        check(ok && sky.size() <= 24, "sky track: samples in range");
+        check(!sky.isEmpty() && std::abs(sky.first().toMap()["el"].toDouble() - 10) < 1.5 &&
+              std::abs(sky.last().toMap()["el"].toDouble() - 10) < 1.5, "sky track starts and ends at the 10 degree pass threshold");
+        check(peak <= rows.first().toMap()["maxEl"].toInt() + 1.5 && peak > 5, "sky track peak is within the first pass maximum");
+    }
     {
         const OverlayLayer* layer = nullptr;
         for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = &l;
