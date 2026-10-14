@@ -97,3 +97,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; merged #266 (green, other area); #73 conflicting, #267 checks running, left alone.
 - Read the Simulator log on #266: the object retag worked (the qrc objects now link) but the link still failed on `libQt6Quick_debug.a[arm64][5](qquickhandlerpoint.cpp.o)` built for 'iOS': the kit's static archives carry the device tag too. Experiment: unpack each kit `.a`, retag the members with vtool, repack with libtool (skipping archives with duplicate member names, printed). Still informational; no screenshot or on-device claim yet.
 - Next: read this PR's Simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
+
+## 2026-10-14 (sixteenth hourly run)
+- Owner priority #269: device build to TestFlight before more Simulator work. Added the `iPad TestFlight upload` job to apple.yml (main pushes only, skips cleanly without ASC secrets or `APPLE_TEAM_ID`): Qt 6.8.3 iOS device build via the Xcode generator, `xcodebuild archive` with cloud automatic signing through the API key (`-allowProvisioningUpdates`), build number = run number, export `app-store-connect` with destination `upload`. Key file deleted on exit, nothing echoed. Pushed onto the open #268 branch (one-PR rule). Untested until a main run; if cloud signing cannot create the distribution certificate I will open "Owner input needed: iOS distribution certificate".
+- Simulator work is now time-boxed to two more runs (#268 is the first).
+- Next: read the first main-run result of the TestFlight job, fix, and add the owner as internal tester if the API allows.

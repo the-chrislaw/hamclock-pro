@@ -268,3 +268,91 @@ jobs:
           name: ipad-simulator-screenshot
           path: ipad.png
           if-no-files-found: ignore
+
+  # TestFlight upload of the iPad device build (issue #269). Main pushes only;
+  # every step skips cleanly while the App Store Connect secrets or APPLE_TEAM_ID
+  # are absent. Cloud signing uses the API key, so no certificate or profile is
+  # stored in the repo. The key file is deleted at the end; nothing is echoed.
+  ios-testflight:
+    name: iPad TestFlight upload
+    runs-on: macos-14
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    continue-on-error: true
+    timeout-minutes: 60
+    env:
+      QT_VER: "6.8.3"
+      BUNDLE_ID: com.chrislaw.hamclockpro
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        id: gate
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ] && [ -n "$TEAM" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect secrets or APPLE_TEAM_ID absent; skipping TestFlight"; fi
+      - name: Cache Qt install
+        if: steps.gate.outputs.go == 'true'
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Qt
+          key: qt-${{ runner.os }}-${{ env.QT_VER }}-desktop-ios-v1
+      - name: Install Qt (desktop host tools + iOS)
+        if: steps.gate.outputs.go == 'true' && steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/aqt"
+          "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
+          AQT="$RUNNER_TEMP/aqt/bin/aqt"
+          "$AQT" install-qt mac desktop "$QT_VER" clang_64 -m qtshadertools --outputdir "$HOME/Qt"
+          "$AQT" install-qt mac ios "$QT_VER" ios --outputdir "$HOME/Qt"
+      - name: Configure
+        if: steps.gate.outputs.go == 'true'
+        env:
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          brew install ninja
+          "$HOME/Qt/$QT_VER/ios/bin/qt-cmake" -S . -B build-tf -G Xcode \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DQT_HOST_PATH="$HOME/Qt/$QT_VER/macos" \
+            -DBUILD_TESTING=OFF \
+            -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="$TEAM" \
+            -DCMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Automatic \
+            -DCMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY=2
+      - name: Archive, export and upload
+        if: steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          KEYFILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s' "$KEY" | base64 --decode > "$KEYFILE"
+          trap 'rm -f "$KEYFILE"' EXIT
+          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEYFILE" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          # Build number must rise on every upload: use the run number.
+          BUILD="${{ github.run_number }}"
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          set -o pipefail
+          xcodebuild archive -project build-tf/hamclock-pro.xcodeproj -scheme hamclock-pro \
+            -configuration Release -sdk iphoneos -archivePath "$RUNNER_TEMP/hc.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            CURRENT_PROJECT_VERSION="$BUILD" "${AUTH[@]}" 2>&1 | tee tf-archive.log | tail -5 \
+            || { grep -E "error:|BUILD FAILED" tf-archive.log | head -30; exit 1; }
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/hc.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            "${AUTH[@]}" 2>&1 | tee tf-export.log | tail -15 \
+            || { grep -E "error:|rror Domain" tf-export.log | head -30; exit 1; }
