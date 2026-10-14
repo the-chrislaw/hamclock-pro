@@ -43,3 +43,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Checked by offscreen screenshots at 800x480, 1024x600 (compact) and 1920x1080 (dark); the full non-compact layout was not rendered because all default panes are compact. Not validated on device. Fixture is a real capture (the feed is ~1 kB). ASan/UBSan run on the widget tests.
 - #120 was fixed by #126 earlier today; the issue is still open for QA to close. Left #133 (not mine, iPad check still running) and #73 (docs, unknown mergeability) alone.
 - Next: 9 (DST), then 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Dst index (backlog 9)
+
+- New `solardst` widget ("Dst index"): SWPC `products/kyoto-dst.json` (hourly Kyoto Dst, ~7 days) polled every 30 min. Shows latest nT with a Quiet/Weak/Moderate/Intense/Super word, a 48 h plot with 0 and -50 nT guide lines, and in the full card the 24 h low and observed time. If the latest record is more than 6 h old the widget shows no data rather than an old value as current. Source terms recorded in the roadmap (same SWPC policy).
+- Checked by offscreen screenshots at 800x480 and 1920x1080 (dark; fixture time-shifted to look current); 1024x600 rendered too. Full non-compact layout not rendered (all default panes are compact). Not validated on device. Fixture is a real capture.
+- Merged #146 (docs, green). #147/#148 still had macOS/iPad checks running; #73 (docs) has a stale base and was left alone.
+- Next: 12 (stats ranked by impact), then 7 (DRAP) / 8 (Aurora) with area G's map styles.
