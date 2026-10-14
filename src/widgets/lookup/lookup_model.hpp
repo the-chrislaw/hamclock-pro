@@ -24,6 +24,7 @@ class LookupModel : public WidgetModel {
     Q_PROPERTY(QString grid READ grid NOTIFY resultChanged)
     Q_PROPERTY(QString country READ country NOTIFY resultChanged)
     Q_PROPERTY(QString message READ message NOTIFY resultChanged)
+    Q_PROPERTY(QString path READ path NOTIFY resultChanged)
 public:
     explicit LookupModel(const WidgetContext& context, QObject* parent = nullptr);
 
@@ -35,6 +36,9 @@ public:
     QString grid() const { return current_ ? current_->grid : QString(); }
     QString country() const { return current_ ? current_->country : QString(); }
     QString message() const { return message_; }
+    // "5210 km · 52° SP" from DE to the looked-up grid centre; empty without a DE or a usable grid.
+    QString path() const;
+    static QString pathText(double de_lat, double de_lon, const QString& grid);
 
     Q_INVOKABLE void lookup(const QString& call);
 

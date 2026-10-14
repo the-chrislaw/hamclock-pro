@@ -29,7 +29,7 @@ Card {
             label: root.widget ? root.widget.call : ""
             available: visible
             value: root.widget ? root.widget.name : ""
-            caption: root.widget ? [root.widget.location, root.widget.grid].filter(function (s) { return s.length > 0 }).join(" · ") : ""
+            caption: root.widget ? [root.widget.location, root.widget.grid, root.widget.path].filter(function (s) { return s.length > 0 }).join(" · ") : ""
             Layout.fillWidth: true
         }
         Text {
