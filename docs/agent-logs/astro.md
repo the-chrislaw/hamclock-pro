@@ -32,6 +32,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Not mine: #135, #73 left alone.
 - Next: user-chosen satellites (max two), TLE age (D7), EME (D5).
 
+## 2026-10-14 (UTC), run 11
+- Yearly sunrise/sunset series (backlog D11, domain slice): `sun_year_series(year, lat, lon)` in `astro_sun.*` returns per-day rise/set minutes (UTC) and polar state; test checks London June/December solstice rows against almanac times and Tromso midnight sun/polar night. No UI yet (chart pane is the next slice). Full ctest green locally; ASan/UBSan left to CI.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues.
+- Next: grayline chart pane, SatNOGS transmitters, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
 ## 2026-10-14 (UTC), run 5
 - EME planning slice 1 (backlog D5): `src/domain/astro_eme.*` (mutual Moon-above-both-horizons window bisected to ~1 s, path loss vs perigee = 40 log10(d/356400 km)) and `src/widgets/eme/` compact pane (Moon az/el at DE and DX, mutual window, distance, path loss, declination; lower rows dropped, not clipped, when short). Test checks window edges against the ephemeris, antipodes (no window), in-progress windows and the 2.3 dB apogee figure. Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device); ASan/UBSan run of the EME test clean.
 - Merged #149 (green, other area). #154-#156 CI pending, left alone.

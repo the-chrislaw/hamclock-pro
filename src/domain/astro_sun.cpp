@@ -76,3 +76,26 @@ std::optional<UtcSeconds> next_sun_event(UtcSeconds after, SunEventKind kind, do
     return std::nullopt;
 }
 } // namespace hamclock
+
+namespace hamclock {
+std::vector<SunYearDay> sun_year_series(int year, double latitude_deg, double longitude_deg) {
+    if (year < 1900 || year > 2100) throw std::invalid_argument("year out of range");
+    // Days from 1970-01-01 to Jan 1 of `year` (civil-from-days inverse, Hinnant).
+    const int y = year - 1;
+    const std::int64_t jan1 = std::int64_t(y / 400) * 146097 + (y % 400) * 365 + (y % 400) / 4 - (y % 400) / 100 - 719162 + 0;
+    const bool leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    std::vector<SunYearDay> out;
+    out.reserve(leap ? 366 : 365);
+    for (int d = 0; d < (leap ? 366 : 365); ++d) {
+        const std::int64_t start = (jan1 + d) * 86400;
+        const SunDay day = sun_events_for_utc_day(start, latitude_deg, longitude_deg);
+        SunYearDay e{d + 1, -1, -1, day.polar};
+        for (const auto& ev : day.events) {
+            const double m = double(ev.time.value - start) / 60.0;
+            (ev.kind == SunEventKind::Rise ? e.rise_min : e.set_min) = m;
+        }
+        out.push_back(e);
+    }
+    return out;
+}
+}

@@ -22,4 +22,10 @@ SunDay sun_events_for_utc_day(std::int64_t day_start_utc, double latitude_deg, d
 // days ahead; empty when none (polar regions).
 std::optional<UtcSeconds> next_sun_event(UtcSeconds after, SunEventKind kind,
                                          double latitude_deg, double longitude_deg);
+
+// Yearly sunrise/sunset ("grayline") series for the chart: one entry per UTC
+// day of `year`. Times are minutes after 00:00 UTC of that day; -1 when the day
+// has no such event (see polar). Same accuracy and argument checks as above.
+struct SunYearDay { int day_of_year; double rise_min; double set_min; PolarState polar; };
+std::vector<SunYearDay> sun_year_series(int year, double latitude_deg, double longitude_deg);
 }
