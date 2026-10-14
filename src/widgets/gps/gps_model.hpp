@@ -16,6 +16,7 @@ class GpsModel : public WidgetModel {
     Q_PROPERTY(QString fixText READ fixText NOTIFY changed)
     Q_PROPERTY(QString position READ position NOTIFY changed)
     Q_PROPERTY(QString grid READ grid NOTIFY changed)
+    Q_PROPERTY(QString clockCheck READ clockCheck NOTIFY changed)
     Q_PROPERTY(QString satellites READ satellites NOTIFY changed)
 public:
     explicit GpsModel(const WidgetContext& context, QString host = "127.0.0.1", quint16 port = 2947, QObject* parent = nullptr);
@@ -25,6 +26,7 @@ public:
     QString position() const;
     QString grid() const;
     QString satellites() const;
+    QString clockCheck() const;  // empty without a fresh GPS time
 signals:
     void changed();
 private slots:
