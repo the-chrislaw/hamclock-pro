@@ -1,5 +1,6 @@
 #include "projection.hpp"
 #include "borders.hpp"
+#include "states.hpp"
 #include "coastline.hpp"
 #include <cmath>
 #include <iostream>
@@ -56,6 +57,19 @@ int run_map_tests() {
           if (std::fabs(p.latitude - 49.0) < 0.2 && p.longitude > -110 && p.longitude < -100) us_ca = true;
       }
       check(us_ca, "US-Canada border near 49N"); }
+    { // Natural Earth 110m admin-1 lines: bounds, coverage, and a Colorado-like box edge (41N, ~-102W..-109W) exists.
+      check(state_point_count > 500 && state_point_count <= 100000 && state_part_count <= 10000, "state counts");
+      std::size_t sn = 0; bool co = false;
+      for (const auto part : state_parts) {
+          check(part.start == sn && part.count >= 2 && part.count <= state_point_count - part.start, "state part bounds");
+          sn = static_cast<std::size_t>(part.start) + part.count;
+      }
+      check(sn == state_point_count, "state coverage");
+      for (const auto p : state_points) {
+          check(valid_location({p.latitude, p.longitude}), "state coordinate");
+          if (std::fabs(p.latitude - 41.0) < 0.1 && p.longitude > -109.1 && p.longitude < -102) co = true;
+      }
+      check(co, "Colorado/Wyoming state line near 41N"); }
     // Azimuthal equidistant: centre, cardinal directions, antipode, round trips.
     {
         auto close = [](double a, double b, double e = 1e-9) { return std::abs(a - b) < e; };

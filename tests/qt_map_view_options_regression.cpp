@@ -122,6 +122,11 @@ int main(int argc, char** argv) {
       for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
           MapScene bs; bs.sun.reset(); bs.projection = proj; const auto off = render(bs); bs.borders = true;
           check(render(bs) != off, "borders render differently"); } }
+    { MapViewOptions sm; check(!sm.states, "states default off"); sm.states = true;
+      check(sm.save(ini), "save states"); MapViewOptions r; r.load(ini); check(r.states, "states round trip");
+      for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
+          MapScene ss; ss.sun.reset(); ss.projection = proj; const auto off = render(ss); ss.states = true;
+          check(render(ss) != off, "states render differently"); } }
     { MapViewOptions lp; check(!lp.long_path, "long path default off"); lp.long_path = true;
       check(lp.save(ini), "save long path"); MapViewOptions r; r.load(ini); check(r.long_path, "long path round trip"); }
     { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};

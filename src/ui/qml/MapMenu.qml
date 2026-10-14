@@ -42,6 +42,8 @@ Popup {
                      onClicked: menu.map.skyPoints = !menu.map.skyPoints }
             Toggle { label: "Country borders"; on: menu.map ? menu.map.borders : false
                      onClicked: menu.map.borders = !menu.map.borders }
+            Toggle { label: "US state lines"; on: menu.map ? menu.map.states : false
+                     onClicked: menu.map.states = !menu.map.states }
             Toggle { label: "Gray map"; on: menu.map ? menu.map.gray : false
                      onClicked: menu.map.gray = !menu.map.gray }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false
