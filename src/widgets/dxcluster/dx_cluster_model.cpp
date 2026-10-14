@@ -32,6 +32,7 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
         const auto* e = dxcluster::DxccTable::bundled().lookup(s.dx);
         return e ? e->name : QString();
     }
+    case NeededRole: return needed_ ? needed_(s.dx, s.band) : QString();
     case OtaRole: return s.ota_ref.isEmpty() ? QString() : s.ota_program + " " + s.ota_ref;
     }
     return {};
@@ -39,7 +40,7 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}, {OtaRole, "ota"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}, {OtaRole, "ota"}, {NeededRole, "needed"}};
 }
 
 void DxSpotList::rebuild() {
@@ -85,6 +86,12 @@ QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& 
         out << m;
     }
     return out;
+}
+
+void DxSpotList::set_needed_resolver(std::function<QString(const QString&, const QString&)> r) {
+    beginResetModel();
+    needed_ = std::move(r);
+    endResetModel();
 }
 
 void DxSpotList::set_watch(const QStringList& entries) {
@@ -212,6 +219,19 @@ void register_widget_dxcluster(WidgetRegistry& registry, const WidgetContext& co
     auto* model = new DxClusterModel(context, make_tcp_socket_factory());
     registry.add({"dxcluster", "DX cluster", QUrl("qrc:/widgets/dxcluster/DxClusterCard.qml"), "wide", 40}, model);
     QTimer::singleShot(0, model, &DxClusterModel::start);
+    // New-DXCC / new-band badges from the ADIF log widget, looked up by id at run time (no link-time dependency).
+    QTimer::singleShot(0, model, [model, &registry] {
+        QObject* adif = registry.model("adif");
+        if (!adif) return;
+        model->setNeededResolver([adif](const QString& call, const QString& band) {
+            bool needed = false;
+            if (QMetaObject::invokeMethod(adif, "entityNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call)) && needed)
+                return QStringLiteral("NEW DXCC");
+            if (!band.isEmpty() && QMetaObject::invokeMethod(adif, "bandSlotNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call), Q_ARG(QString, band)) && needed)
+                return QStringLiteral("NEW BAND");
+            return QString();
+        });
+    });
 }
 
 } // namespace hamclock

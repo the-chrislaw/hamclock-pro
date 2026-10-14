@@ -125,3 +125,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 15 (slice): NADXCC/NABand queries. `AdifModel::entityNeeded(call)` and `bandSlotNeeded(call, band)` use a DXCC resolver (bundled cty.dat table by default, injectable) over the loaded log; both return false without data or for unknown entities. No AppSettings change. Test with a synthetic resolver passes normally and under ASan/UBSan (leak check off).
 - Not done: wiring into DX cluster/HamAlert rows and watch keywords (NADXCC etc.), NAPref/NAGrid, ADIF map overlay. Not validated on device.
 - Next: wire "needed" badge into the DX cluster card, OTA filter controls in Settings, Meshtastic.
+
+## 2026-10-14 (run 22)
+- Step 1: nothing of mine open; #264 (ui) and #73 (stale docs) are other areas', left alone. Open `[A]`/`[D]`/`[G]` qa issues only, no `[C]`.
+- Backlog item 15 (slice): "needed" badge on DX cluster rows. `DxSpotList` has a `needed` role (NEW DXCC / NEW BAND) from an injectable resolver; the registered widget wires it to the ADIF model's `entityNeeded`/`bandSlotNeeded` via the registry by id at run time (no link dependency; no badge without an ADIF log). No AppSettings change. Test with a fake resolver passes normally and under ASan/UBSan (leak check off).
+- Not done: NADXCC/NABand watch keywords, NAPref/NAGrid, ADIF map overlay. No screenshot (cluster Not configured without a callsign). Not validated on device.
+- Next: OTA filter controls in Settings, Meshtastic, ONTA/ADIF overlays.

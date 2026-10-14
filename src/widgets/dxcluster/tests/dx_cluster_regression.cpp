@@ -147,6 +147,12 @@ int main(int argc, char** argv) {
     check(list->data(list->index(0), DxSpotList::OtaRole).toString().isEmpty(), "no reference, no ota text");
     emit model.client().lineReceived("DX de W3LPL:     14074.0  K1POT       FT8 POTA K-1234                 1235Z FN20");
     check(list->data(list->index(0), DxSpotList::OtaRole) == "POTA K-1234", "ota role names program and reference");
+    check(list->data(list->index(0), DxSpotList::NeededRole).toString().isEmpty(), "no resolver, no needed badge");
+    model.setNeededResolver([](const QString& call, const QString& band) {
+        return call == "K1POT" ? (band == "20m" ? QStringLiteral("NEW DXCC") : QStringLiteral("NEW BAND")) : QString();
+    });
+    check(list->data(list->index(0), DxSpotList::NeededRole).toString() == "NEW DXCC", "resolver gets call and band (14074 is 20m)");
+    model.setNeededResolver({});
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 
