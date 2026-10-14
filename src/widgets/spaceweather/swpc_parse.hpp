@@ -5,6 +5,7 @@
 #include <QDateTime>
 #include <QString>
 #include <optional>
+#include <vector>
 
 namespace hamclock::swpc {
 
@@ -21,6 +22,12 @@ std::optional<Reading> latest_solar_flux(const QByteArray& body);
 // json/goes/primary/xrays-*.json: rows per energy band; uses the 0.1-0.8 nm
 // band (the one flare classes are defined on). Value is W/m^2.
 std::optional<Reading> latest_xray_flux(const QByteArray& body);
+
+// 0.1-0.8 nm series from xrays-1-day.json, oldest first, reduced to one point per
+// `bucket_minutes` (the bucket maximum, so short flares survive the reduction).
+std::vector<Reading> xray_series(const QByteArray& body, int bucket_minutes);
+// Position of a flux on the plot's log axis: 0 at A1 (1e-8) to 1 at X10 (1e-3), clamped.
+double xray_plot_fraction(double flux_w_m2);
 
 // GOES flare class for a 0.1-0.8 nm flux, e.g. 3.2e-6 -> "C3.2", 1.2e-3 -> "X12".
 QString xray_class(double flux_w_m2);

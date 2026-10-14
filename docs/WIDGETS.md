@@ -74,7 +74,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 8. Aurora pane, Aurora map style, and automatic switch to the Aurora/DRAP map when activity is high.
 9. DST (Disturbance) pane.
 10. NOAA R/S/G scales pane.
-11. X-ray 24 h history plot.
+11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
 12. Space-weather stats ranked by impact.
 13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
 14. HamQSL (N0NBH) HF and VHF condition panes (check terms first).

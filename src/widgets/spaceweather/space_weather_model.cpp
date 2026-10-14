@@ -13,6 +13,9 @@ using namespace std::chrono_literals;
 constexpr PollPolicy kKpPolicy{15min, 4h, 1h};
 constexpr PollPolicy kFluxPolicy{6h, 36h, 6h};
 constexpr PollPolicy kXrayPolicy{5min, 30min, 30min};
+// 24 h history is ~650 kB, so it is polled far less often than the 6 h product.
+constexpr PollPolicy kXrayDayPolicy{15min, 1h, 1h};
+constexpr char kXrayDayUrl[] = "https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json";
 constexpr char kKpUrl[] = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json";
 constexpr char kFluxUrl[] = "https://services.swpc.noaa.gov/products/summary/10cm-flux.json";
 constexpr char kXrayUrl[] = "https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json";
@@ -22,8 +25,9 @@ SpaceWeatherModel::SpaceWeatherModel(const WidgetContext& context, QObject* pare
     : WidgetModel("spaceweather", "Space weather", parent),
       kp_source_(new PolledSource("swpc-kp", QUrl(kKpUrl), kKpPolicy, context.transport, this)),
       flux_source_(new PolledSource("swpc-sfi", QUrl(kFluxUrl), kFluxPolicy, context.transport, this)),
-      xray_source_(new PolledSource("swpc-xray", QUrl(kXrayUrl), kXrayPolicy, context.transport, this)) {
-    for (auto* source : {kp_source_, flux_source_, xray_source_}) {
+      xray_source_(new PolledSource("swpc-xray", QUrl(kXrayUrl), kXrayPolicy, context.transport, this)),
+      xray_day_source_(new PolledSource("swpc-xray-24h", QUrl(kXrayDayUrl), kXrayDayPolicy, context.transport, this)) {
+    for (auto* source : {kp_source_, flux_source_, xray_source_, xray_day_source_}) {
         connect(source, &PolledSource::updated, this, [this] { parse(); refreshState(); });
         connect(source, &PolledSource::failed, this, &SpaceWeatherModel::refreshState);
     }
@@ -31,7 +35,7 @@ SpaceWeatherModel::SpaceWeatherModel(const WidgetContext& context, QObject* pare
 }
 
 void SpaceWeatherModel::start() {
-    for (auto* source : {kp_source_, flux_source_, xray_source_}) source->start();
+    for (auto* source : {kp_source_, flux_source_, xray_source_, xray_day_source_}) source->start();
 }
 
 QString SpaceWeatherModel::kpText() const { return has_kp_ ? swpc::kp_description(kp_) : QString(); }
@@ -45,6 +49,11 @@ void SpaceWeatherModel::parse() {
     has_sfi_ = flux.has_value();
     sfi_ = flux ? static_cast<int>(std::lround(flux->value)) : 0;
     xray_class_ = xray ? swpc::xray_class(xray->value) : QString();
+    history_.clear();
+    if (!xray_day_source_->isStale(now())) {
+        const auto series = swpc::xray_series(xray_day_source_->body(), 10);
+        for (const auto& point : series) history_.push_back(swpc::xray_plot_fraction(point.value));
+    }
     emit valuesChanged();
 }
 
@@ -52,6 +61,10 @@ void SpaceWeatherModel::parse() {
 // the most limiting source so the user knows which value to distrust.
 void SpaceWeatherModel::refreshState() {
     const auto now_utc = now();
+    if (!history_.isEmpty() && xray_day_source_->isStale(now_utc)) {
+        history_.clear();
+        emit valuesChanged();
+    }
     struct Item { PolledSource* source; const char* label; bool has; };
     const Item items[] = {{kp_source_, "Kp", has_kp_}, {flux_source_, "Solar flux", has_sfi_},
                           {xray_source_, "X-ray", !xray_class_.isEmpty()}};

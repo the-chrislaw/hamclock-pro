@@ -46,9 +46,18 @@ Card {
                 }
             }
         }
+        XrayPlot {
+            visible: root.widget && root.widget.hasXrayHistory
+            width: parent.width
+            height: 34 * Theme.scale
+            values: root.widget ? root.widget.xrayHistory : []
+        }
     }
-    RowLayout {
+    Column {
         visible: !root.compact
+        width: parent.width
+        spacing: Theme.gap
+    RowLayout {
         width: parent.width
         spacing: Theme.gap * 1.5
         Metric {
@@ -76,5 +85,12 @@ Card {
                       : available && root.widget.xrayClass[0] === "M" ? Theme.warn : Theme.ink
             Layout.fillWidth: true
         }
+    }
+    XrayPlot {
+        visible: root.widget && root.widget.hasXrayHistory
+        width: parent.width
+        height: 56 * Theme.scale
+        values: root.widget ? root.widget.xrayHistory : []
+    }
     }
 }
