@@ -15,6 +15,8 @@ final class SpaceWeatherStore: ObservableObject {
     @Published var kp: Sample?
     @Published var flux: Sample?
     @Published var xray: Sample?
+    @Published var windSpeed: Sample?
+    @Published var bz: Sample?
 
     static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
     static let userAgent = "HamClockPro/\(version) (+https://github.com/the-chrislaw/hamclock-pro)"
@@ -35,10 +37,14 @@ final class SpaceWeatherStore: ObservableObject {
             async let k = fetch("/products/noaa-planetary-k-index.json", hcp_swpc_latest_kp)
             async let f = fetch("/products/summary/10cm-flux.json", hcp_swpc_latest_solar_flux)
             async let x = fetch("/json/goes/primary/xrays-6-hour.json", hcp_swpc_latest_xray)
+            async let w = fetch("/json/rtsw/rtsw_wind_1m.json", hcp_solarwind_latest_speed)
+            async let b = fetch("/json/rtsw/rtsw_mag_1m.json", hcp_solarwind_latest_bz)
             // A failed fetch keeps the previous sample; its age then drives Stale/Offline.
             if let v = await k { kp = v }
             if let v = await f { flux = v }
             if let v = await x { xray = v }
+            if let v = await w { windSpeed = v }
+            if let v = await b { bz = v }
             try? await Task.sleep(nanoseconds: UInt64(interval * 1e9))
         }
     }
@@ -72,5 +78,15 @@ final class SpaceWeatherStore: ObservableObject {
     static func kpDescription(_ kp: Double) -> String {
         var buf = [CChar](repeating: 0, count: 64)
         return hcp_swpc_kp_description(kp, &buf, buf.count) != 0 ? String(cString: buf) : ""
+    }
+
+    static func windSpeedDescription(_ kmS: Double) -> String {
+        var buf = [CChar](repeating: 0, count: 32)
+        return hcp_solarwind_speed_description(kmS, &buf, buf.count) != 0 ? String(cString: buf) : ""
+    }
+
+    static func bzDescription(_ nt: Double) -> String {
+        var buf = [CChar](repeating: 0, count: 32)
+        return hcp_solarwind_bz_description(nt, &buf, buf.count) != 0 ? String(cString: buf) : ""
     }
 }
