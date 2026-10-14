@@ -61,6 +61,18 @@ Card {
             Accessible.role: Accessible.Button
             Accessible.onPressAction: clockBox.local = !clockBox.local
         }
+        // Tap to cycle day of year / JD / MJD / sidereal / UNIX.
+        Text {
+            Layout.fillWidth: true
+            text: station.auxTime
+            color: Theme.secondary
+            font.pixelSize: Theme.fontCaption
+            wrapMode: Text.WordWrap
+            Accessible.role: Accessible.Button
+            Accessible.name: "Auxiliary time " + text
+            Accessible.onPressAction: station.cycleAuxTime()
+            TapHandler { onTapped: station.cycleAuxTime() }
+        }
         Text {
             text: station.deZoneLabel
             color: Theme.secondary

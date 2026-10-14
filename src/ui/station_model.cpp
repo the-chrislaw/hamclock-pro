@@ -1,5 +1,6 @@
 #include "station_model.hpp"
 #include "app_settings.hpp"
+#include "aux_time.hpp"
 #include "banner_text.hpp"
 #include "clock_text.hpp"
 #include "../app/station_view.hpp"
@@ -68,6 +69,15 @@ QString StationModel::pathText() const {
 }
 
 QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
+
+QString StationModel::auxTime() const {
+    return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0);
+}
+
+void StationModel::cycleAuxTime() {
+    aux_time_mode_ = next_aux_time_mode(aux_time_mode_);
+    emit tick();
+}
 
 void StationModel::cycleBanner() {
     banner_mode_ = next_banner_mode(banner_mode_);
