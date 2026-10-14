@@ -98,3 +98,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - `SolarTrendCard.qml`: compact slots drop the 30-day flux line (the metrics row already shows it) and keep the Kp bars; the bars now fill the height left in the pane (16 to 90 scaled px) instead of a fixed height. Checked by offscreen screenshots at 800x480, 1024x600 (light), 1280x800 and 1920x1080 (dark). QML only; full ctest passes (132/132). Not validated on device.
 - Other auto-merge PRs: #73 has a merge conflict (not mine), #236 and #237 (other areas) had checks still running; left alone. No open [B] issues.
 - Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): Dst folded into the impact ranking (backlog 12)
+
+- `solarimpact` now also polls `products/kyoto-dst.json` (30 min, same SWPC terms, already in the roadmap policy) and ranks the Kyoto Dst index as a fourth row "D" alongside R/S/G (levels: Quiet 0, Weak 1, Moderate 2, Intense 3, Super 5; 24 h low as the 24 h max). The row is dropped once the latest hourly value is over 6 h old, so an old storm never ranks as current. Kp and X-ray are not added separately: G and R already come from them.
+- Tests: Dst level thresholds, quiet real fixture ranks last, synthetic intense storm ranks first with headline, stale drop; widget test passes under ASan/UBSan, full ctest green. No screenshots taken (offscreen platform unavailable for the app binary here; only a fourth 1.2-line row added, QML pane test passes). Not validated on device.
+- No open [B] issues; #73 (not mine) and the other auto-merge PRs left alone.
+- Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
