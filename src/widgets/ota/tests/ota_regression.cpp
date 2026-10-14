@@ -1,6 +1,7 @@
 // On-the-air widget: POTA/SOTA parsers and model, offline.
 // Fixtures are trimmed real responses captured 2026-10-13 ~17:40 UTC.
 #include "../ota_model.hpp"
+#include "../ota_overlay.hpp"
 #include "../ota_parse.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
@@ -84,6 +85,22 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasData() && model.count() == static_cast<int>(merged.size()), "fresh -> live");
     check(model.statusText() == "POTA + SOTA", "both sources named");
     check(model.recent().size() == 6, "recent capped at 6");
+    {
+        size_t positioned = 0;
+        for (const auto& sp : merged) positioned += sp.has_position ? 1 : 0;
+        check(positioned > 0, "fixture has positioned spots");
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "ota" && layers[0].markers.size() == positioned, "live -> POTA spots on the map");
+        const auto direct = ota::overlay_layer(merged, 3);
+        check(direct.markers.size() == 3, "marker cap");
+        bool all_pota = true;
+        for (const auto& m : direct.markers) all_pota = all_pota && m.shape == OverlayShape::Dot;
+        check(all_pota, "SOTA spots (no position) are not drawn");
+        model.setMapVisible(false);
+        check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+        model.setMapVisible(true);
+        check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    }
 
     fail_pota = true;
     now = now.addSecs(20 * 60);
@@ -100,6 +117,7 @@ int main(int argc, char** argv) {
     model.sotaSource().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
+    check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");
 
     std::cout << "OTA: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
