@@ -26,6 +26,26 @@ int event_rank(const QString& event) {
     return 0;
 }
 
+QString region_for(double lat, double lon) {
+    if (lat >= 51 && lon <= -130) return "AL";
+    if ((lat < 30 && lon < -150) || lon > 130 || lon < -165) return "PI";
+    if (lat >= 41.3 && lat <= 49.5 && lon >= -92.5 && lon <= -76) return "GL";
+    if (lat < 31.5 && lon >= -98 && lon <= -81.8) return "GM";
+    if (lon <= -114 && lat >= 32 && lat <= 49.5) return "PA";
+    if (lon >= -82 && lon <= -50 && lat >= 24 && lat <= 50) return "AT";
+    return {};
+}
+
+QString region_name(const QString& code) {
+    if (code == "GM") return "Gulf of Mexico";
+    if (code == "AT") return "Atlantic";
+    if (code == "PA") return "Pacific coast";
+    if (code == "AL") return "Alaska";
+    if (code == "PI") return "Pacific islands";
+    if (code == "GL") return "Great Lakes";
+    return {};
+}
+
 Feed parse(const QByteArray& body) {
     Feed feed;
     const auto doc = QJsonDocument::fromJson(body);
