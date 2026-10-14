@@ -107,7 +107,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 **Audit additions (D):**
 6. 🟡 (sky plot of the next pass in the Satellites pane done; DX panel placement not) Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
 7. 🟡 (maximum TLE age of 30 days done) Satellite rise/set alert; user-supplied TLE.
-8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. ✅ Planets on the map (offline): Mercury to Saturn sub-planet points as overlay layer "planets", plus a pane of the planets above the horizon at DE; Uranus and Neptune not included. 11. Yearly sunrise/sunset ("grayline") chart.
+8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. ✅ Planets on the map (offline): Mercury to Saturn sub-planet points as overlay layer "planets", plus a pane of the planets above the horizon at DE; Uranus and Neptune not included. 11. 🟡 (offline chart pane `daylight` done: weekly sunrise/sunset curves in UTC with today marked; DE local time and axis labels not done) Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
 
 **Owner request (Oct 14): satellite detail box.** Tapping a satellite (map marker or Satellites pane row) opens a small, non-modal box using area G's tap-for-details mechanism (G0); closes on tap outside or Back. Contents, compact at 1024×600:
