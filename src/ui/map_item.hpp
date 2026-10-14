@@ -12,6 +12,7 @@ class AppSettings;
 class MapItem : public QQuickPaintedItem {
     Q_OBJECT
     Q_PROPERTY(bool dark READ dark WRITE setDark NOTIFY darkChanged)
+    Q_PROPERTY(double uiScale READ uiScale WRITE setUiScale NOTIFY uiScaleChanged)
     Q_PROPERTY(bool showPath READ showPath WRITE setShowPath NOTIFY showPathChanged)
 public:
     explicit MapItem(QQuickItem* parent = nullptr);
@@ -24,11 +25,14 @@ public:
     void setDark(bool dark);
     bool showPath() const { return scene_.route_visible; }
     void setShowPath(bool show);
+    double uiScale() const { return scene_.ui_scale; }
+    void setUiScale(double s);
     void paint(QPainter* painter) override;
 
 signals:
     void darkChanged();
     void showPathChanged();
+    void uiScaleChanged();
 
 private:
     void syncStation();

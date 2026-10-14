@@ -5,10 +5,12 @@
 #include "path.hpp"
 #include "projection.hpp"
 #include <QLinearGradient>
+#include <QFont>
 #include <QPainter>
 #include <QPolygonF>
 #include <QTransform>
 #include <algorithm>
+#include <cmath>
 #include <exception>
 #include <iterator>
 #include <stdexcept>
@@ -115,6 +117,9 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         painter.restore();
         auto px = [&](double nx, double ny) { return QPointF(vp.origin_x() + k * W + nx * W, vp.origin_y() + ny * H); };
         auto at = [&](Location l) { const auto p = map_project_equirectangular(l); return px(p.x, p.y); };
+        const double ui = std::max(1.0, scene.ui_scale);
+        { QFont f = painter.font(); f.setPixelSize(int(std::lround(11 * ui))); painter.setFont(f); }
+        std::vector<QRectF> used_rects; // DE/DX first so they always win
         if (scene.sun) {
             const auto sun = at({scene.sun->latitude_deg, scene.sun->longitude_deg});
             painter.setPen(QPen(QColor(dark ? "#f2c14e" : "#d68f00"), 2)); painter.setBrush(Qt::NoBrush);
@@ -134,16 +139,21 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         if (scene.de && scene.dx) {
             painter.setPen(QPen(route, 2)); painter.setBrush(sea);
             const auto de = at(*scene.de), dx = at(*scene.dx);
-            painter.drawEllipse(de, 4, 4);
-            painter.drawRect(QRectF(dx.x() - 4, dx.y() - 4, 8, 8));
+            const double dr = 4 * ui;
+            painter.drawEllipse(de, dr, dr);
+            painter.drawRect(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
+            used_rects.push_back(QRectF(de.x() - dr, de.y() - dr, 2 * dr, 2 * dr));
+            used_rects.push_back(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
             painter.setPen(route);
             const auto m = painter.fontMetrics();
             const QRectF view(QPointF(), size);
             for (const auto& item : {std::pair<QPointF, QString>{de, "DE"}, {dx, "DX"}}) {
                 const double lw = m.horizontalAdvance(item.second);
                 if (view.height() < m.height() || view.width() < lw || !view.contains(item.first)) continue;
-                painter.drawText(QPointF(std::clamp(item.first.x() + 7, 0.0, view.width() - lw),
-                                         std::clamp(item.first.y() - 7, double(m.ascent()), view.height())), item.second);
+                const QPointF base(std::clamp(item.first.x() + 7 * ui, 0.0, view.width() - lw),
+                                   std::clamp(item.first.y() - 7 * ui, double(m.ascent()), view.height()));
+                painter.drawText(base, item.second);
+                used_rects.push_back(QRectF(base.x(), base.y() - m.ascent(), lw, m.height()));
             }
         }
         for (const auto& layer : scene.overlays) {
@@ -167,9 +177,9 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                         }
                     } catch (const std::exception&) {} // antipodal: no path invented
                 }
-                if (!view.adjusted(-m.size_px, -m.size_px, m.size_px, m.size_px).contains(p)) continue;
+                if (!view.adjusted(-m.size_px * ui, -m.size_px * ui, m.size_px * ui, m.size_px * ui).contains(p)) continue;
                 painter.setPen(QPen(dark ? QColor("#10181b") : Qt::white, 1)); painter.setBrush(m.color);
-                const double r = m.size_px;
+                const double r = m.size_px * ui;
                 switch (m.shape) {
                 case OverlayShape::Dot: painter.drawEllipse(p, r, r); break;
                 case OverlayShape::Square: painter.drawRect(QRectF(p.x() - r, p.y() - r, 2 * r, 2 * r)); break;
@@ -178,13 +188,17 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                 }
                 if (!overlay_label_text(m, layer.labels).isEmpty()) { anchors.push_back(p); labelled.push_back(&m); }
             }
-            const auto keep = select_labels(anchors, layer.min_label_distance_px);
+            const auto keep = select_labels(anchors, layer.min_label_distance_px * ui);
             const auto fm = painter.fontMetrics();
             for (std::size_t i = 0; i < anchors.size(); ++i) {
                 if (!keep[i]) continue;
+                const auto text = overlay_label_text(*labelled[i], layer.labels);
+                const auto rect = place_label(view, anchors[i], labelled[i]->size_px * ui,
+                                              QSizeF(fm.horizontalAdvance(text), fm.height()), used_rects);
+                if (!rect) continue;
+                used_rects.push_back(*rect);
                 painter.setPen(dark ? QColor("#e6eef0") : QColor("#1b2a30"));
-                painter.drawText(QPointF(anchors[i].x() + labelled[i]->size_px + 3, anchors[i].y() + fm.ascent() / 2.0),
-                                 overlay_label_text(*labelled[i], layer.labels));
+                painter.drawText(QPointF(rect->left(), rect->top() + fm.ascent()), text);
             }
         }
     }

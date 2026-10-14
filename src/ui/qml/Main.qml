@@ -118,6 +118,7 @@ ApplicationWindow {
                     // degrees), so the map takes the whole card body.
                     anchors.fill: parent
                     dark: Theme.dark
+                    uiScale: Theme.scale
                     showPath: mapCard.showPath
                 }
             }

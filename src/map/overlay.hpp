@@ -8,6 +8,9 @@
 #include <QString>
 #include <functional>
 #include <utility>
+#include <optional>
+#include <QRectF>
+#include <QSizeF>
 #include <vector>
 namespace hamclock {
 enum class OverlayLabelMode { None, Prefix, Call, Dot };
@@ -34,6 +37,12 @@ struct OverlayLayer {
 QString overlay_label_text(const OverlayMarker& marker, OverlayLabelMode mode);
 // Greedy, order-preserving: result[i] is true when anchor i keeps its label.
 std::vector<bool> select_labels(const std::vector<QPointF>& anchors, double min_distance_px);
+
+// Rect for a label of `text` beside a marker at `anchor` (radius `marker_r`):
+// right of the marker, flipped to the left when it would leave `view`, and
+// shifted vertically inside `view`. Empty when it fits neither side or overlaps
+// a rect in `used`.
+std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, QSizeF text, const std::vector<QRectF>& used);
 
 // Registry the app publishes layers into; the map listens for changes.
 class MapOverlays {
