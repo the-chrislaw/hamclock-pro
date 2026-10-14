@@ -72,3 +72,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F. Merged #219 (green, other area); #220 had no checks yet and #73 is stale; left alone.
 - F4: the iPad device build is green on main, but the Simulator step (needed for the layout screenshot) still fails with xcodebuild exit 65 and its error was hidden. Switched to Qt's documented Xcode flow (no SYSROOT override, `-sdk iphonesimulator -arch arm64` at build time) and the step now prints the first error/linker lines on failure. Still experimental (continue-on-error); no screenshot claim yet.
 - Next: read the Simulator error from this PR's run and fix; then the 1180x820/1366x1024 layout screenshot.
+
+## 2026-10-14 (twelfth hourly run)
+- No qa issues for area F; #220/#226 (other areas) checks running, #73 stale; left alone.
+- Verified from main run 38563306109: Developer ID signing and notarization now work end to end (notary Accepted, stapled, keychain removed); commented on #58.
+- iPad Simulator still fails at link ("building for iOS-simulator, but linking object built for iOS", Qt 6.8.3's prebuilt QML resource objects). Experiment: the simulator job now uses the Qt 6.5.3 iOS kit (job-level `IOS_QT_VERSION`; still informational). No on-device claims.
+- Next: read this PR's simulator result; if still failing, try another Qt version or skip static QML plugin init; then the iPad layout screenshot.
