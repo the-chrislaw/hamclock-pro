@@ -96,10 +96,15 @@ QString StationModel::dxSun() const {
     return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_) : QString();
 }
 
+QString StationModel::dxLocal() const {
+    return configured() ? zone_local_text(dx_zone_, QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+}
+
 void StationModel::reload() {
     if (!settings_.configured()) {
         callsign_ = de_grid_ = dx_grid_ = de_coordinates_ = dx_coordinates_ = distance_ = bearing_ = {};
         has_geometry_ = false;
+        dx_zone_.clear();
         emit stationChanged();
         return;
     }
@@ -114,6 +119,7 @@ void StationModel::reload() {
         has_geometry_ = true;
         de_lat_ = view.de.latitude; de_lon_ = view.de.longitude;
         dx_lat_ = view.dx.latitude; dx_lon_ = view.dx.longitude;
+        dx_zone_ = zones_.suggestZone(dx_lat_, dx_lon_);
         de_coordinates_ = coordinates(view.de.latitude, view.de.longitude);
         dx_coordinates_ = coordinates(view.dx.latitude, view.dx.longitude);
     } catch (const std::exception&) {

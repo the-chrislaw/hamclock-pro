@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QString>
+#include <QTimeZone>
 
 namespace hamclock {
 
@@ -18,6 +19,18 @@ inline QString clock_time(const QDateTime& utc, qint64 offset_secs, bool h12 = f
 }
 inline QString clock_date(const QDateTime& utc, qint64 offset_secs, int order = 0) {
     return utc.addSecs(offset_secs).toString(date_format(order));
+}
+
+// "Local 14:05 · Tokyo (zone from coordinates)" for an IANA zone id; empty when the
+// id is empty or unknown. `suggested` marks a zone guessed from coordinates.
+inline QString zone_local_text(const QString& zone_id, const QDateTime& utc, bool h12 = false, bool suggested = true) {
+    if (zone_id.isEmpty()) return {};
+    const QTimeZone tz(zone_id.toUtf8());
+    if (!tz.isValid()) return {};
+    QString city = zone_id.mid(zone_id.lastIndexOf('/') + 1);
+    city.replace('_', ' ');
+    const QString time = utc.addSecs(tz.offsetFromUtc(utc)).toString(h12 ? "h:mm AP" : "HH:mm");
+    return "Local " + time + " · " + city + (suggested ? " (auto)" : "");
 }
 
 } // namespace hamclock

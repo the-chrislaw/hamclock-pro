@@ -102,3 +102,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 21)
 - Backlog A14 slice: Settings > "Clock format" chooses the date order (Thu 15 Oct / Thu Oct 15 / 2026-10-15) and 12/24 h clock, saved in `options.ini` (`clock/date_order`, `clock/h12`; `AppSettings.saveClockFormat`); applies to the UTC and DE clocks in the station card (`clock_text.hpp`, `clock-text-regression` extended). Screenshots at 800x480, 1024x600, 1920x1080 with 12 h + ISO: no clipping. Week start, alarms and time travel still pending. ctest 140/140; ASan/UBSan left to CI. Not validated on a device.
 - #279 and #286 (others) still had checks running; #73 stale. Left alone.
+
+## 2026-10-14 (hourly run, 22)
+- Backlog 0c slice: the DX box shows "Local 06:08 · Tokyo (auto)", the DX local time using the offline nearest-city zone hint (`zone_local_text` in `clock_text.hpp`, `StationModel.dxLocal`, `clock-text-regression` extended). Hidden when no zone is within 1500 km. Honest limit: borders are not modelled, so the zone can be wrong near them; manual override still pending. Screenshots at 800x480 and 1024x600 with a configured station (DX Tokyo): fits in two lines at worst, no clipping; 1920x1080 rendered. ctest 142/142; ASan/UBSan left to CI. Not validated on a device.
+- #73 (docs, conflicting) and #293 (area G) open; not mine, left alone.
