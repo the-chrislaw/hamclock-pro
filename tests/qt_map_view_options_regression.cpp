@@ -135,9 +135,11 @@ int main(int argc, char** argv) {
       MapScene ps; ps.sun.reset(); ps.de = Location{39.7, -105}; const auto flat = render(ps);
       ps.projection = MapProjection::Azimuthal; const auto az = render(ps);
       ps.projection = MapProjection::Robinson; const auto rb = render(ps);
-      check(az != flat && rb != flat && az != rb, "projections render differently");
+      ps.projection = MapProjection::AzimuthalOne; const auto one = render(ps);
+      check(az != flat && rb != flat && az != rb && one != az && one != flat, "projections render differently");
+      { MapViewOptions o1; o1.projection = 3; check(o1.save(ini), "save azim one"); MapViewOptions r3; r3.load(ini); check(r3.projection == 3, "azim one round trip"); }
       // The DE marker (a ring in the route colour over sea) sits at the frame's pixel for DE.
-      for (const auto proj : {MapProjection::Azimuthal, MapProjection::Robinson}) {
+      for (const auto proj : {MapProjection::Azimuthal, MapProjection::Robinson, MapProjection::AzimuthalOne}) {
           MapScene s; s.sun.reset(); s.projection = proj; s.de = Location{39.7, -105}; s.dx = Location{51.5, -0.1};
           s.route = map_short_path(*s.de, *s.dx);
           QImage img(1024, 600, QImage::Format_ARGB32_Premultiplied); img.fill(Qt::white);

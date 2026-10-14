@@ -118,6 +118,30 @@ int run_map_tests() {
             const auto mid = rb.to_pixel({0, 30});
             check(mid && close(mid->x, rb.x + rb.w / 2) && close(mid->y, rb.y + rb.h / 2), "robinson centre longitude is the middle");
         }
+        {   // Azimuthal-one: near hemisphere only, rim at 90 degrees of arc, twice the scale.
+            const Location de{39.7, -105};
+            for (const auto& size : {std::pair<double, double>{1024, 600}, {800, 480}, {1920, 1080}}) {
+                const auto one = MapFrame::fit(MapProjection::AzimuthalOne, de, size.first, size.second);
+                const auto full = MapFrame::fit(MapProjection::Azimuthal, de, size.first, size.second);
+                const auto c = one.to_pixel(de);
+                check(c && close(c->x, one.x + one.w / 2) && close(c->y, one.y + one.h / 2), "azimuth-one centre is the frame centre");
+                const Location p{51.5, -0.1}; // London: about 7,500 km, well inside the hemisphere
+                const auto a = one.to_pixel(p), b = full.to_pixel(p);
+                check(a && b && close(a->x - c->x, 2 * (b->x - (full.x + full.w / 2)), 1e-6), "azimuth-one is the azimuthal map at twice the scale");
+                check(!one.to_pixel({-39.7, 75}), "azimuth-one drops the antipode");
+                check(!one.to_pixel({-20, 100}), "azimuth-one drops the far hemisphere");
+                const auto east = one.to_pixel({0, 0}); // Gulf of Guinea, ~ 105 degrees of arc away
+                check(!east, "azimuth-one drops a point beyond 90 degrees of arc");
+                const auto rim = one.to_pixel({0.0, -105 + 89.0});
+                check(rim && std::hypot(rim->x - c->x, rim->y - c->y) < one.w / 2, "azimuth-one rim point stays inside");
+                for (const Location q : {Location{51.5, -0.1}, Location{10, -150}, Location{60, -60}}) {
+                    const auto px = one.to_pixel(q);
+                    const auto back = px ? one.to_location(px->x, px->y) : std::nullopt;
+                    check(back && close(back->latitude, q.latitude, 1e-6) && close(std::remainder(back->longitude - q.longitude, 360.0), 0.0, 1e-6), "azimuth-one round trip");
+                }
+                check(!one.to_location(one.x + 1, one.y + 1), "azimuth-one corner is outside the disc");
+            }
+        }
         check(!MapFrame::fit(MapProjection::Equirectangular, {0, 0}, 100, 100).to_pixel({0, 0}), "flat map uses MapViewport");
         check(!MapFrame::fit(MapProjection::Azimuthal, {0, 0}, 0, 100).to_pixel({0, 0}), "empty item has no frame");
     }

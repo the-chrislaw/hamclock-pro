@@ -273,7 +273,7 @@ QImage MapRenderer::equirect_base(const MapScene& scene, const QColor& sea, cons
 }
 MapFrame MapRenderer::frameFor(QSizeF size, const MapScene& scene) {
     Location centre{0, scene.center_lon ? *scene.center_lon : 0.0};
-    if (scene.projection == MapProjection::Azimuthal && scene.de) centre = *scene.de;
+    if ((scene.projection == MapProjection::Azimuthal || scene.projection == MapProjection::AzimuthalOne) && scene.de) centre = *scene.de;
     return MapFrame::fit(scene.projection, centre, size.width(), size.height());
 }
 // Whole-world projections: the base map is resampled per pixel from the
@@ -320,7 +320,7 @@ void MapRenderer::paint_projected(QPainter& painter, QSizeF size, const MapScene
     painter.drawImage(QRectF(frame.x, frame.y, frame.w, frame.h), proj_);
     QPen outline(coast); outline.setWidthF(1); outline.setCosmetic(true);
     painter.setPen(outline); painter.setBrush(Qt::NoBrush);
-    if (frame.kind == MapProjection::Azimuthal) {
+    if (frame.kind == MapProjection::Azimuthal || frame.kind == MapProjection::AzimuthalOne) {
         painter.drawEllipse(QRectF(frame.x, frame.y, frame.w, frame.h));
     } else {
         QPolygonF edge;

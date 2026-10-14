@@ -110,7 +110,7 @@ MapFrame MapFrame::fit(MapProjection kind, Location centre, double width, double
     f.kind = kind;
     f.centre = centre;
     if (kind == MapProjection::Equirectangular || width <= 0 || height <= 0) return f;
-    if (kind == MapProjection::Azimuthal) {
+    if (kind == MapProjection::Azimuthal || kind == MapProjection::AzimuthalOne) {
         f.w = f.h = std::min(width, height);
     } else {
         f.w = std::min(width, height / robinson_aspect);
@@ -122,8 +122,12 @@ MapFrame MapFrame::fit(MapProjection kind, Location centre, double width, double
 }
 std::optional<MapPoint> MapFrame::to_pixel(Location location) const {
     if (w <= 0 || !valid_location(location)) return std::nullopt;
-    if (kind == MapProjection::Azimuthal) {
-        const auto p = map_project_azimuthal(centre, location);
+    if (kind == MapProjection::Azimuthal || kind == MapProjection::AzimuthalOne) {
+        auto p = map_project_azimuthal(centre, location);
+        if (kind == MapProjection::AzimuthalOne) {
+            p.x *= 2.0; p.y *= 2.0;
+            if (std::hypot(p.x, p.y) > 1.0) return std::nullopt;
+        }
         return MapPoint{x + w / 2.0 + p.x * w / 2.0, y + h / 2.0 - p.y * h / 2.0};
     }
     if (kind == MapProjection::Robinson) {
@@ -134,9 +138,10 @@ std::optional<MapPoint> MapFrame::to_pixel(Location location) const {
 }
 std::optional<Location> MapFrame::to_location(double px, double py) const {
     if (w <= 0) return std::nullopt;
-    if (kind == MapProjection::Azimuthal) {
-        const MapPoint p{(px - x - w / 2.0) / (w / 2.0), -(py - y - h / 2.0) / (h / 2.0)};
+    if (kind == MapProjection::Azimuthal || kind == MapProjection::AzimuthalOne) {
+        MapPoint p{(px - x - w / 2.0) / (w / 2.0), -(py - y - h / 2.0) / (h / 2.0)};
         if (std::hypot(p.x, p.y) > 1.0) return std::nullopt;
+        if (kind == MapProjection::AzimuthalOne) { p.x /= 2.0; p.y /= 2.0; }
         return map_unproject_azimuthal(centre, p);
     }
     if (kind == MapProjection::Robinson) {
