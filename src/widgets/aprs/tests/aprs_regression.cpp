@@ -1,5 +1,7 @@
 // APRS: packet parsing (plain, compressed, ambiguity, rejects) and the model's receive-only login. Offline.
 #include "../aprs_model.hpp"
+#include "../aprs_overlay.hpp"
+#include "../../../map/overlay.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QTemporaryDir>
@@ -57,8 +59,21 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.count() == 2, "stations taken");
     const auto n = model.nearest();
     check(n.size() == 2 && n[0].toMap()["call"] == "N0CALL-9" && n[0].toMap()["km"].toInt() < 20, "nearest first");
+    {
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "aprs" && layers[0].markers.size() == 2, "live stations published on the map");
+        check(layers.size() == 1 && layers[0].markers[0].call.size() > 0 && layers[0].markers[0].detail.contains("far") == (layers[0].markers[0].call == "FAR"), "marker detail");
+    }
+    model.setMapVisible(false);
+    check(MapOverlays::instance().layers().empty(), "per-source map off removes the layer");
+    model.setMapVisible(true);
+    check(MapOverlays::instance().layers().size() == 1, "map on restores the layer");
     emit sock->closed("reset");
     check(model.state() == "offline", "lost connection shown as offline");
+    check(MapOverlays::instance().layers().empty(), "lost link leaves nothing on the map");
+    std::vector<aprs::Station> st(3);
+    st[1].latitude = std::nan("");
+    check(aprs::overlay_layer(st).markers.size() == 2 && aprs::overlay_layer(st, 1).markers.size() == 1, "non-finite skipped, cap applied");
     std::cerr << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

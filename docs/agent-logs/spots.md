@@ -95,3 +95,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 1 (slice): DX cluster spots on the map via the overlay API. New `dxcluster/dx_overlay`: `overlay_layer` draws one marker per DXCC entity at the cty.dat entity centre (spots carry no position), newest first, capped at 40, prefix labels, dashed path from DE. `DxClusterModel` publishes the layer only while the link is live and removes it otherwise; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Tests (synthetic resolver; model publish/remove) pass normally and under ASan/UBSan for the two touched test binaries.
 - Not done: Settings toggle, band colouring, HamAlert/APRS overlays. Entity centres are approximate (not the DX station's location). The cluster stays Not configured without a callsign, so no screenshot of the layer; not validated on device.
 - Next: APRS/HamAlert overlays, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
+
+## 2026-10-14 (run 17)
+- Step 1: nothing of mine open; #220 (lookup, no checks reported) and #73 (stale docs) are other areas', left alone. No open `[C]` qa issues.
+- Backlog item 14 (slice): APRS stations on the map via the overlay API. New `aprs/aprs_overlay` (`overlay_layer`: diamond markers, call labels, comment as tap detail, capped at 60, non-finite positions skipped); `AprsModel` publishes the layer only while the link is live (most recently heard first) and removes it on loss/stop/destruction; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Tests pass normally (132/132) and the aprs test under ASan/UBSan (leak check off).
+- Not done: Settings toggle, HamAlert overlay, radius setting. APRS needs a callsign so no screenshot of the layer; not validated on device.
+- Next: HamAlert overlay, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
