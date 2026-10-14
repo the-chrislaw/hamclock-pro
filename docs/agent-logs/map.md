@@ -70,3 +70,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues; no open PRs of mine. #185/#186 (not mine) had CI still running so were not merged; #73 (docs) left alone.
 - G0 slice 4 (PR agent/map-grid): `src/map/grid.hpp` (`MapGrid` None/Tropics/Lat-Lng/Maidenhead, pure `grid_lines`), drawn by `MapRenderer` under the night shade; `MapViewOptions.grid` (options.ini `[map] grid`, out-of-range rejected); `MapItem.grid`; Map menu "Grid" row. Test: extended `qt-map-view-options-regression` (line coordinates/counts, persistence, render differs). Offscreen 1024x600 dark with Maidenhead grid checked. Local ASan/UBSan run not done (left to the CI asan-ubsan job). Not validated on device.
 - Next: G0 slice 5: marker tap details + Set DX; projection entry (G4); azimuth rings and CQ/ITU zones (G5, need dataset licence record).
+
+## 2026-10-14 (UTC, run 9)
+
+- Orient: no open `[G]` qa issues. #186 (apple, not mine) still had macOS/iPad queued so was not merged; #73 (docs) not mergeable; left alone.
+- G0 slice 5 (PR agent/map-marker-tap): tapping an overlay marker opens the tap popup with the marker's call and optional `OverlayMarker::detail` line plus Set DE / Set DX at the marker position. New pure `hit_test_marker` (visible layers only, nearest within 14 px x ui scale, world copies either side checked); `MapItem::markerTapped`. Shared file: Main.qml (one handler). Test: extended `qt-map-overlay-regression`. 1024x600 offscreen render unchanged (CLI cannot open the popup). ASan/UBSan left to CI. Not validated on device.
+- Next: G0 slice 6/G4 projection entry (Mercator centre longitude, azimuthal, Robinson); G5 azimuth rings and zones (need dataset licence record).

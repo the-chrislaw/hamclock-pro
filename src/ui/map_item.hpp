@@ -78,6 +78,8 @@ signals:
     void styleChanged();
     // A tap (no drag) on the map: the location under the finger, for Set DE / Set DX.
     void tapped(double latitude, double longitude);
+    // A tap on an overlay marker: its layer id, call, detail line and position.
+    void markerTapped(const QString& layer, const QString& call, const QString& detail, double latitude, double longitude);
 
 protected:
     void mousePressEvent(QMouseEvent* e) override;
