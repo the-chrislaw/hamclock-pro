@@ -32,3 +32,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Open PRs #138/#73 are other areas' (#138 Apple jobs still running, #73 conflicting); left alone. qa #120 is area B.
 - F3 slice 4: `macOS universal build` job in apple.yml (aqt universal Qt 6.8.3, `arm64;x86_64`, `lipo -archs` check, cached Qt). Informational (continue-on-error) until the first green run; then the signed dmg can switch to it.
 - Next: make the dmg/signing use the universal build once green; F4 iPad when the map renderer port lands.
+
+## 2026-10-14 (fourteenth hourly run)
+- No qa issues for area F; #73/#240/#241 are other areas' (checks running), left alone.
+- Read main run 38579449271: signing/notarization still green. The iPad Simulator link still fails on Qt 6.5.3 too: `qrc_qmake_QtQuick.cpp.o` in the kit is tagged for device iOS ("building for 'iOS-simulator', but linking in object file ... built for 'iOS'"), so the Qt version is not the cause. Experiment: after the device build, retag the kit's `objects-*` `.o` files for the simulator with `vtool -set-build-version 7` (plain arm64 code), printing the tag before and after. Still informational; no screenshot or on-device claim yet.
+- Next: read this PR's simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.

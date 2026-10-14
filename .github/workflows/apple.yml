@@ -192,6 +192,17 @@ jobs:
       - name: Simulator build and screenshot (experimental)
         continue-on-error: true
         run: |
+          # Qt's iOS kit ships its QML resource objects tagged for the device
+          # only (LC_BUILD_VERSION platform iOS), which the simulator link
+          # rejects. The code is plain arm64, so retag those objects for the
+          # simulator. The device build above has already run, so changing the
+          # local kit copy is safe (the cache is not saved on a hit).
+          QTIOS="$HOME/Qt/$IOS_QT_VERSION/ios"
+          find "$QTIOS" -path '*objects-*' -name '*.o' > objs.txt
+          echo "retagging $(wc -l < objs.txt) objects"
+          head -1 objs.txt | xargs xcrun vtool -show-build | head -8
+          xargs -P 4 -I{} sh -c 'xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "{}" "{}" >/dev/null 2>&1 || xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "{}" "{}"' < objs.txt
+          head -1 objs.txt | xargs xcrun vtool -show-build | head -8
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
             -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
