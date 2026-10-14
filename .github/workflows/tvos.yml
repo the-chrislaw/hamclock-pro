@@ -51,9 +51,12 @@ jobs:
           test -n "$udid"
           xcrun simctl boot "$udid"
           fail=0
-          for t in build-tvos/core-*-regression; do
+          ls -R build-tvos | head -40
+          tests=$(find "$PWD/build-tvos" -type f -perm -u+x -name 'core-*-regression')
+          test -n "$tests"
+          for t in $tests; do
             echo "== $t"
-            xcrun simctl spawn "$udid" "$PWD/$t" || fail=1
+            xcrun simctl spawn "$udid" "$t" || fail=1
           done
           xcrun simctl shutdown "$udid" || true
           exit $fail

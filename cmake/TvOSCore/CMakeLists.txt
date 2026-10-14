@@ -32,5 +32,6 @@ set(_tests clock_state stopwatch_state countdown_state solar_position locator_in
 foreach(t ${_tests})
     add_executable(core-${t}-regression ${HCP_ROOT}/tests/${t}_regression.cpp)
     target_link_libraries(core-${t}-regression PRIVATE hamclock-core)
+    set_target_properties(core-${t}-regression PROPERTIES MACOSX_BUNDLE OFF)
     add_test(NAME core-${t}-regression COMMAND core-${t}-regression)
 endforeach()
