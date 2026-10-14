@@ -21,6 +21,13 @@ int main() {
     CHECK(aux_time_text(5, j2000, 0) == aux_time_text(0, j2000, 0));
     CHECK(aux_time_text(-1, j2000, 0) == aux_time_text(4, j2000, 0));
     CHECK(next_aux_time_mode(4) == 0 && next_aux_time_mode(0) == 1);
+    // Sunday start: 2000-01-01 was a Saturday, so it is week 1 and Sun 2000-01-02 is week 2.
+    CHECK(aux_time_text(0, j2000, 0, true) == "Day 1 of 366 · week 1");
+    CHECK(week_of_year(QDate(2000, 1, 2), true) == 2);
+    CHECK(week_of_year(QDate(2000, 12, 31), true) == 54);
+    CHECK(week_of_year(QDate(2026, 10, 14), true) == 42);
+    CHECK(week_of_year(QDate(2026, 10, 14), false) == 42);
+    CHECK(week_of_year(QDate(2026, 1, 1), false) == 1);
     const double lst = local_sidereal_hours(j2000, -179.0);
     CHECK(lst >= 0.0 && lst < 24.0);
     return failures ? 1 : 0;

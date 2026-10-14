@@ -71,7 +71,8 @@ QString StationModel::pathText() const {
 QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
 
 QString StationModel::auxTime() const {
-    return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0);
+    return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0,
+                         settings_.weekStartsSunday());
 }
 
 void StationModel::cycleAuxTime() {
