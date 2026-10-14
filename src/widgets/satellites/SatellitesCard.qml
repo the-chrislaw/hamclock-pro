@@ -112,6 +112,16 @@ Card {
             color: Theme.secondary; font.pixelSize: Theme.fontCaption * 0.8
             elide: Text.ElideRight; Layout.fillWidth: true
         }
+        Text {
+            text: root.showDetail && root.d.tracked ? "Hide track on map" : "Show track on map"
+            color: Theme.accent; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+            Layout.topMargin: Theme.gap * 0.4
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -Theme.gap
+                onClicked: root.widget.toggleTracked()
+            }
+        }
         TapHandler { onTapped: root.widget.selectRow(-1) }
     }
     Text {
