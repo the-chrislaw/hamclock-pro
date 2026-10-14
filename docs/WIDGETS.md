@@ -122,7 +122,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
 2. 🟡 Callsign lookup (QRZ XML or HamQTH; card + session handling done, spotted-call wiring pending) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
-4. 🟡 (read-only rigctld frequency/mode card done; flrig, header display and rotator pending) Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
+4. 🟡 (read-only rigctld frequency/mode card done, with a read-only flrig XML-RPC fallback on localhost:12345; header display pending) Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
 
 **Audit additions (E):**
@@ -210,7 +210,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
 | gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
-| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio planned) |
+| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; defaults only, no settings yet) |
 | PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
@@ -260,6 +260,6 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | HamAlert: personal spot alerts over telnet (hamalert.org:7300, `DX de` lines); `TelnetClient` gained an optional password step (sent once after a `password:` prompt, never logged); Not configured until user and password are saved; compact card (count + newest, list when not compact); receive-only; not on the default dashboard; tested with a fake socket, not against the live service | C | Partial |
 | Host sensors: clock sync status (chronyc/timedatectl, read-only, via src/platform/ntp_status), CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; BME280/BMP280 via kernel IIO sysfs (air temperature, pressure, humidity, dew point; not tested on a Pi; no corrections or history yet); not on the default dashboard | E | Partial |
 | GPS (gpsd JSON on localhost:2947, read-only): fix quality, position, Maidenhead grid, satellites in use; unconfigured when gpsd is absent; does not change DE yet, no NMEA serial or time use; tested against a loopback fake gpsd, not a real receiver; not on the default dashboard | E | Partial |
-| Radio (rigctld on localhost:4532, strictly read-only: only `f` and `m` are ever sent): frequency, band, mode; unconfigured when rigctld is absent, error replies are never shown as live; tested against a loopback fake rigctld, not a real rig; no flrig, not on the header or default dashboard | E | Partial |
+| Radio (rigctld on localhost:4532, strictly read-only: only `f` and `m` are ever sent; falls back to flrig XML-RPC on localhost:12345 asking only `rig.get_vfo`/`rig.get_mode`): frequency, band, mode; unconfigured when rigctld is absent, error replies are never shown as live; tested against a loopback fake rigctld, not a real rig; no flrig, not on the header or default dashboard | E | Partial |
 | Rotator (rotctld on localhost:4533, strictly read-only: only `p` is ever sent): azimuth and elevation; unconfigured when rotctld is absent, error replies and out-of-range values are never shown as live; tested against a loopback fake rotctld; not run with a real rotator; no tracking or move commands; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |
