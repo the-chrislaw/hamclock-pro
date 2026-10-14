@@ -110,6 +110,14 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 8. hams.at upcoming activations pane. 9. Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
 
+**Owner request (Oct 14): satellite detail box.** Tapping a satellite (map marker or Satellites pane row) opens a small, non-modal box using area G's tap-for-details mechanism (G0); closes on tap outside or Back. Contents, compact at 1024×600:
+- Now: azimuth/elevation, range, above/below horizon, sunlit/eclipsed, range rate.
+- Next pass: AOS / TCA / LOS times (local and UTC), max elevation, AOS and LOS azimuths with compass letters, countdown; "more passes" lists the next 5.
+- Listen/Transmit: each transmitter's downlink and uplink frequency and mode (FM, linear/inverting, CW beacon, packet/APRS), CTCSS tone where the database has it, and live Doppler-corrected frequencies (from SGP4 range rate, updated each second; uplink and downlink corrected in opposite senses, inverting transponders handled).
+- Status: active/inactive from the database; show "frequency data from SatNOGS DB (CC BY-SA 4.0)" attribution.
+- Actions: show ground track + footprint on the map; Set as DX (sub-satellite point).
+Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters/?format=json`, open data, CC BY-SA 4.0; poll at most daily, cache, honest User-Agent), joined to TLEs by NORAD id. Tests: Doppler maths against a hand-computed case, NORAD join, inverting-transponder sign, fixture-based parse. If `db.satnogs.org` is not reachable, open "Owner input needed: allowlist domains".
+
 ### E. Weather, lookup, events, radio (owns `src/widgets/weather/`, `lookup/`, `events/`, `radio/`)
 1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
 2. 🟡 Callsign lookup (QRZ XML or HamQTH; card + session handling done, spotted-call wiring pending) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
