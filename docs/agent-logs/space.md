@@ -105,3 +105,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Tests: Dst level thresholds, quiet real fixture ranks last, synthetic intense storm ranks first with headline, stale drop; widget test passes under ASan/UBSan, full ctest green. No screenshots taken (offscreen platform unavailable for the app binary here; only a fourth 1.2-line row added, QML pane test passes). Not validated on device.
 - No open [B] issues; #73 (not mine) and the other auto-merge PRs left alone.
 - Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): In-house path reliability model (backlog 13, first slice)
+
+- Owner picked option C on #281 ("simple in-house, but not too simple"). New `bands/path_model` (pure C++, offline): great-circle path split into F2 hops of at most 3000 km, foF2/MUF from SFI and the sun's elevation at each hop midpoint, secant-law path MUF, P.533-style D-layer absorption (tuned x0.6), SNR in 2.5 kHz from power, antenna gain, slant free-space loss, ground-reflection loss and ITU-R P.372 rural noise, mode thresholds (SSB/CW/digital), Kp and polar-path penalty. Gives MUF, SNR, takeoff angle, hops and 0..1 reliability per band, plus a band x 24 h matrix. Documented as approximate in the header, not VOACAP.
+- Tests (`path_model_regression`): London-New York distance, 20m open by day, 80m absorbed by day and better at night, 10m closed at night, MUF rises with SFI, Kp 7 cuts reliability, 20 dB less power is 20 dB less SNR, digital needs less SNR, NaN inputs stay finite, matrix shape. No UI yet, so no screenshots. Not validated on device.
+- Next: matrix card (DE to DX timeline) and settings for power/mode/antenna, long-path option; MUF map style and tropo still wait on #281.
