@@ -112,3 +112,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (eighteenth hourly run)
 - No qa issues for area F; #73/#279/#283/#284 are other areas' (no checks yet), left alone.
 - Read main run 38622861499: TestFlight archive failed on automatic signing ("Revoke certificate: Your account already has an Apple Development signing certificate ... private key is not installed"; no iOS development profiles). The Simulator job step passed (still informational; screenshot not verified). Change: archive unsigned (`CODE_SIGNING_ALLOWED=NO`) and let `-exportArchive` sign with the cloud-managed distribution certificate. Untested until a main run; if export also fails, "Owner input needed: iOS distribution certificate" (e.g. a Distribution .p12 secret).
+
+## 2026-10-14 (nineteenth hourly run)
+- No qa issues for area F; #73/#289/#291 are other areas' (checks running), left alone.
+- Read main run 38627403670: TestFlight archive now SUCCEEDS unsigned; export failed with "exportOptionsPlist error for key method expected one {} but found app-store-connect" (the runner's Xcode predates that method name). Changed the export method to `app-store` (same upload destination). Untested until a main run; no on-device claims.
