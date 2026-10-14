@@ -73,7 +73,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 7. DRAP pane and DRAP map style.
 8. Aurora pane, Aurora map style, and automatic switch to the Aurora/DRAP map when activity is high.
 9. DST (Disturbance) pane.
-10. NOAA R/S/G scales pane.
+10. ✅ NOAA R/S/G scales pane (`solarscales`: SWPC `products/noaa-scales.json`, current R/S/G, 24 h max and tomorrow's outlook; polled every 10 min; not on the default dashboard).
 11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
 12. Space-weather stats ranked by impact.
 13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
@@ -203,6 +203,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
 | Band conditions: HF day/night outlook from SFI/Kp/A (local heuristic, not VOACAP) | B | **Live** |
 | Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
+| NOAA scales: R/S/G radio blackout, radiation and geomagnetic storm levels with tomorrow's outlook (SWPC; not on the default dashboard) | B | **Live** |
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
