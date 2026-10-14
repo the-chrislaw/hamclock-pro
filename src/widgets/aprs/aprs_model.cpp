@@ -1,4 +1,6 @@
 #include "aprs_model.hpp"
+#include "aprs_overlay.hpp"
+#include "../../map/overlay.hpp"
 #include "../../domain/geometry.hpp"
 #include "../../ui/app_settings.hpp"
 #include <algorithm>
@@ -10,6 +12,24 @@ AprsModel::AprsModel(const WidgetContext& context, TelnetSocketFactory factory, 
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &AprsModel::connect_now);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &AprsModel::start);
+}
+
+AprsModel::~AprsModel() { MapOverlays::instance().remove_layer(aprs::kOverlayLayerId); }
+
+void AprsModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Only while the APRS-IS link is live; a lost link never leaves stations on the map.
+void AprsModel::publishOverlay() {
+    if (!map_visible_ || state() != "live") { MapOverlays::instance().remove_layer(aprs::kOverlayLayerId); return; }
+    std::vector<const Entry*> order;
+    for (const auto& e : stations_) order.push_back(&e);
+    std::sort(order.begin(), order.end(), [](const Entry* a, const Entry* b) { return a->heard > b->heard; });
+    std::vector<aprs::Station> list;
+    for (const auto* e : order) list.push_back(e->station);
+    MapOverlays::instance().set_layer(aprs::overlay_layer(list));
 }
 
 QString AprsModel::login_line(const QString& call, double lat, double lon, int radius_km) {
@@ -24,6 +44,7 @@ void AprsModel::start() {
     stations_.clear();
     partial_.clear();
     emit changed();
+    publishOverlay();
     const QString call = settings_ ? settings_->callsign().trimmed().toUpper() : QString();
     if (call.isEmpty()) { setState("unconfigured", "Not configured: set your callsign in Settings"); return; }
     for (QChar c : call)
@@ -53,6 +74,7 @@ void AprsModel::on_closed() {
     if (!wanted_) return;
     ++failures_;
     setState("offline", "APRS-IS connection lost; retrying");
+    publishOverlay();
     retry_.start(int(TelnetClient::backoff(failures_).count()) * 1000);
 }
 
@@ -79,6 +101,7 @@ void AprsModel::on_data(const QByteArray& data) {
         setState("live", "APRS-IS", now());
         emit changed();
     }
+    publishOverlay();
 }
 
 void AprsModel::prune() {

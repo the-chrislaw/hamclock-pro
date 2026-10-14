@@ -16,7 +16,9 @@ class AprsModel : public WidgetModel {
     Q_PROPERTY(QVariantList nearest READ nearest NOTIFY changed)
 public:
     AprsModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent = nullptr);
+    ~AprsModel() override;
     void start();
+    void setMapVisible(bool visible); // per-source map on/off (default on)
     int count() const { return int(stations_.size()); }
     QVariantList nearest() const; // closest to DE first, at most kShown rows
     static QString login_line(const QString& call, double lat, double lon, int radius_km);
@@ -30,6 +32,7 @@ private:
     void on_data(const QByteArray& data);
     void on_closed();
     void prune();
+    void publishOverlay();
     AppSettings* settings_;
     TelnetSocketFactory factory_;
     TelnetSocket* socket_ = nullptr;
@@ -39,6 +42,7 @@ private:
     QHash<QString, Entry> stations_;
     int failures_ = 0;
     bool wanted_ = false;
+    bool map_visible_ = true;
 };
 
 void register_widget_aprs(WidgetRegistry& registry, const WidgetContext& context);
