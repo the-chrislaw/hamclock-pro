@@ -140,6 +140,11 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 **Audit additions (F):**
 6. Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
 
+**More Apple surfaces (owner request, Oct 14; start only after the signed macOS app and the iPad TestFlight build ship):**
+7. Widgets (WidgetKit extension in the iPad/iPhone app): small/medium widgets for band conditions, Kp/SFI/X-ray and the next satellite pass. The same widgets appear in StandBy and on the CarPlay dashboard (CarPlay supports iPhone widgets), which is the App Store-acceptable way to put HamClock in the car. A full CarPlay app is not planned: CarPlay apps are limited to Apple's approved categories (audio, navigation, communication, EV charging, parking, fuelling, quick food ordering, driving task), so a dashboard would be rejected.
+8. Apple TV app: Qt has no tvOS support, so a native SwiftUI front end over the shared C++ core (parsers, astro/SGP4, models) built as a static library for tvOS. Remote-friendly focus navigation, 1080p/4K layouts, the same one-page dashboard. Design doc first (owner review), then a prototype.
+9. HomeView (Apple's wall/tabletop home hub announced Oct 13, 2026): a wall-mounted touchscreen dashboard is HamClock's natural home. Track whether Apple opens it to third-party apps or widgets; if only widgets, item 7 covers it. Open "Owner input needed" when the SDK story is clear.
+
 ### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
 Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
 **Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
