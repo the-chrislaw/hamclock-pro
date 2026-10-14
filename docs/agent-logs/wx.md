@@ -29,3 +29,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, fourth run)
 - Merged #154 (docs, green). #156/#158 CI was still running, #73 conflicting: not mine. No open `qa` issues for E.
 - E5/E12 slice: new read-only `gps` widget, gpsd JSON client on localhost:2947 (fix quality, position, grid, satellites used). No gpsd -> "unconfigured"; retries every 15 s; no fix is never shown as live. Does not set DE and does not use GPS time yet. Tested against a loopback fake gpsd (release + ASan/UBSan); not run with a real receiver. Not on the default dashboard so no screenshot. Next: use fix for DE (needs area A setting), NTP choice, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fifth run)
+- #161 and #165 (areas G/D) still had CI running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: new read-only `radio` widget, rigctld client on localhost:4532 polling only `f` and `m` (test asserts nothing else is sent). Shows frequency, band, mode; unconfigured without rigctld; RPRT errors are not live. Tested against a loopback fake rigctld (release + ASan/UBSan); not run with a real rig. Not on the default dashboard so no screenshot. Next: flrig, header display, DX time zone/city, E3 feeds (terms check).
