@@ -5,6 +5,7 @@
 #include <QVariantList>
 
 namespace hamclock {
+class AppSettings;
 
 // Worldwide earthquakes M2.5+ in the past day (USGS). Shows the strongest
 // event and the most recent few; values are "—" until a feed has been parsed.
@@ -15,6 +16,7 @@ class QuakesModel : public WidgetModel {
     Q_PROPERTY(double strongestMagnitude READ strongestMagnitude NOTIFY quakesChanged)
     Q_PROPERTY(QString strongestText READ strongestText NOTIFY quakesChanged)
     Q_PROPERTY(QString strongestPlace READ strongestPlace NOTIFY quakesChanged)
+    Q_PROPERTY(QString nearestText READ nearestText NOTIFY quakesChanged)
     Q_PROPERTY(QVariantList recent READ recent NOTIFY quakesChanged)
 public:
     explicit QuakesModel(const WidgetContext& context, QObject* parent = nullptr);
@@ -25,6 +27,8 @@ public:
     double strongestMagnitude() const;
     QString strongestText() const;   // "Strong · 14 h ago"
     QString strongestPlace() const;
+    // "M4.1 · 820 km NW of DE · 3 h ago"; empty without a configured station.
+    QString nearestText() const;
     QVariantList recent() const;     // newest first: {mag, place, age}
 
     // Quakes are drawn on the map only while the data is live; off hides them.
@@ -42,6 +46,7 @@ private:
     void refreshStateImpl();
     void publishOverlay();
 
+    AppSettings* settings_;
     PolledSource* source_;
     quakes::Feed feed_;
     bool map_visible_ = true;

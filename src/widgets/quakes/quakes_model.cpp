@@ -1,7 +1,10 @@
 #include "quakes_model.hpp"
 #include "quakes_overlay.hpp"
 #include "../../map/overlay.hpp"
+#include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
+#include "../../ui/app_settings.hpp"
+#include <cmath>
 #include <QTimer>
 
 namespace hamclock {
@@ -16,7 +19,9 @@ constexpr int kRecentRows = 6;
 
 QuakesModel::QuakesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("quakes", "Earthquakes", parent),
+      settings_(context.settings),
       source_(new PolledSource("usgs-quakes-2-5-day", QUrl(kUrl), kPolicy, context.transport, this)) {
+    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &QuakesModel::quakesChanged);
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = quakes::parse(source_->body());
         emit quakesChanged();
@@ -42,6 +47,23 @@ QString QuakesModel::strongestText() const {
 QString QuakesModel::strongestPlace() const {
     const auto* q = quakes::strongest(feed_);
     return q ? q->place : QString();
+}
+
+QString QuakesModel::nearestText() const {
+    if (!settings_ || !settings_->configured() || feed_.quakes.empty()) return {};
+    const Location de{settings_->deLatitude(), settings_->deLongitude()};
+    if (!valid_location(de)) return {};
+    const quakes::Quake* best = nullptr;
+    GeometryResult best_g{};
+    for (const auto& q : feed_.quakes) {
+        const auto g = geometry(de, {q.latitude, q.longitude});
+        if (!best || g.distance_km < best_g.distance_km) { best = &q; best_g = g; }
+    }
+    static const char* const kPoints[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+    QString where = QString::number(std::lround(best_g.distance_km)) + " km";
+    if (best_g.status == BearingStatus::Defined)
+        where += QString(" ") + kPoints[static_cast<int>(std::floor(best_g.short_bearing_deg / 45.0 + 0.5)) % 8] + " of DE";
+    return "M" + QString::number(best->magnitude, 'f', 1) + " · " + where + " · " + formatAge(best->time, now());
 }
 
 QVariantList QuakesModel::recent() const {
