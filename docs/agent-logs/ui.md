@@ -98,3 +98,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 20)
 - Backlog 0/A8: the pane chooser already had category tabs, but 11 widgets (ADS-B, APRS, planets, eclipse, EME, daylight, GPS, radio, rotator, Dst, space weather impact) fell under "Other". They now sit in their categories, and the new `pane-categories-regression` (python, offline) fails if any widget registered in `src/widgets` has no category. One line added to the root CMakeLists test block. ctest 139/139; no layout change, so no new screenshots. ASan/UBSan left to CI. Not validated on a device.
 - #73 (docs, no checks), #274 (tvOS check queued) and #279 (no checks yet) were open; none mine and none mergeable yet, left alone.
+
+## 2026-10-14 (hourly run, 21)
+- Backlog A14 slice: Settings > "Clock format" chooses the date order (Thu 15 Oct / Thu Oct 15 / 2026-10-15) and 12/24 h clock, saved in `options.ini` (`clock/date_order`, `clock/h12`; `AppSettings.saveClockFormat`); applies to the UTC and DE clocks in the station card (`clock_text.hpp`, `clock-text-regression` extended). Screenshots at 800x480, 1024x600, 1920x1080 with 12 h + ISO: no clipping. Week start, alarms and time travel still pending. ctest 140/140; ASan/UBSan left to CI. Not validated on a device.
+- #279 and #286 (others) still had checks running; #73 stale. Left alone.

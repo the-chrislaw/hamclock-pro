@@ -34,8 +34,8 @@ StationModel::StationModel(AppSettings& settings, QObject* parent) : QObject(par
 
 bool StationModel::configured() const { return settings_.configured(); }
 
-QString StationModel::utcTime() const { return QDateTime::currentDateTimeUtc().toString("HH:mm:ss"); }
-QString StationModel::utcDate() const { return QDateTime::currentDateTimeUtc().toString("ddd d MMM yyyy"); }
+QString StationModel::utcTime() const { return clock_time(QDateTime::currentDateTimeUtc(), 0, settings_.clock12h()); }
+QString StationModel::utcDate() const { return clock_date(QDateTime::currentDateTimeUtc(), 0, settings_.dateOrder()); }
 
 QString StationModel::deTime() const {
     const auto zone = settings_.deZone().toStdString();
@@ -47,12 +47,12 @@ QString StationModel::deTime() const {
 
 QString StationModel::deClock() const {
     const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
-    return offset ? clock_time(QDateTime::currentDateTimeUtc(), offset->value) : QString();
+    return offset ? clock_time(QDateTime::currentDateTimeUtc(), offset->value, settings_.clock12h()) : QString();
 }
 
 QString StationModel::deDate() const {
     const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
-    return offset ? clock_date(QDateTime::currentDateTimeUtc(), offset->value) : QString();
+    return offset ? clock_date(QDateTime::currentDateTimeUtc(), offset->value, settings_.dateOrder()) : QString();
 }
 
 QString StationModel::deZoneLabel() const {

@@ -173,6 +173,31 @@ Rectangle {
             }
 
             Card {
+                title: "Clock format"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: [[0, "Thu 15 Oct"], [1, "Thu Oct 15"], [2, "2026-10-15"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.dateOrder === modelData[0]
+                            onClicked: appSettings.saveClockFormat(modelData[0], appSettings.clock12h)
+                        }
+                    }
+                    Repeater {
+                        model: [[false, "24 h"], [true, "12 h AM/PM"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.clock12h === modelData[0]
+                            onClicked: appSettings.saveClockFormat(appSettings.dateOrder, modelData[0])
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {
