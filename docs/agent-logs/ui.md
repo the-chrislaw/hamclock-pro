@@ -86,3 +86,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 17)
 - Issue #151 remainder: `TimeZoneSearch::suggestZone(lat, lon)` picks the zone of the nearest city in a small offline table (about 110 cities, hint only, empty beyond 1500 km or for invalid coordinates); Settings > Station has a "Suggest zone from home coordinates" button that fills the picker and says to check it. Test `time-zone-search-regression` extended. ctest 137/137. DX zone from DX coordinates is not done. Settings is not reachable from `--screenshot`, so layout was not checked visually. ASan/UBSan left to CI. Not validated on a device.
 - Only #73 was open (stale docs, not mine).
+
+## 2026-10-14 (hourly run, 18)
+- Backlog 0c/A14 slice: auxiliary time line under the station clock; tap cycles "Day N of 365 · week W", JD, MJD, local sidereal time (DE longitude, Greenwich when unconfigured), UNIX (`aux_time.hpp`, `StationModel.auxTime/cycleAuxTime`, `aux-time-text-regression` checked against J2000 values). Per session only; date order/week start, time travel and alarms pending. ctest 138/138; 800x480, 1024x600, 1920x1080 screenshots show no clipping. ASan/UBSan left to CI. Not validated on a device.
+- Only #73 open (conflicting docs, not mine). Pre-existing warnings in legacy src/qt dialogs remain (retire task).
