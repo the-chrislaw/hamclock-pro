@@ -29,3 +29,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 3)
 - Custom rotation sets per slot (A8): `AppSettings.paneRotationSets`, `togglePaneRotationMember`, `clearPaneRotationSet` (options.ini `panes/setN`, cleared by reset); `PaneSlot` rotates only through the set (empty = all widgets); long-press menu has Add/Remove from rotation and "Rotate all widgets". ctest 84/84; 1024x600 screenshot renders. ASan/UBSan left to CI. Not validated on a device.
 - #132 (area G) had the iPad check still running; #73 stale. Per-widget `compact` audit is in src/widgets (other areas' files), so the mechanism (`Card.compact`) stays here and widget owners adopt it. Next: category picker, side panes.
+
+## 2026-10-14 (hourly run, 4)
+- Merged #143 (docs, CI green). #145/#146 still had macOS/iPad checks running; #73 stale.
+- Category picker (A8): the pane chooser has tabs (All, Space Wx, DX & Contest, Weather, Sky & Space, Station, Other) that filter the widget list; opens on the current widget's category. Mapping lives in `PaneChooser.qml` (unknown ids fall under Other). ctest 88/88. The popup is not reachable from `--screenshot`, so its layout was not visually checked at 1024x600; only QML load/warnings are covered. Not validated on a device.
+- Next: side panes / PANE_0 overlay, compact-mode adoption by widget owners.
