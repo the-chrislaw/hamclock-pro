@@ -42,6 +42,8 @@ Popup {
                      onClicked: menu.map.skyPoints = !menu.map.skyPoints }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false
                      onClicked: menu.map.showPath = !menu.map.showPath }
+            Toggle { label: "Long path"; on: menu.map ? menu.map.longPath : false
+                     onClicked: menu.map.longPath = !menu.map.longPath }
             Repeater {
                 model: menu.map ? menu.map.layerIds : []
                 Toggle {

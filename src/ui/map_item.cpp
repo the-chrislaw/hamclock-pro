@@ -165,6 +165,14 @@ void MapItem::setSkyPoints(bool on) {
     update();
 }
 
+void MapItem::setLongPath(bool on) {
+    if (on == options_.long_path) return;
+    options_.long_path = on;
+    saveOptions();
+    syncStation();
+    emit longPathChanged();
+}
+
 void MapItem::setCenterLon(int lon) {
     if (lon != MapViewOptions::center_auto) lon = std::clamp(lon, -180, 180);
     if (lon == options_.center_lon) return;
@@ -253,7 +261,8 @@ void MapItem::syncStation() {
             const auto result = geometry(station.de, station.dx);
             scene_.de = station.de;
             scene_.dx = station.dx;
-            if (result.status != BearingStatus::Antipodal) scene_.route = map_short_path(station.de, station.dx);
+            if (result.status != BearingStatus::Antipodal) scene_.route = options_.long_path ? map_long_path(station.de, station.dx)
+                                                                  : map_short_path(station.de, station.dx);
         } catch (const std::exception&) {
             scene_.de.reset();
             scene_.dx.reset();

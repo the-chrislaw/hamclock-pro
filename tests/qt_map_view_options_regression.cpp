@@ -1,6 +1,7 @@
 #include <cmath>
 #include "../src/map/view_options.hpp"
 #include "../src/map/map_renderer.hpp"
+#include "../src/map/path.hpp"
 #include "../src/map/sky_points.hpp"
 #include <QGuiApplication>
 #include <QFile>
@@ -111,6 +112,11 @@ int main(int argc, char** argv) {
       const auto base = render(ss); ss.sky_points = true;
       check(render(ss) != base, "sky points drawn"); }
     { MapViewOptions sp; sp.sky_points = true; check(sp.save(ini), "save sky"); MapViewOptions r; r.load(ini); check(r.sky_points, "sky points round trip"); }
+    { MapViewOptions lp; check(!lp.long_path, "long path default off"); lp.long_path = true;
+      check(lp.save(ini), "save long path"); MapViewOptions r; r.load(ini); check(r.long_path, "long path round trip"); }
+    { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};
+      ls.route = map_short_path(*ls.de, *ls.dx); const auto sh = render(ls);
+      ls.route = map_long_path(*ls.de, *ls.dx); check(render(ls) != sh, "long path renders differently"); }
     // Night shade off removes the shading from the render.
     MapScene sc; sc.sun = SubsolarPoint{20.0, 0.0}; sc.night_shade = true;
     const auto on = render(sc);

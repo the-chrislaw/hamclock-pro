@@ -15,6 +15,7 @@ struct MapViewOptions {
     int label_mode = -1; // -1 = each layer's own mode, else OverlayLabelMode
     bool night_shade = true;
     bool path = true;
+    bool long_path = false; // draw the DE/DX path the long way round
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
     bool sky_points = false; // sublunar point and DE antipode markers

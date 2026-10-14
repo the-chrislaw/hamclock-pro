@@ -17,6 +17,7 @@ class MapItem : public QQuickPaintedItem {
     Q_PROPERTY(bool dark READ dark WRITE setDark NOTIFY darkChanged)
     Q_PROPERTY(double uiScale READ uiScale WRITE setUiScale NOTIFY uiScaleChanged)
     Q_PROPERTY(bool showPath READ showPath WRITE setShowPath NOTIFY showPathChanged)
+    Q_PROPERTY(bool longPath READ longPath WRITE setLongPath NOTIFY longPathChanged)
     Q_PROPERTY(bool skyPoints READ skyPoints WRITE setSkyPoints NOTIFY skyPointsChanged)
     Q_PROPERTY(bool nightShade READ nightShade WRITE setNightShade NOTIFY nightShadeChanged)
     // -1 = each layer's own labels, else 0 None, 1 Prefix, 2 Call, 3 Dot.
@@ -47,8 +48,10 @@ public:
     void setUiScale(double s);
     double zoom() const { return scene_.zoom; }
     void setZoom(double z);
+    bool longPath() const { return options_.long_path; }
     bool skyPoints() const { return options_.sky_points; }
     void setSkyPoints(bool on);
+    void setLongPath(bool on);
     bool nightShade() const { return options_.night_shade; }
     void setNightShade(bool on);
     int centerLon() const { return options_.center_lon; }
@@ -80,6 +83,7 @@ signals:
     void zoomChanged();
     void nightShadeChanged();
     void skyPointsChanged();
+    void longPathChanged();
     void labelModeChanged();
     void gridChanged();
     void centerLonChanged();

@@ -9,5 +9,8 @@ namespace hamclock {
 // Output coordinates are degrees, longitude within [-180,180]. A renderer
 // must seam-split consecutive points; these are geographic, not screen lines.
 std::vector<Location> map_short_path(Location de, Location dx, unsigned subdivisions = 64);
+// Long path: the complementary arc of the same great circle (2*pi - short arc),
+// same contract and exact endpoints. Coincident endpoints return only DE.
+std::vector<Location> map_long_path(Location de, Location dx, unsigned subdivisions = 64);
 int run_path_tests();
 }
