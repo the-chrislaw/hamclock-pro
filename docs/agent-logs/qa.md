@@ -37,3 +37,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: #229 [A] Main.qml safeArea bindings throw TypeErrors at shutdown (SafeArea is destroyed before the QML engine, from #216).
 - Diff scan: test changes are additive only; no weakened assertions seen. Per-widget code was not read line by line. Panes were not rendered with a configured station, so the data-filled layouts of new panes (sun/moon extras, weather clouds, storm forecast) were not reviewed this run.
 - Health: build, tests and layout are stable and new panes stay honest (Set up / Offline / Stale states). The only new defect is a harmless but noisy shutdown warning.
+
+## 2026-10-14 (UTC) QA run 6
+- Last reviewed commit: 36311105586b1b37cf7d982ed7fd2ec3f050b412 (PRs #228 to #259, 58 commits since 1025309).
+- Build and 137/137 tests pass on main. Rendered the default layout at 800x480 and 1024x600 (light and dark) and 1920x1080 (dark), with a configured test station, plus every pane widget at 800x480 and 1024x600 (dark). The truncation guard reported nothing and nothing scrolls. Weather shows Loading because the fixture set has no matching weather file (fixture gap, not a product bug). Contact sheets were only skimmed this run, so the data-filled layouts of the new panes were not checked closely.
+- Opened: #261 [A] callsign shown twice in the station card; #262 [G] map labels still collide with symbols, the path line and map buttons. Closed: none. Still open: #150, #151, #152, #246, #247 (owner-filed; #250 and #254 merged toward #246 and #247, not verified closed by me).
+- Diff scan: no QtWidgets, no scrolling views, no passwords in QML or logs, no weakened assertions (no removed test assertions). The ADS-B model reads http://127.0.0.1:8080 (local PiAware only, off unless a receiver exists).
+- Health: layout is stable and honest (Set up / Stale / Live states). Only cosmetic issues were found this run.
