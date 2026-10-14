@@ -67,7 +67,7 @@ Card {
             text: station.auxTime
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
-            elide: Text.ElideRight
+            wrapMode: Text.WordWrap
             Accessible.role: Accessible.Button
             Accessible.name: "Auxiliary time " + text
             Accessible.onPressAction: station.cycleAuxTime()
