@@ -101,7 +101,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
 3. 🟡 (SGP4, look angles, pass search, TLE download and a next-passes pane done; map track and the user's choice of up to two satellites next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
-4. ✅ (schedule + pane; map markers wait for area G's overlay API) NCDXF/IARU beacons (F19): current transmitting beacon per band, beacon locations on map (offline schedule).
+4. ✅ NCDXF/IARU beacons (F19): current transmitting beacon per band, the five on-air beacons marked on the map (offline schedule).
 5. EME planning (F06): Moon position at DE and DX, mutual window.
 
 **Audit additions (D):**
@@ -213,7 +213,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | NWS fire-weather alerts (api.weather.gov: Red Flag Warning, Fire Weather Watch, Fire Warning, Extreme Fire Danger; worst alert, area, issued/until, start time of a future watch, expired alerts dropped; nationwide, no region filter or map overlay yet; no Red Flag Warning was active when the fixture was captured, so it holds a Fire Weather Watch) | H | **Live** |
 | NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, no region filter or map overlay yet) | H | **Live** |
 | Satellites: next passes at DE for popular amateur birds (ISS, SO-50, AO-7, FO-29, AO-73, RS-44, AO-91, AO-85) from CelesTrak TLEs (daily, cached) via vendored SGP4; peak elevation >= 10 deg; no map track, sky plot, alerts or TLE-age limit yet | D | Partial (not on the default dashboard; fixture is a real capture) |
-| NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; no map markers yet) | D | Working |
+| NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; the five on-air beacons are marked on the map, positions from approximate locators) | D | Working |
 | On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; POTA spots drawn on the map via the overlay API (SOTA has no position in its feed), only while live; no filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
 | Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; no BME280 or history yet; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |

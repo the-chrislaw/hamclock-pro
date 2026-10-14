@@ -1,3 +1,4 @@
+#include <cmath>
 // NCDXF/IARU beacon schedule: published rule (3 minute cycle from UTC minutes
 // divisible by 3, 10 s slots, 4U1UN on 14.100 MHz in the first slot, each
 // beacon moving up one band per slot). Offline.
@@ -51,5 +52,18 @@ int main(int argc, char** argv) {
     check(rows[1].toMap()["call"].toString() == "4U1UN", "row 1");
 
     std::cerr << checks << " checks, " << failures << " failures\n";
+    {
+        const Location ny = ncdxf_beacon_location(0); // FN30as
+        check(std::abs(ny.latitude - 40.73) < 0.05 && std::abs(ny.longitude + 74.0) < 0.1, "4U1UN locator centre near New York");
+        const Location caracas = ncdxf_beacon_location(17); // FK60, 4 characters
+        check(std::abs(caracas.latitude - 10.5) < 1e-9 && std::abs(caracas.longitude + 67.0) < 1e-9, "4-character locator uses the square centre");
+        for (int i = 0; i < kNcdxfBeaconCount; ++i) {
+            const Location l = ncdxf_beacon_location(i);
+            check(l.latitude > -90 && l.latitude < 90 && l.longitude > -180 && l.longitude < 180, "beacon location in range");
+        }
+        const OverlayLayer layer = beacon_overlay_layer({base});
+        check(layer.id == "beacons" && layer.markers.size() == 5, "overlay has the five on-air beacons");
+        check(layer.markers[0].call == "4U1UN", "first marker is the 14.100 beacon");
+    }
     return failures ? 1 : 0;
 }

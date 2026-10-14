@@ -16,3 +16,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellites slice 2 (backlog D3): `src/widgets/satellites/` pane. CelesTrak amateur TLEs fetched daily through PolledSource (cached, offline/stale states), eight popular birds matched by name, next pass per bird at DE (>= 10 deg, 24 h horizon), five soonest shown as name / "in N min" or HH:MMZ / peak elevation (compact two-column layout). No rows are invented without a station or data. Test uses a six-set trim of the real CelesTrak capture. Rendered at 800x480, 1024x600, 1920x1080 light and dark offscreen (not on-device). Source terms recorded in the roadmap Data source policy.
 - Next: map ground track via area G's overlay API once it exists, user-chosen satellites (max two tracked), TLE max age and pass alerts (D7); then EME (D5).
 - Others' PRs: #103 CI pending, #73 not mergeable-checked (other areas, left alone).
+
+## 2026-10-14 (UTC), run 2
+- Beacons map markers (backlog D4): the five on-air NCDXF beacons are published as overlay layer "beacons" (diamond + callsign) via area G's overlay API; `ncdxf_beacon_location()` gives the locator centre. Test covers locator centres and the layer. Screenshot at 1024x600 dark checked offscreen (not on-device).
+- Not mine: #73 conflicting, #111 CI pending; left alone.
+- Next: satellite ground track on the map, user-chosen satellites, TLE age (D3/D7), EME (D5).

@@ -1,4 +1,5 @@
 #include "beacons_model.hpp"
+#include "../../map/overlay.hpp"
 #include <QVariantMap>
 
 namespace hamclock {
@@ -17,6 +18,24 @@ QVariantList beacon_rows(UtcSeconds now) {
     return rows;
 }
 
+OverlayLayer beacon_overlay_layer(UtcSeconds now) {
+    OverlayLayer layer;
+    layer.id = "beacons";
+    layer.labels = OverlayLabelMode::Call;
+    layer.min_label_distance_px = 30;
+    for (int band = 0; band < kNcdxfBandCount; ++band) {
+        const int index = ncdxf_current(now, band).beacon_index;
+        OverlayMarker m;
+        m.where = ncdxf_beacon_location(index);
+        m.call = QString::fromLatin1(ncdxf_beacon(index).call);
+        m.color = QColor("#f2a900");
+        m.shape = OverlayShape::Diamond;
+        m.size_px = 5;
+        layer.markers.push_back(m);
+    }
+    return layer;
+}
+
 BeaconsModel::BeaconsModel(const WidgetContext&, QObject* parent)
     : WidgetModel("beacons", "Beacons", parent) {
     timer_.setInterval(1000);
@@ -27,6 +46,7 @@ void BeaconsModel::start() { recompute(); timer_.start(); }
 
 void BeaconsModel::recompute() {
     rows_ = beacon_rows(UtcSeconds{now().toSecsSinceEpoch()});
+    MapOverlays::instance().set_layer(beacon_overlay_layer(UtcSeconds{now().toSecsSinceEpoch()}));
     setState("live", "NCDXF/IARU schedule from the system clock", now());
     emit changed();
 }
