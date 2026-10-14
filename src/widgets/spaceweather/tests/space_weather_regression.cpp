@@ -40,6 +40,22 @@ int main(int argc, char** argv) {
     check(xray && std::abs(xray->value - 7.258945515786763e-07) < 1e-15, "X-ray uses the 0.1-0.8 nm band only");
     check(xray && swpc::xray_class(xray->value) == "B7.2", "real flux classifies as B7.2");
 
+    // 24 h series: bucket maximum, 0.1-0.8 nm band only, oldest first.
+    const auto day = swpc::xray_series(fixture(dir, "xrays-1-day.json"), 10);
+    check(day.size() >= 140 && day.size() <= 145, "24 h of 10-minute points");
+    check(day.size() > 1 && day.front().time < day.back().time, "series is oldest first");
+    check(swpc::xray_series("[{\"time_tag\":\"2026-10-13T00:01:00Z\",\"flux\":1e-6,\"energy\":\"0.1-0.8nm\"},"
+                            "{\"time_tag\":\"2026-10-13T00:04:00Z\",\"flux\":3e-6,\"energy\":\"0.1-0.8nm\"},"
+                            "{\"time_tag\":\"2026-10-13T00:05:00Z\",\"flux\":9e-5,\"energy\":\"0.05-0.4nm\"}]", 10).size() == 1,
+          "short band ignored, one bucket");
+    check(swpc::xray_series("[{\"time_tag\":\"2026-10-13T00:01:00Z\",\"flux\":1e-6,\"energy\":\"0.1-0.8nm\"},"
+                            "{\"time_tag\":\"2026-10-13T00:04:00Z\",\"flux\":3e-6,\"energy\":\"0.1-0.8nm\"}]", 10)[0].value == 3e-6,
+          "bucket keeps the peak");
+    check(swpc::xray_series("garbage", 10).empty() && swpc::xray_series("[]", 0).empty(), "bad input -> empty series");
+    check(swpc::xray_plot_fraction(1e-8) == 0 && swpc::xray_plot_fraction(0) == 0 &&
+          std::abs(swpc::xray_plot_fraction(1e-5) - 0.6) < 1e-9 && swpc::xray_plot_fraction(1) == 1,
+          "plot axis A1..X10 clamped");
+
     // Malformed and hostile input never yields a value.
     for (const char* bad : {"", "{}", "[", "null", "[{\"time_tag\":\"x\",\"Kp\":3}]",
                             "[{\"time_tag\":\"2026-10-13T00:00:00\",\"Kp\":12}]",
@@ -74,30 +90,32 @@ int main(int argc, char** argv) {
     SpaceWeatherModel model(context);
     const auto now = QDateTime(QDate(2026, 10, 13), QTime(16, 0), QTimeZone::utc());
     model.setClock([&] { return now; });
-    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource()})
+    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource(), &model.xrayDaySource()})
         source->setClock([&] { return now; });
     // Start from an empty cache so every run exercises the network path, and
     // let all startup requests finish before simulating an outage.
-    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource()})
+    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource(), &model.xrayDaySource()})
         QFile::remove(source->cachePath());
     model.start();
     for (int i = 0; i < 20; ++i) app.processEvents();
-    check(requests == 3, "three SWPC requests on start");
+    check(requests == 4, "four SWPC requests on start");
     check(model.state() == "live", "all fresh sources -> live");
     check(model.hasKp() && model.kp() == 3.0 && model.kpText() == "Quiet", "model Kp");
     check(model.hasSolarFlux() && model.solarFlux() == 123, "model solar flux");
     check(model.xrayClass() == "B7.2", "model X-ray class");
+    check(model.hasXrayHistory() && model.xrayHistory().size() == int(day.size()), "model exposes 24 h history");
 
     // Network loss keeps the last good values but reports them as stale.
     fail_all = true;
     model.setClock([&] { return now.addSecs(5 * 3600); });
-    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource()}) {
+    for (auto* source : {&model.kpSource(), &model.fluxSource(), &model.xraySource(), &model.xrayDaySource()}) {
         source->setClock([&] { return now.addSecs(5 * 3600); });
         source->refreshNow();
     }
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale", "old data after failures -> stale, not live");
     check(model.hasKp() && model.kp() == 3.0, "last good value kept while stale");
+    check(!model.hasXrayHistory(), "stale history is not plotted");
     check(model.statusText().contains("Kp"), "status names the stale source");
 
     std::cout << "Space weather: " << checks << " checks, " << failures << " failures\n";

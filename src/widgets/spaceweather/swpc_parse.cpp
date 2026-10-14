@@ -2,7 +2,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <algorithm>
 #include <cmath>
+#include <map>
 
 namespace hamclock::swpc {
 namespace {
@@ -61,6 +63,32 @@ std::optional<Reading> latest_xray_flux(const QByteArray& body) {
             return std::nullopt;
         return flux.toDouble();
     });
+}
+
+std::vector<Reading> xray_series(const QByteArray& body, int bucket_minutes) {
+    std::vector<Reading> out;
+    if (bucket_minutes < 1) return out;
+    const qint64 bucket_ms = qint64(bucket_minutes) * 60 * 1000;
+    std::map<qint64, Reading> buckets;
+    for (const auto& item : rows(body)) {
+        if (!item.isObject()) continue;
+        const auto row = item.toObject();
+        const auto flux = row.value("flux");
+        const auto time = parse_time(row.value("time_tag"));
+        if (row.value("energy").toString() != kFlareBand || !flux.isDouble() || !time.isValid() ||
+            !std::isfinite(flux.toDouble()) || flux.toDouble() <= 0) continue;
+        const qint64 key = time.toMSecsSinceEpoch() / bucket_ms;
+        auto it = buckets.find(key);
+        if (it == buckets.end()) buckets.emplace(key, Reading{flux.toDouble(), time});
+        else if (flux.toDouble() > it->second.value) it->second.value = flux.toDouble();
+    }
+    for (const auto& [key, reading] : buckets) out.push_back({reading.value, QDateTime::fromMSecsSinceEpoch(key * bucket_ms, Qt::UTC)});
+    return out;
+}
+
+double xray_plot_fraction(double flux) {
+    if (!std::isfinite(flux) || flux <= 1e-8) return 0;
+    return std::min(1.0, (std::log10(flux) + 8) / 5);
 }
 
 QString xray_class(double flux) {
