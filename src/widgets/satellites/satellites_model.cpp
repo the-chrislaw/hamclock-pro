@@ -1,6 +1,7 @@
 #include "satellites_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include <QSettings>
 #include <QTimeZone>
 #include <QVariantMap>
 #include <algorithm>
@@ -33,6 +34,20 @@ std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time) {
     for (const Tle& tle : tles) {
         SatellitePropagator p(tle);
         if (p.valid() && unix_time - p.epoch_unix() <= kMaxTleAgeDays * 86400.0) out.push_back(tle);
+    }
+    return out;
+}
+
+std::vector<Tle> choose_tracked(const std::vector<Tle>& tles, const QStringList& wanted) {
+    std::vector<Tle> out;
+    for (const QString& w : wanted) {
+        for (const Tle& tle : tles) {
+            if (satellite_short_name(QString::fromStdString(tle.name)).compare(w.trimmed(), Qt::CaseInsensitive) == 0) {
+                out.push_back(tle);
+                break;
+            }
+        }
+        if (out.size() >= static_cast<std::size_t>(kMaxTracked)) break;
     }
     return out;
 }
@@ -95,9 +110,21 @@ void SatellitesModel::recompute() {
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
-    if (tles.empty()) MapOverlays::instance().remove_layer("satellites");
-    else MapOverlays::instance().set_layer(satellite_overlay_layer(tles, t));
+    // Map: the user's choice ([satellites] tracked= in options.ini, at most two), else the two
+    // satellites with the soonest passes (the first two in the list without a station).
+    QStringList wanted;
+    if (settings_) {
+        QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+        wanted = ini.value("satellites/tracked").toStringList();
+    }
+    std::vector<Tle> tracked = choose_tracked(tles, wanted);
+    auto publish_layer = [&](const std::vector<Tle>& pick) {
+        if (pick.empty()) MapOverlays::instance().remove_layer("satellites");
+        else MapOverlays::instance().set_layer(satellite_overlay_layer(pick, t));
+    };
     if (tles.empty() || !settings_ || !settings_->configured()) {
+        if (tracked.empty()) tracked.assign(tles.begin(), tles.begin() + std::min<std::size_t>(tles.size(), kMaxTracked));
+        publish_layer(tracked);
         emit changed();
         return;
     }
@@ -112,6 +139,9 @@ void SatellitesModel::recompute() {
             if (static_cast<double>(pass.los) > t) { found.push_back({tle, pass}); break; }
     }
     std::sort(found.begin(), found.end(), [](const Row& a, const Row& b) { return a.pass.aos < b.pass.aos; });
+    if (tracked.empty())
+        for (std::size_t i = 0; i < found.size() && i < static_cast<std::size_t>(kMaxTracked); ++i) tracked.push_back(found[i].tle);
+    publish_layer(tracked);
     if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
     for (const Row& r : found) {
         const qint64 until = r.pass.aos - static_cast<qint64>(t);

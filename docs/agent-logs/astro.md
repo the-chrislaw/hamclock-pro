@@ -46,3 +46,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Maximum TLE age (backlog D7, slice 1): element sets with an epoch more than 30 days old are dropped from passes and the map layer; if all are stale the pane says "Element sets over 30 days old" instead of showing drifted orbits as live. Test advances the clock 60 days and back. Pane text only (no layout change). ASan/UBSan left to CI.
 - Not mine: #173, #174 (CI pending), #73 left alone.
 - Next: user-chosen satellites (max two), pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 8
+- User-chosen satellites (backlog D3): the map layer now tracks at most two satellites (was all eight): `[satellites] tracked=AO-7,ISS` in options.ini (read-only, no AppSettings change), else the two with the soonest passes (first two without a station). Test covers default, choice, unknown names, cap. No settings control yet (shared settings UI, left for a later slice).
+- Open PRs: #181, #182 (not mine, CI still running / failing tvOS check), #73 left alone. No `[D]` QA issues.
+- Next: settings control for the choice, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
