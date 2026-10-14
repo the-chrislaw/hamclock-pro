@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "app_settings.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
@@ -227,6 +228,8 @@ void AppSettings::loadAccounts() {
     lookup_service_ = service == "qrz" || service == "hamqth" ? service : "none";
     lookup_user_ = ini.value("lookup/user").toString().left(kMaxUserLength);
     lookup_password_ = ini.value("lookup/password").toString().left(kMaxPasswordLength);
+    hamalert_user_ = ini.value("hamalert/user").toString().left(kMaxUserLength);
+    hamalert_password_ = ini.value("hamalert/password").toString().left(kMaxPasswordLength);
 }
 
 QString AppSettings::writeAccounts() {
@@ -237,6 +240,8 @@ QString AppSettings::writeAccounts() {
         ini.setValue("lookup/service", lookup_service_);
         ini.setValue("lookup/user", lookup_user_);
         ini.setValue("lookup/password", lookup_password_);
+        ini.setValue("hamalert/user", hamalert_user_);
+        ini.setValue("hamalert/password", hamalert_password_);
         ini.sync();
         if (ini.status() != QSettings::NoError) return "Could not save account settings.";
     }
@@ -256,6 +261,22 @@ QString AppSettings::saveAccount(const QString& service, const QString& user, co
     lookup_user_ = service == "none" ? QString() : trimmed_user;
     if (service == "none") lookup_password_.clear();
     else if (!password.isEmpty()) lookup_password_ = password;
+    const auto error = writeAccounts();
+    emit accountsChanged();
+    return error;
+}
+
+QString AppSettings::saveHamAlert(const QString& user, const QString& password) {
+    const auto trimmed_user = user.trimmed();
+    if (trimmed_user.size() > kMaxUserLength || password.size() > kMaxPasswordLength)
+        return "User name or password is too long.";
+    const auto printable = [](const QString& v) {
+        return std::all_of(v.begin(), v.end(), [](QChar c) { return c.unicode() > 32 && c.unicode() < 127; });
+    };
+    if (!printable(trimmed_user) || !printable(password)) return "Use plain letters, digits and symbols only (no spaces).";
+    hamalert_user_ = trimmed_user;
+    if (trimmed_user.isEmpty()) hamalert_password_.clear();
+    else if (!password.isEmpty()) hamalert_password_ = password;
     const auto error = writeAccounts();
     emit accountsChanged();
     return error;

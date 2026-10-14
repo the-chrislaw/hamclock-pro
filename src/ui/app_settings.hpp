@@ -38,6 +38,8 @@ class AppSettings : public QObject {
     // Widgets a slot's rotation cycles through, one list per slot (empty list = every widget).
     Q_PROPERTY(QVariantList paneRotationSets READ paneRotationSets NOTIFY panesChanged)
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
+    Q_PROPERTY(QString hamAlertUser READ hamAlertUser NOTIFY accountsChanged)
+    Q_PROPERTY(bool hasHamAlertPassword READ hasHamAlertPassword NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
@@ -66,6 +68,9 @@ public:
     bool hasLookupPassword() const { return !lookup_password_.isEmpty(); }
     // C++ only (never a QML property): for widgets that log in.
     QString lookupPassword() const { return lookup_password_; }
+    QString hamAlertUser() const { return hamalert_user_; }
+    bool hasHamAlertPassword() const { return !hamalert_password_.isEmpty(); }
+    QString hamAlertPassword() const { return hamalert_password_; } // C++ only, like lookupPassword()
     QString stationPath() const { return station_path_; }
     QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
@@ -97,6 +102,8 @@ public:
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
+    // HamAlert.org telnet login; empty password keeps the stored one, empty user clears both.
+    Q_INVOKABLE QString saveHamAlert(const QString& user, const QString& password);
 
 signals:
     void stationChanged();
@@ -125,6 +132,7 @@ private:
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
+    QString hamalert_user_, hamalert_password_;
 };
 
 } // namespace hamclock

@@ -59,3 +59,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 16 (slice): `parse_ota_ref` pulls one WWFF/SOTA/IOTA/POTA reference out of a spot comment (`DxSpot::ota_program`/`ota_ref`). Strict boundaries avoid matching inside longer tokens; a POTA-shaped `XX-NNNN` is accepted as POTA. Tests pass normally and under ASan/UBSan. No QML change (reference not shown yet), so no screenshots; not validated on device.
 - Not done: IOTA reference names (needs the IOTA list, a data source to vet), showing the reference in the card or map label.
 - Next: HamAlert, OTA filter controls in Settings, WWFF/IOTA programmes; DXCC table still needs cty.dat allowlisted (#136).
+
+## 2026-10-14 (run 11)
+- Step 1: nothing of mine open; #181 (space) and #73 not mine, left alone. No open `[C]` qa issues.
+- Backlog item 8 (slice): HamAlert pane. `TelnetClient::start` takes an optional password, sent once after a `password:` prompt (online only afterwards; printable ASCII without spaces, else the client stays idle). `HamAlertModel` connects to hamalert.org:7300 and shows incoming `DX de` spots; Not configured until user and password are set. AppSettings gets `hamalert/user` + `hamalert/password` in credentials.ini (0600), `saveHamAlert`, password C++-only; Settings gets a HamAlert card; pane chooser lists it under DX. Tests pass normally and under ASan/UBSan (leak check off).
+- Not verified: the live service's exact prompts and line format (port 7300 is not reachable from the sandbox; tests use a fake socket). No map overlay, no card screenshot (not on the default dashboard), not validated on device.
+- Next: HamAlert map overlay, OTA filter controls in Settings, APRS-IS, WWFF/IOTA; DXCC table still needs cty.dat allowlisted (#136).
