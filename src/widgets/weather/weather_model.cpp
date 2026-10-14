@@ -17,7 +17,7 @@ constexpr double kMaxOffsetDeg = 0.5;
 WeatherModel::WeatherModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("weather", "Weather", parent), context_(context), settings_(context.settings) {
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, [this] { build(); });
-    connect(this, &WidgetModel::ageChanged, this, &WeatherModel::refreshState);
+    connect(this, &WidgetModel::ageChanged, this, [this] { refreshState(); emit changed(); });
 }
 
 bool WeatherModel::hasStation() const { return settings_ && settings_->configured(); }
@@ -67,6 +67,10 @@ QString WeatherModel::wind(const End& e) {
     if (!e.now) return {};
     if (e.now->wind_kmh < 1) return "Calm";
     return QString("%1 %2 km/h").arg(weather::compass_point(e.now->wind_dir_deg)).arg(std::lround(e.now->wind_kmh));
+}
+
+QString WeatherModel::local(const End& e) const {
+    return e.now && e.now->utc_offset_s ? weather::local_time_text(now(), *e.now->utc_offset_s) : QString();
 }
 
 QString WeatherModel::air(const End& e) {
