@@ -90,3 +90,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, nineteenth run)
 - #297/#298/#299 (areas tvOS/C/D) have Apple jobs still queued/running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E4 slice: rigctld and rotctld host/port are read from options.ini (`[radio]`/`[rotator]` `host`, `port`); invalid hosts (anything but letters, digits, `.`, `-`, `:`) and ports outside 1..65535 fall back to the defaults field by field. Remote LAN hosts now possible; still strictly read-only. flrig stays on localhost. Offline parser tests; no Settings control yet (area A page). Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, twentieth run)
+- #306/#307/#73 are other areas' PRs with Apple jobs queued or conflicts: not mine, left alone. No open `qa` issues for E.
+- E12 slice (NTP): the sensors card's clock line now also shows chrony's stratum and reference source ("Synced, 3 ms, stratum 2 via time.example"). The source name is shown only if it is plain host/address characters (<= 64), otherwise dropped. Display only, read-only `chronyc tracking`; no source selection yet (would need privileged config, out of scope). Tests updated and extended; full release suite and ASan/UBSan sensors tests pass. Not run on a Pi. Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend.

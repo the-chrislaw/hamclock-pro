@@ -24,13 +24,19 @@ std::optional<ClockSync> parse_chrony_tracking(const QByteArray& text) {
     }
     const auto st = QRegularExpression("Stratum\\s*:\\s*(\\d+)").match(t);
     if (st.hasMatch() && s.synchronized) s.stratum = st.captured(1).toInt();
+    // "Reference ID : A29FC801 (time.example.org)": keep only host-name/address characters.
+    const auto src = QRegularExpression("Reference ID\\s*:\\s*[0-9A-Fa-f]+\\s*\\(([^)]*)\\)").match(t);
+    if (src.hasMatch() && s.synchronized) {
+        const QString name = src.captured(1).trimmed();
+        if (name.size() <= 64 && QRegularExpression("^[A-Za-z0-9.:_-]+$").match(name).hasMatch()) s.source = name;
+    }
     return s;
 }
 
 std::optional<ClockSync> parse_timedatectl(const QByteArray& text) {
     const QString t = QString::fromUtf8(text).trimmed();
-    if (t == "NTPSynchronized=yes") return ClockSync{true, std::nullopt, std::nullopt};
-    if (t == "NTPSynchronized=no") return ClockSync{false, std::nullopt, std::nullopt};
+    if (t == "NTPSynchronized=yes") return ClockSync{true, std::nullopt, std::nullopt, {}};
+    if (t == "NTPSynchronized=no") return ClockSync{false, std::nullopt, std::nullopt, {}};
     return std::nullopt;
 }
 
@@ -60,6 +66,8 @@ QString describe(const ClockSync& s) {
     if (!s.synchronized) return "Not synchronised";
     QString out = "Synced";
     if (s.offset_ms) out += s.offset_ms < 1.0 ? QString(", <1 ms") : QString(", %1 ms").arg(std::lround(*s.offset_ms));
+    if (s.stratum && *s.stratum > 0) out += QString(", stratum %1").arg(*s.stratum);
+    if (!s.source.isEmpty()) out += " via " + s.source;
     return out;
 }
 
