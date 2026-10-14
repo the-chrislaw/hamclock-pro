@@ -1,6 +1,7 @@
 #pragma once
 // Station header data for QML: UTC and DE local clocks, DE/DX grids, path.
 #include "path_text.hpp"
+#include "sun_text.hpp"
 #include <QObject>
 #include <QString>
 #include <QTimer>
@@ -25,6 +26,8 @@ class StationModel : public QObject {
     Q_PROPERTY(QString distanceText READ distanceText NOTIFY stationChanged)
     Q_PROPERTY(QString pathText READ pathText NOTIFY stationChanged)
     Q_PROPERTY(QString bearingText READ bearingText NOTIFY stationChanged)
+    Q_PROPERTY(QString deSun READ deSun NOTIFY tick)
+    Q_PROPERTY(QString dxSun READ dxSun NOTIFY tick)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
 public:
     explicit StationModel(AppSettings& settings, QObject* parent = nullptr);
@@ -43,6 +46,8 @@ public:
     QString distanceText() const { return distance_; }
     QString bearingText() const { return bearing_; }
     QString pathText() const { return path_summary(distance_, bearing_); }
+    QString deSun() const;       // next sunrise/sunset at DE, empty when unconfigured
+    QString dxSun() const;
     bool configured() const;
 
 signals:
@@ -53,6 +58,7 @@ private:
     void reload();
     AppSettings& settings_;
     QTimer timer_;
+    double de_lat_ = 0, de_lon_ = 0, dx_lat_ = 0, dx_lon_ = 0;
     QString callsign_, de_grid_, dx_grid_, de_coordinates_, dx_coordinates_, distance_, bearing_;
 };
 
