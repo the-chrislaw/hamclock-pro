@@ -22,6 +22,7 @@ Card {
             label: "Pressure"
             visible: root.widget && root.widget.envPressure !== ""
             value: visible ? root.widget.envPressure : ""
+            caption: visible && root.widget.envTrend !== "" ? root.widget.envTrend : ""
         }
         Metric {
             label: "Humidity"

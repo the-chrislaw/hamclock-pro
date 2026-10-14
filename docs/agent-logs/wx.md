@@ -57,3 +57,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, eleventh run)
 - #218/#219 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E2 slice: lookup card shows "5210 km · 52° SP" (distance and short-path bearing from DE to the centre of the returned grid; hidden without a DE or a valid grid). Uses the existing geometry/locator helpers. Offline tests for malformed grids and a known cell; full suite passes (release). ASan/UBSan and screenshots were not run locally (card needs an account, not in the screenshot harness). Spotted-call wiring still pending (needs area C selection). Next: header radio display, DX city/popup, gpiod backend.
+
+## 2026-10-14 (UTC, twelfth run)
+- #232 (area C) had both Linux checks green but Apple jobs running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card shows a pressure trend (Rising/Falling/Steady) under the BME280 pressure, from an in-memory history (one sample/min, 3 h window, needs 30 min, scaled to a 3 h change, steady within +-1 hPa). Hidden without history or sensor. Unit tests for the history; full suite passes (release build); ASan/UBSan left to CI; no screenshot (card needs hardware). Not run on a Pi. Next: calibration offsets (needs a setting), DX city/popup, gpiod backend, header radio display.

@@ -90,4 +90,24 @@ std::optional<double> dew_point_c(double t, double rh) {
     return b * g / (a - g);
 }
 
+void PressureHistory::add(qint64 t, double hpa) {
+    if (!samples_.empty() && t - samples_.back().first < 60) return;
+    if (!samples_.empty() && t < samples_.back().first) samples_.clear();  // clock stepped back
+    samples_.emplace_back(t, hpa);
+    while (samples_.size() > 1 && t - samples_.front().first > 3 * 3600) samples_.erase(samples_.begin());
+}
+
+std::optional<double> PressureHistory::change_per_3h() const {
+    if (samples_.size() < 2) return std::nullopt;
+    const qint64 span = samples_.back().first - samples_.front().first;
+    if (span < 30 * 60) return std::nullopt;
+    return (samples_.back().second - samples_.front().second) * (3.0 * 3600.0 / static_cast<double>(span));
+}
+
+QString PressureHistory::trend_word() const {
+    const auto c = change_per_3h();
+    if (!c) return QString();
+    return *c > 1.0 ? "Rising" : *c < -1.0 ? "Falling" : "Steady";
+}
+
 } // namespace hamclock::sensors
