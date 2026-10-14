@@ -27,6 +27,13 @@ int main(int argc, char** argv) {
     CHECK(zones.search("", 5).size() == 5);                       // limit respected
     CHECK(zones.labelFor("Not/AZone").isEmpty());
     CHECK(zones.search("est5edt").isEmpty());                     // legacy aliases hidden
+    CHECK(zones.suggestZone(40.7, -74.0) == "America/New_York");
+    CHECK(zones.suggestZone(35.68, 139.7) == "Asia/Tokyo");
+    CHECK(zones.suggestZone(51.0, 0.5) == "Europe/London");
+    CHECK(zones.suggestZone(-33.9, 151.0) == "Australia/Sydney");
+    CHECK(zones.suggestZone(0.0, -140.0).isEmpty());   // open Pacific: too far from any city
+    CHECK(zones.suggestZone(95.0, 0.0).isEmpty());     // invalid latitude
+    CHECK(zones.suggestZone(0.0, 200.0).isEmpty());    // invalid longitude
     const auto sys = zones.systemZone();
     CHECK(sys.isEmpty() || !zones.labelFor(sys).isEmpty());
     return failures ? 1 : 0;
