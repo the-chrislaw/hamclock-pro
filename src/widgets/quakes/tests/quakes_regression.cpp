@@ -1,6 +1,7 @@
 // Earthquakes widget: parser and model, offline.
 // Fixture is a trimmed real USGS 2.5_day.geojson response captured 2026-10-13 (feed built 20:53 UTC).
 #include "../quakes_model.hpp"
+#include "../quakes_overlay.hpp"
 #include "../quakes_parse.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
@@ -77,6 +78,20 @@ int main(int argc, char** argv) {
     check(model.strongestMagnitude() == 6.8 && model.strongestText().startsWith("Strong · "), "strongest text");
     check(model.recent().size() == 6, "recent capped at 6");
     check(model.updatedAt() == feed.generated, "updatedAt is the feed build time");
+    {
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "quakes" && layers[0].markers.size() == 8, "live -> quakes on the map");
+        const auto& m = layers[0].markers;
+        check(m[0].prefix == "M6.8" && m[0].color == QColor("#d1332b"), "strongest first, red");
+        bool sorted = true;
+        for (size_t i = 1; i < m.size(); ++i) sorted = sorted && m[i - 1].size_px >= m[i].size_px;
+        check(sorted, "marker size follows magnitude");
+        check(quakes::overlay_layer(feed.quakes, 3).markers.size() == 3, "marker cap");
+        model.setMapVisible(false);
+        check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+        model.setMapVisible(true);
+        check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    }
 
     fail_all = true;
     now = now.addSecs(3 * 3600);
@@ -84,6 +99,7 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
+    check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");
 
     std::cout << "Quakes: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
