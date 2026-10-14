@@ -37,6 +37,16 @@ int main(int argc, char** argv) {
     const auto skyc = gps::parse_line(R"({"class":"SKY","uSat":7,"nSat":11})");
     check(skyc.sky.used == 7 && skyc.sky.seen == 11, "SKY summary counts");
 
+    {   // GPS time vs system clock
+        const auto tp = gps::parse_line(R"({"class":"TPV","mode":3,"lat":1,"lon":2,"time":"2026-10-14T12:00:00.000Z"})");
+        check(tp.fix.time && tp.fix.time->toString(Qt::ISODate) == "2026-10-14T12:00:00Z", "TPV time parsed");
+        check(!gps::parse_line(R"({"class":"TPV","mode":3,"time":"nonsense"})").fix.time, "bad time ignored");
+        check(!gps::parse_line(R"({"class":"TPV","mode":3,"time":"1970-01-01T00:00:00.000Z"})").fix.time, "implausible time ignored");
+        const auto g = *tp.fix.time;
+        check(gps::clock_vs_gps_text(g, g.addMSecs(900)).startsWith("Clock agrees"), "small skew is not resolved");
+        check(gps::clock_vs_gps_text(g.addSecs(12), g) == "Clock is 12 s behind GPS", "behind");
+        check(gps::clock_vs_gps_text(g, g.addSecs(5400)) == "Clock is 1.5 h ahead of GPS", "ahead in hours");
+    }
     {   // NMEA 0183 serial sentences (reference sentences with valid checksums)
         const auto gga = gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n");
         check(gga.kind == gps::Nmea::Gga && gga.fix.mode == 3 && gga.used == 8, "GGA fix and satellites");

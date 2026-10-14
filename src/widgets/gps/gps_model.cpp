@@ -91,6 +91,11 @@ QString GpsModel::grid() const {
     return QString::fromStdString(maidenhead({*fix_.lat, *fix_.lon}, 6));
 }
 
+QString GpsModel::clockCheck() const {
+    if (!hasFix() || !fix_.time) return QString();
+    return gps::clock_vs_gps_text(*fix_.time, now().toUTC());
+}
+
 QString GpsModel::satellites() const {
     return sky_.seen > 0 ? QString("%1 of %2").arg(sky_.used).arg(sky_.seen) : QString();
 }

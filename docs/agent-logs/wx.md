@@ -82,3 +82,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, seventeenth run)
 - #274 (tvOS) and #73 (area A) open, not mine, left alone. No open `qa` issues for E.
 - E12 slice: NMEA stream layer for the future serial GPS reader. `NmeaStream` splits raw bytes into lines (partial lines held, >128-byte lines dropped); `NmeaTracker` merges GGA+RMC, reports a position/UTC only while younger than 5 s, clears on a no-fix GGA. Offline tests; full release suite and ASan/UBSan gps test pass. Still no serial reader (QtSerialPort not installed here) and no DE/time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, eighteenth run)
+- No open PRs of mine; #289/#290 (areas B/D) had green Linux checks but Apple jobs still running, #73 (area A) open: not mine, left alone. No open `qa` issues for E.
+- E12 slice: GPS card compares the gpsd TPV `time` with the system clock and shows "Clock agrees with GPS (within 2 s)" or "Clock is N s ahead of/behind GPS" (full-size layout only; differences under 2 s are never shown as a precise offset because gpsd reports late). Display only: it never sets the clock or DE. Offline parser/text tests; full release suite passes, ASan/UBSan left to CI; no screenshot (card needs a fix). Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.

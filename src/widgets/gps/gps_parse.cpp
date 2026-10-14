@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <cmath>
+#include <cstdlib>
 
 namespace hamclock::gps {
 
@@ -27,6 +28,8 @@ Message parse_line(const QByteArray& line) {
         m.fix.lat = number(o, "lat", -90, 90);
         m.fix.lon = number(o, "lon", -180, 180);
         if (!m.fix.lat || !m.fix.lon) m.fix.lat = m.fix.lon = std::nullopt;
+        const auto t = QDateTime::fromString(o.value("time").toString(), Qt::ISODateWithMs);
+        if (t.isValid() && t.date().year() >= 2020) m.fix.time = t.toUTC();
         m.fix.alt_m = number(o, "altMSL", -1000, 100000);
         if (!m.fix.alt_m) m.fix.alt_m = number(o, "alt", -1000, 100000);
     } else if (cls == "SKY") {
@@ -40,6 +43,14 @@ Message parse_line(const QByteArray& line) {
         }
     }
     return m;
+}
+
+QString clock_vs_gps_text(const QDateTime& gps_utc, const QDateTime& system_utc) {
+    const qint64 ms = system_utc.toMSecsSinceEpoch() - gps_utc.toMSecsSinceEpoch();
+    if (std::llabs(ms) < 2000) return "Clock agrees with GPS (within 2 s)";
+    const long long s = std::llround(std::fabs(ms / 1000.0));
+    const QString span = s >= 3600 ? QString("%1 h").arg(s / 3600.0, 0, 'f', 1) : QString("%1 s").arg(s);
+    return QString("Clock is %1 %2 GPS").arg(span, ms > 0 ? "ahead of" : "behind");
 }
 
 } // namespace hamclock::gps
