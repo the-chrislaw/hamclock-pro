@@ -95,3 +95,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Found the SatNOGS fetch and detail box already on main (my parallel PR #251 conflicted and was closed as redundant). Kept only the useful difference: the transmitters URL is filtered to `service=Amateur&alive=true` (about 330 kB instead of the 4 MB full database); roadmap note updated. No logic change.
 - Not mine: #73 conflicting; left alone.
 - Next: remaining detail-box items (sunlit/eclipsed, Show track, Set as DX, map tap), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 17
+- Sunlit/eclipsed (owner request #246, D3 detail box): `sun_teme_km` (Astronomical Almanac low-precision Sun vector), `in_earth_shadow` (cylindrical shadow) and `SatellitePropagator::sunlit`; the detail box line shows "sunlit" / "eclipsed". Test checks the Sun direction at the 2000 equinox and declination at the 2024 June solstice, shadow geometry cases and a plausible LEO eclipse fraction over a day (88888). Penumbra ignored. Screenshots left to CI.
+- Not mine: #256 CI still running, #73 conflicting; left alone.
+- Next: Show track / Set as DX / more passes in the detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).

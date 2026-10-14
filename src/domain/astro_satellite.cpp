@@ -82,6 +82,37 @@ bool SatellitePropagator::teme(double unix_time, double r[3]) const {
     return SGP4Funcs::sgp4(impl_->rec, tsince, r, v);
 }
 
+void sun_teme_km(double unix_time, double out[3]) {
+    const double n = unix_time / 86400.0 + 2440587.5 - 2451545.0;
+    const double d2r = 3.14159265358979323846 / 180.0;
+    const double L = 280.460 + 0.9856474 * n, g = (357.528 + 0.9856003 * n) * d2r;
+    const double lam = (L + 1.915 * std::sin(g) + 0.020 * std::sin(2 * g)) * d2r;
+    const double eps = (23.439 - 0.0000004 * n) * d2r;
+    const double R = (1.00014 - 0.01671 * std::cos(g) - 0.00014 * std::cos(2 * g)) * 149597870.7;
+    out[0] = R * std::cos(lam);
+    out[1] = R * std::cos(eps) * std::sin(lam);
+    out[2] = R * std::sin(eps) * std::sin(lam);
+}
+
+bool in_earth_shadow(const double sat[3], const double sun[3]) {
+    const double sn = std::sqrt(sun[0] * sun[0] + sun[1] * sun[1] + sun[2] * sun[2]);
+    double along = 0;
+    for (int i = 0; i < 3; ++i) along += sat[i] * sun[i] / sn;
+    if (along >= 0) return false; // on the day side of Earth's centre plane
+    double perp2 = 0;
+    for (int i = 0; i < 3; ++i) { const double c = sat[i] - along * sun[i] / sn; perp2 += c * c; }
+    const double earth_r = 6378.137;
+    return perp2 < earth_r * earth_r;
+}
+
+bool SatellitePropagator::sunlit(double unix_time, bool& lit) const {
+    double r[3], s[3];
+    if (!teme(unix_time, r)) return false;
+    sun_teme_km(unix_time, s);
+    lit = !in_earth_shadow(r, s);
+    return true;
+}
+
 namespace {
 // TEME -> ECEF by GMST rotation (polar motion ignored: well under 0.1 km).
 void ecef_of_teme(const double r[3], double unix_time, double out[3]) {
