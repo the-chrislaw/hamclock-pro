@@ -57,8 +57,8 @@ Card {
 
         Repeater {
             model: station.configured ? [
-                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates },
-                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates }
+                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun },
+                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun }
             ] : []
             delegate: ColumnLayout {
                 spacing: 1
@@ -66,6 +66,14 @@ Card {
                 Text { text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: modelData.grid; color: Theme.ink; font.pixelSize: Theme.fontTitle * 1.3; font.weight: Font.DemiBold }
                 Text { text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text {
+                    visible: modelData.sun.length > 0
+                    text: "☀ " + modelData.sun
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontCaption
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                }
             }
         }
         Text {

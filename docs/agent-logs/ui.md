@@ -62,3 +62,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 11)
 - Backlog 0c slice: tapping the station clock swaps the big clock between UTC and DE local time (`StationModel.deClock/deDate`, `clock_text.hpp`, `clock-text-regression`); the other zone shows as a small line under it. Screenshots at 800x480, 1024x600, 1920x1080 render with no truncation (the station is unconfigured in the fixtures, so the DE clock was not visible; layout of the configured card unchecked visually). ctest 128/128; ASan/UBSan left to CI. Not validated on a device.
 - #212/#207 (other areas) had checks running or none; #73 stale. Next: "Find" request slice, DX local time/sun times, side panes.
+
+## 2026-10-14 (hourly run, 12)
+- Backlog 0c slice: the DE and DX boxes show the next sunrise and sunset as "Rise in 3h 12m · Set in 14h 5m" (soonest first; "Sun up/down all day" in polar regions), from the offline `astro_sun` code (`src/ui/sun_text.hpp`, `StationModel.deSun/dxSun`, `sun-text-regression`). Screenshots at 800x480, 1024x600, 1920x1080 with a configured station: the line wraps to two lines in the 1024x600 column, nothing clipped. Observed (not mine, not changed): `Main.qml` safe-area bindings log "Cannot read property 'left' of null" once at startup in `--screenshot`. ctest 130/130; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 open (stale, not mine). Next: "Find" request slice, DX local time/zone from coordinates, side panes.
