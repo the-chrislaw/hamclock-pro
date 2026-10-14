@@ -43,6 +43,11 @@ struct Filter {
     QString mode;          // "CW", "SSB", ... case-insensitive
     int max_age_min = 0;
     QString program;       // "POTA" or "SOTA", empty for both
+    // List order: "time" (newest first, default), "freq" (ascending) or "dist"
+    // (nearest to DE first; spots without a position last). Unknown = "time".
+    QString sort;
+    bool has_de = false;
+    double de_lat = 0, de_lon = 0;
 };
 std::vector<Spot> filter(const std::vector<Spot>& spots, const Filter& f, const QDateTime& now);
 

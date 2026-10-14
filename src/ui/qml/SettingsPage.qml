@@ -254,6 +254,7 @@ Rectangle {
                         FormField { id: otaProgram; label: "On the air: POTA/SOTA (empty = both)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
                         FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
                         FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
+                        FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; Layout.preferredWidth: 1 }
                         FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
@@ -271,6 +272,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveAdifPath(adifPath.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveOtaSort(otaSort.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
                                         if (clusterError.text === "")
