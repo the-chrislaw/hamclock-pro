@@ -27,3 +27,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Open PRs #129/#73 are other areas'; none of mine open. Took qa issue #123 ([F] plaintext credential file on Linux/Pi).
 - Documented the clear-text limitation (WIDGETS.md, header), file store now also sets its directory to 0700, and the regression test asserts a loose pre-existing file is tightened to 0600 and the directory is owner-only. libsecret store not done; the Settings page help text belongs to area A (to request).
 - Next: universal build, F4 iPad once the map renderer port lands.
+
+## 2026-10-14 (third hourly run)
+- Open PRs #138/#73 are other areas' (#138 Apple jobs still running, #73 conflicting); left alone. qa #120 is area B.
+- F3 slice 4: `macOS universal build` job in apple.yml (aqt universal Qt 6.8.3, `arm64;x86_64`, `lipo -archs` check, cached Qt). Informational (continue-on-error) until the first green run; then the signed dmg can switch to it.
+- Next: make the dmg/signing use the universal build once green; F4 iPad when the map renderer port lands.
