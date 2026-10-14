@@ -1,5 +1,6 @@
 #include "space_weather_model.hpp"
 #include "swpc_parse.hpp"
+#include "../../map/styles.hpp"
 #include "../../net/polled_source.hpp"
 #include <QTimer>
 #include <algorithm>
@@ -38,6 +39,18 @@ void SpaceWeatherModel::start() {
     for (auto* source : {kp_source_, flux_source_, xray_source_, xray_day_source_}) source->start();
 }
 
+SpaceWeatherModel::~SpaceWeatherModel() { MapStyles::instance().set_auto_space_weather(false); }
+
+// Feeds the map's automatic Aurora/DRAP choice. A value whose source is out of
+// date is passed as unknown, so an old storm never keeps a style on the map.
+void SpaceWeatherModel::publishMapWeather() {
+    const auto now_utc = now();
+    SpaceWeatherNow weather;
+    if (has_kp_ && !kp_source_->isStale(now_utc)) weather.kp = kp_;
+    if (!xray_class_.isEmpty() && !xray_source_->isStale(now_utc)) weather.xray_flux_wm2 = xray_flux_;
+    MapStyles::instance().set_auto_space_weather(true, weather);
+}
+
 QString SpaceWeatherModel::kpText() const { return has_kp_ ? swpc::kp_description(kp_) : QString(); }
 
 void SpaceWeatherModel::parse() {
@@ -49,6 +62,7 @@ void SpaceWeatherModel::parse() {
     has_sfi_ = flux.has_value();
     sfi_ = flux ? static_cast<int>(std::lround(flux->value)) : 0;
     xray_class_ = xray ? swpc::xray_class(xray->value) : QString();
+    xray_flux_ = xray ? xray->value : 0;
     history_.clear();
     if (!xray_day_source_->isStale(now())) {
         const auto series = swpc::xray_series(xray_day_source_->body(), 10);
@@ -61,6 +75,7 @@ void SpaceWeatherModel::parse() {
 // the most limiting source so the user knows which value to distrust.
 void SpaceWeatherModel::refreshState() {
     const auto now_utc = now();
+    publishMapWeather();
     if (!history_.isEmpty() && xray_day_source_->isStale(now_utc)) {
         history_.clear();
         emit valuesChanged();

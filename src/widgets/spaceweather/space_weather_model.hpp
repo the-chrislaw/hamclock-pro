@@ -22,6 +22,7 @@ class SpaceWeatherModel : public WidgetModel {
     Q_PROPERTY(QVariantList xrayHistory READ xrayHistory NOTIFY valuesChanged)
 public:
     explicit SpaceWeatherModel(const WidgetContext& context, QObject* parent = nullptr);
+    ~SpaceWeatherModel() override;
     void start();
 
     bool hasKp() const { return has_kp_; }
@@ -48,6 +49,7 @@ signals:
 private:
     void parse();
     void refreshState();
+    void publishMapWeather();
 
     PolledSource* kp_source_;
     PolledSource* flux_source_;
@@ -58,6 +60,7 @@ private:
     double kp_ = 0;
     int sfi_ = 0;
     QString xray_class_;
+    double xray_flux_ = 0;
 };
 
 void register_widget_spaceweather(WidgetRegistry& registry, const WidgetContext& context);
