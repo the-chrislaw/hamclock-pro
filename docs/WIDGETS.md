@@ -187,6 +187,13 @@ Takes over E8 and E13. Each feed: check terms first and record them in the roadm
 4. Lightning with range rings from DE, active fires (NASA FIRMS): overlays/badges.
 5. NetLogger active nets pane.
 
+### I. Apple TV (owns `apple/tvos/`, `cmake/TvOS*.cmake`, `docs/apple-tv*.md`, `.github/workflows/tvos.yml`, `docs/agent-logs/tvos.md`)
+Native SwiftUI tvOS app over the shared C++ core (Qt has no tvOS support); design in [docs/apple-tv.md](apple-tv.md). Unsigned Simulator builds only until the owner approves signing (#58).
+1. 🟡 Design doc for owner review (written; awaiting owner comments).
+2. `tvos.yml`: build the C++ core for the tvOS Simulator and run its unit tests on macOS.
+3. Minimal SwiftUI app: clock + live NOAA SWPC space weather, Simulator screenshot artifact.
+4. Remaining dashboard panes, map with shared overlay data, settings (after the design review).
+
 ### QA. Quality reviewer (no feature ownership; writes only `docs/agent-logs/qa.md`, `docs/hardware-validation.md` notes and GitHub issues)
 Runs every 4 hours: reviews PRs merged since its last run, builds main, renders screenshots at 800×480 and 1024×600 (light/dark) with all widget fixtures, compares behaviour against the original (docs/FEATURE-AUDIT.md) and the contract (one page, no clipping, compact panes, honest states, portability), and opens a focused GitHub issue per problem labelled `qa` with the owning area in the title (e.g. "[B] Space weather X-ray clipped at 1024x600"). Agents treat open `qa` issues in their area as top of their backlog. Never edits feature code.
 
