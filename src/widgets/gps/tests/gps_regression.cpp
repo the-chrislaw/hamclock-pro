@@ -1,6 +1,7 @@
 // gpsd JSON parsing and the client against a loopback fake gpsd. Offline.
 #include "../gps_model.hpp"
 #include "../gps_parse.hpp"
+#include "../../../platform/apple_lifecycle.hpp"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QTcpServer>
@@ -57,5 +58,14 @@ int main(int argc, char** argv) {
     check(model.grid() == "IO91wm" && model.position() == "51.5072°N 0.1276°W" && model.satellites() == "5 of 9", "grid, position, satellites");
     peer->disconnectFromHost();
     check(waitFor([&] { return model.state() == "unconfigured"; }) && !model.hasFix(), "connection loss clears the fix");
+
+    // iPad suspend: the socket is closed and not retried; resume reconnects at once.
+    auto& lifecycle = AppLifecycle::instance();
+    while (server.hasPendingConnections()) server.nextPendingConnection();
+    lifecycle.setState(Qt::ApplicationSuspended);
+    waitFor([&] { return false; });
+    check(!server.hasPendingConnections(), "no connection while suspended");
+    lifecycle.setState(Qt::ApplicationActive);
+    check(waitFor([&] { return server.hasPendingConnections(); }), "resume reconnects immediately");
     return failures ? 1 : 0;
 }

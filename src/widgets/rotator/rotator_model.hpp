@@ -28,6 +28,8 @@ private slots:
     void onConnected();
     void onReadyRead();
     void onDisconnected();
+    void onSuspended();
+    void onResumed();
     void poll();
 private:
     enum class Wait { Idle, Azimuth, Elevation };
@@ -36,6 +38,7 @@ private:
     QString host_;
     quint16 port_;
     QTcpSocket socket_;
+    bool started_ = false;
     QTimer retry_, poll_;
     QByteArray buffer_;
     Wait wait_ = Wait::Idle;

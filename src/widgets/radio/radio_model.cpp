@@ -1,4 +1,5 @@
 #include "radio_model.hpp"
+#include "../../platform/apple_lifecycle.hpp"
 #include "radio_parse.hpp"
 
 namespace hamclock {
@@ -9,6 +10,9 @@ RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject
     retry_.setInterval(15000);
     poll_.setInterval(1000);
     connect(&retry_, &QTimer::timeout, this, &RadioModel::connectNow);
+    auto& lifecycle = AppLifecycle::instance();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &RadioModel::onSuspended);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &RadioModel::onResumed);
     connect(&poll_, &QTimer::timeout, this, &RadioModel::poll);
     connect(&socket_, &QTcpSocket::connected, this, &RadioModel::onConnected);
     connect(&socket_, &QTcpSocket::readyRead, this, &RadioModel::onReadyRead);
@@ -18,7 +22,21 @@ RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject
     });
 }
 
-void RadioModel::start() { connectNow(); retry_.start(); }
+void RadioModel::start() { started_ = true; connectNow(); retry_.start(); }
+
+// iPad: iOS kills sockets of suspended apps, so close cleanly and reconnect on resume.
+void RadioModel::onSuspended() {
+    retry_.stop();
+    poll_.stop();
+    socket_.abort();
+    if (started_) onDisconnected();
+}
+
+void RadioModel::onResumed() {
+    if (!started_) return;
+    connectNow();
+    retry_.start();
+}
 
 void RadioModel::connectNow() {
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;
