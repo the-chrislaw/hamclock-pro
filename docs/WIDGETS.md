@@ -102,7 +102,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
 3. 🟡 (SGP4, look angles, pass search, TLE download, next-passes pane and map sub-points with ground track done; the user's choice of up to two satellites next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. ✅ NCDXF/IARU beacons (F19): current transmitting beacon per band, the five on-air beacons marked on the map (offline schedule).
-5. EME planning (F06): Moon position at DE and DX, mutual window.
+5. 🟡 (offline pane done: Moon az/el at DE and DX, next mutual window, distance and path loss vs perigee; moon image/tool link and per-band sky temperature not done) EME planning (F06): Moon position at DE and DX, mutual window.
 
 **Audit additions (D):**
 6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
@@ -223,7 +223,8 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Dst index: latest hourly Dst (Kyoto WDC via SWPC) with storm word, 24 h low and 48 h plot (not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
-| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (EME not started) |
+| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
+| EME: Moon az/el at DE and DX, next mutual window (Moon above both horizons), distance and path loss vs perigee (offline) | D | Partial (not on the default dashboard; geometric visibility only) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover, 3 h pressure trend; no forecast or popup yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live) | H | **Live** |
 | Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane + map overlay: diamonds sized and coloured by category, labelled with the storm name, removed when data is not live; forecast tracks and JTWC not yet) | H | **Live** |
