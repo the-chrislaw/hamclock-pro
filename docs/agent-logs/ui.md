@@ -74,3 +74,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 14)
 - Backlog 0c/A12 slice: Settings > "Distance units" (Metric / Imperial) saved in `options.ini` (`units/imperial`, `AppSettings.imperialUnits/saveImperialUnits`); the station card path line shows "MI" instead of "KM" when imperial (`path_detail` gained an `imperial` argument; `path-text-regression` extended). The unconfigured/legacy distance string and magnetic bearing (WMM) are unchanged. Settings is not reachable from `--screenshot`, so the new card was not checked visually. Not validated on a device.
 - #228 (area G) had the iPad check running; #73 stale. Not mine. Next: "Find" request slice, side panes.
+
+## 2026-10-14 (hourly run, 15)
+- Backlog A13 slice: the station card shows a callsign banner (configured stations only); tapping it cycles call / "ON AIR" / "73 DE call" (`banner_text.hpp`, `StationModel.bannerText/cycleBanner`, `banner-text-regression`). Per session only; fg/bg colours, rainbow and custom titles are pending. The fixture station is unconfigured, so the banner was not visible in 800x480, 1024x600, 1920x1080 screenshots (no regressions seen). ctest 133/133; ASan/UBSan left to CI. Not validated on a device.
+- #236 (area G) checks running; #73 stale; neither mine. Next: "Find" request slice, side panes.

@@ -54,7 +54,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 10. Map overlays: Tropics, lat/lng, Maidenhead (fields and 4-char), azimuth rings, CQ and ITU zones, cities (tap snaps to city), country borders and US states, DE antipode, sublunar point, long-path drawing, gray display mode.
 11. Hover/long-press info box: lat/lng, grid, prefix/country, distance/bearing, local mean time, weather, details of the object under the pointer.
 12. DE/DX panels: DE formats (All info, Simple analog, Calendar, Annotated analog, Digital 12/24 h), DX time zone (auto/manual), sunrise/set "in/ago" vs "at", SP/LP toggle, true or magnetic bearing (WMM), units Imperial/Metric/British.
-13. Callsign banner: call / rotating titles / ON AIR text, fg/bg colours, rainbow option.
+13. Callsign banner (done: tap cycles call / ON AIR / 73 DE call): call / rotating titles / ON AIR text, fg/bg colours, rainbow option.
 14. Clocks: auxiliary time (Date, DOY, JD, MJD, Sidereal, Solar, UNIX), change-time ("time travel") menu, date order and week start, daily and one-time alarms (sound, optional GPIO), Big Clock option parity (LST, +digital, numbers, coloured hands, DE WX, Space WX, satellite).
 15. Kiosk management: brightness min/max, light-sensor auto-dim where available, daily on/off schedule per weekday, idle blanking, screen lock, restart/exit/reboot/shutdown menu, per-action passwords via the credential store.
 16. Saved configurations (save/restore/update/delete/rename) and demo mode.

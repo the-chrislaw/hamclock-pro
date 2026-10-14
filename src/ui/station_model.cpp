@@ -1,5 +1,6 @@
 #include "station_model.hpp"
 #include "app_settings.hpp"
+#include "banner_text.hpp"
 #include "clock_text.hpp"
 #include "../app/station_view.hpp"
 #include "../qt/de_time_zone.hpp"
@@ -64,6 +65,13 @@ QString StationModel::deZoneLabel() const {
 QString StationModel::pathText() const {
     if (!has_geometry_) return path_summary(distance_, bearing_);
     return path_detail(geometry_, long_path_, settings_.imperialUnits());
+}
+
+QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
+
+void StationModel::cycleBanner() {
+    banner_mode_ = next_banner_mode(banner_mode_);
+    emit stationChanged();
 }
 
 void StationModel::toggleLongPath() {
