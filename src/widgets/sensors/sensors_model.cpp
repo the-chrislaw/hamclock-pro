@@ -21,6 +21,7 @@ void SensorsModel::refresh() {
     wifi_ = sensors::read_wifi_dbm(wireless_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
     env_ = sensors::read_env_sensor(iio_);
+    if (env_.pressure_hpa) pressure_.add(now().toSecsSinceEpoch(), *env_.pressure_hpa);
     clock_ = clockReader_ ? clockReader_() : std::nullopt;
     if (temp_ || wifi_ || disk_ || env_.any() || clock_) setState("live", "Host sensors", now());
     else setState("unconfigured", "No host sensors available on this device");

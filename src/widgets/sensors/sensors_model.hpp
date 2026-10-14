@@ -20,6 +20,7 @@ class SensorsModel : public WidgetModel {
     Q_PROPERTY(bool hasEnv READ hasEnv NOTIFY changed)
     Q_PROPERTY(QString envTemp READ envTemp NOTIFY changed)
     Q_PROPERTY(QString envPressure READ envPressure NOTIFY changed)
+    Q_PROPERTY(QString envTrend READ envTrend NOTIFY changed)
     Q_PROPERTY(QString envHumidity READ envHumidity NOTIFY changed)
     Q_PROPERTY(QString envDewPoint READ envDewPoint NOTIFY changed)
     Q_PROPERTY(bool hasClock READ hasClock NOTIFY changed)
@@ -40,6 +41,7 @@ public:
     bool hasEnv() const { return env_.any(); }
     QString envTemp() const;
     QString envPressure() const;
+    QString envTrend() const { return pressure_.trend_word(); }
     QString envHumidity() const;
     QString envDewPoint() const;
     bool hasClock() const { return clock_.has_value(); }
@@ -53,6 +55,7 @@ signals:
 private:
     QString root_, wireless_, diskPath_, iio_;
     sensors::EnvReading env_;
+    sensors::PressureHistory pressure_;
     std::function<std::optional<platform::ClockSync>()> clockReader_;
     std::optional<platform::ClockSync> clock_;
     QTimer timer_;

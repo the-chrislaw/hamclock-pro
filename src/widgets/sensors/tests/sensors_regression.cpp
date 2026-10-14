@@ -108,5 +108,22 @@ int main(int argc, char** argv) {
                            [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2}); });
     clockOnly.refresh();
     check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms", "clock shown");
+    {
+        sensors::PressureHistory h;
+        check(h.trend_word().isEmpty(), "no history -> no trend");
+        h.add(0, 1013.0);
+        h.add(10, 1000.0);  // within a minute: ignored
+        h.add(20 * 60, 1013.0);
+        check(h.trend_word().isEmpty(), "under 30 min -> no trend");
+        h.add(60 * 60, 1011.0);
+        check(h.trend_word() == "Falling" && std::abs(*h.change_per_3h() + 6.0) < 1e-9, "falling scaled to 3 h");
+        sensors::PressureHistory s;
+        s.add(0, 1010.0); s.add(3600, 1010.2);
+        check(s.trend_word() == "Steady", "small change steady");
+        s.add(2 * 3600, 1013.0);
+        check(s.trend_word() == "Rising", "rising");
+        s.add(5 * 3600, 1013.0);  // old samples trimmed past 3 h
+        check(s.change_per_3h() && std::abs(*s.change_per_3h()) < 1e-9, "window trimmed to 3 h");
+    }
     return failures ? 1 : 0;
 }
