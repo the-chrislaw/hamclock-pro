@@ -125,6 +125,7 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
+                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     FormField { id: watchList; label: "Watch list (calls or prefixes like VP8*, space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
@@ -135,6 +136,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveClusterLogin(parseInt(clusterSsid.text) || 0, clusterCmds.text.split(";").join("\n"))
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveWatchList(watchList.text)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveAdifPath(adifPath.text)
                                     } }
                     }
                 }

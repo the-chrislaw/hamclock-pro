@@ -26,6 +26,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int clusterSsid READ clusterSsid NOTIFY optionsChanged)
     Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString watchListText READ watchListText NOTIFY optionsChanged)
+    Q_PROPERTY(QString adifPath READ adifPath NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
@@ -55,6 +56,7 @@ public:
     QString clusterCommandsText() const { return cluster_commands_.join('\n'); }
     QStringList watchList() const { return watch_list_; }              // uppercase calls / prefixes with *
     QString watchListText() const { return watch_list_.join(' '); }
+    QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
     QString lookupService() const { return lookup_service_; }
     QString lookupUser() const { return lookup_user_; }
     bool hasLookupPassword() const { return !lookup_password_.isEmpty(); }
@@ -85,6 +87,7 @@ public:
     // SSID 0-99 (0 = none); commands one per line, filtered to receive-only commands.
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
+    Q_INVOKABLE QString saveAdifPath(const QString& path);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -109,6 +112,7 @@ private:
     int cluster_ssid_ = 0;
     QStringList cluster_commands_;
     QStringList watch_list_;
+    QString adif_path_;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot

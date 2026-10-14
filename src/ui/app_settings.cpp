@@ -75,6 +75,7 @@ void AppSettings::loadOptions() {
     cluster_ssid_ = ssid >= 0 && ssid <= 99 ? ssid : 0;
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
+    adif_path_ = ini.value("adif/path").toString().left(1024);
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -269,6 +270,17 @@ QString AppSettings::saveWatchList(const QString& entries) {
     watch_list_ = kept;
     emit optionsChanged();
     if (kept.size() < wanted.size()) return QString("Saved; %1 entry(ies) skipped (letters, digits, / * ? only; duplicates removed).").arg(wanted.size() - kept.size());
+    return {};
+}
+
+QString AppSettings::saveAdifPath(const QString& path) {
+    const QString kept = path.trimmed().left(1024);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("adif/path", kept);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the log path.";
+    adif_path_ = kept;
+    emit optionsChanged();
     return {};
 }
 
