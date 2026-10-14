@@ -80,3 +80,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Pass sky plot (backlog D6, UI slice): `SatellitesModel::skyTrack` (24 az/el samples of the first listed pass) and a polar plot in the Satellites card (north up, zenith centre, rings at 30/60 deg) shown only when the slot has room (width > 240 and height > 150 theme units); compact slots keep the text list. The DX panel is area A/G's, so the plot lives in the pane for now. Test checks sample range, endpoints at the 10 deg pass threshold and peak vs the pass maximum. Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device); ASan/UBSan clean for the model test.
 - Not mine: #73 conflicting, left alone. No `[D]` QA issues.
 - Next: fetch/cache transmitters, detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8), yearly grayline chart (D11).
+
+## 2026-10-14 (UTC), run 15
+- Yearly sunrise/sunset chart (backlog D11, UI slice): new `src/widgets/daylight/` (hamclock_add_widget takes one widget per folder, so the pane could not live in `sunmoon/`; same area D) draws weekly sunrise (amber) and sunset (blue) curves from `sun_year_series` for DE, minutes after 00:00 UTC, with today marked; gaps at polar day/night. Test checks London solstice rows against almanac times (within 4 min) and Tromso gaps. Rendered offscreen at 800x480, 1024x600, 1920x1080 (not on-device); no axis labels or local-time scale yet. ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #238/#239 CI still running; left alone. No `[D]` QA issues.
+- Next: settings control for tracked satellites, fetch/cache transmitters + detail box, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
