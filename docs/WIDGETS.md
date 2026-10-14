@@ -145,7 +145,7 @@ Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout
 **Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
 1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox). Keep the PR small; land it before anything else.
 2. ✅ (markers, labels, min distance, DE path; tap/legend later) Overlay API (moved up): a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance, plus great-circle path drawing from DE. Document it in `docs/map-overlays.md` with one worked example. Areas B, C, D, E and H start their map items as soon as this merges.
-3. Map styles framework (moved up): selectable base styles with rotation 20/60/90/120 s and automatic space-weather style, and a colour-scale legend. Individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
+3. ✅ (registry, rotation, auto space-weather pick, legend; settings UI comes with the first image style) Map styles framework (moved up): selectable base styles with rotation 20/60/90/120 s and automatic space-weather style, and a colour-scale legend. Individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
 4. Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
 5. Grids and zones: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, borders and US states, cities (licensed data), DE antipode, sublunar point, long-path drawing, gray mode.
 
@@ -197,7 +197,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Widget | Area | State |
 |---|---|---|
 | Station + clocks + DE local time | A | Working (QML); dashboard page scrolls (touch flick) when widgets exceed the screen, map keeps a full 2:1 size |
-| World map, day/night, path | G | Working (QML, pure QPainter renderer, no QtWidgets; fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
+| World map, day/night, path | G | Working (QML, pure QPainter renderer, no QtWidgets; styles registry with legend (no image styles published yet); fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |

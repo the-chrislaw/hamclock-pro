@@ -8,7 +8,7 @@
 namespace hamclock {
 namespace {
 AppSettings* g_settings = nullptr;
-constexpr int kSolarRefreshMs = 30000;
+constexpr int kSolarRefreshMs = 10000; // also steps style rotation (min 20 s);
 }
 
 void MapItem::setSettings(AppSettings* settings) { g_settings = settings; }
@@ -27,16 +27,22 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     };
     refresh_sun();
     scene_.overlays = MapOverlays::instance().layers();
+    auto sync_style = [this] {
+        const auto* st = MapStyles::instance().active(QDateTime::currentMSecsSinceEpoch());
+        scene_.style = st ? std::optional<MapStyle>(*st) : std::nullopt;
+    };
+    sync_style();
+    style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); });
     // The registry is process-wide; the callback only ever runs on the GUI thread.
     overlay_token_ = MapOverlays::instance().on_change([this] { scene_.overlays = MapOverlays::instance().layers(); update(); });
     minute_timer_.setInterval(kSolarRefreshMs);
-    connect(&minute_timer_, &QTimer::timeout, this, refresh_sun);
+    connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] { sync_style(); refresh_sun(); });
     minute_timer_.start();
     connect(this, &QQuickItem::widthChanged, this, [this] { update(); });
     connect(this, &QQuickItem::heightChanged, this, [this] { update(); });
 }
 
-MapItem::~MapItem() { MapOverlays::instance().remove_listener(overlay_token_); }
+MapItem::~MapItem() { MapOverlays::instance().remove_listener(overlay_token_); MapStyles::instance().remove_listener(style_token_); }
 
 void MapItem::setDark(bool dark) {
     if (dark == scene_.dark) return;

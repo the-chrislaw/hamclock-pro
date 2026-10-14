@@ -5,6 +5,7 @@
 #include "../domain/geometry.hpp"
 #include "../domain/solar_position.hpp"
 #include "overlay.hpp"
+#include "styles.hpp"
 #include "viewport.hpp"
 #include <QPainterPath>
 #include <QSizeF>
@@ -19,6 +20,7 @@ struct MapScene {
     std::optional<SubsolarPoint> sun;
     bool dark = false;
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
+    std::optional<MapStyle> style;      // active base-map style image + legend
 };
 class MapRenderer {
 public:

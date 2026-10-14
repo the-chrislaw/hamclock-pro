@@ -35,7 +35,7 @@ private:
     MapRenderer renderer_;
     MapScene scene_;
     QTimer minute_timer_;
-    int overlay_token_ = 0;
+    int overlay_token_ = 0, style_token_ = 0;
 };
 
 } // namespace hamclock
