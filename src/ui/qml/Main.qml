@@ -61,7 +61,10 @@ ApplicationWindow {
         id: page
         anchors.fill: parent
         anchors.margins: Theme.pad
-        anchors.topMargin: Theme.dense ? Theme.pad : 0
+        anchors.topMargin: (Theme.dense ? Theme.pad : 0) + safeArea.top
+        anchors.leftMargin: Theme.pad + safeArea.left
+        anchors.rightMargin: Theme.pad + safeArea.right
+        anchors.bottomMargin: Theme.pad + safeArea.bottom
         spacing: Theme.gap
 
         StationCard {

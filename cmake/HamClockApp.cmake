@@ -8,12 +8,16 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Network Quick QuickControls2)
 add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
     src/platform/apple_lifecycle.cpp
+    src/platform/apple_safearea.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
     src/platform/settings.cpp)
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
+if(IOS)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm)
+endif()
 
 # All widget models are compiled into this library by hamclock_add_widget().
 add_library(hamclock-widgets STATIC)
@@ -122,6 +126,11 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(safe-area-regression tests/safe_area_regression.cpp)
+    target_link_libraries(safe-area-regression PRIVATE hamclock-widget-core)
+    set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME safe-area-regression COMMAND safe-area-regression)
+    set_tests_properties(safe-area-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp)
     target_include_directories(path-text-regression PRIVATE src)
     target_link_libraries(path-text-regression PRIVATE Qt6::Core)
