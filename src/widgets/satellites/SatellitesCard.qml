@@ -7,7 +7,10 @@ Card {
     // Next passes at DE: satellite, when, peak elevation (elevation hidden in a compact slot).
     // Roomy slots also get a polar sky plot of the first pass (north up, zenith at the centre).
     readonly property bool showSky: width > 240 * Theme.scale && height > 150 * Theme.scale && widget && widget.skyTrack.length > 1
+    readonly property var d: widget ? widget.detail : ({})
+    readonly property bool showDetail: d && d.name !== undefined
     RowLayout {
+        visible: !root.showDetail
         width: parent.width
         spacing: Theme.gap * 1.5
         GridLayout {
@@ -29,6 +32,11 @@ Card {
                     font.weight: col === 0 || row.live ? Font.DemiBold : Font.Normal
                     elide: Text.ElideRight
                     Layout.fillWidth: col === cols - 1
+                    MouseArea {
+                        anchors.fill: parent
+                        anchors.margins: -Theme.gap
+                        onClicked: root.widget.selectRow(Math.floor(index / cols))
+                    }
                 }
             }
         }
@@ -58,8 +66,42 @@ Card {
             }
         }
     }
+    // Detail box for the tapped satellite: now, next pass, transmitters with Doppler. Tap to close.
+    ColumnLayout {
+        visible: root.showDetail
+        width: parent.width
+        spacing: Theme.gap * 0.4
+        Text {
+            text: root.showDetail ? root.d.name + "  " + root.d.az + "° " + root.d.compass + "  el " + root.d.el + "°" +
+                  (root.d.above ? "" : " (below)") + "  " + root.d.rangeKm + " km" : ""
+            color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.2; font.weight: Font.DemiBold
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        Text {
+            text: root.showDetail ? "Pass " + root.d.countdown + "  max " + root.d.maxEl + "°  " + root.d.aos + " " +
+                  (root.d.aosAz || "") + " > " + root.d.los + " " + (root.d.losAz || "") : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        Repeater {
+            model: root.showDetail && !root.compact ? root.d.transmitters : []
+            Text {
+                required property var modelData
+                text: (modelData.down ? "↓ " + modelData.down : "") + (modelData.up ? "  ↑ " + modelData.up : "") + "  " + modelData.mode
+                color: Theme.ink; font.pixelSize: Theme.fontCaption
+                elide: Text.ElideRight; Layout.fillWidth: true
+            }
+        }
+        Text {
+            visible: root.showDetail && !root.compact
+            text: "Frequency data from SatNOGS DB (CC BY-SA 4.0); Doppler-corrected"
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption * 0.8
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        TapHandler { onTapped: root.widget.selectRow(-1) }
+    }
     Text {
-        visible: root.widget && root.widget.hasData && root.widget.rows.length === 0
+        visible: !root.showDetail && root.widget && root.widget.hasData && root.widget.rows.length === 0
         text: root.widget.allStale ? "Element sets over 30 days old" : "No passes in the next 24 h"
         color: Theme.secondary
         font.pixelSize: Theme.fontCaption

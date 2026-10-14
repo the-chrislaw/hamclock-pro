@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "../../domain/astro_satellite.hpp"
+#include "../../domain/astro_transmitters.hpp"
 #include "../../map/overlay.hpp"
 #include <QStringList>
 #include <QTimer>
@@ -20,6 +21,8 @@ class SatellitesModel : public WidgetModel {
     Q_PROPERTY(QVariantList rows READ rows NOTIFY changed)
     Q_PROPERTY(bool allStale READ allStale NOTIFY changed)
     Q_PROPERTY(QVariantList skyTrack READ skyTrack NOTIFY changed)
+    // Detail box for the tapped row (empty when none): now, next pass, transmitters with Doppler.
+    Q_PROPERTY(QVariantMap detail READ detail NOTIFY detailChanged)
 public:
     explicit SatellitesModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -33,21 +36,40 @@ public:
     // Az/el samples ({az, el} degrees) of the first listed pass, AOS to LOS, for the sky plot; empty if none.
     QVariantList skyTrack() const { return sky_track_; }
     PolledSource& source() { return *source_; }
+    PolledSource& transmitterSource() { return *tx_source_; }
+    QVariantMap detail() const { return detail_; }
+    // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
+    Q_INVOKABLE void selectRow(int index);
 
 signals:
     void changed();
+    void detailChanged();
 
 private:
     void load();
+    void load_transmitters();
+    void refresh_detail();
 
     AppSettings* settings_;
     PolledSource* source_;
+    PolledSource* tx_source_;
     std::vector<Tle> tles_;
     QTimer timer_;
     QVariantList rows_;
     bool all_stale_ = false;
     QVariantList sky_track_;
+    struct Listed { Tle tle; SatPass pass; };
+    std::vector<Listed> listed_;
+    std::map<int, std::vector<Transmitter>> transmitters_;
+    int selected_ = -1;
+    QVariantMap detail_;
+    QTimer detail_timer_;
 };
+
+// Frequency as "145.8000 MHz" (100 Hz resolution).
+QString format_mhz(double hz);
+// 16-point compass letters for an azimuth in degrees.
+QString compass_point(double az_deg);
 
 // Element sets older than this are dropped: SGP4 drifts by km per day for low orbits.
 constexpr int kMaxTleAgeDays = 30;
