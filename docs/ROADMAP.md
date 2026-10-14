@@ -216,3 +216,14 @@ No owner decisions are currently open. New questions go in GitHub issues titled 
 - **PRs target `main`** and stay small; CI must be green before merge.
 - **No simulated data shown as live.** Unavailable panes say so.
 - **Hardware claims need hardware.** "Works on Pi X" only after a recorded run on Pi X.
+
+## On the radar (deferred by the owner)
+
+Parked features, not planned now. Revisit if users ask; the issues keep the research (label `deferred`).
+
+| Feature | Why parked | Next step if revived | Issue |
+|---|---|---|---|
+| Contest calendar pane | WA7BNM Contest Calendar is "All Rights Reserved" with no reuse terms | Ask WA7BNM for permission (draft email in the owner's notes) or find an openly licensed calendar | #200 |
+| MUF map style (KC2G) | No documented feed or reuse terms | Ask KC2G for a supported endpoint and attribution | #206 |
+| VOACAP-style reliability matrix | Needs a bundled engine (licence review, large) or a hosted API | Evaluate ITURHFProp/VOACAP licences | #206 |
+| Tropo forecast map | Usual source unreachable, no reuse terms | Find an open source or derive from GFS | #206 |
