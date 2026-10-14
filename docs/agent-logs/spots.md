@@ -53,3 +53,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - The XML field names follow N1MM's documented spot broadcast but are not verified against a real capture; tests use synthetic datagrams. Not validated on device; Settings controls not screenshotted (no direct way to render the page).
 - Not done: WSJT-X binary protocol, multicast, "UDP sets DX", by me/all filter, Log4OM format.
 - Next: HamAlert, OTA filter controls in Settings, WWFF/IOTA; DXCC table still needs cty.dat allowlisted (#136).
+
+## 2026-10-14 (run 10)
+- Step 1: nothing of mine open; #173 (space) CI running and #73 not mine, left alone. No open `[C]` qa issues.
+- Backlog item 16 (slice): `parse_ota_ref` pulls one WWFF/SOTA/IOTA/POTA reference out of a spot comment (`DxSpot::ota_program`/`ota_ref`). Strict boundaries avoid matching inside longer tokens; a POTA-shaped `XX-NNNN` is accepted as POTA. Tests pass normally and under ASan/UBSan. No QML change (reference not shown yet), so no screenshots; not validated on device.
+- Not done: IOTA reference names (needs the IOTA list, a data source to vet), showing the reference in the card or map label.
+- Next: HamAlert, OTA filter controls in Settings, WWFF/IOTA programmes; DXCC table still needs cty.dat allowlisted (#136).
