@@ -60,6 +60,16 @@ QString StationModel::deZoneLabel() const {
     return zone + " · " + tz.abbreviation(QDateTime::currentDateTimeUtc());
 }
 
+QString StationModel::pathText() const {
+    if (!has_geometry_) return path_summary(distance_, bearing_);
+    return path_detail(geometry_, long_path_);
+}
+
+void StationModel::toggleLongPath() {
+    long_path_ = !long_path_;
+    emit stationChanged();
+}
+
 QString StationModel::deSun() const {
     return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), de_lat_, de_lon_) : QString();
 }
@@ -70,6 +80,7 @@ QString StationModel::dxSun() const {
 void StationModel::reload() {
     if (!settings_.configured()) {
         callsign_ = de_grid_ = dx_grid_ = de_coordinates_ = dx_coordinates_ = distance_ = bearing_ = {};
+        has_geometry_ = false;
         emit stationChanged();
         return;
     }
@@ -80,12 +91,15 @@ void StationModel::reload() {
         dx_grid_ = QString::fromStdString(view.dx_grid);
         distance_ = QString::fromStdString(view.distance_text);
         bearing_ = QString::fromStdString(view.bearing_text);
+        geometry_ = geometry(view.de, view.dx);
+        has_geometry_ = true;
         de_lat_ = view.de.latitude; de_lon_ = view.de.longitude;
         dx_lat_ = view.dx.latitude; dx_lon_ = view.dx.longitude;
         de_coordinates_ = coordinates(view.de.latitude, view.de.longitude);
         dx_coordinates_ = coordinates(view.dx.latitude, view.dx.longitude);
     } catch (const std::exception&) {
         distance_ = bearing_ = "Unavailable";
+        has_geometry_ = false;
     }
     emit stationChanged();
 }
