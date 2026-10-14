@@ -46,6 +46,13 @@ Popup {
             onClicked: { options.close(); options.stepRequested(options.slot, -1) }
         }
         AppButton {
+            readonly property var steps: [0, 5, 10, 30, 60]
+            readonly property int current: appSettings.paneRotations[options.slot]
+            width: parent.width
+            text: "Rotate: " + (current > 0 ? "every " + current + " s" : "off")
+            onClicked: appSettings.setPaneRotation(options.slot, steps[(steps.indexOf(current) + 1) % steps.length])
+        }
+        AppButton {
             width: parent.width; text: "Empty pane"
             onClicked: { appSettings.setPane(options.slot, "none"); options.close() }
         }

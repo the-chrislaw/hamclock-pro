@@ -164,8 +164,14 @@ int main(int argc, char** argv) {
         check(panes.setPane(2, "none").isEmpty() && panes.panes()[2] == "none", "pane can be left empty");
         AppSettings again({}, pane_dir.path());
         check(again.panes() == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
+        check(again.paneRotations() == QList<int>({0, 0, 0}), "rotation off by default");
+        check(!again.setPaneRotation(3, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
+        check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations() == QList<int>({0, 30, 0}), "rotation applied");
+        AppSettings third({}, pane_dir.path());
+        check(third.paneRotations() == QList<int>({0, 30, 0}), "rotation survives restart");
         again.resetPanes();
         check(again.panes() == defaults, "panes reset to default");
+        check(again.paneRotations() == QList<int>({0, 0, 0}), "reset turns rotation off");
     }
 
     std::cout << "Widget core: " << checks << " checks, " << failures << " failures\n";

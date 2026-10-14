@@ -90,6 +90,7 @@ ApplicationWindow {
                     model: 3
                     PaneSlot {
                         index: modelData
+                        paused: paneChooser.visible || paneOptions.visible
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         Layout.preferredWidth: 1
