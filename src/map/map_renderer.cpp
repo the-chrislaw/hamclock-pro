@@ -110,7 +110,7 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawImage(QRectF(0, 0, 1, 1), scene.style->image);
             painter.setOpacity(1.0);
         }
-        if (scene.sun) {
+        if (scene.sun && scene.night_shade) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, dark ? 90 : 55));
             painter.drawPolygon(night);
