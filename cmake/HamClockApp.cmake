@@ -7,11 +7,12 @@ find_package(Qt6 6.4 REQUIRED COMPONENTS Network Quick QuickControls2)
 # Core shared by all widgets: data plumbing, widget base/registry, settings.
 add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
+    src/platform/apple_lifecycle.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
     src/platform/settings.cpp)
-target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Network)
+target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 
 # All widget models are compiled into this library by hamclock_add_widget().
@@ -114,6 +115,11 @@ if(BUILD_TESTING)
     add_test(NAME widget-core-regression COMMAND widget-core-regression)
     set_tests_properties(widget-core-regression PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-core;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-core")
+    add_executable(app-lifecycle-regression tests/app_lifecycle_regression.cpp)
+    target_link_libraries(app-lifecycle-regression PRIVATE hamclock-widget-core)
+    set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
+    set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(time-zone-search-regression tests/time_zone_search_regression.cpp src/ui/time_zone_search.cpp)
     target_include_directories(time-zone-search-regression PRIVATE src)
     target_link_libraries(time-zone-search-regression PRIVATE Qt6::Core)

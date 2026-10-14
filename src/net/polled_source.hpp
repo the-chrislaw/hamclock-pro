@@ -44,6 +44,11 @@ public:
 
     void start();           // load cache, then fetch immediately
     void refreshNow();
+    // Stop polling while the app is suspended (iPad background); resume fetches
+    // at once if the data is older than the interval, else waits out the rest.
+    void pause();
+    void resume();
+    bool isPaused() const { return paused_; }
     const QByteArray& body() const { return body_; }
     QDateTime fetchedAt() const { return fetched_at_; } // UTC; invalid if never
     bool isStale(const QDateTime& now_utc) const;
@@ -77,6 +82,7 @@ private:
     QString last_error_;
     int failures_ = 0;
     bool in_flight_ = false;
+    bool paused_ = false;
     std::function<QDateTime()> clock_;
 };
 
