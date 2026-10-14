@@ -36,3 +36,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Checked by offscreen screenshots at 800x480 and 1920x1080 (dark); not validated on device. QML only, no model changes.
 - Merged other areas' green PRs #124 and #125; #73 (docs) still conflicts and was left alone.
 - Next: 10 (NOAA R/S/G scales), 9 (DST).
+
+## 2026-10-14 (UTC): NOAA R/S/G scales (backlog 10)
+
+- New `solarscales` widget ("NOAA scales"): SWPC `products/noaa-scales.json` polled every 10 min. Shows current R, S and G levels (coloured green/amber/red), and in the full card the 24 h maximum and tomorrow's SWPC outlook (R1-2 / R3+ and S1+ probabilities, expected G). Missing current levels or an unparseable body read as no data (loading/offline), never as zeros. Source terms recorded in the roadmap (same SWPC policy).
+- Checked by offscreen screenshots at 800x480, 1024x600 (compact) and 1920x1080 (dark); the full non-compact layout was not rendered because all default panes are compact. Not validated on device. Fixture is a real capture (the feed is ~1 kB). ASan/UBSan run on the widget tests.
+- #120 was fixed by #126 earlier today; the issue is still open for QA to close. Left #133 (not mine, iPad check still running) and #73 (docs, unknown mergeability) alone.
+- Next: 9 (DST), then 7 (DRAP) / 8 (Aurora) with area G's map styles.

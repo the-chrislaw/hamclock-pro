@@ -19,3 +19,4 @@ The cloud agents' sandbox cannot reach outside websites, so these one-time sampl
 | nominatim-search.json | https://nominatim.openstreetmap.org/search?q=Pioneer+Courthouse+Square,+Portland,+Oregon&format=jsonv2&limit=3&addressdetails=1 | OpenStreetMap geocoding for the Settings location lookup. Usage policy: max 1 request/second, identify the app in User-Agent, only on explicit user action, attribution "© OpenStreetMap contributors". Captured 2026-10-13. |
 
 Not included: the NG3K DXpedition list and the WA7BNM contest calendar are copyrighted listings whose terms must be checked (and recorded in the roadmap's Data source policy) before any use; ask the owner via an "Owner input needed" issue if unclear.
+| swpc-noaa-scales.json | https://services.swpc.noaa.gov/products/noaa-scales.json | NOAA R/S/G scales: now ("0"), past 24 h max ("-1"), 3-day outlook ("1"-"3"). Full file, ~1 kB. Captured 2026-10-14. |
