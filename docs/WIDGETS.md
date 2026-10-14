@@ -143,6 +143,15 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 ### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
 Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
 **Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
+0. 🔴 **Owner priority (Oct 14): map controls on the map, as in the original.** The original's core interaction is the map's own buttons/menu, not separate panes. Today the overlays exist (named layers with a `visible` flag) but there is no way to toggle them, so do this before the remaining G items:
+   - A small "Map" button in a corner of the map card (large enough to tap on the 7-inch screen, keyboard/remote accessible) opening a Map View menu.
+   - Layers, each on/off independently of which panes are shown: DX cluster spots, PSKReporter/RBN/WSPR, POTA/SOTA, satellites, NCDXF beacons, quakes, storms, other hazards, DE/DX path, night shading, labels (None/Prefix/Call/Dot).
+   - Base style (Countries/Terrain and the styles registered through G3), with style rotation on/off.
+   - Grid: None, Tropics, Lat/Lng, Maidenhead, Azimuth rings, CQ zones, ITU zones (entries appear as G5 implements them).
+   - Projection (Mercator / Azimuthal / Azim One / Robinson as G4 implements them) and centre/zoom/reset.
+   - Tapping a marker shows its details (call, frequency, age, distance/bearing) with Set DX; tapping empty map offers Set DE / Set DX.
+   - All choices saved in options.ini and restored at start. Screenshot the open menu at 1024×600 and 800×480.
+   Widgets still own their data; a layer's pane is optional (e.g. quakes can be on the map with no Earthquakes pane).
 1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox). Keep the PR small; land it before anything else.
 2. ✅ (markers, labels, min distance, DE path; tap/legend later) Overlay API (moved up): a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance, plus great-circle path drawing from DE. Document it in `docs/map-overlays.md` with one worked example. Areas B, C, D, E and H start their map items as soon as this merges.
 3. ✅ (registry, rotation, auto space-weather pick, legend; settings UI comes with the first image style) Map styles framework (moved up): selectable base styles with rotation 20/60/90/120 s and automatic space-weather style, and a colour-scale legend. Individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
