@@ -1,8 +1,18 @@
 #pragma once
 #include <QString>
+#include <QtGlobal>
 #include <optional>
 
 namespace hamclock::rotator {
+
+struct Endpoint {
+    QString host;
+    quint16 port = 0;
+};
+// Host and port from options.ini ([rotator] host / port). A host must be a plain
+// name or address (letters, digits, '.', '-', ':'); a port must be 1..65535.
+// Anything empty or invalid falls back to the default, field by field.
+Endpoint parse_endpoint(const QString& host, const QString& port, const Endpoint& fallback);
 
 // Replies of rotctld's default (short) protocol to the read-only "p" command:
 // azimuth line then elevation line. Error replies ("RPRT -n"), garbage and

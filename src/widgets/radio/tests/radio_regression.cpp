@@ -23,6 +23,17 @@ template <class F> bool waitFor(F f) {
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     using namespace hamclock;
+    {
+        const radio::Endpoint def{"127.0.0.1", 4532};
+        auto e = radio::parse_endpoint("shack-pc.local", "4540", def);
+        check(e.host == "shack-pc.local" && e.port == 4540, "radio endpoint from options");
+        e = radio::parse_endpoint("192.168.1.5", "", def);
+        check(e.host == "192.168.1.5" && e.port == 4532, "radio empty port keeps default");
+        e = radio::parse_endpoint("bad host;rm", "70000", def);
+        check(e.host == "127.0.0.1" && e.port == 4532, "radio bad host and port ignored");
+        e = radio::parse_endpoint("", "0", def);
+        check(e.host == "127.0.0.1" && e.port == 4532, "radio empty host, zero port ignored");
+    }
     check(radio::parse_frequency_hz("14074000\n").value_or(0) == 14074000, "frequency parsed");
     check(!radio::parse_frequency_hz("RPRT -1"), "error reply is not a frequency");
     check(!radio::parse_frequency_hz("0"), "zero rejected");

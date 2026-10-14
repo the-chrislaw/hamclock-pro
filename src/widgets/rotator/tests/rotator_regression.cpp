@@ -22,6 +22,17 @@ template <class F> bool waitFor(F f) {
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     using namespace hamclock;
+    {
+        const rotator::Endpoint def{"127.0.0.1", 4533};
+        auto e = rotator::parse_endpoint("shack-pc.local", "4540", def);
+        check(e.host == "shack-pc.local" && e.port == 4540, "rotator endpoint from options");
+        e = rotator::parse_endpoint("192.168.1.5", "", def);
+        check(e.host == "192.168.1.5" && e.port == 4533, "rotator empty port keeps default");
+        e = rotator::parse_endpoint("bad host;rm", "70000", def);
+        check(e.host == "127.0.0.1" && e.port == 4533, "rotator bad host and port ignored");
+        e = rotator::parse_endpoint("", "0", def);
+        check(e.host == "127.0.0.1" && e.port == 4533, "rotator empty host, zero port ignored");
+    }
     check(rotator::parse_azimuth("123.5\n").value_or(-1) == 123.5, "azimuth parsed");
     check(!rotator::parse_azimuth("RPRT -1") && rotator::is_error("RPRT -1"), "error reply is not an azimuth");
     check(!rotator::parse_azimuth("400"), "azimuth out of range");

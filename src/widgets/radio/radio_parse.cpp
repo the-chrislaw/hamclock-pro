@@ -3,6 +3,19 @@
 
 namespace hamclock::radio {
 
+Endpoint parse_endpoint(const QString& host, const QString& port, const Endpoint& fallback) {
+    Endpoint e = fallback;
+    const QString h = host.trimmed();
+    bool hostOk = !h.isEmpty() && h.size() <= 253;
+    for (const QChar c : h)
+        if (!(c.isLetterOrNumber() && c.unicode() < 128) && c != '.' && c != '-' && c != ':') hostOk = false;
+    if (hostOk) e.host = h;
+    bool ok = false;
+    const uint p = port.trimmed().toUInt(&ok);
+    if (ok && p >= 1 && p <= 65535) e.port = static_cast<quint16>(p);
+    return e;
+}
+
 bool is_error(const QString& line) { return line.trimmed().startsWith("RPRT"); }
 
 std::optional<double> parse_frequency_hz(const QString& line) {
