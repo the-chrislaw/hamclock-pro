@@ -19,7 +19,7 @@ Popup {
     // Category tabs narrow the list (A8). Unknown widget ids fall under "Other".
     readonly property var categoryNames: ["All", "Space Wx", "DX & Contest", "Weather", "Sky & Space", "Station", "Other"]
     readonly property var categoryOf: ({
-        spaceweather: 1, solaralerts: 1, solarscales: 1, solaraurora: 1, solardrap: 1, solartrend: 1, solarwind: 1, solarimage: 1, bands: 1,
+        spaceweather: 1, solaralerts: 1, solarscales: 1, solaraurora: 1, solarhamqsl: 1, solardrap: 1, solartrend: 1, solarwind: 1, solarimage: 1, bands: 1,
         dxcluster: 2, pskreporter: 2, beacons: 2, ota: 2, watchlist: 2, lookup: 2, adif: 2, hamalert: 2,
         weather: 3, firewx: 3, fires: 3, storms: 3, quakes: 3, marine: 3,
         sunmoon: 4, satellites: 4,

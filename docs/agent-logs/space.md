@@ -83,3 +83,11 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Test: quiet fixture leaves the plain map, a Kp 6 body picks `aurora`, stale data picks nothing. No UI change, so no screenshots. Not validated on device.
 - No mergeable PRs of mine; #73, #186 (macOS universal build failing) and #189 belong to others and were left alone. No open [B] issues.
 - Next: 13-15 need source/terms decisions (VOACAP, HamQSL, tropo); MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): HamQSL conditions pane (backlog 14)
+
+- New `solarhamqsl` widget ("HamQSL conditions"): N0NBH `solarxml.php` polled hourly (the author's request). Card shows the calculated HF day/night words for 80-40m, 30-20m, 17-15m and 12-10m, coloured Poor/Fair/Good, with the HamQSL.com (N0NBH) credit; the full layout adds the VHF openings. Hidden (never shown as current) when the report is over 6 h old; a truncated or malformed document is rejected. Terms recorded in the roadmap. The words are N0NBH's calculation, not ours (our own outlook stays in `bands`).
+- Fixture is a real capture. Tests cover parsing, bad/truncated input, model live/stale/expired/offline. Checked by offscreen screenshots at 800x480, 1024x600 (compact; 1920x1080 rendered too); the full layout with VHF lines was not viewed. Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- #73 (docs, not mine) has unknown mergeability and a stale base; left alone. No open [B] issues.
+- Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions.

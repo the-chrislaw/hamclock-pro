@@ -77,7 +77,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
 12. ✅ Space-weather stats ranked by impact (`solarimpact`: the SWPC R/S/G levels from `noaa-scales.json`, worst first with a one-line HF/aurora/GPS effect from the NOAA scale definitions; polled every 10 min; not on the default dashboard). Kp, Dst and X-ray are not yet folded into the ranking.
 13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
-14. HamQSL (N0NBH) HF and VHF condition panes (check terms first).
+14. ✅ HamQSL (N0NBH) HF and VHF conditions pane (`solarhamqsl`: `https://www.hamqsl.com/solarxml.php`, calculated day/night HF band words and VHF openings, credit shown; polled hourly; hidden when the report is over 6 h old; not on the default dashboard).
 15. Tropo map style (check source terms first).
 
 ### C. Spots (owns `src/widgets/dxcluster/`, `pskreporter/`, `ota/`, `src/net/telnet*`)
@@ -235,6 +235,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
 | NOAA scales: R/S/G radio blackout, radiation and geomagnetic storm levels with tomorrow's outlook (SWPC; not on the default dashboard) | B | **Live** |
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
+| HamQSL (N0NBH) calculated HF day/night band conditions and VHF openings (not on the default dashboard) | B | **Live** |
 | Dst index: latest hourly Dst (Kyoto WDC via SWPC) with storm word, 24 h low and 48 h plot (not on the default dashboard) | B | **Live** |
 | D-RAP: highest affected frequency and the D-RAP map style (SWPC; not on the default dashboard) | B | **Live** |
 | Aurora: peak OVATION aurora probability per hemisphere and the Aurora map style (SWPC; not on the default dashboard) | B | **Live** |
