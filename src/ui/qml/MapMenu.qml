@@ -44,6 +44,8 @@ Popup {
                      onClicked: menu.map.borders = !menu.map.borders }
             Toggle { label: "US state lines"; on: menu.map ? menu.map.states : false
                      onClicked: menu.map.states = !menu.map.states }
+            Toggle { label: "Cities"; on: menu.map ? menu.map.cities : false
+                     onClicked: menu.map.cities = !menu.map.cities }
             Toggle { label: "Gray map"; on: menu.map ? menu.map.gray : false
                      onClicked: menu.map.gray = !menu.map.gray }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false

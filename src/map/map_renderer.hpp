@@ -31,6 +31,7 @@ struct MapScene {
     MapGrid grid = MapGrid::None;
     bool borders = false;               // country borders on the base map
     bool states = false;                // US state lines on the base map (Natural Earth 110m admin-1)
+    bool cities = false;                // largest cities with names (Natural Earth 110m populated places)
     bool gray = false;                  // grayscale base map
     bool sky_points = false;            // draw sublunar point and DE antipode
     std::optional<Location> moon;       // sublunar point

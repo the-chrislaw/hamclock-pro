@@ -44,6 +44,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.gray = options_.gray;
     scene_.borders = options_.borders;
     scene_.states = options_.states;
+    scene_.cities = options_.cities;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -234,6 +235,14 @@ void MapItem::setStates(bool on) {
     options_.states = scene_.states = on;
     saveOptions();
     emit statesChanged();
+    update();
+}
+
+void MapItem::setCities(bool on) {
+    if (on == options_.cities) return;
+    options_.cities = scene_.cities = on;
+    saveOptions();
+    emit citiesChanged();
     update();
 }
 
