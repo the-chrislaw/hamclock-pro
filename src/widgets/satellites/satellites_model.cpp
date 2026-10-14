@@ -5,6 +5,7 @@
 #include <QTimeZone>
 #include <QVariantMap>
 #include <algorithm>
+#include <cmath>
 
 namespace hamclock {
 namespace {
@@ -12,12 +13,22 @@ using namespace std::chrono_literals;
 // CelesTrak asks for at most one download per group per 2 h; we fetch daily.
 constexpr PollPolicy kPolicy{24h, 72h, 6h};
 constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle";
+constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json";
 constexpr double kMinElevation = 10.0;
 constexpr double kHorizonSeconds = 24 * 3600;
 constexpr int kMaxRows = 5;
 // Popular FM/linear birds; matched against the TLE name.
 const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "FO-29", "AO-73", "RS-44", "AO-91", "AO-85"};
 } // namespace
+
+QString format_mhz(double hz) { return QString::number(hz / 1e6, 'f', 4) + " MHz"; }
+
+QString compass_point(double az_deg) {
+    static const char* const kNames[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                                         "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+    const int i = static_cast<int>(std::floor(std::fmod(std::fmod(az_deg, 360.0) + 360.0, 360.0) / 22.5 + 0.5)) % 16;
+    return kNames[i];
+}
 
 QString satellite_short_name(const QString& tle_name) {
     const QString name = tle_name.trimmed();
@@ -86,6 +97,11 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
 SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("satellites", "Satellites", parent), settings_(context.settings),
       source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)) {
+    // SatNOGS DB (CC BY-SA 4.0): at most daily; optional, the pane works without it.
+    tx_source_ = new PolledSource("satnogs-transmitters", QUrl(kTxUrl), kPolicy, context.transport, this);
+    connect(tx_source_, &PolledSource::updated, this, &SatellitesModel::load_transmitters);
+    detail_timer_.setInterval(1000);
+    connect(&detail_timer_, &QTimer::timeout, this, &SatellitesModel::refresh_detail);
     trackSource(*source_, "CelesTrak");
     connect(source_, &PolledSource::updated, this, &SatellitesModel::load);
     timer_.setInterval(30 * 1000);
@@ -93,7 +109,7 @@ SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &SatellitesModel::recompute);
 }
 
-void SatellitesModel::start() { source_->start(); timer_.start(); }
+void SatellitesModel::start() { source_->start(); tx_source_->start(); timer_.start(); }
 
 void SatellitesModel::load() {
     tles_.clear();
@@ -108,6 +124,7 @@ void SatellitesModel::load() {
 void SatellitesModel::recompute() {
     rows_.clear();
     sky_track_.clear();
+    listed_.clear();
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
@@ -126,6 +143,7 @@ void SatellitesModel::recompute() {
     if (tles.empty() || !settings_ || !settings_->configured()) {
         if (tracked.empty()) tracked.assign(tles.begin(), tles.begin() + std::min<std::size_t>(tles.size(), kMaxTracked));
         publish_layer(tracked);
+        refresh_detail();
         emit changed();
         return;
     }
@@ -149,6 +167,7 @@ void SatellitesModel::recompute() {
             sky_track_.append(QVariantMap{{"az", s.az_deg}, {"el", s.el_deg}});
     }
     if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
+    for (const Row& r : found) listed_.push_back({r.tle, r.pass});
     for (const Row& r : found) {
         const qint64 until = r.pass.aos - static_cast<qint64>(t);
         QString when;
@@ -158,7 +177,67 @@ void SatellitesModel::recompute() {
         rows_.append(QVariantMap{{"name", satellite_short_name(QString::fromStdString(r.tle.name))},
                                  {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)}, {"live", until <= 0}});
     }
+    refresh_detail();
     emit changed();
+}
+
+void SatellitesModel::load_transmitters() {
+    transmitters_ = group_by_norad(parse_satnogs_transmitters(tx_source_->body().toStdString()));
+    refresh_detail();
+}
+
+void SatellitesModel::selectRow(int index) {
+    selected_ = (index == selected_ || index < 0 || index >= static_cast<int>(listed_.size())) ? -1 : index;
+    if (selected_ >= 0) detail_timer_.start(); else detail_timer_.stop();
+    refresh_detail();
+}
+
+void SatellitesModel::refresh_detail() {
+    QVariantMap d;
+    if (selected_ >= 0 && selected_ < static_cast<int>(listed_.size()) && settings_ && settings_->configured()) {
+        const Listed& l = listed_[selected_];
+        const double t = static_cast<double>(now().toSecsSinceEpoch());
+        const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
+        SatellitePropagator p(l.tle);
+        LookAngle la;
+        if (p.valid() && p.look(t, obs, la)) {
+            d["name"] = satellite_short_name(QString::fromStdString(l.tle.name));
+            d["az"] = qRound(la.az_deg);
+            d["compass"] = compass_point(la.az_deg);
+            d["el"] = qRound(la.el_deg);
+            d["above"] = la.el_deg >= 0;
+            d["rangeKm"] = qRound(la.range_km);
+            d["rangeRate"] = QString::number(la.range_rate_km_s, 'f', 2);
+            auto utc = [](qint64 s) { return QDateTime::fromSecsSinceEpoch(s, QTimeZone::utc()).toString("HH:mm:ss") + "Z"; };
+            const auto track = p.pass_track(obs, l.pass, 2);
+            d["aos"] = utc(l.pass.aos);
+            d["tca"] = utc(l.pass.tca);
+            d["los"] = utc(l.pass.los);
+            d["maxEl"] = qRound(l.pass.max_el_deg);
+            if (track.size() >= 2) {
+                d["aosAz"] = compass_point(track.front().az_deg);
+                d["losAz"] = compass_point(track.back().az_deg);
+            }
+            const qint64 until = l.pass.aos - static_cast<qint64>(t);
+            d["countdown"] = until <= 0 ? QString("now") : until < 5400 ? QString("in %1 min").arg((until + 30) / 60) : utc(l.pass.aos);
+            QVariantList tx;
+            const auto it = transmitters_.find(tle_norad_id(l.tle));
+            if (it != transmitters_.end()) {
+                for (const Transmitter& x : it->second) {
+                    if (!x.active || tx.size() >= 3) continue;
+                    QString down = x.downlink_low_hz > 0 ? format_mhz(doppler_downlink_hz(x.downlink_low_hz, la.range_rate_km_s)) : QString();
+                    QString up = x.uplink_low_hz > 0 ? format_mhz(doppler_uplink_hz(x.uplink_low_hz, la.range_rate_km_s)) : QString();
+                    QString kind = QString::fromStdString(x.mode);
+                    if (x.transponder()) kind += x.inverting ? " inverting" : " linear";
+                    if (x.ctcss_hz > 0) kind += QString(" CTCSS %1").arg(x.ctcss_hz, 0, 'f', 1);
+                    tx.append(QVariantMap{{"label", QString::fromStdString(x.description)}, {"mode", kind},
+                                          {"down", down}, {"up", up}});
+                }
+            }
+            d["transmitters"] = tx;
+        }
+    }
+    if (d != detail_) { detail_ = d; emit detailChanged(); }
 }
 
 void register_widget_satellites(WidgetRegistry& registry, const WidgetContext& context) {

@@ -30,6 +30,9 @@ int main(int argc, char** argv) {
     QFile file(QDir(argv[1]).filePath("gp.php"));
     check(file.open(QIODevice::ReadOnly), "fixture present");
     const QByteArray body = file.readAll();
+    QFile txfile(QDir(argv[1]).filePath("transmitters.json"));
+    check(txfile.open(QIODevice::ReadOnly), "transmitter fixture present");
+    const QByteArray txbody = txfile.readAll();
 
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
@@ -40,9 +43,9 @@ int main(int argc, char** argv) {
     WidgetContext context;
     context.settings = &settings;
     bool down = false;
-    context.transport = [&](const QUrl&, FetchDone done) {
+    context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult r;
-        if (down) r.error = "network down"; else { r.http_status = 200; r.body = body; }
+        if (down) r.error = "network down"; else { r.http_status = 200; r.body = url.host() == "db.satnogs.org" ? txbody : body; }
         QTimer::singleShot(0, [done, r] { done(r); });
     };
     auto settle = [&] { for (int i = 0; i < 20; ++i) app.processEvents(); };
@@ -51,7 +54,9 @@ int main(int argc, char** argv) {
     SatellitesModel model(context);
     model.setClock([&] { return t0; });
     model.source().setClock([&] { return t0; });
+    model.transmitterSource().setClock([&] { return t0; });
     QFile::remove(model.source().cachePath());
+    QFile::remove(model.transmitterSource().cachePath());
     // Station not configured yet: data loads but no passes are invented.
     model.start();
     settle();
@@ -83,6 +88,24 @@ int main(int argc, char** argv) {
         check(!sky.isEmpty() && std::abs(sky.first().toMap()["el"].toDouble() - 10) < 1.5 &&
               std::abs(sky.last().toMap()["el"].toDouble() - 10) < 1.5, "sky track starts and ends at the 10 degree pass threshold");
         check(peak <= rows.first().toMap()["maxEl"].toInt() + 1.5 && peak > 5, "sky track peak is within the first pass maximum");
+    }
+    {
+        // Detail box: tap a row, see az/el, the pass and the transmitters of that satellite.
+        check(model.detail().isEmpty(), "no detail before a tap");
+        model.selectRow(0);
+        const QVariantMap d = model.detail();
+        const QString name = rows.first().toMap()["name"].toString();
+        check(d["name"].toString() == name && d["maxEl"].toInt() == rows.first().toMap()["maxEl"].toInt(), "detail matches the tapped row");
+        check(d["az"].toInt() >= 0 && d["az"].toInt() <= 360 && !d["compass"].toString().isEmpty() &&
+              d["rangeKm"].toInt() > 300 && d["rangeKm"].toInt() < 20000 && !d["aosAz"].toString().isEmpty(), "detail look angle and pass azimuths sane");
+        const QVariantList tx = d["transmitters"].toList();
+        bool known = name == "AO-7" || name == "ISS" || name == "SO-50" || name == "FO-29" || name == "AO-91";
+        check(!known || !tx.isEmpty(), "transmitters joined by NORAD id for a satellite in the fixture");
+        for (const auto& v : tx) check(v.toMap()["down"].toString().endsWith("MHz") || v.toMap()["up"].toString().endsWith("MHz"), "transmitter frequencies formatted");
+        model.selectRow(0);
+        check(model.detail().isEmpty(), "second tap closes the detail");
+        check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&
+              compass_point(90) == "E" && compass_point(225) == "SW", "format helpers");
     }
     {
         const OverlayLayer* layer = nullptr;
