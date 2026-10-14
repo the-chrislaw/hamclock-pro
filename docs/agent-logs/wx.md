@@ -78,3 +78,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, sixteenth run)
 - #265/#266 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E12 slice: `gps_nmea` parser for serial GPS receivers (GGA position/fix/satellites, RMC validity and UTC time; checksum required, void fixes, bad hemispheres and out-of-range values rejected). Offline tests on reference sentences; debug suite for gps passes, ASan/UBSan left to CI. Parser only: no serial reader (QtSerialPort availability to check), no DE or time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, seventeenth run)
+- #274 (tvOS) and #73 (area A) open, not mine, left alone. No open `qa` issues for E.
+- E12 slice: NMEA stream layer for the future serial GPS reader. `NmeaStream` splits raw bytes into lines (partial lines held, >128-byte lines dropped); `NmeaTracker` merges GGA+RMC, reports a position/UTC only while younger than 5 s, clears on a no-fix GGA. Offline tests; full release suite and ASan/UBSan gps test pass. Still no serial reader (QtSerialPort not installed here) and no DE/time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.

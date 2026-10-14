@@ -66,4 +66,44 @@ Nmea parse_nmea(const QByteArray& sentence) {
     return n;
 }
 
+QList<QByteArray> NmeaStream::feed(const QByteArray& chunk) {
+    QList<QByteArray> out;
+    for (char c : chunk) {
+        if (c == '\n' || c == '\r') {
+            if (!overflow_ && !buf_.isEmpty()) out.append(buf_);
+            buf_.clear();
+            overflow_ = false;
+        } else if (!overflow_) {
+            buf_.append(c);
+            if (buf_.size() > 128) { buf_.clear(); overflow_ = true; }
+        }
+    }
+    return out;
+}
+
+void NmeaTracker::apply(const Nmea& n, qint64 now_ms) {
+    if (n.kind == Nmea::Gga) {
+        used_ = n.used;
+        if (n.fix.has_position()) { fix_ = n.fix; fix_ms_ = now_ms; }
+        else { fix_ = Fix{}; fix_ms_ = -1; }   // receiver reports no fix
+    } else if (n.kind == Nmea::Rmc) {
+        if (n.utc) { utc_ = *n.utc; utc_ms_ = now_ms; }
+        if (n.fix.has_position()) {
+            const auto alt = fix_.alt_m;     // RMC has no altitude: keep GGA's
+            fix_ = n.fix;
+            if (alt) { fix_.alt_m = alt; fix_.mode = 3; }
+            fix_ms_ = now_ms;
+        }
+    }
+}
+
+bool NmeaTracker::fresh(qint64 now_ms) const {
+    return fix_ms_ >= 0 && now_ms >= fix_ms_ && now_ms - fix_ms_ <= qint64(max_age_s_) * 1000;
+}
+
+std::optional<QDateTime> NmeaTracker::utc(qint64 now_ms) const {
+    if (utc_ms_ < 0 || now_ms < utc_ms_ || now_ms - utc_ms_ > qint64(max_age_s_) * 1000) return std::nullopt;
+    return utc_.addMSecs(now_ms - utc_ms_);
+}
+
 } // namespace hamclock::gps
