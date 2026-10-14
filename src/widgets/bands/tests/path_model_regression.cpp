@@ -60,6 +60,18 @@ int main() {
     PathInput local{51.5, -0.1, 53.5, -2.2};
     check(band(path_outlook(local, UtcSeconds{1760367600}, 120, 1), "40m").hops == 1, "short path one hop");
 
+    // Long path: the other way round the globe, so ~34400 km and many more hops, never better than short.
+    PathInput lp = lon_ny;
+    lp.long_path = true;
+    const double ld = path_distance_km(lp);
+    check(ld > 34300 && ld < 34500 && std::abs(ld + d - 40030) < 100, "long path is the rest of the circumference");
+    const auto lp_noon = path_outlook(lp, UtcSeconds{1760367600}, 150, 2);
+    check(band(lp_noon, "20m").hops >= 11, "long path needs many hops");
+    check(band(lp_noon, "20m").reliability < band(noon, "20m").reliability, "long path is worse than short");
+    bool lp_finite = true;
+    for (const auto& b : lp_noon) lp_finite = lp_finite && std::isfinite(b.reliability) && std::isfinite(b.muf_mhz);
+    check(lp_finite, "long path stays finite");
+
     // Bad input is clamped, never NaN.
     const auto odd = path_outlook(lon_ny, UtcSeconds{kNoonUtc}, std::nan(""), std::nan(""));
     bool finite = true;

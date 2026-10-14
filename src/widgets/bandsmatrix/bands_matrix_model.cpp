@@ -84,9 +84,14 @@ void BandsMatrixModel::recompute() {
             // antenna_gain_db: both ends combined, over isotropic (default 6 = two dipoles).
             const double gain = ini.value("bandsmatrix/antenna_gain_db").toString().toDouble(&ok);
             if (ok && gain >= 0 && gain <= 30) path.gain_db = gain;
+            // long_path = true rates the other way round the globe.
+            const QString lp = ini.value("bandsmatrix/long_path").toString().trimmed().toLower();
+            path.long_path = lp == "true" || lp == "1" || lp == "yes";
         }
         const double km = bands::path_distance_km(path);
-        has_path_ = settings_->configured() && km >= 50;  // DX not set (or on top of DE): no path to rate
+        bands::PathInput short_path = path;
+        short_path.long_path = false;
+        has_path_ = settings_->configured() && bands::path_distance_km(short_path) >= 50;  // DX not set (or on top of DE): no path to rate
         if (has_path_) {
             const UtcSeconds start{hour * 3600};
             const auto first = bands::path_outlook(path, start, sfi_, kp_);
@@ -99,7 +104,7 @@ void BandsMatrixModel::recompute() {
             }
             has_matrix_ = true;
             start_hour_ = hour;
-            path_text_ = QString("%1 km · %2 %3 W · %4 dBi").arg(qRound(km)).arg(mode_name).arg(qRound(path.power_w)).arg(qRound(path.gain_db));
+            path_text_ = QString("%1 km%5 · %2 %3 W · %4 dBi").arg(qRound(km)).arg(mode_name).arg(qRound(path.power_w)).arg(qRound(path.gain_db)).arg(path.long_path ? QString(" long path") : QString());
             best_text_ = first[best].reliability < 0.05 ? QString("HF closed now")
                 : QString("Best now: %1 %2%").arg(first[best].band).arg(qRound(first[best].reliability * 100));
             start_text_ = QString("%1Z").arg(int(hour % 24), 2, 10, QChar('0'));
