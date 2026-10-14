@@ -14,6 +14,8 @@ struct MapViewOptions {
     int label_mode = -1; // -1 = each layer's own mode, else OverlayLabelMode
     bool night_shade = true;
     bool path = true;
+    QString style;        // base style id; "" = plain base map
+    int rotation_s = 0;   // style rotation interval in seconds, 0 = off
 
     bool layer_visible(const QString& id) const { return !hidden_layers.contains(id); }
     void set_layer_visible(const QString& id, bool on);

@@ -51,6 +51,31 @@ Popup {
                 }
             }
         }
+        Text { text: "Base map"; color: Theme.ink; font.pixelSize: Theme.fontBody
+               visible: menu.map && menu.map.styleIds.length > 0 }
+        Flow {
+            Layout.fillWidth: true
+            spacing: Theme.gap / 2
+            visible: menu.map && menu.map.styleIds.length > 0
+            Toggle { label: "Plain"; on: menu.map && menu.map.style === "" && menu.map.rotation === 0
+                     onClicked: { menu.map.rotation = 0; menu.map.style = "" } }
+            Repeater {
+                model: menu.map ? menu.map.styleIds : []
+                Toggle { label: modelData; on: menu.map.style === modelData && menu.map.rotation === 0
+                         onClicked: { menu.map.rotation = 0; menu.map.style = modelData } }
+            }
+        }
+        Text { text: "Rotate styles"; color: Theme.ink; font.pixelSize: Theme.fontBody
+               visible: menu.map && menu.map.styleIds.length > 1 }
+        RowLayout {
+            spacing: Theme.gap / 2
+            visible: menu.map && menu.map.styleIds.length > 1
+            Repeater {
+                model: menu.map ? menu.map.rotationChoices : []
+                Toggle { label: modelData === 0 ? "Off" : modelData + " s"; on: menu.map.rotation === modelData
+                         onClicked: menu.map.rotation = modelData }
+            }
+        }
         Text { text: "Labels"; color: Theme.ink; font.pixelSize: Theme.fontBody }
         RowLayout {
             spacing: Theme.gap / 2

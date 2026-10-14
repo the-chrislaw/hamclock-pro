@@ -58,3 +58,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: merged #167 (E4, green, auto-merge). #168 (not mine) still had macOS/iPad running; #73 (docs) conflicts; left alone. No open `[G]` qa issues (#152 items 7/8 are map-related: label collision fixed earlier by declutter; restart-zoom state is not persisted by the map today, so a restart shows DE/DX).
 - G0 slice 2 (PR agent/map-tap-popup): tapping the map opens `MapTapMenu.qml` (lat/lon, Set DE, Set DX, Cancel) saving through `AppSettings::saveStation` (callsign, zone and the other point kept; save errors shown). Shared files: Main.qml (map card, ~9 lines), `cmake/HamClockApp.cmake` QML list. No new C++; `saveStation` is already covered by existing tests, popup verified by `qml-app-smoke` and an offscreen 800x480 screenshot with the popup forced open (fits, buttons tappable). Not validated on device.
 - Next: G0 slice 3: marker tap details + Set DX, base style/rotation, grid and projection entries.
+
+## 2026-10-14 (UTC, run 7)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #176/#177 (wx/apple) and #73 (docs, conflicts) left alone.
+- G0 slice 3 (PR agent/map-menu-styles): Map menu gets "Base map" (Plain + each published style) and "Rotate styles" (Off/20/60/90/120 s), hidden until a style is published. `MapViewOptions` gains `style` and `rotation_s` (options.ini `[map] style/rotation`, unknown intervals rejected); `MapItem` pushes them into the `MapStyles` registry and lets styles published after start join the rotation. Test: extended `qt-map-view-options-regression`. No styles are published yet, so the new menu rows are not visible in screenshots. Not validated on device.
+- Next: G0 slice 4: marker tap details + Set DX, grid and projection entries (G4/G5).
