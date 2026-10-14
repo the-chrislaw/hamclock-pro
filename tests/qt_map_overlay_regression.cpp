@@ -33,6 +33,15 @@ int main(int argc, char** argv) {
         check(!place_label(view, {50, 50}, 4, t, {QRectF(40, 40, 100, 20)}), "label skipped when both sides are taken");
         check(place_label(view, {50, 50}, 4, t, {QRectF(55, 40, 40, 20)}).has_value(), "falls back to the left side when the right is taken");
     }
+    check(overlay_label_priority("satellites") < overlay_label_priority("dx-cluster")
+          && overlay_label_priority("dx-cluster") < overlay_label_priority("quakes"), "label priority: satellites, spots, quakes");
+    {
+        const auto obs = line_obstacles({{0, 0}, {40, 0}, {-1e6, -1e6}, {80, 0}}, 100, 2);
+        bool covers = false, jump = false;
+        for (const auto& r : obs) { covers = covers || r.contains(QPointF(20, 0)); jump = jump || r.left() < -1000; }
+        check(covers && !jump, "line obstacles follow the segment and skip off-map jumps");
+        check(!place_label(QRectF(0, 0, 200, 100), {10, 0}, 4, QSizeF(30, 12), obs).has_value(), "label on a path line is dropped");
+    }
     int calls = 0;
     auto& reg = MapOverlays::instance();
     const int token = reg.on_change([&] { ++calls; });
