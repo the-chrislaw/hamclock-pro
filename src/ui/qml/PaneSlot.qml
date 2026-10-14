@@ -12,10 +12,13 @@ Item {
     // rotation (never written to settings, so a rotation does not wear the SD card).
     property string rotated: ""
     readonly property string choice: rotateSeconds > 0 && rotated !== "" ? rotated : saved
+    // Widgets the rotation cycles through (empty = every widget).
+    readonly property var rotationSet: appSettings.paneRotationSets[index]
     // Pause rotation while the user is interacting or a menu is open.
     property bool paused: false
     onSavedChanged: rotated = ""
     onRotateSecondsChanged: rotated = ""
+    onRotationSetChanged: rotated = ""
     signal chooseRequested(int slot)
     signal optionsRequested(int slot)
 
@@ -32,13 +35,16 @@ Item {
         appSettings.setPane(index, list[(at + direction + list.length) % list.length])
     }
 
-    // Automatic rotation: cycle through every widget (skipping "none").
+    // Automatic rotation: cycle through the slot's rotation set, or every widget when it is empty.
     Timer {
         interval: slot.rotateSeconds * 1000
         repeat: true
         running: slot.rotateSeconds > 0 && !slot.paused && slot.visible
         onTriggered: {
-            const list = slot.ids().filter(function (id) { return id !== "none" })
+            const known = slot.ids()
+            const list = known.filter(function (id) {
+                return id !== "none" && (slot.rotationSet.length === 0 || slot.rotationSet.indexOf(id) >= 0)
+            })
             if (list.length === 0) return
             slot.rotated = list[(Math.max(0, list.indexOf(slot.choice)) + 1) % list.length]
         }

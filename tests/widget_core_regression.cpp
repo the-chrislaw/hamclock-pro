@@ -169,7 +169,18 @@ int main(int argc, char** argv) {
         check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations() == QList<int>({0, 30, 0}), "rotation applied");
         AppSettings third({}, pane_dir.path());
         check(third.paneRotations() == QList<int>({0, 30, 0}), "rotation survives restart");
+        check(again.paneRotationSets()[1].toStringList().isEmpty(), "rotation set empty by default (all widgets)");
+        check(!again.togglePaneRotationMember(1, "none").isEmpty() && !again.togglePaneRotationMember(5, "weather").isEmpty() &&
+                  !again.togglePaneRotationMember(1, "bad id;").isEmpty(), "bad rotation set member rejected");
+        check(again.togglePaneRotationMember(1, "weather").isEmpty() && again.togglePaneRotationMember(1, "dxcluster").isEmpty() &&
+                  again.paneRotationSets()[1].toStringList() == QStringList({"weather", "dxcluster"}), "rotation set built");
+        AppSettings fourth({}, pane_dir.path());
+        check(fourth.paneRotationSets()[1].toStringList() == QStringList({"weather", "dxcluster"}), "rotation set survives restart");
+        check(again.togglePaneRotationMember(1, "weather").isEmpty() && again.paneRotationSets()[1].toStringList() == QStringList({"dxcluster"}), "toggle removes member");
+        check(again.clearPaneRotationSet(1).isEmpty() && again.paneRotationSets()[1].toStringList().isEmpty(), "rotation set cleared");
+        again.togglePaneRotationMember(0, "weather");
         again.resetPanes();
+        check(again.paneRotationSets()[0].toStringList().isEmpty(), "reset clears rotation sets");
         check(again.panes() == defaults, "panes reset to default");
         check(again.paneRotations() == QList<int>({0, 0, 0}), "reset turns rotation off");
     }
