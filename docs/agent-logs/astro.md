@@ -70,3 +70,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - SatNOGS transmitters (backlog D3 detail box, domain slice): `src/domain/astro_transmitters.*` parses the SatNOGS DB JSON (frequencies, mode, inverting flag, status, CTCSS tone from the description), joins to TLEs by NORAD id (`tle_norad_id`, `group_by_norad`) and maps an uplink frequency through a linear transponder (inverting reverses the offset). Test uses a trimmed real response (AO-7, SO-50, AO-91, ISS, FO-29) with the CelesTrak fixture; db.satnogs.org is reachable from the sandbox. No fetching or UI yet; data-source policy recorded in the roadmap.
 - Not mine: #73 conflicting, left alone. No `[D]` QA issues.
 - Next: fetch/cache transmitters, the detail box itself, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 13
+- Pass sky-plot data (backlog D6, domain slice): `SatellitePropagator::pass_track()` returns evenly spaced az/el samples from AOS to LOS; test checks sample count, endpoints on the horizon, azimuth range and peak vs the pass maximum (AO-7 fixture). No UI yet (sky plot in the DX panel is next).
+- Not mine: #220 had no CI results yet, #73 conflicting; left alone. No `[D]` QA issues.
+- Next: sky plot pane, fetch/cache transmitters, detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).

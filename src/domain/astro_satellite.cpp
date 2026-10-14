@@ -190,4 +190,19 @@ std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double fro
     return out;
 }
 
+std::vector<PassSample> SatellitePropagator::pass_track(const Observer& obs, const SatPass& pass,
+                                                        int max_samples) const {
+    std::vector<PassSample> out;
+    if (!impl_->ok || max_samples < 2 || pass.los < pass.aos) return out;
+    const double span = static_cast<double>(pass.los - pass.aos);
+    const int n = span < 1.0 ? 2 : max_samples;
+    for (int i = 0; i < n; ++i) {
+        const double t = static_cast<double>(pass.aos) + span * i / (n - 1);
+        LookAngle la;
+        if (!look(t, obs, la)) continue;
+        out.push_back({static_cast<std::int64_t>(std::llround(t)), la.az_deg, la.el_deg});
+    }
+    return out;
+}
+
 } // namespace hamclock
