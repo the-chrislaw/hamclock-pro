@@ -130,7 +130,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 7. Weather and clouds map styles; Windy and WEFAX links.
 8. Hazard panes and map overlays: quakes (USGS), tropical storms (NHC/JTWC), NWS marine and fire-weather warnings, lightning with range rings, active fires (NASA FIRMS); check each feed's terms first.
 9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
-10. Rotator pane (rotctld) that can track the selected satellite or DX.
+10. 🟡 (read-only rotctld position card done; tracking the selected satellite or DX pending the radio/rotator safety review) Rotator pane (rotctld) that can track the selected satellite or DX.
 11. BME280 environment panes (temperature, pressure, humidity, dew point; corrections); CPU temperature, Wi-Fi RSSI and disk-use history.
 12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
 13. NetLogger active nets pane.
@@ -257,4 +257,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; BME280/BMP280 via kernel IIO sysfs (air temperature, pressure, humidity, dew point; not tested on a Pi; no corrections or history yet); not on the default dashboard | E | Partial |
 | GPS (gpsd JSON on localhost:2947, read-only): fix quality, position, Maidenhead grid, satellites in use; unconfigured when gpsd is absent; does not change DE yet, no NMEA serial or time use; tested against a loopback fake gpsd, not a real receiver; not on the default dashboard | E | Partial |
 | Radio (rigctld on localhost:4532, strictly read-only: only `f` and `m` are ever sent): frequency, band, mode; unconfigured when rigctld is absent, error replies are never shown as live; tested against a loopback fake rigctld, not a real rig; no flrig, not on the header or default dashboard | E | Partial |
+| Rotator (rotctld on localhost:4533, strictly read-only: only `p` is ever sent): azimuth and elevation; unconfigured when rotctld is absent, error replies and out-of-range values are never shown as live; tested against a loopback fake rotctld; not run with a real rotator; no tracking or move commands; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |
