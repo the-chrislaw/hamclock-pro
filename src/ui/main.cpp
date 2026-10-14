@@ -136,6 +136,9 @@ int main(int argc, char** argv) {
     const bool start_fullscreen = parser.isSet(fullscreen) ||
         (!parser.isSet(windowed) && !parser.isSet(screenshot) && small_screen);
 
+    // Declared before the engine so it outlives it: QML bindings on safeArea
+    // re-evaluate during engine teardown and must not see a null object.
+    hamclock::SafeArea safe_area;
     QQmlApplicationEngine engine;
     // In screenshot mode any QML warning (binding error, missing type) fails
     // the run, so CI catches broken QML that would otherwise render blank.
@@ -149,7 +152,6 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
-    hamclock::SafeArea safe_area;
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
