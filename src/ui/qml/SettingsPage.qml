@@ -125,6 +125,15 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                        AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
+                                    text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
+                                    onClicked: lan = !lan; Layout.preferredWidth: 2 }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     FormField { id: watchList; label: "Watch list (calls or prefixes like VP8*, space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
@@ -138,6 +147,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveWatchList(watchList.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAdifPath(adifPath.text)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
                                     } }
                     }
                 }

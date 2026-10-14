@@ -76,6 +76,9 @@ void AppSettings::loadOptions() {
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
+    const int udp = ini.value("udp/port", 0).toInt();
+    udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
+    udp_lan_ = ini.value("udp/lan", false).toBool();
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -280,6 +283,19 @@ QString AppSettings::saveAdifPath(const QString& path) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveUdpSpots(int port, bool lan) {
+    if (port != 0 && (port < 1024 || port > 65535)) return "UDP port must be 0 (off) or 1024-65535.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/port", port);
+    ini.setValue("udp/lan", lan);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP spot settings.";
+    udp_port_ = port;
+    udp_lan_ = lan;
     emit optionsChanged();
     return {};
 }
