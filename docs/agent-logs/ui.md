@@ -46,3 +46,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 7)
 - Issue #152 item 6: when DE == DX the station card shows "Set a DX target in Settings" instead of "0 KM · BEARING UNDEFINED" (`path_summary` in `src/ui/path_text.hpp`, `StationModel.pathText`, `path-text-regression`). The "NONAME" callsign was not found in src, so it is not addressed. ctest 111/111. ASan/UBSan left to CI. Not validated on a device.
 - #179 (area H) had checks running; #73 stale. Remaining in #152: truncated-Text guard in the smoke test, wheel scrolling in Settings, centred Settings, satellite time format (G/other).
+
+## 2026-10-14 (hourly run, 8)
+- Issue #152: Settings page column is now centred on wide windows and scrolls with mouse wheel / trackpad (`WheelHandler` on the Flickable). ctest 115/115; QML loads without warnings. Settings is not reachable from `--screenshot`, so layout was not visually checked. ASan/UBSan left to CI. Not validated on a device.
+- #186 had a failing macOS universal check (area F, not mine); #187 checks running; #73 stale.
