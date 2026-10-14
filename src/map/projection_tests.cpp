@@ -1,4 +1,5 @@
 #include "projection.hpp"
+#include "borders.hpp"
 #include "coastline.hpp"
 #include <cmath>
 #include <iostream>
@@ -42,6 +43,19 @@ int run_map_tests() {
     }
     check(next == coastline_point_count, "coastline coverage");
     for (const auto p : coastline_points) check(valid_location({p.latitude,p.longitude}), "coastline coordinate");
+    { // Natural Earth 110m boundary lines: bounds, coverage, and the 49th parallel is there.
+      check(border_point_count > 1000 && border_point_count <= 100000 && border_part_count <= 10000, "border counts");
+      std::size_t bn = 0; bool us_ca = false;
+      for (const auto part : border_parts) {
+          check(part.start == bn && part.count >= 2 && part.count <= border_point_count - part.start, "border part bounds");
+          bn = static_cast<std::size_t>(part.start) + part.count;
+      }
+      check(bn == border_point_count, "border coverage");
+      for (const auto p : border_points) {
+          check(valid_location({p.latitude, p.longitude}), "border coordinate");
+          if (std::fabs(p.latitude - 49.0) < 0.2 && p.longitude > -110 && p.longitude < -100) us_ca = true;
+      }
+      check(us_ca, "US-Canada border near 49N"); }
     // Azimuthal equidistant: centre, cardinal directions, antipode, round trips.
     {
         auto close = [](double a, double b, double e = 1e-9) { return std::abs(a - b) < e; };

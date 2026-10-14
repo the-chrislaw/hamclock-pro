@@ -1,5 +1,6 @@
 #include "map_renderer.hpp"
 #include "../qt/land_fill_path.hpp"
+#include "borders.hpp"
 #include "coastline.hpp"
 #include "land.hpp"
 #include "path.hpp"
@@ -35,6 +36,15 @@ MapRenderer::MapRenderer() {
             for (std::size_t j = 0; j < split.count; ++j) {
                 coast_.moveTo(split.segments[j].first.x, split.segments[j].first.y);
                 coast_.lineTo(split.segments[j].second.x, split.segments[j].second.y);
+            }
+        }
+    for (const auto& part : border_parts)
+        for (std::size_t i = 1; i < part.count; ++i) {
+            const auto a = border_points[part.start + i - 1], b = border_points[part.start + i];
+            const auto split = map_split_equirectangular({a.latitude, a.longitude}, {b.latitude, b.longitude});
+            for (std::size_t j = 0; j < split.count; ++j) {
+                borders_.moveTo(split.segments[j].first.x, split.segments[j].first.y);
+                borders_.lineTo(split.segments[j].second.x, split.segments[j].second.y);
             }
         }
 }
@@ -231,8 +241,8 @@ QRgb sample_base(const QImage& img, double lat, double lon) {
 }
 QImage MapRenderer::equirect_base(const MapScene& scene, const QColor& sea, const QColor& land, const QColor& coast) const {
     const bool styled = scene.style && !scene.style->image.isNull();
-    const QString key = QStringLiteral("%1|%2|%3|%4").arg(scene.dark).arg(scene.gray)
-                            .arg(styled ? scene.style->image.cacheKey() : 0).arg(styled ? scene.style->opacity : 0.0);
+    const QString key = QStringLiteral("%1|%2|%3|%4|%5").arg(scene.dark).arg(scene.gray)
+                            .arg(styled ? scene.style->image.cacheKey() : 0).arg(styled ? scene.style->opacity : 0.0).arg(scene.borders);
     if (base_key_ == key && !base_.isNull()) return base_;
     QImage img(2048, 1024, QImage::Format_RGB32);
     img.fill(sea);
@@ -245,6 +255,12 @@ QImage MapRenderer::equirect_base(const MapScene& scene, const QColor& sea, cons
     QPen pen(coast); pen.setWidthF(1.5 / img.width()); // 1.5 px of the base image
     p.setPen(pen); p.setBrush(Qt::NoBrush);
     p.drawPath(coast_);
+    if (scene.borders) {
+        QColor bc = coast; bc.setAlpha(150);
+        QPen bp(bc); bp.setWidthF(1.0 / img.width()); bp.setStyle(Qt::DashLine);
+        p.setPen(bp);
+        p.drawPath(borders_);
+    }
     if (styled) {
         p.setOpacity(std::clamp(scene.style->opacity, 0.0, 1.0));
         p.setRenderHint(QPainter::SmoothPixmapTransform);
@@ -392,6 +408,12 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         QPen pen(coast); pen.setWidthF(1); pen.setCosmetic(true);
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);
         painter.drawPath(coast_);
+        if (scene.borders) {
+            QColor bc = coast; bc.setAlpha(150);
+            QPen bp(bc); bp.setWidthF(1); bp.setCosmetic(true); bp.setStyle(Qt::DashLine);
+            painter.setPen(bp);
+            painter.drawPath(borders_);
+        }
         if (scene.style && !scene.style->image.isNull()) {
             painter.setOpacity(std::clamp(scene.style->opacity, 0.0, 1.0));
             painter.setRenderHint(QPainter::SmoothPixmapTransform);

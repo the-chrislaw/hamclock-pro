@@ -42,6 +42,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.projection = static_cast<MapProjection>(options_.projection);
     scene_.sky_points = options_.sky_points;
     scene_.gray = options_.gray;
+    scene_.borders = options_.borders;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -216,6 +217,14 @@ void MapItem::setGray(bool on) {
     options_.gray = scene_.gray = on;
     saveOptions();
     emit grayChanged();
+    update();
+}
+
+void MapItem::setBorders(bool on) {
+    if (on == options_.borders) return;
+    options_.borders = scene_.borders = on;
+    saveOptions();
+    emit bordersChanged();
     update();
 }
 
