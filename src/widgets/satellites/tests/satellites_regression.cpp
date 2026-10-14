@@ -47,6 +47,30 @@ int main(int argc, char** argv) {
     check(std::fabs(doppler_downlink_hz(145.8e6, 7.0) - 145.8e6 + 3404.0) < 5.0, "7 km/s at 145.8 MHz is ~3.4 kHz");
     check(doppler_uplink_hz(435.0e6, 7.0) > 435.0e6, "uplink pre-compensates upward when receding");
 
+    // Sun vector: equinox (2000-03-20 07:35 UTC) near +x, solstice (2024-06-20 20:51 UTC) at ~23.44 deg declination, ~1 AU.
+    {
+        double s[3];
+        sun_teme_km(953537700.0, s);
+        const double n = std::sqrt(s[0] * s[0] + s[1] * s[1] + s[2] * s[2]);
+        check(std::fabs(n - 149.6e6) < 1.5e6 && s[0] / n > 0.9999 && std::fabs(s[2] / n) < 2e-3, "equinox sun direction");
+        sun_teme_km(1718916660.0, s);
+        const double dec = std::asin(s[2] / std::sqrt(s[0] * s[0] + s[1] * s[1] + s[2] * s[2])) * 180 / M_PI;
+        check(std::fabs(dec - 23.44) < 0.05, "solstice declination");
+        const double sun[3] = {1.5e8, 0, 0};
+        const double night[3] = {-7000, 100, 0}, day[3] = {7000, 0, 0}, side[3] = {-7000, 7000, 0};
+        check(in_earth_shadow(night, sun), "behind Earth is shadowed");
+        check(!in_earth_shadow(day, sun), "sun side is lit");
+        check(!in_earth_shadow(side, sun), "outside the shadow cylinder is lit");
+        // Over a day a LEO satellite is eclipsed for a sensible fraction of samples (not 0, not 100%).
+        int dark = 0, n_s = 0;
+        for (int i = 0; i < 1440; ++i) {
+            bool lit = true;
+            if (p.sunlit(p.epoch_unix() + i * 60.0, lit)) { ++n_s; if (!lit) ++dark; }
+        }
+        const double f = n_s ? double(dark) / n_s : -1;
+        check(f > 0.15 && f < 0.5, "LEO eclipse fraction plausible");
+    }
+
     SatellitePropagator bad(Tle{"x", "1 garbage", "2 garbage"});
     check(!bad.valid(), "garbage TLE rejected");
 

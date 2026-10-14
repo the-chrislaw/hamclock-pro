@@ -27,6 +27,13 @@ double doppler_downlink_hz(double f_hz, double range_rate_km_s);
 // Frequency to transmit (Hz) so the satellite receives `f_hz`: f * (1 + rate/c).
 double doppler_uplink_hz(double f_hz, double range_rate_km_s);
 
+// Sun position in the TEME/mean-equator-of-date frame, km (Astronomical Almanac
+// low-precision series, ~0.01 deg). Used for satellite sunlit/eclipsed state.
+void sun_teme_km(double unix_time, double out[3]);
+// True if a satellite at `sat` (km, same frame) is in Earth's cylindrical shadow
+// for a Sun at `sun` (km). Penumbra is ignored (a few seconds per orbit).
+bool in_earth_shadow(const double sat[3], const double sun[3]);
+
 struct SatPass {
     std::int64_t aos = 0, tca = 0, los = 0; // unix seconds
     double max_el_deg = 0;
@@ -47,6 +54,8 @@ public:
     // Position in the TEME frame, km; false if SGP4 reports an error (e.g. decayed).
     bool teme(double unix_time, double r[3]) const;
     bool sub_point(double unix_time, SubSatellitePoint& out) const;
+    // Sunlit state at `unix_time`; false if propagation fails.
+    bool sunlit(double unix_time, bool& lit) const;
     bool look(double unix_time, const Observer& obs, LookAngle& out) const;
     // Passes above min_el_deg starting after `from`, within the horizon, up to max_passes.
     std::vector<SatPass> passes(const Observer& obs, double from, double horizon_s,

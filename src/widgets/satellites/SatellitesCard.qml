@@ -73,7 +73,7 @@ Card {
         spacing: Theme.gap * 0.4
         Text {
             text: root.showDetail ? root.d.name + "  " + root.d.az + "° " + root.d.compass + "  el " + root.d.el + "°" +
-                  (root.d.above ? "" : " (below)") + "  " + root.d.rangeKm + " km" : ""
+                  (root.d.above ? "" : " (below)") + (root.d.sunlit === undefined ? "" : root.d.sunlit ? "  sunlit" : "  eclipsed") + "  " + root.d.rangeKm + " km" : ""
             color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.2; font.weight: Font.DemiBold
             elide: Text.ElideRight; Layout.fillWidth: true
         }

@@ -209,6 +209,8 @@ void SatellitesModel::refresh_detail() {
             d["above"] = la.el_deg >= 0;
             d["rangeKm"] = qRound(la.range_km);
             d["rangeRate"] = QString::number(la.range_rate_km_s, 'f', 2);
+            bool lit = true;
+            if (p.sunlit(t, lit)) d["sunlit"] = lit;
             auto utc = [](qint64 s) { return QDateTime::fromSecsSinceEpoch(s, QTimeZone::utc()).toString("HH:mm:ss") + "Z"; };
             const auto track = p.pass_track(obs, l.pass, 2);
             d["aos"] = utc(l.pass.aos);
