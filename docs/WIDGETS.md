@@ -107,7 +107,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 **Audit additions (D):**
 6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
 7. Satellite rise/set alert; maximum TLE age; user-supplied TLE.
-8. hams.at upcoming activations pane. 9. Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
+8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
 
 **Owner request (Oct 14): satellite detail box.** Tapping a satellite (map marker or Satellites pane row) opens a small, non-modal box using area G's tap-for-details mechanism (G0); closes on tap outside or Back. Contents, compact at 1024×600:
@@ -239,6 +239,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
+| Next solar eclipse: date, type, greatest-eclipse time and countdown, worldwide (Meeus ch. 54, offline, checked against NASA catalogue values; not visibility at DE) | D | Partial (not on the default dashboard) |
 | EME: Moon az/el at DE and DX, next mutual window (Moon above both horizons), distance and path loss vs perigee (offline) | D | Partial (not on the default dashboard; geometric visibility only) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover, 3 h pressure trend; no forecast or popup yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live) | H | **Live** |
