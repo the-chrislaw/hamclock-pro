@@ -1,5 +1,8 @@
 #include "ntp_status.hpp"
+#include <QtGlobal>
+#ifdef Q_OS_LINUX
 #include <QProcess>
+#endif
 #include <QRegularExpression>
 #include <cmath>
 
@@ -31,6 +34,7 @@ std::optional<ClockSync> parse_timedatectl(const QByteArray& text) {
     return std::nullopt;
 }
 
+#ifdef Q_OS_LINUX
 static std::optional<QByteArray> run(const QString& program, const QStringList& args) {
     QProcess p;
     p.start(program, args, QIODevice::ReadOnly);
@@ -41,6 +45,7 @@ static std::optional<QByteArray> run(const QString& program, const QStringList& 
     }
     return p.readAllStandardOutput();
 }
+#endif
 
 std::optional<ClockSync> read_clock_sync() {
 #ifdef Q_OS_LINUX

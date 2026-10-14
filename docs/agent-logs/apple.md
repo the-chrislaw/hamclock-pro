@@ -57,3 +57,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F. #199 (other area) has a failing iPad Simulator job, #73 conflicting; left alone.
 - F4 slice 3: `GpsModel`, `RotatorModel`, `RadioModel` (gpsd/rotctld/rigctld sockets) subscribe to `AppLifecycle`: on suspend they stop retry/poll timers and abort the socket; on resume they reconnect at once. Small backward-compatible changes in those widget models (areas of other agents); `gps_regression` covers suspend/resume on Linux.
 - Next: safe-area handling, iPad layout check once the map renderer port lands.
+
+## 2026-10-14 (ninth hourly run)
+- No qa issues for area F; #73/#207/#209 are other areas' (checks running), left alone.
+- Found the iPad Simulator job failing on every build since E12 (`ntp_status.cpp` uses QProcess, which Qt for iOS lacks). Guarded the include and the helper with `Q_OS_LINUX` (the only caller is already Linux-only). One-file, behaviour-neutral change in area E's file.
+- Next: safe-area handling, iPad layout check once the map renderer port lands.
