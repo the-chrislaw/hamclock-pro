@@ -67,3 +67,12 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Shared file touched: one id added to the category map in `PaneChooser.qml`.
 - No green PRs to merge this run (#171, #172 had checks running; #73 is not mine).
 - Next: 7 (DRAP, `text/drap_global_frequencies.txt` reachable), wire auto Aurora/DRAP switch to live Kp/X-ray.
+
+## 2026-10-14 (UTC): D-RAP pane and map style (backlog 7)
+
+- New `solardrap` widget ("D-RAP"): SWPC `text/drap_global_frequencies.txt` (4 x 2 degree grid, ~42 kB, same SWPC terms recorded in the roadmap) polled every 10 min. Card shows the highest affected frequency with the X-ray/proton status and valid time. It publishes the `drap` map style (360x180, blue to red, legend "D-RAP MHz") and removes it when the table is over 2 h old; a truncated or malformed table is rejected, never shown as zeros.
+- Fixture is the real capture (quiet, peak 4.0 MHz). Tests cover parsing, orientation/alpha of the image, staleness removal of the style; ASan/UBSan run on the widget test.
+- Checked by offscreen screenshots at 800x480, 1024x600, 1920x1080 (dark, fixture time shifted); map style not viewed on the map (no selection UI yet). Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- Merged #179 (hazards, green). #180 still had checks running; #73 mergeability unknown, left alone.
+- Next: wire auto Aurora/DRAP switch to live Kp/X-ray; MUF style needs a terms-checked source.
