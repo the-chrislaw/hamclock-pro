@@ -148,6 +148,10 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 **Audit additions (F):**
 6. Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
 
+**iPhone support (owner request, Oct 14; after the first iPad TestFlight build):**
+F10. Make the iOS target universal (iPhone + iPad, same bundle ID com.chrislaw.hamclockpro), portrait and landscape, safe areas, Dynamic Island/notch insets; TestFlight builds install on iPhone. Area A provides the phone layout (A0d); area F wires the target, orientation, App Store metadata and a phone Simulator screenshot when the Simulator flow works.
+A0d (area A). Phone layout for widths under ~600 pt: station strip on top (callsign, UTC/local, DE/DX grids), one pane at a time with swipe/page dots plus the pane chooser, map below (landscape: map left, one pane right), same Map button/menu; no text truncation (smoke guard at 390×844 and 844×390).
+
 **More Apple surfaces (owner request, Oct 14; start only after the signed macOS app and the iPad TestFlight build ship):**
 7. Widgets (WidgetKit extension in the iPad/iPhone app): small/medium widgets for band conditions, Kp/SFI/X-ray and the next satellite pass. The same widgets appear in StandBy and on the CarPlay dashboard (CarPlay supports iPhone widgets), which is the App Store-acceptable way to put HamClock in the car. A full CarPlay app is not planned: CarPlay apps are limited to Apple's approved categories (audio, navigation, communication, EV charging, parking, fuelling, quick food ordering, driving task), so a dashboard would be rejected.
 8. Apple TV app: Qt has no tvOS support, so a native SwiftUI front end over the shared C++ core (parsers, astro/SGP4, models) built as a static library for tvOS. Remote-friendly focus navigation, 1080p/4K layouts, the same one-page dashboard. Design doc first (owner review), then a prototype.
