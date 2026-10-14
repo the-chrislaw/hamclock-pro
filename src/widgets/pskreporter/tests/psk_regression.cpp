@@ -2,6 +2,7 @@
 // Fixture is a trimmed real response captured 2026-10-13 ~17:40 UTC.
 #include "../psk_model.hpp"
 #include "../psk_parse.hpp"
+#include "../psk_overlay.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDir>
@@ -9,6 +10,7 @@
 #include <QFile>
 #include <QTimeZone>
 #include <QTimer>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -50,6 +52,20 @@ int main(int argc, char** argv) {
     check(mixed.ok && mixed.reports.size() == 2, "malformed rows skipped");
     check(mixed.reports[0].receiver == "NEW1" && !mixed.reports[0].has_snr, "newest first, SNR optional");
 
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].receiver = "A1"; rs[0].receiver_grid = "IO86";
+        rs[1].receiver = "A1"; rs[1].receiver_grid = "FN31";   // duplicate call: first wins
+        rs[2].receiver = "B2"; rs[2].receiver_grid = "IO86IB";
+        rs[3].receiver = "C3"; rs[3].receiver_grid = "IO";     // too coarse
+        const auto layer = psk::overlay_layer(rs);
+        check(layer.markers.size() == 2 && layer.id == "psk", "overlay: dedup and coarse grids skipped");
+        check(std::abs(layer.markers[0].where.latitude - 56.5) < 1e-9 && std::abs(layer.markers[0].where.longitude + 3.0) < 1e-9 &&
+                  layer.markers[0].path_from_de,
+              "overlay: 4-char grid centre, path from DE");
+        check(std::abs(layer.markers[1].where.latitude - (56.0 + 1 * 2.5 / 60 + 1.25 / 60)) < 1e-6, "overlay: 6-char centre");
+        check(psk::overlay_layer(rs, 1).markers.size() == 1, "overlay: capped");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
@@ -83,10 +99,16 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasData() && model.count() == 1, "report -> live");
     check(model.bestSnr() == "14 dB" && model.recent().size() == 1, "summary");
 
+    check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",
+          "live feed publishes the overlay layer");
+    model.setMapVisible(false);
+    check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+    model.setMapVisible(true);
     now = now.addSecs(25 * 60);
     model.source()->setClock([&] { return now; });
     emit model.ageChanged();
     check(model.state() == "stale", "old data -> stale");
+    check(MapOverlays::instance().layers().empty(), "stale feed removes the layer");
 
     check(settings.saveStation("W1AW-5", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "save unsupported callsign");
     model.start();
