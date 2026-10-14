@@ -65,3 +65,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite detail box groundwork (owner request, D3): `LookAngle` gains `range_rate_km_s` (central difference over ±0.5 s; backward compatible) and `doppler_downlink_hz` / `doppler_uplink_hz` in `astro_satellite.*`. Test checks the rate against a 10 s finite difference and the formulas (7 km/s at 145.8 MHz ≈ 3.4 kHz, opposite senses for up/down). No UI change; transmitter data (SatNOGS) and the box itself are next slices.
 - Not mine: #196/#197 have a failing iPad Simulator check, #73 conflicting; left alone. No `[D]` QA issues.
 - Next: SatNOGS transmitter parse + NORAD join, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 12
+- SatNOGS transmitters (backlog D3 detail box, domain slice): `src/domain/astro_transmitters.*` parses the SatNOGS DB JSON (frequencies, mode, inverting flag, status, CTCSS tone from the description), joins to TLEs by NORAD id (`tle_norad_id`, `group_by_norad`) and maps an uplink frequency through a linear transponder (inverting reverses the offset). Test uses a trimmed real response (AO-7, SO-50, AO-91, ISS, FO-29) with the CelesTrak fixture; db.satnogs.org is reachable from the sandbox. No fetching or UI yet; data-source policy recorded in the roadmap.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues.
+- Next: fetch/cache transmitters, the detail box itself, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
