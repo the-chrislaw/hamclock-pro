@@ -30,3 +30,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: #203 [H] Quakes and Fires "Nearest ..." lines truncated at 800x480 and 1024x600. Closed: none. Still open: #150, #151, #152 (owner-filed).
 - Diff scan: no QtWidgets, no http:// URLs, no passwords in QML or logs (telnet password stays in C++); the only ListView/Flickable uses are the time zone picker and settings. Two test assertions were changed but both follow intended behaviour changes (satellite default of two sub-points, stale Kp value). Per-widget code was not read line by line.
 - Health: layout stays one-page with no scrolling and the new panes show honest Stale / Set up states; the only text-fit regressions are the two hazards panes. Fixture-only renders show DX weather as missing because the fixture set has one weather file, which is not a product bug.
+
+## 2026-10-14 (UTC) QA run 5
+- Last reviewed commit: 10253097793bfeb649bad0bd19110ac027a2c91d (PRs #204 to #227, 48 commits since 7a4b360).
+- Build and 132/132 tests pass on main. Rendered all 35 pane widgets at 800x480 and 1024x600 (light and dark) and the default layout at 1920x1080, with no station configured so most panes show their Set up state. No text truncation was reported and nothing scrolls. Quakes and Fires render without truncation, so #203 is fixed on main. Still open: #150, #151, #152 (owner-filed).
+- Opened: #229 [A] Main.qml safeArea bindings throw TypeErrors at shutdown (SafeArea is destroyed before the QML engine, from #216).
+- Diff scan: test changes are additive only; no weakened assertions seen. Per-widget code was not read line by line. Panes were not rendered with a configured station, so the data-filled layouts of new panes (sun/moon extras, weather clouds, storm forecast) were not reviewed this run.
+- Health: build, tests and layout are stable and new panes stay honest (Set up / Offline / Stale states). The only new defect is a harmless but noisy shutdown warning.
