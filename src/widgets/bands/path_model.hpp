@@ -15,7 +15,7 @@
 //     (ITU-R P.372). Mode sets the SNR needed.
 //   * Reliability = P(f below the median MUF, logistic, +-6%) * P(SNR above
 //     the need, logistic, 4 dB) * geomagnetic factor (Kp >= 5 and polar paths).
-// Short path only; takeoff angle is the ground elevation of the first hop.
+// Short path by default, or the long path (other way round the globe) with `long_path`; takeoff angle is the ground elevation of the first hop.
 #include "../../domain/clock_state.hpp"
 #include <QString>
 #include <vector>
@@ -29,6 +29,7 @@ struct PathInput {
     double power_w = 100;
     double gain_db = 6; // antenna gain over isotropic, both ends combined (two simple dipoles)
     PathMode mode = PathMode::Ssb;
+    bool long_path = false; // the other way round the globe (2*pi*R minus the short path)
 };
 struct PathBand {
     QString band;
@@ -40,6 +41,7 @@ struct PathBand {
     int hops = 0;
 };
 
+// Length of the path being rated (short, or long when long_path is set).
 double path_distance_km(const PathInput& path);
 std::vector<PathBand> path_outlook(const PathInput& path, UtcSeconds utc, double sfi, double kp);
 // One row per band, one column per hour starting at start_utc (reliability 0..1).

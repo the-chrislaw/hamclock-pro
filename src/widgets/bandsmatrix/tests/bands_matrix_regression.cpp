@@ -111,6 +111,18 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(odd.pathText().endsWith("SSB 100 W · 6 dBi"), "bad options fall back to SSB 100 W 6 dBi");
 
+    {
+        QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        ini.setValue("bandsmatrix/long_path", "true");
+        ini.sync();
+    }
+    BandsMatrixModel longp(context);
+    for (auto* source : {&longp.kpSource(), &longp.fluxSource()}) { source->setClock([&] { return now; }); QFile::remove(source->cachePath()); }
+    longp.setClock([&] { return now; });
+    longp.start();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(longp.pathText().contains("long path"), "long_path option is shown in the label");
+
     // Outage: data kept but flagged stale.
     fail_all = true;
     const auto outage = now.addSecs(8 * 3600);

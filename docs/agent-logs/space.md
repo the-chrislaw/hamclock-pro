@@ -131,3 +131,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - `bandsmatrix` reads optional `[bandsmatrix] antenna_gain_db` (0..30, both ends combined over isotropic, default 6) from the options file; the pane label now ends with the gain in dBi. Out-of-range values fall back to 6. Test extended (12 dBi accepted, 500 ignored). Label text only, no layout change, no screenshots. Not validated on device.
 - No mergeable PRs: #301 and #303 (others) had checks running, #73 (not mine) conflicts. No open [B] issues.
 - Next: long-path option, in-app settings UI, MUF map style; tropo needs a terms-checked source.
+
+## 2026-10-14 (UTC): HF path reliability long path (backlog 13, fifth slice)
+
+- `bands/path_model` gets `PathInput::long_path`: path length is the circumference minus the short arc, hop control points continue away from DX along the great circle. `bandsmatrix` reads `[bandsmatrix] long_path = true|1|yes` from the options file and appends "long path" to the pane label; "no path" still follows the short distance (DX on DE stays unrated).
+- Tests: long London-New York path is ~34400 km, 11+ hops, finite and worse than short; option shown in the label. No layout change beyond label text, no screenshots. Not validated on device.
+- Other PRs (#309, #310, #73) belong to others; #309/#310 had checks running, left alone. Only [B] issue is #281, already answered.
+- Next: in-app settings UI, MUF map style; tropo needs a terms-checked source.

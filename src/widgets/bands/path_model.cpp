@@ -62,7 +62,8 @@ double need_db(PathMode mode) {
 } // namespace
 
 double path_distance_km(const PathInput& p) {
-    return central_angle({p.de_lat, p.de_lon}, {p.dx_lat, p.dx_lon}) * kEarthKm;
+    const double angle = central_angle({p.de_lat, p.de_lon}, {p.dx_lat, p.dx_lon});
+    return (p.long_path ? 2 * kPi - angle : angle) * kEarthKm;
 }
 
 std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sfi, double kp) {
@@ -81,7 +82,11 @@ std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sf
     double muf = 1e9, polar = 0;
     std::vector<double> zenith;
     for (int i = 0; i < hops; ++i) {
-        const Point c = along(de, dx, (i + 0.5) / hops);
+        const double t = (i + 0.5) / hops;
+        // Long path: continue away from DX, covering 2*pi minus the short angle.
+        const double short_angle = central_angle(de, dx);
+        const Point c = p.long_path && short_angle > 1e-9 ? along(de, dx, -t * (2 * kPi - short_angle) / short_angle)
+                                                          : along(de, dx, t);
         const double elev = solar_elevation_deg(sun, std::clamp(c.lat, -90.0, 90.0), std::fmod(c.lon + 540.0, 360.0) - 180.0);
         muf = std::min(muf, fo_f2(sfi, elev, c.lat) * sec_f2);
         zenith.push_back(90.0 - elev);
