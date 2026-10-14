@@ -23,7 +23,7 @@ final class SpaceWeatherStore: ObservableObject {
         let cfg = URLSessionConfiguration.default
         cfg.timeoutIntervalForRequest = 20
         cfg.httpAdditionalHeaders = ["User-Agent": SpaceWeatherStore.userAgent]
-        return cfg
+        return URLSession(configuration: cfg)
     }()
 
     private static let base = "https://services.swpc.noaa.gov"
