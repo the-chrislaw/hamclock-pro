@@ -78,3 +78,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Verified from main run 38563306109: Developer ID signing and notarization now work end to end (notary Accepted, stapled, keychain removed); commented on #58.
 - iPad Simulator still fails at link ("building for iOS-simulator, but linking object built for iOS", Qt 6.8.3's prebuilt QML resource objects). Experiment: the simulator job now uses the Qt 6.5.3 iOS kit (job-level `IOS_QT_VERSION`; still informational). No on-device claims.
 - Next: read this PR's simulator result; if still failing, try another Qt version or skip static QML plugin init; then the iPad layout screenshot.
+
+## 2026-10-14 (thirteenth hourly run)
+- Fixed qa #229 (SafeArea, my class, destroyed before the QML engine so `safeArea` bindings threw TypeErrors on quit): `safe_area` is now declared before the engine in src/ui/main.cpp (one-line move in area A's file). Verified on Linux: screenshot run prints no QML errors after "Saved".
+- #73/#233/#234 are other areas'; left alone. Simulator Qt 6.5.3 experiment result still to be read from main's Apple run.
