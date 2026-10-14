@@ -2,6 +2,9 @@
 // Offline helpers for the Settings station form (backlog A0b): coordinates as
 // decimal or degrees:minutes:seconds, Maidenhead grid entry, and parsing of
 // OpenStreetMap Nominatim search results. No network access here.
+#include "../net/polled_source.hpp"
+
+#include <QElapsedTimer>
 #include <QObject>
 #include <QString>
 #include <QVariantList>
@@ -26,6 +29,22 @@ public:
     // Nominatim jsonv2 search reply -> list of {name, latitude, longitude}.
     // Entries without usable coordinates are dropped.
     Q_INVOKABLE QVariantList parseSearchReply(const QByteArray& json) const;
+
+    // Place search (backlog A0b "Find"): one Nominatim request per button press,
+    // at most one per second. Without a transport the search reports an error.
+    void setTransport(Transport transport) { transport_ = std::move(transport); }
+    static QUrl searchUrl(const QString& query);
+    Q_INVOKABLE void search(const QString& query);
+
+signals:
+    // results: [{name, latitude, longitude}]; error is empty on success
+    // (including zero matches, reported as "No match").
+    void searchFinished(const QVariantList& results, const QString& error);
+
+private:
+    Transport transport_;
+    QElapsedTimer last_request_;
+    bool pending_ = false;
 };
 
 } // namespace hamclock

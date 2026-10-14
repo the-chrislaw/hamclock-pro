@@ -6,6 +6,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QUrlQuery>
 #include <cmath>
 #include <limits>
 
@@ -90,6 +91,37 @@ QVariantList LocationTools::parseSearchReply(const QByteArray& json) const {
         out.push_back(QVariantMap{{"name", o.value("display_name").toString()}, {"latitude", lat}, {"longitude", lon}});
     }
     return out;
+}
+
+QUrl LocationTools::searchUrl(const QString& query) {
+    QUrl url("https://nominatim.openstreetmap.org/search");
+    QUrlQuery q;
+    q.addQueryItem("q", query.trimmed());
+    q.addQueryItem("format", "jsonv2");
+    q.addQueryItem("limit", "5");
+    url.setQuery(q);
+    return url;
+}
+
+void LocationTools::search(const QString& query) {
+    if (query.trimmed().size() < 3) { emit searchFinished({}, "Type at least 3 characters to search."); return; }
+    if (!transport_) { emit searchFinished({}, "Search is not available."); return; }
+    if (pending_) return;
+    if (last_request_.isValid() && last_request_.elapsed() < 1000) {
+        emit searchFinished({}, "Please wait a second and try again.");
+        return;
+    }
+    last_request_.start();
+    pending_ = true;
+    transport_(searchUrl(query), [this](FetchResult r) {
+        pending_ = false;
+        if (!r.error.isEmpty() || r.http_status != 200) {
+            emit searchFinished({}, "Search failed: " + (r.error.isEmpty() ? QString("HTTP %1").arg(r.http_status) : r.error));
+            return;
+        }
+        const auto hits = parseSearchReply(r.body);
+        emit searchFinished(hits, hits.isEmpty() ? QString("No match.") : QString());
+    });
 }
 
 } // namespace hamclock

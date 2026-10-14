@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
     hamclock::StationModel station_model(settings);
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
+    location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 
     QQuickStyle::setStyle("Basic"); // fully themed by our QML, identical on every platform

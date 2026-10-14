@@ -56,6 +56,28 @@ Rectangle {
                     spacing: Theme.gap * 0.8
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
                                 field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: place; label: "Find a place (address or city; sent to OpenStreetMap when you press Find)"
+                                    placeholder: "e.g. Portland, Oregon"
+                                    Keys.onReturnPressed: findButton.clicked() }
+                        AppButton { id: findButton; text: "Find"; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { placeStatus.text = "Searching..."; locationTools.search(place.text) } }
+                    }
+                    Text { id: placeStatus; visible: text.length > 0; color: Theme.secondary
+                           font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    Connections {
+                        target: locationTools
+                        function onSearchFinished(results, error) {
+                            if (error.length) { placeStatus.text = error; return }
+                            const r = results[0]
+                            deLat.text = r.latitude.toFixed(4)
+                            deLon.text = r.longitude.toFixed(4)
+                            deGrid.text = locationTools.gridFor(r.latitude, r.longitude)
+                            placeStatus.text = "Using: " + r.name
+                        }
+                    }
                     FormField { id: deGrid; label: "Or grid square (fills the home coordinates)"
                                 placeholder: "e.g. FN31pr"
                                 field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase

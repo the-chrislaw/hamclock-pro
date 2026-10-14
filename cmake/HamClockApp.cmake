@@ -160,7 +160,7 @@ if(BUILD_TESTING)
     add_executable(location-tools-regression tests/location_tools_regression.cpp src/ui/location_tools.cpp
         src/domain/locator_input.cpp src/domain/geometry.cpp)
     target_include_directories(location-tools-regression PRIVATE src)
-    target_link_libraries(location-tools-regression PRIVATE Qt6::Core)
+    target_link_libraries(location-tools-regression PRIVATE Qt6::Core Qt6::Network)
     set_target_properties(location-tools-regression PROPERTIES AUTOMOC ON)
     add_test(NAME location-tools-regression COMMAND location-tools-regression
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/sources/nominatim-search.json)
