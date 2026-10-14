@@ -56,9 +56,23 @@ int main(int argc, char** argv) {
     MapViewOptions bad; bad.load(ini);
     check(bad.label_mode == -1 || (bad.label_mode >= 0 && bad.label_mode <= 3), "out-of-range label mode rejected");
 
+    auto render = [&](const MapScene& m) { QImage img(400, 240, QImage::Format_ARGB32); img.fill(Qt::white); QPainter p(&img); MapRenderer().paint(p, QSizeF(400, 240), m); return img; };
+    // Grid: persisted, out-of-range rejected, lines at known coordinates, drawn.
+    o.grid = 3; check(o.save(ini), "save grid");
+    MapViewOptions rg; rg.load(ini); check(rg.grid == 3, "grid round trip");
+    { QFile g(ini); g.open(QIODevice::WriteOnly | QIODevice::Append); g.write("\n[map]\ngrid=9\n"); }
+    MapViewOptions rg2; rg2.load(ini); check(rg2.grid == 0, "bad grid rejected");
+    check(grid_lines(MapGrid::None).empty(), "no grid lines");
+    check(grid_lines(MapGrid::Tropics).size() == 5 && grid_lines(MapGrid::Tropics)[3].lat1 > 23.43 && grid_lines(MapGrid::Tropics)[3].lat1 < 23.44, "tropic of Cancer");
+    check(grid_lines(MapGrid::LatLng).size() == 5 + 13, "lat/lng line count");
+    check(grid_lines(MapGrid::Maidenhead).size() == 17 + 19, "maidenhead field boundaries");
+    MapScene gs; gs.sun.reset();
+    const auto plain = render(gs);
+    gs.grid = MapGrid::Maidenhead;
+    check(render(gs) != plain, "grid changes the render");
+
     // Night shade off removes the shading from the render.
     MapScene sc; sc.sun = SubsolarPoint{20.0, 0.0}; sc.night_shade = true;
-    auto render = [&](const MapScene& m) { QImage img(400, 240, QImage::Format_ARGB32); img.fill(Qt::white); QPainter p(&img); MapRenderer().paint(p, QSizeF(400, 240), m); return img; };
     const auto on = render(sc);
     sc.night_shade = false;
     const auto off = render(sc);

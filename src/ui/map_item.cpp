@@ -32,6 +32,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     if (g_settings) options_.load(g_settings->optionsPath());
     scene_.route_visible = options_.path;
     scene_.night_shade = options_.night_shade;
+    scene_.grid = static_cast<MapGrid>(options_.grid);
     syncOverlays();
     applyStyleOptions();
     auto sync_style = [this] {
@@ -142,6 +143,16 @@ void MapItem::setNightShade(bool on) {
     options_.night_shade = scene_.night_shade = on;
     saveOptions();
     emit nightShadeChanged();
+    update();
+}
+
+void MapItem::setGrid(int g) {
+    g = std::clamp(g, 0, map_grid_count - 1);
+    if (g == options_.grid) return;
+    options_.grid = g;
+    scene_.grid = static_cast<MapGrid>(g);
+    saveOptions();
+    emit gridChanged();
     update();
 }
 

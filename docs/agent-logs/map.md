@@ -64,3 +64,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues; no open PRs of mine. #176/#177 (wx/apple) and #73 (docs, conflicts) left alone.
 - G0 slice 3 (PR agent/map-menu-styles): Map menu gets "Base map" (Plain + each published style) and "Rotate styles" (Off/20/60/90/120 s), hidden until a style is published. `MapViewOptions` gains `style` and `rotation_s` (options.ini `[map] style/rotation`, unknown intervals rejected); `MapItem` pushes them into the `MapStyles` registry and lets styles published after start join the rotation. Test: extended `qt-map-view-options-regression`. No styles are published yet, so the new menu rows are not visible in screenshots. Not validated on device.
 - Next: G0 slice 4: marker tap details + Set DX, grid and projection entries (G4/G5).
+
+## 2026-10-14 (UTC, run 8)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #185/#186 (not mine) had CI still running so were not merged; #73 (docs) left alone.
+- G0 slice 4 (PR agent/map-grid): `src/map/grid.hpp` (`MapGrid` None/Tropics/Lat-Lng/Maidenhead, pure `grid_lines`), drawn by `MapRenderer` under the night shade; `MapViewOptions.grid` (options.ini `[map] grid`, out-of-range rejected); `MapItem.grid`; Map menu "Grid" row. Test: extended `qt-map-view-options-regression` (line coordinates/counts, persistence, render differs). Offscreen 1024x600 dark with Maidenhead grid checked. Local ASan/UBSan run not done (left to the CI asan-ubsan job). Not validated on device.
+- Next: G0 slice 5: marker tap details + Set DX; projection entry (G4); azimuth rings and CQ/ITU zones (G5, need dataset licence record).
