@@ -20,11 +20,20 @@ Rectangle {
         boundsBehavior: Flickable.StopAtBounds
         ScrollIndicator.vertical: ScrollIndicator {}
 
+        // Mouse wheel / trackpad scrolling (Flickable only handles touch drags).
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function (event) {
+                const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2
+                flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, flick.contentY - dy))
+            }
+        }
+
         ColumnLayout {
             id: column
-            x: Theme.pad
-            y: Theme.pad
             width: Math.min(flick.width - 2 * Theme.pad, 640 * Theme.scale)
+            x: Math.max(Theme.pad, (flick.width - width) / 2)
+            y: Theme.pad
             spacing: Theme.gap
 
             RowLayout {
