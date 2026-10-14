@@ -60,3 +60,45 @@ jobs:
           done
           xcrun simctl shutdown "$udid" || true
           exit $fail
+
+  app:
+    name: SwiftUI app (tvOS Simulator build + screenshot)
+    needs: core
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: brew install ninja xcodegen
+      - name: Build core for tvOS Simulator
+        run: |
+          cmake -S cmake/TvOSCore -B build-tvos -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/TvOSToolchain.cmake"
+          cmake --build build-tvos --target hamclock-core
+      - name: Build app
+        run: |
+          cd apple/tvos
+          xcodegen generate
+          xcodebuild -project HamClockTV.xcodeproj -scheme HamClockTV \
+            -sdk appletvsimulator -configuration Debug -derivedDataPath "$RUNNER_TEMP/dd" \
+            ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build
+      - name: Launch and screenshot
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)["devices"]
+          for rt,devs in sorted(d.items()):
+              if "tvOS" in rt and devs:
+                  print(devs[0]["udid"]); break')
+          xcrun simctl boot "$udid"
+          app=$(find "$RUNNER_TEMP/dd" -name HamClockTV.app -type d | head -1)
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" com.chrislaw.hamclockpro.tv
+          sleep 20
+          mkdir -p shots
+          xcrun simctl io "$udid" screenshot shots/tvos-dashboard.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tvos-simulator-screenshot
+          path: shots/tvos-dashboard.png
