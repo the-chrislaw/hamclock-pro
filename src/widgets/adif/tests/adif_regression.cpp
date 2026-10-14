@@ -1,9 +1,12 @@
 // ADIF parser and log model against a temp file. Offline.
 #include "../adif_model.hpp"
+#include "../adif_overlay.hpp"
 #include "../adif_parse.hpp"
+#include "../../../map/overlay.hpp"
 #include <QCoreApplication>
 #include <QFile>
 #include <QTemporaryDir>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -46,6 +49,26 @@ int main(int argc, char** argv) {
     check(model.state() == "error", "missing file -> error");
     model.load(f.fileName());
     check(model.state() == "live" && model.count() == 4, "loads file");
+    {
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "adif" && layers[0].markers.size() == 1, "only QSOs with a grid are drawn");
+        const auto& m = layers[0].markers[0];
+        // FN31pr: SW corner 41.7083, -72.75; centre adds half a 5 x 2.5 arc-minute subsquare
+        check(m.call == "W1AW" && std::abs(m.where.latitude - 41.7292) < 0.01 && std::abs(m.where.longitude - (-72.7083)) < 0.01, "marker at grid cell centre");
+    }
+    model.setMapVisible(false);
+    check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+    model.setMapVisible(true);
+    check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    {
+        std::vector<adif::Qso> qs;
+        auto mk = [](const char* c, const char* g) { adif::Qso q; q.call = c; q.grid = g; return q; };
+        qs = {mk("K1AA", "FN31"), mk("K1AA/P", "JO62"), mk("K2BB", "ZZ99"), mk("K3CC", "FN3"), mk("K4DD", "JO62pq12")};
+        const auto l = adif::overlay_layer(qs, 10);
+        check(l.markers.size() == 2 && l.markers[0].where.latitude == 41.5 && l.markers[0].where.longitude == -73.0,
+              "newest per call, invalid or odd-length grids skipped, 4-char centre");
+        check(adif::overlay_layer(qs, 1).markers.size() == 1, "marker cap");
+    }
     check(model.recent().size() == 4 && model.recent()[0].toMap()["call"] == "EA8/DL1ABC", "newest first");
     check(model.worked("dl1abc") && model.worked("W1AW/P") && !model.worked("N0CALL"), "worked-before ignores portable parts");
 
@@ -62,6 +85,7 @@ int main(int argc, char** argv) {
     model.setEntityResolver([](const QString& c) { return c == "N0CALL" ? QString("ZZ") : QString("K"); });
     check(model.entityNeeded("N0CALL") && model.bandSlotNeeded("N0CALL", "20m"), "unworked entity needed");
     model.load("");
+    check(MapOverlays::instance().layers().empty(), "no log leaves nothing on the map");
     check(!model.entityNeeded("N0CALL") && !model.bandSlotNeeded("N0CALL", "20m"), "unloaded log never claims needed");
     return failures ? 1 : 0;
 }

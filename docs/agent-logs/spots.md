@@ -143,3 +143,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Settings parity (APRS): `AppSettings` gains `aprsHost/aprsPort/aprsRadiusKm` (options.ini `[aprs]`, validated, defaults rotate.aprs2.net / 14580 / 100, backward compatible), `saveAprs` and an `aprsChanged` signal emitted only on a real change. `AprsModel` uses them for connection and the `r/` filter and reconnects on change. Settings Spots card has three fields saved with "Save cluster". Per-source map toggles already exist in area G's Map menu (layer visibility), so no separate toggle was added. Test covers validation, reconnect, filter radius, no-op save, persistence; 138/138 pass. ASan/UBSan left to CI; no Settings screenshot; not validated on device.
 - Not done: Meshtastic, ONTA/ADIF overlays, WWFF/IOTA/GMA programmes.
 - Next: Meshtastic, ONTA/ADIF overlays.
+
+## 2026-10-14 (run 25)
+- Step 1: merged #286 (apple, all green). #287 had macOS checks still running and #73 is stale docs, both other areas', left alone. Nothing of mine open. No open `[C]` qa issues.
+- Backlog item 15 (slice): ADIF map overlay. Layer `adif` (square markers, one per distinct base call, newest QSO wins, capped at 200) placed at the centre of the logged Maidenhead grid (2/4/6 chars); QSOs without a valid grid are not drawn. Published only while a log is loaded, removed on clear/error/destruction; `setMapVisible` is the per-source hook. No AppSettings change. Offline test added.
+- Not done: Meshtastic (needs MQTT/protobuf or a node link; source decision pending), ONTA overlay, NADXCC/NAPref/NAGrid watch keywords. No screenshot (needs a user log); not validated on device.
+- Next: Meshtastic, ONTA overlay, NAGrid.
