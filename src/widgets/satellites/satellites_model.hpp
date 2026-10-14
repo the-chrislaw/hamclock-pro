@@ -23,6 +23,8 @@ class SatellitesModel : public WidgetModel {
     Q_PROPERTY(QVariantList skyTrack READ skyTrack NOTIFY changed)
     // Detail box for the tapped row (empty when none): now, next pass, transmitters with Doppler.
     Q_PROPERTY(QVariantMap detail READ detail NOTIFY detailChanged)
+    // One-line rise alert ("AO-7 rises in 4 min" / "AO-7 above horizon"); empty when no pass is imminent.
+    Q_PROPERTY(QString alert READ alert NOTIFY changed)
 public:
     explicit SatellitesModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -38,6 +40,7 @@ public:
     PolledSource& source() { return *source_; }
     PolledSource& transmitterSource() { return *tx_source_; }
     QVariantMap detail() const { return detail_; }
+    QString alert() const { return alert_; }
     // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
     Q_INVOKABLE void selectRow(int index);
 
@@ -63,8 +66,13 @@ private:
     std::map<int, std::vector<Transmitter>> transmitters_;
     int selected_ = -1;
     QVariantMap detail_;
+    QString alert_;
     QTimer detail_timer_;
 };
+
+// Alert text for a pass: "NAME rises in N min" within lead_s before AOS, "NAME above horizon"
+// while it is in progress, empty otherwise.
+QString pass_alert_text(const QString& name, qint64 aos, qint64 los, qint64 now, int lead_s = 300);
 
 // Frequency as "145.8000 MHz" (100 Hz resolution).
 QString format_mhz(double hz);

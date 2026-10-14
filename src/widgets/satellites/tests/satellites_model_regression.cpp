@@ -34,6 +34,12 @@ int main(int argc, char** argv) {
     check(txfile.open(QIODevice::ReadOnly), "transmitter fixture present");
     const QByteArray txbody = txfile.readAll();
 
+    check(pass_alert_text("AO-7", 1000, 1600, 1000 - 240) == "AO-7 rises in 4 min" &&
+          pass_alert_text("AO-7", 1000, 1600, 1000 - 20) == "AO-7 rises in 1 min" &&
+          pass_alert_text("AO-7", 1000, 1600, 1000 - 301).isEmpty() &&
+          pass_alert_text("AO-7", 1000, 1600, 1200) == "AO-7 above horizon" &&
+          pass_alert_text("AO-7", 1000, 1600, 1600).isEmpty(),
+          "pass alert text");
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
           "short names");
