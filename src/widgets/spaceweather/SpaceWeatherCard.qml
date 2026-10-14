@@ -89,7 +89,7 @@ Card {
     XrayPlot {
         visible: root.widget && root.widget.hasXrayHistory
         width: parent.width
-        height: 56 * Theme.scale
+        height: Math.max(56 * Theme.scale, Math.min(parent.height * 0.3, 160 * Theme.scale))
         values: root.widget ? root.widget.xrayHistory : []
     }
     }
