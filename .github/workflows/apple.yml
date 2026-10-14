@@ -46,6 +46,71 @@ jobs:
         run: |
           macdeployqt build-mac/hamclock-pro.app -dmg
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
+      # Signing and notarization (issue #58). Main pushes and tags only, and every
+      # step skips cleanly while the secrets are absent. Secrets are only passed
+      # through env, never echoed; the keychain is temporary and deleted at the end.
+      - name: Check signing secrets
+        id: sign
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+        env:
+          CERT: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          if [ -n "$CERT" ] && [ -n "$CERT_PW" ]; then echo "sign=true" >> "$GITHUB_OUTPUT"; else echo "Developer ID certificate secrets absent; skipping signing"; fi
+          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ]; then echo "notarize=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect API key secrets absent; skipping notarization"; fi
+      - name: Sign app and dmg (Developer ID)
+        if: steps.sign.outputs.sign == 'true'
+        env:
+          CERT: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/signing.keychain-db"
+          KCPW="$(uuidgen)"
+          echo "KC=$KC" >> "$GITHUB_ENV"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -P "$CERT_PW" -A -t cert -f pkcs12 -k "$KC" >/dev/null
+          rm -f "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+          IDENTITY="$(security find-identity -v -p codesigning "$KC" | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}')"
+          test -n "$IDENTITY" || { echo "No Developer ID Application identity in the p12"; exit 1; }
+          APP=build-mac/hamclock-pro.app
+          find "$APP/Contents" \( -name '*.dylib' -o -name '*.framework' -o -name '*.so' \) -print0 | \
+            xargs -0 -n1 codesign --force --options runtime --timestamp --sign "$IDENTITY"
+          codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"
+          codesign --verify --deep --strict "$APP"
+          rm -rf dmgroot && mkdir dmgroot && cp -R "$APP" dmgroot/ && ln -s /Applications dmgroot/Applications
+          hdiutil create -volname "HamClock Pro" -srcfolder dmgroot -ov -format UDZO hamclock-pro-macos.dmg
+          codesign --force --timestamp --sign "$IDENTITY" hamclock-pro-macos.dmg
+      - name: Notarize and staple
+        if: steps.sign.outputs.sign == 'true' && steps.sign.outputs.notarize == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          printf '%s' "$KEY" | base64 --decode > "$RUNNER_TEMP/AuthKey.p8"
+          xcrun notarytool submit hamclock-pro-macos.dmg --key "$RUNNER_TEMP/AuthKey.p8" \
+            --key-id "$KEY_ID" --issuer "$ISSUER" --wait
+          rm -f "$RUNNER_TEMP/AuthKey.p8"
+          xcrun stapler staple hamclock-pro-macos.dmg
+          xcrun stapler validate hamclock-pro-macos.dmg
+      - name: Remove signing keychain
+        if: always() && steps.sign.outputs.sign == 'true'
+        run: |
+          security delete-keychain "$KC" || true
+          rm -f "$RUNNER_TEMP/cert.p12" "$RUNNER_TEMP/AuthKey.p8"
+      - uses: actions/upload-artifact@v4
+        if: steps.sign.outputs.sign == 'true'
+        with:
+          name: hamclock-pro-macos-signed
+          path: hamclock-pro-macos.dmg
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-macos-unsigned
