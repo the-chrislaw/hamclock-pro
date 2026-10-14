@@ -1,4 +1,6 @@
 #include "quakes_model.hpp"
+#include "quakes_overlay.hpp"
+#include "../../map/overlay.hpp"
 #include "../../net/polled_source.hpp"
 #include <QTimer>
 
@@ -54,7 +56,25 @@ QVariantList QuakesModel::recent() const {
     return out;
 }
 
+QuakesModel::~QuakesModel() { MapOverlays::instance().remove_layer(quakes::kOverlayLayerId); }
+
+void QuakesModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Never keep markers for data that is not live.
+void QuakesModel::publishOverlay() {
+    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(quakes::overlay_layer(feed_.quakes));
+    else MapOverlays::instance().remove_layer(quakes::kOverlayLayerId);
+}
+
 void QuakesModel::refreshState() {
+    refreshStateImpl();
+    publishOverlay();
+}
+
+void QuakesModel::refreshStateImpl() {
     if (!feed_.ok) {
         if (!source_->lastError().isEmpty()) setState("offline", "USGS unreachable: " + source_->lastError());
         else if (source_->fetchedAt().isValid()) setState("stale", "USGS returned no usable earthquake data");

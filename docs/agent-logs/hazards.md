@@ -26,3 +26,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Note: marine and firewx fixtures are both named `active` (URL path), so screenshot runs need separate `--fixtures` dirs.
 - Next: marine region filter, then lightning (blocked on a terms-checked source), quakes/storms overlays once #107 merges.
 - Blocked: nothing.
+
+## 2026-10-14 01:00 UTC
+- Step 1: #115 (G3) and #73 still had CI running / conflicts, other areas, left alone. No PRs of mine open; no `qa` issues for [H].
+- H1 slice 2: quakes map overlay via area G's API (`quakes_overlay.*`): one dot per quake, strongest first, size and colour by magnitude (yellow < M4.5, orange < M6, red), "M6.8" labels, capped at 60; layer removed when data is not live or map visibility is off (`setMapVisible`). Tests cover order, size, cap, off/on, stale removal. Pane unchanged, so no new screenshots needed; overlay rendering itself is area G's.
+- Next: storms track overlay, then lightning (needs a terms-checked source), fires (FIRMS key via settings), nets.
+- Blocked: nothing.

@@ -208,7 +208,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (EME not started) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover, 3 h pressure trend; no forecast or popup yet) |
-| Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane only; map overlay waits for area G's API) | H | **Live** |
+| Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live) | H | **Live** |
 | Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane only, track overlay waits for area G's API; JTWC not yet) | H | **Live** |
 | NWS fire-weather alerts (api.weather.gov: Red Flag Warning, Fire Weather Watch, Fire Warning, Extreme Fire Danger; worst alert, area, issued/until, start time of a future watch, expired alerts dropped; nationwide, no region filter or map overlay yet; no Red Flag Warning was active when the fixture was captured, so it holds a Fire Weather Watch) | H | **Live** |
 | NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, no region filter or map overlay yet) | H | **Live** |

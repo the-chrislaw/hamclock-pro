@@ -27,6 +27,11 @@ public:
     QString strongestPlace() const;
     QVariantList recent() const;     // newest first: {mag, place, age}
 
+    // Quakes are drawn on the map only while the data is live; off hides them.
+    void setMapVisible(bool visible);
+    bool mapVisible() const { return map_visible_; }
+    ~QuakesModel() override;
+
     PolledSource& source() { return *source_; }
 
 signals:
@@ -34,9 +39,12 @@ signals:
 
 private:
     void refreshState();
+    void refreshStateImpl();
+    void publishOverlay();
 
     PolledSource* source_;
     quakes::Feed feed_;
+    bool map_visible_ = true;
 };
 
 void register_widget_quakes(WidgetRegistry& registry, const WidgetContext& context);
