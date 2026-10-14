@@ -28,6 +28,15 @@ QString satellite_short_name(const QString& tle_name) {
     return amp > 0 ? name.left(amp) : name;
 }
 
+std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time) {
+    std::vector<Tle> out;
+    for (const Tle& tle : tles) {
+        SatellitePropagator p(tle);
+        if (p.valid() && unix_time - p.epoch_unix() <= kMaxTleAgeDays * 86400.0) out.push_back(tle);
+    }
+    return out;
+}
+
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time) {
     OverlayLayer layer;
     layer.id = "satellites";
@@ -83,19 +92,20 @@ void SatellitesModel::load() {
 
 void SatellitesModel::recompute() {
     rows_.clear();
-    if (tles_.empty()) MapOverlays::instance().remove_layer("satellites");
-    else MapOverlays::instance().set_layer(satellite_overlay_layer(tles_, static_cast<double>(now().toSecsSinceEpoch())));
-    if (tles_.empty() || !settings_ || !settings_->configured()) {
+    const double t = static_cast<double>(now().toSecsSinceEpoch());
+    const std::vector<Tle> tles = fresh_tles(tles_, t);
+    all_stale_ = !tles_.empty() && tles.empty();
+    if (tles.empty()) MapOverlays::instance().remove_layer("satellites");
+    else MapOverlays::instance().set_layer(satellite_overlay_layer(tles, t));
+    if (tles.empty() || !settings_ || !settings_->configured()) {
         emit changed();
         return;
     }
     const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
-    const double t = static_cast<double>(now().toSecsSinceEpoch());
     struct Row { Tle tle; SatPass pass; };
     std::vector<Row> found;
-    for (const Tle& tle : tles_) {
+    for (const Tle& tle : tles) {
         SatellitePropagator p(tle);
-        if (!p.valid()) continue;
         // Start a few minutes back so a pass in progress is still listed.
         const auto passes = p.passes(obs, t - 900, kHorizonSeconds + 900, kMinElevation, 3);
         for (const SatPass& pass : passes)

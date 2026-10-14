@@ -41,3 +41,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Next solar eclipse pane (backlog D9, slice 1): `src/domain/astro_eclipse.*` implements Meeus ch. 54 (greatest-eclipse time, gamma, type, partial magnitude) offline; `src/widgets/eclipse/` compact pane (next eclipse, greatest time, countdown, central/gamma or magnitude; lower rows dropped, not clipped). Test checks eight eclipses 2023-2027 against NASA catalogue times (within 5 min) and gamma (within 0.01) plus type; ASan/UBSan clean. NASA's eclipse site is not reachable from the sandbox, so reference values are from memory of the published catalogue and were not re-fetched this run. Rendered offscreen at 800x480, 1024x600, 1920x1080 (not on-device). Shows worldwide only, never claims visibility at DE.
 - Not mine: #161, #164, #73 left alone (CI pending / other areas).
 - Next: eclipse visibility at DE, user-chosen satellites (max two), TLE age (D7), moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 7
+- Maximum TLE age (backlog D7, slice 1): element sets with an epoch more than 30 days old are dropped from passes and the map layer; if all are stale the pane says "Element sets over 30 days old" instead of showing drifted orbits as live. Test advances the clock 60 days and back. Pane text only (no layout change). ASan/UBSan left to CI.
+- Not mine: #173, #174 (CI pending), #73 left alone.
+- Next: user-chosen satellites (max two), pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).

@@ -28,7 +28,7 @@ Card {
     }
     Text {
         visible: root.widget && root.widget.hasData && root.widget.rows.length === 0
-        text: "No passes in the next 24 h"
+        text: root.widget.allStale ? "Element sets over 30 days old" : "No passes in the next 24 h"
         color: Theme.secondary
         font.pixelSize: Theme.fontCaption
     }

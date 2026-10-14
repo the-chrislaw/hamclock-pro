@@ -18,6 +18,7 @@ class SatellitesModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(bool hasData READ hasData NOTIFY changed)
     Q_PROPERTY(QVariantList rows READ rows NOTIFY changed)
+    Q_PROPERTY(bool allStale READ allStale NOTIFY changed)
 public:
     explicit SatellitesModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -26,6 +27,8 @@ public:
     bool hasData() const { return !tles_.empty(); }
     // Soonest first: {name, when ("now" / "in 42 min" / "14:05Z"), maxEl, label}.
     QVariantList rows() const { return rows_; }
+    // True when elements exist but every set is older than kMaxTleAgeDays (nothing is shown then).
+    bool allStale() const { return all_stale_; }
     PolledSource& source() { return *source_; }
 
 signals:
@@ -39,7 +42,13 @@ private:
     std::vector<Tle> tles_;
     QTimer timer_;
     QVariantList rows_;
+    bool all_stale_ = false;
 };
+
+// Element sets older than this are dropped: SGP4 drifts by km per day for low orbits.
+constexpr int kMaxTleAgeDays = 30;
+// Sets whose epoch is within kMaxTleAgeDays of unix_time (or in the near future).
+std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
 
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);

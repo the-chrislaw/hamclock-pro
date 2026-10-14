@@ -106,7 +106,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 **Audit additions (D):**
 6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
-7. Satellite rise/set alert; maximum TLE age; user-supplied TLE.
+7. 🟡 (maximum TLE age of 30 days done) Satellite rise/set alert; user-supplied TLE.
 8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
 
