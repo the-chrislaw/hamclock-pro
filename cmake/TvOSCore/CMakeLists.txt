@@ -19,7 +19,9 @@ add_library(hamclock-core STATIC
     ${D}/countdown_state.cpp
     ${D}/solar_position.cpp
     ${D}/geometry.cpp
-    ${D}/locator_input.cpp)
+    ${D}/locator_input.cpp
+    ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
+    ${HCP_ROOT}/apple/tvos/Core/swpc.cpp)
 target_include_directories(hamclock-core PUBLIC ${HCP_ROOT}/src)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-core PRIVATE -Wall -Wextra -Wpedantic)
@@ -35,3 +37,11 @@ foreach(t ${_tests})
     set_target_properties(core-${t}-regression PROPERTIES MACOSX_BUNDLE OFF)
     add_test(NAME core-${t}-regression COMMAND core-${t}-regression)
 endforeach()
+
+# Qt-free SWPC parser port; Qt parser fixtures are the oracle.
+add_executable(core-swpc-regression ${HCP_ROOT}/apple/tvos/Core/tests/swpc_regression.cpp)
+target_link_libraries(core-swpc-regression PRIVATE hamclock-core)
+target_compile_definitions(core-swpc-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/spaceweather/tests/fixtures")
+set_target_properties(core-swpc-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-swpc-regression COMMAND core-swpc-regression)
