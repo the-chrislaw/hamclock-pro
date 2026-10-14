@@ -37,6 +37,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.route_visible = options_.path;
     scene_.night_shade = options_.night_shade;
     scene_.grid = static_cast<MapGrid>(options_.grid);
+    scene_.projection = static_cast<MapProjection>(options_.projection);
     scene_.sky_points = options_.sky_points;
     scene_.gray = options_.gray;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
@@ -99,6 +100,7 @@ void MapItem::resetView() {
 }
 
 void MapItem::panBy(double dx, double dy) {
+    if (scene_.projection != MapProjection::Equirectangular) return;
     if (scene_.zoom <= 1.0 || width() <= 0 || height() <= 0) return;
     const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
     if (vp.scale <= 0) return;
@@ -117,9 +119,20 @@ void MapItem::mouseMoveEvent(QMouseEvent* e) {
 
 void MapItem::mouseReleaseEvent(QMouseEvent* e) {
     if (dragging_ || width() <= 0 || height() <= 0) return;
+    const double radius = 14 * std::max(1.0, scene_.ui_scale);
+    if (scene_.projection != MapProjection::Equirectangular) {
+        const auto frame = MapRenderer::frameFor(QSizeF(width(), height()), scene_);
+        const auto hit = hit_test_marker(scene_.overlays, frame, e->position().x(), e->position().y(), radius);
+        if (hit.marker) {
+            emit markerTapped(hit.layer->id, hit.marker->call, hit.marker->detail, hit.marker->where.latitude, hit.marker->where.longitude);
+            return;
+        }
+        if (const auto loc = frame.to_location(e->position().x(), e->position().y())) emit tapped(loc->latitude, loc->longitude);
+        return; // outside the outline: nothing to set
+    }
     const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
     if (vp.scale <= 0) return;
-    const auto hit = hit_test_marker(scene_.overlays, vp, e->position().x(), e->position().y(), 14 * std::max(1.0, scene_.ui_scale));
+    const auto hit = hit_test_marker(scene_.overlays, vp, e->position().x(), e->position().y(), radius);
     if (hit.marker) {
         emit markerTapped(hit.layer->id, hit.marker->call, hit.marker->detail, hit.marker->where.latitude, hit.marker->where.longitude);
         return;
@@ -200,6 +213,17 @@ void MapItem::setGrid(int g) {
     scene_.grid = static_cast<MapGrid>(g);
     saveOptions();
     emit gridChanged();
+    update();
+}
+
+void MapItem::setProjection(int p) {
+    p = std::clamp(p, 0, map_projection_count - 1);
+    if (p == options_.projection) return;
+    options_.projection = p;
+    scene_.projection = static_cast<MapProjection>(p);
+    resetView(); // zoom and pan only exist on the flat map
+    saveOptions();
+    emit projectionChanged();
     update();
 }
 

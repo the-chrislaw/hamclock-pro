@@ -3,6 +3,7 @@
 // beacons) publish markers in named layers and never touch the renderer.
 // QtGui only. See docs/map-overlays.md.
 #include "../domain/geometry.hpp"
+#include "projection.hpp"
 #include "viewport.hpp"
 #include <QColor>
 #include <QPointF>
@@ -51,6 +52,9 @@ std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, 
 // checked so markers near the date line stay tappable.
 struct MarkerHit { const OverlayLayer* layer = nullptr; const OverlayMarker* marker = nullptr; };
 MarkerHit hit_test_marker(const std::vector<OverlayLayer>& layers, const MapViewport& vp, double px, double py, double radius_px);
+
+// Same for a whole-world projection: markers at their frame pixel position.
+MarkerHit hit_test_marker(const std::vector<OverlayLayer>& layers, const MapFrame& frame, double px, double py, double radius_px);
 
 // Registry the app publishes layers into; the map listens for changes.
 class MapOverlays {

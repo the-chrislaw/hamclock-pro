@@ -81,6 +81,32 @@ int run_map_tests() {
         bool rejected = false; try { (void)map_unproject_robinson({0.0, 0.0}); } catch (const std::invalid_argument&) { rejected = true; }
         check(rejected, "robinson outside outline rejected");
     }
+    {   // MapFrame: one transform for pixels <-> locations (G4)
+        auto close = [](double a, double b, double tol = 1e-6) { return std::abs(a - b) < tol; };
+        for (const auto& size : {std::pair<double, double>{1024, 600}, {800, 480}, {1920, 1080}, {300, 900}}) {
+            const auto az = MapFrame::fit(MapProjection::Azimuthal, {39.7, -105}, size.first, size.second);
+            const auto rb = MapFrame::fit(MapProjection::Robinson, {0, 30}, size.first, size.second);
+            check(az.w == az.h && az.x >= 0 && az.y >= 0 && az.x + az.w <= size.first + 1e-9 && az.y + az.h <= size.second + 1e-9, "azimuthal frame fits");
+            check(rb.x >= 0 && rb.y >= 0 && rb.x + rb.w <= size.first + 1e-9 && rb.y + rb.h <= size.second + 1e-9 && close(rb.h / rb.w, MapFrame::robinson_aspect), "robinson frame fits");
+            const auto c = az.to_pixel({39.7, -105});
+            check(c && close(c->x, az.x + az.w / 2) && close(c->y, az.y + az.h / 2), "azimuthal centre is the frame centre");
+            const auto north = az.to_pixel({60, -105});
+            check(north && close(north->x, c->x) && north->y < c->y, "azimuthal north is up");
+            for (const Location p : {Location{51.5, -0.1}, Location{-33.9, 151.2}, Location{0, 179}, Location{-70, -20}}) {
+                for (const auto* f : {&az, &rb}) {
+                    const auto px = f->to_pixel(p);
+                    const auto back = px ? f->to_location(px->x, px->y) : std::nullopt;
+                    check(back && close(back->latitude, p.latitude, 1e-6) && close(std::remainder(back->longitude - p.longitude, 360.0), 0.0, 1e-6), "frame round trip");
+                }
+            }
+            check(!az.to_location(az.x + 1, az.y + 1), "azimuthal corner is outside the disc");
+            check(!rb.to_location(rb.x + 1, rb.y + 1), "robinson corner is outside the outline");
+            const auto mid = rb.to_pixel({0, 30});
+            check(mid && close(mid->x, rb.x + rb.w / 2) && close(mid->y, rb.y + rb.h / 2), "robinson centre longitude is the middle");
+        }
+        check(!MapFrame::fit(MapProjection::Equirectangular, {0, 0}, 100, 100).to_pixel({0, 0}), "flat map uses MapViewport");
+        check(!MapFrame::fit(MapProjection::Azimuthal, {0, 0}, 0, 100).to_pixel({0, 0}), "empty item has no frame");
+    }
     return failures;
 }
 }
