@@ -107,3 +107,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 14 (slice): HamAlert alerts on the map. `HamAlertModel` publishes layer `hamalert` (reuses the DX overlay builder: one marker per DXCC entity centre, newest first, own colour) only while the feed is live, removed on loss/stop/destruction; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Test uses a synthetic resolver.
 - Not done: Settings toggle, trigger names, ONTA/ADIF overlays. Needs HamAlert login so no screenshot; not validated on device.
 - Next: OTA filter controls in Settings, DXCC-entity watching, Meshtastic, ONTA/ADIF overlays.
+
+## 2026-10-14 (run 19)
+- Step 1: merged #237 (ui callsign banner, green); #238 (CI running) and #73 are other areas', left alone. Nothing of mine open. No open `[C]` qa issues.
+- Backlog item 16 (slice): DX cluster rows gain an `ota` role ("POTA K-1234", from the already-parsed comment reference) and the card shows it as an accent badge before the country/comment. No AppSettings change. Test added; 132/132 pass. ASan/UBSan left to CI (small model/QML change); no screenshot since the cluster stays Not configured without a callsign. Not validated on device.
+- Not done: IOTA reference names, ONTA/ADIF overlays, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
+- Next: OTA filter controls in Settings, DXCC-entity watching, Meshtastic.

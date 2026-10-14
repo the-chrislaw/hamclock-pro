@@ -25,13 +25,14 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
         const auto* e = dxcluster::DxccTable::bundled().lookup(s.dx);
         return e ? e->name : QString();
     }
+    case OtaRole: return s.ota_ref.isEmpty() ? QString() : s.ota_program + " " + s.ota_ref;
     }
     return {};
 }
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}, {OtaRole, "ota"}};
 }
 
 void DxSpotList::rebuild() {
