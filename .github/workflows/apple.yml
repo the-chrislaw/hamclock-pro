@@ -291,8 +291,10 @@ jobs:
           KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ISSUER: ${{ secrets.ASC_ISSUER_ID }}
           TEAM: ${{ vars.APPLE_TEAM_ID }}
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
         run: |
-          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ] && [ -n "$TEAM" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect secrets or APPLE_TEAM_ID absent; skipping TestFlight"; fi
+          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ] && [ -n "$TEAM" ] && [ -n "$DIST" ] && [ -n "$DIST_PW" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect or Apple Distribution secrets or APPLE_TEAM_ID absent; skipping TestFlight"; fi
       - name: Cache Qt install
         if: steps.gate.outputs.go == 'true'
         id: qt-cache
@@ -322,6 +324,24 @@ jobs:
             -DCMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Automatic \
             -DCMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY=2
+      - name: Import Apple Distribution certificate
+        if: steps.gate.outputs.go == 'true'
+        env:
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/ios-signing.keychain-db"
+          KCPW="$(uuidgen)"
+          echo "KC=$KC" >> "$GITHUB_ENV"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$DIST" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_PW" -A -t cert -f pkcs12 -k "$KC" >/dev/null
+          rm -f "$RUNNER_TEMP/dist.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+          security find-identity -v -p codesigning "$KC" | grep -c 'Apple Distribution' || { echo "No Apple Distribution identity in the p12"; exit 1; }
       - name: Archive, export and upload
         if: steps.gate.outputs.go == 'true'
         env:
@@ -347,15 +367,21 @@ jobs:
           </dict></plist>
           PLIST
           set -o pipefail
-          # Archive unsigned: the Apple Development cert needs a private key this runner
-          # lacks. The export step below signs with the cloud-managed distribution cert.
+          # Archive signed with the imported Apple Distribution identity; Xcode creates the
+          # App Store provisioning profile through the API key (-allowProvisioningUpdates).
           xcodebuild archive -project build-tf/HamClockPro.xcodeproj -scheme hamclock-pro \
             -configuration Release -sdk iphoneos -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-            CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution" "${AUTH[@]}" \
             2>&1 | tee tf-archive.log | tail -5 \
             || { grep -E "error:|BUILD FAILED" tf-archive.log | head -30; exit 1; }
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
             "${AUTH[@]}" 2>&1 | tee tf-export.log | tail -15 \
             || { grep -E "error:|rror Domain" tf-export.log | head -30; exit 1; }
+      - name: Remove signing keychain
+        if: always() && steps.gate.outputs.go == 'true'
+        run: |
+          security delete-keychain "$KC" || true
+          rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP"/AuthKey_*.p8

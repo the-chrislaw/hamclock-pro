@@ -42,6 +42,9 @@ if(IOS AND TARGET hamclock-pro)
         MACOSX_BUNDLE_GUI_IDENTIFIER "${HAMCLOCK_IOS_BUNDLE_ID}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${HAMCLOCK_BUILD_NUMBER}"
+        # Custom plist: all four iPad orientations and a launch screen, which App
+        # Store validation requires. ID and versions come from the Xcode attributes.
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/Info-ios.plist"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${HAMCLOCK_IOS_BUNDLE_ID}"
         XCODE_ATTRIBUTE_MARKETING_VERSION "${PROJECT_VERSION}"
         XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "${HAMCLOCK_BUILD_NUMBER}"

@@ -116,3 +116,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (nineteenth hourly run)
 - No qa issues for area F; #73/#289/#291 are other areas' (checks running), left alone.
 - Read main run 38627403670: TestFlight archive now SUCCEEDS unsigned; export failed with "exportOptionsPlist error for key method expected one {} but found app-store-connect" (the runner's Xcode predates that method name). Changed the export method to `app-store` (same upload destination). Untested until a main run; no on-device claims.
+
+## 2026-10-14 (twentieth hourly run)
+- No qa issues for area F; #73/#297/#299/#300 are other areas' (checks running), left alone.
+- Read main run 38635393173: the unsigned archive exported with "expected one {} but found app-store" (an unsigned archive offers no distribution methods). Followed the owner's recipe in #269: the TestFlight job now imports the Apple Distribution p12 (`IOS_DIST_CERT_P12_BASE64`/`IOS_DIST_CERT_PASSWORD`) into a temporary keychain (deleted at job end), archives with `CODE_SIGN_STYLE=Automatic`, identity "Apple Distribution" and the API key auth flags, then exports/uploads. Skips cleanly when any secret is absent.
+- iOS bundle now uses `packaging/apple/Info-ios.plist` (all four iPad orientations, `UILaunchScreen`, `ITSAppUsesNonExemptEncryption=false`), fixing the two App Store validation warnings from #269. Untested until a main run; no on-device claims.
