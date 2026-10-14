@@ -84,3 +84,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 11 (slice): new `bandactivity/band_activity.hpp` (`summarize`: per-band spot totals split by continent, in band order, resolver injected). `DxSpotList::activity()` uses it with the bundled DXCC table; `DxClusterModel.activity` property feeds a "Busiest 20m · 12 (EU 7 NA 5)" line in the DX cluster card (continent split hidden in compact mode). No AppSettings change. Tests pass normally and under ASan/UBSan (leak check off).
 - Not done: standalone band × continent heatmap pane, PSKReporter/WSPR/RBN as sources, screenshots (cluster stays Not configured without a callsign, so the line cannot be rendered here). Not validated on device.
 - Next: APRS/HamAlert map overlays, OTA filter controls in Settings, DXCC country in card/labels, Meshtastic.
+
+## 2026-10-14 (run 15)
+- Step 1: nothing of mine open; #207 (no checks reported), #213 (macOS universal running), #73 are other areas', left alone. No open `[C]` qa issues.
+- Slice of backlog item 5: the DX cluster card now shows the DXCC country on each row (`country · comment`; country only in compact mode). QML-only change, existing tests pass (127/127). No screenshots: the cluster stays Not configured without a host/callsign, so rows cannot be rendered offline. Not validated on device; ASan/UBSan left to CI for this QML-only change.
+- Next: country in map labels, APRS/HamAlert map overlays, OTA filter controls in Settings, Meshtastic.
