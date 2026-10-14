@@ -22,6 +22,7 @@ add_library(hamclock-core STATIC
     ${D}/locator_input.cpp
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
     ${HCP_ROOT}/apple/tvos/Core/swpc.cpp
+    ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
 target_include_directories(hamclock-core PUBLIC ${HCP_ROOT}/src)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -54,3 +55,11 @@ target_compile_definitions(core-hcpcore-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/spaceweather/tests/fixtures")
 set_target_properties(core-hcpcore-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-hcpcore-regression COMMAND core-hcpcore-regression)
+
+# Qt-free solar wind parser; the Qt parser's fixtures are the oracle.
+add_executable(core-solarwind-regression ${HCP_ROOT}/apple/tvos/Core/tests/solarwind_regression.cpp)
+target_link_libraries(core-solarwind-regression PRIVATE hamclock-core)
+target_compile_definitions(core-solarwind-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/solarwind/tests/fixtures")
+set_target_properties(core-solarwind-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-solarwind-regression COMMAND core-solarwind-regression)

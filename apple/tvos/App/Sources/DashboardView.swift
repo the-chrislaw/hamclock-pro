@@ -16,6 +16,14 @@ struct DashboardView: View {
                     Card(title: "X-ray", sample: weather.xray, now: ctx.date,
                          big: { SpaceWeatherStore.xrayClass($0) }, detail: { _ in "GOES 0.1–0.8 nm" })
                 }
+                HStack(alignment: .top, spacing: 40) {
+                    Card(title: "Solar wind", sample: weather.windSpeed, now: ctx.date,
+                         big: { String(format: "%.0f km/s", $0) },
+                         detail: { SpaceWeatherStore.windSpeedDescription($0) })
+                    Card(title: "IMF Bz (GSM)", sample: weather.bz, now: ctx.date,
+                         big: { String(format: "%+.1f nT", $0) },
+                         detail: { SpaceWeatherStore.bzDescription($0) })
+                }
                 Spacer()
                 Text("Data: NOAA Space Weather Prediction Center")
                     .font(.system(size: 29)).foregroundStyle(.secondary)

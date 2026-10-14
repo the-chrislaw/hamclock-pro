@@ -20,3 +20,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog 3: C ABI (`apple/tvos/Core/hcpcore.h/.cpp`, tested on Linux 7/7), SwiftUI app shell (UTC clock + Kp / solar flux / X-ray cards with Stale/Offline labels, honest User-Agent, NOAA attribution), `project.yml` for XcodeGen, and an `app` job in tvos.yml that builds for the Simulator, launches, and uploads a screenshot artifact.
 - Swift/Xcode could not be run in the Linux sandbox; the first tvos.yml run on the PR is the real check and may need follow-up fixes.
 - Next: fix any CI findings, then item 4 (panes, map, settings).
+
+## 2026-10-14 (fifth run)
+- Main's tvOS CI green (app shell merged as #274). Backlog 4, first slice: Qt-free solar wind parser (`solarwind.cpp`, same fixtures/rules as the Qt oracle), C ABI, and two new cards (solar wind speed, IMF Bz) in the SwiftUI dashboard with Stale/Offline labels. Core tests 8/8 on Linux; Swift verified only by the tvos.yml run on the PR.
+- Next: sun/moon card from the shared solar_position code, then satellites/quakes panes.
