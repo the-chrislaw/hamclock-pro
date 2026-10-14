@@ -120,6 +120,7 @@ ApplicationWindow {
                     dark: Theme.dark
                     uiScale: Theme.scale
                     onTapped: function (lat, lon) { mapTapMenu.openAt(lat, lon) }
+                    onMarkerTapped: function (layer, call, detail, lat, lon) { mapTapMenu.openMarker(layer, call, detail, lat, lon) }
                 }
                 MapTapMenu {
                     id: mapTapMenu

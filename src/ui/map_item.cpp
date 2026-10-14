@@ -112,6 +112,11 @@ void MapItem::mouseReleaseEvent(QMouseEvent* e) {
     if (dragging_ || width() <= 0 || height() <= 0) return;
     const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
     if (vp.scale <= 0) return;
+    const auto hit = hit_test_marker(scene_.overlays, vp, e->position().x(), e->position().y(), 14 * std::max(1.0, scene_.ui_scale));
+    if (hit.marker) {
+        emit markerTapped(hit.layer->id, hit.marker->call, hit.marker->detail, hit.marker->where.latitude, hit.marker->where.longitude);
+        return;
+    }
     const auto loc = vp.location_at(e->position().x(), e->position().y());
     emit tapped(loc.lat, loc.lon);
 }

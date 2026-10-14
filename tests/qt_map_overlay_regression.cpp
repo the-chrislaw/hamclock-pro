@@ -68,6 +68,21 @@ int main(int argc, char** argv) {
     p2.end();
     check(img2.pixelColor(360, 180) != QColor(255, 0, 0), "hidden layer not drawn");
     {
+        // Marker hit test: nearest visible marker within the radius, across world copies.
+        const auto vp = MapViewport::fill(720, 360, 0.0);
+        OverlayMarker a; a.where = {0, 0}; a.call = "A"; a.detail = "first";
+        OverlayMarker b; b.where = {0, 179}; b.call = "B";
+        OverlayLayer ly; ly.id = "h"; ly.markers = {a, b};
+        std::vector<OverlayLayer> layers{ly};
+        auto hit = hit_test_marker(layers, vp, vp.x_of(0) + 5, vp.y_of(0) - 3, 14);
+        check(hit.marker && hit.marker->call == "A" && hit.marker->detail == "first" && hit.layer->id == "h", "hit test finds the marker");
+        check(!hit_test_marker(layers, vp, vp.x_of(0) + 60, vp.y_of(0), 14).marker, "hit test misses outside the radius");
+        hit = hit_test_marker(layers, vp, vp.x_of(-180) + 2, vp.y_of(0), 14);
+        check(hit.marker && hit.marker->call == "B", "hit test wraps across the date line");
+        layers[0].visible = false;
+        check(!hit_test_marker(layers, vp, vp.x_of(0), vp.y_of(0), 14).marker, "hit test ignores hidden layers");
+    }
+    {
         // Issue #141: a painter with a base scale (Retina / contents scale) must place the
         // land exactly where the overlays go. Painting at 1x under scale(2) must match a direct 2x render.
         MapScene s2; s2.de = Location{51.5, -0.1}; s2.dx = Location{-33.9, 151.2};

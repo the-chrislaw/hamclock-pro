@@ -10,6 +10,8 @@ Popup {
     property double latitude: 0
     property double longitude: 0
     property string error: ""
+    property string title: ""   // marker call, empty for a bare map tap
+    property string detail: ""
     padding: Theme.pad
     modal: false
     focus: true
@@ -20,7 +22,13 @@ Popup {
         border.color: Theme.divider
     }
 
-    function openAt(lat, lon) {
+    function openMarker(layer, call, info, lat, lon) {
+        title = call !== "" ? call : layer
+        detail = info
+        openAt(lat, lon, true)
+    }
+    function openAt(lat, lon, keep) {
+        if (keep !== true) { title = ""; detail = "" }
         latitude = lat
         longitude = lon
         error = ""
@@ -39,6 +47,21 @@ Popup {
 
     contentItem: ColumnLayout {
         spacing: Theme.gap
+        Text {
+            visible: menu.title !== ""
+            text: menu.title
+            color: Theme.ink
+            font.pixelSize: Theme.fontBody
+            font.weight: Font.Bold
+        }
+        Text {
+            visible: menu.detail !== ""
+            text: menu.detail
+            color: Theme.secondary
+            font.pixelSize: Theme.fontBody
+            wrapMode: Text.Wrap
+            Layout.maximumWidth: 260 * Theme.scale
+        }
         Text {
             text: Math.abs(menu.latitude).toFixed(2) + (menu.latitude >= 0 ? "°N " : "°S ")
                   + Math.abs(menu.longitude).toFixed(2) + (menu.longitude >= 0 ? "°E" : "°W")
