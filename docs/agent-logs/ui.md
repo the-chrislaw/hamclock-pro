@@ -25,3 +25,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 2)
 - Issue #119: `Card` footer is now a status Text (elides, two lines in non-compact slots) plus a separate age Text that never elides, so the data age is always visible. ctest 82/82; screenshots 800x480 and 1024x600 checked (no fixtures for age, so only the status line shows). ASan/UBSan left to CI. Not validated on a device.
 - #124 (QA docs) had CI still running at start; #73 stale. Next: custom rotation sets per slot (A8), per-widget `compact` audit.
+
+## 2026-10-14 (hourly run, 3)
+- Custom rotation sets per slot (A8): `AppSettings.paneRotationSets`, `togglePaneRotationMember`, `clearPaneRotationSet` (options.ini `panes/setN`, cleared by reset); `PaneSlot` rotates only through the set (empty = all widgets); long-press menu has Add/Remove from rotation and "Rotate all widgets". ctest 84/84; 1024x600 screenshot renders. ASan/UBSan left to CI. Not validated on a device.
+- #132 (area G) had the iPad check still running; #73 stale. Per-widget `compact` audit is in src/widgets (other areas' files), so the mechanism (`Card.compact`) stays here and widget owners adopt it. Next: category picker, side panes.

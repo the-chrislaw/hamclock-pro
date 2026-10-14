@@ -86,6 +86,13 @@ void AppSettings::loadOptions() {
         const int seconds = ini.value(QString("panes/rotate%1").arg(slot), 0).toInt();
         rotations_ << (validRotation(seconds) ? seconds : 0);
     }
+    rotation_sets_.clear();
+    for (int slot = 0; slot < kPaneSlots; ++slot) {
+        QStringList ids;
+        for (const auto& id : ini.value(QString("panes/set%1").arg(slot)).toStringList())
+            if (valid_id.match(id).hasMatch() && id != "none" && !ids.contains(id) && ids.size() < kMaxRotationSet) ids << id;
+        rotation_sets_ << ids;
+    }
 }
 
 QStringList AppSettings::panes() const {
@@ -115,6 +122,44 @@ QString AppSettings::setPaneRotation(int slot, int seconds) {
     return {};
 }
 
+QVariantList AppSettings::paneRotationSets() const {
+    QVariantList result;
+    for (int slot = 0; slot < kPaneSlots; ++slot)
+        result << (slot < rotation_sets_.size() ? rotation_sets_[slot] : QStringList());
+    return result;
+}
+
+QString AppSettings::togglePaneRotationMember(int slot, const QString& widget_id) {
+    static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
+    if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
+    if (!valid_id.match(widget_id).hasMatch() || widget_id == "none") return "Unknown widget.";
+    while (rotation_sets_.size() < kPaneSlots) rotation_sets_ << QStringList();
+    auto ids = rotation_sets_[slot];
+    if (!ids.removeOne(widget_id)) {
+        if (ids.size() >= kMaxRotationSet) return "The rotation set is full.";
+        ids << widget_id;
+    }
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue(QString("panes/set%1").arg(slot), ids);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the rotation set.";
+    rotation_sets_[slot] = ids;
+    emit panesChanged();
+    return {};
+}
+
+QString AppSettings::clearPaneRotationSet(int slot) {
+    if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.remove(QString("panes/set%1").arg(slot));
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the rotation set.";
+    while (rotation_sets_.size() < kPaneSlots) rotation_sets_ << QStringList();
+    rotation_sets_[slot].clear();
+    emit panesChanged();
+    return {};
+}
+
 QString AppSettings::setPane(int slot, const QString& widget_id) {
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
@@ -135,6 +180,7 @@ void AppSettings::resetPanes() {
     ini.sync();
     panes_.clear();
     rotations_.clear();
+    rotation_sets_.clear();
     emit panesChanged();
 }
 

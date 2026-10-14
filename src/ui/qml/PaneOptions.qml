@@ -53,6 +53,24 @@ Popup {
             onClicked: appSettings.setPaneRotation(options.slot, steps[(steps.indexOf(current) + 1) % steps.length])
         }
         AppButton {
+            readonly property var members: appSettings.paneRotationSets[options.slot]
+            readonly property string shown: appSettings.panes[options.slot]
+            readonly property bool inSet: members.indexOf(shown) >= 0
+            width: parent.width
+            visible: appSettings.paneRotations[options.slot] > 0 && shown !== "none"
+            text: members.length === 0 ? "Rotation: all widgets (tap to pick)"
+                  : (inSet ? "Remove from rotation" : "Add to rotation") + " (" + members.length + ")"
+            onClicked: {
+                // From "all widgets", the first tap starts a set holding just this widget.
+                appSettings.togglePaneRotationMember(options.slot, shown)
+            }
+        }
+        AppButton {
+            width: parent.width; text: "Rotate all widgets"
+            visible: appSettings.paneRotationSets[options.slot].length > 0
+            onClicked: appSettings.clearPaneRotationSet(options.slot)
+        }
+        AppButton {
             width: parent.width; text: "Empty pane"
             onClicked: { appSettings.setPane(options.slot, "none"); options.close() }
         }

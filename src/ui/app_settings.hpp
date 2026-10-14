@@ -32,6 +32,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QStringList panes READ panes NOTIFY panesChanged)
     // Seconds between automatic widget changes per slot (0 = off; 5, 10, 30 or 60).
     Q_PROPERTY(QList<int> paneRotations READ paneRotations NOTIFY panesChanged)
+    // Widgets a slot's rotation cycles through, one list per slot (empty list = every widget).
+    Q_PROPERTY(QVariantList paneRotationSets READ paneRotationSets NOTIFY panesChanged)
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
@@ -62,6 +64,7 @@ public:
     QString loadError() const { return load_error_; }
 
     static constexpr int kPaneSlots = 3;
+    static constexpr int kMaxRotationSet = 64;
     QStringList panes() const;
     // Returns an empty string or a user-facing error.
     Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
@@ -69,6 +72,10 @@ public:
     QList<int> paneRotations() const;
     static bool validRotation(int seconds) { return seconds == 0 || seconds == 5 || seconds == 10 || seconds == 30 || seconds == 60; }
     Q_INVOKABLE QString setPaneRotation(int slot, int seconds);
+    QVariantList paneRotationSets() const;
+    // Add the widget to the slot's rotation set, or remove it if present. An empty set means all widgets.
+    Q_INVOKABLE QString togglePaneRotationMember(int slot, const QString& widget_id);
+    Q_INVOKABLE QString clearPaneRotationSet(int slot);
 
     void setAppearance(const QString& appearance);
     // Validate and save; returns an empty string or a user-facing error.
@@ -103,6 +110,7 @@ private:
     QStringList cluster_commands_;
     QStringList watch_list_;
     QList<int> rotations_;
+    QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
 };
