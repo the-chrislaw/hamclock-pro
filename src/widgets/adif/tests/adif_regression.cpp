@@ -48,5 +48,20 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.count() == 4, "loads file");
     check(model.recent().size() == 4 && model.recent()[0].toMap()["call"] == "EA8/DL1ABC", "newest first");
     check(model.worked("dl1abc") && model.worked("W1AW/P") && !model.worked("N0CALL"), "worked-before ignores portable parts");
+
+    // NADXCC / NABand with a synthetic resolver (EA8 -> EA8, W/K -> K, DL -> DL).
+    model.setEntityResolver([](const QString& c) {
+        const QString b = adif::base_call(c);
+        return c.startsWith("EA8/") ? QString("EA8") : b.startsWith("DL") ? QString("DL") : b.startsWith("W") || b.startsWith("K") ? QString("K") : QString();
+    });
+    check(model.state() == "live", "reloaded after resolver change");
+    check(!model.entityNeeded("W9XYZ") && !model.entityNeeded("VK9XX"), "worked entity / unknown entity not needed");
+    check(model.entityNeeded("DL5ABC") && !model.entityNeeded("EA8/DL1ABC"), "operating prefix decides the entity");
+    check(!model.bandSlotNeeded("K2AAA", "20m") && !model.bandSlotNeeded("K2AAA", "20M") && model.bandSlotNeeded("K2AAA", "15m"), "band slot needed only when entity+band unworked");
+    check(!model.bandSlotNeeded("EA8/XX1X", "40m") && model.bandSlotNeeded("EA8/XX1X", "20m") && !model.bandSlotNeeded("VK9XX", "20m"), "slots per entity; unknown entity never needed");
+    model.setEntityResolver([](const QString& c) { return c == "N0CALL" ? QString("ZZ") : QString("K"); });
+    check(model.entityNeeded("N0CALL") && model.bandSlotNeeded("N0CALL", "20m"), "unworked entity needed");
+    model.load("");
+    check(!model.entityNeeded("N0CALL") && !model.bandSlotNeeded("N0CALL", "20m"), "unloaded log never claims needed");
     return failures ? 1 : 0;
 }

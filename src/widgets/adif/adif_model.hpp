@@ -5,6 +5,7 @@
 #include <QFileSystemWatcher>
 #include <QSet>
 #include <QVariantList>
+#include <functional>
 
 namespace hamclock {
 
@@ -25,6 +26,13 @@ public:
     QVariantList recent() const;  // newest first: {call, band, mode, grid, age}
     // True when the callsign (portable suffixes ignored) is already in the log.
     Q_INVOKABLE bool worked(const QString& call) const;
+    // NADXCC / NABand: true when no QSO in the log is with the call's DXCC entity (any band),
+    // or none with that entity on that band. Unknown entities and an unloaded log report false
+    // (never claim "needed" without data).
+    Q_INVOKABLE bool entityNeeded(const QString& call) const;
+    Q_INVOKABLE bool bandSlotNeeded(const QString& call, const QString& band) const;
+    // Call -> DXCC primary prefix; default is the bundled table (tests inject one).
+    void setEntityResolver(std::function<QString(const QString&)> resolver);
     void load(const QString& path);
 
 signals:
@@ -38,6 +46,9 @@ private:
     bool loaded_ = false;
     std::vector<adif::Qso> qsos_;  // newest first
     QSet<QString> calls_;
+    QSet<QString> entities_, slots_;  // primary prefix; "prefix|band"
+    std::function<QString(const QString&)> entity_of_;
+    QString entityFor(const QString& call) const;
 };
 
 void register_widget_adif(WidgetRegistry& registry, const WidgetContext& context);
