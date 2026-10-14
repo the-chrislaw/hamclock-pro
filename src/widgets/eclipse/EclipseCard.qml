@@ -20,6 +20,8 @@ Card {
         Text { text: root.v(root.widget ? root.widget.when : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
         Text { visible: root.rowsFit >= 3; text: "In"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text { visible: root.rowsFit >= 3; text: root.v(root.widget ? root.widget.countdown : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
+        Text { visible: root.rowsFit >= 3 && root.widget && root.widget.visibility !== ""; text: "At DE"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+        Text { visible: root.rowsFit >= 3 && root.widget && root.widget.visibility !== ""; text: root.widget ? root.widget.visibility : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
         Text { visible: root.rowsFit >= 4; text: "Path"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text { visible: root.rowsFit >= 4; text: root.v(root.widget ? root.widget.detail : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
     }

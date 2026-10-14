@@ -105,3 +105,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - "More passes" (owner request #246, D3 detail box): the detail box lists the next four passes of the tapped satellite (day, HH:mmZ, peak elevation) on a wrapped "Then ..." line. The model keeps up to five passes per satellite from the existing search; the list rows are unchanged. Test checks at most four later passes with a time and a peak at or above the 10 degree threshold. Full ctest passes (138/138); screenshots and ASan/UBSan left to CI.
 - Not mine: #73 conflicting; left alone. No other `[D]` QA issues.
 - Next: Show track / Set as DX (needs G's tap mechanism), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 19
+- Eclipse visibility at DE (backlog D9, domain + pane): `eclipse_visibility()` scans +-4 h around the global greatest eclipse (2 min steps), keeps samples with the Sun up and takes the minimum Sun-Moon topocentric separation; under 0.40 deg is Visible, 0.40-0.64 Borderline (Moon ephemeris is ~0.1 deg), else None. The Eclipse card shows an "At DE" row when a station is set. Test (2024-04-08): Dallas and Denver visible, London, Sydney (night) and Honolulu not; invalid latitude throws. No local magnitude or contact times (needs Besselian elements). Screenshots/ASan left to CI.
+- Not mine: #73 conflicting; #273/#274 CI still running. No new `[D]` QA issues.
+- Next: pass alerts, settings control for tracked satellites, moon image (D12), hams.at pane (D8).

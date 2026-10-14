@@ -1,5 +1,8 @@
 #include "astro_eclipse.hpp"
+#include "astro_moon.hpp"
+#include "solar_position.hpp"
 #include <cmath>
+#include <stdexcept>
 
 namespace hamclock {
 namespace {
@@ -78,5 +81,30 @@ const char* solar_eclipse_type_name(SolarEclipseType t) {
     case SolarEclipseType::Hybrid: return "Hybrid";
     }
     return "";
+}
+
+EclipseLocal eclipse_visibility(const SolarEclipse& e, double lat, double lon) {
+    if (!std::isfinite(lat) || !std::isfinite(lon) || lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+        throw std::invalid_argument("invalid location");
+    EclipseLocal out{EclipseVisibility::None, 180.0, 0.0};
+    const double la = rad(lat);
+    for (int s = -240; s <= 240; s += 2) {
+        const UtcSeconds t{e.greatest.value + s * 60};
+        const SubsolarPoint sub = subsolar_point(t);
+        const double sun_el = solar_elevation_deg(sub, lat, lon);
+        if (sun_el <= 0.0) continue;
+        // Sun azimuth from north from its declination and hour angle (west positive).
+        const double dec = rad(sub.latitude_deg), h = rad(lon - sub.longitude_deg);
+        const double sun_az = std::atan2(std::sin(h), std::cos(h) * std::sin(la) - std::tan(dec) * std::cos(la)) + kPi;
+        const MoonHorizontal m = moon_horizontal(t, lat, lon);
+        const double se = rad(sun_el), me = rad(m.elevation_deg), da = sun_az - rad(m.azimuth_deg);
+        double c = std::sin(se) * std::sin(me) + std::cos(se) * std::cos(me) * std::cos(da);
+        c = std::fmax(-1.0, std::fmin(1.0, c));
+        const double sep = std::acos(c) * 180.0 / kPi;
+        if (sep < out.min_separation_deg) { out.min_separation_deg = sep; out.sun_elevation_deg = sun_el; }
+    }
+    if (out.min_separation_deg < 0.40) out.visibility = EclipseVisibility::Visible;
+    else if (out.min_separation_deg < 0.64) out.visibility = EclipseVisibility::Marginal;
+    return out;
 }
 }

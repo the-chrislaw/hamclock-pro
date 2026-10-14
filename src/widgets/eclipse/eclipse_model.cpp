@@ -1,36 +1,58 @@
 #include "eclipse_model.hpp"
+#include "../../ui/app_settings.hpp"
 #include <QDateTime>
 #include <QTimeZone>
 
 namespace hamclock {
-
-EclipseSummary summarize_eclipse(UtcSeconds now) {
+namespace {
+EclipseSummary describe(const SolarEclipse& e, UtcSeconds now) {
     EclipseSummary out;
-    const auto e = next_solar_eclipse(now);
-    if (!e) return out;
-    out.kind = QString("%1 solar eclipse").arg(solar_eclipse_type_name(e->type));
-    out.when = QDateTime::fromSecsSinceEpoch(e->greatest.value, QTimeZone::utc()).toString("d MMM yyyy HH:mm") + "Z";
-    const std::int64_t minutes = (e->greatest.value - now.value) / 60;
+    out.kind = QString("%1 solar eclipse").arg(solar_eclipse_type_name(e.type));
+    out.when = QDateTime::fromSecsSinceEpoch(e.greatest.value, QTimeZone::utc()).toString("d MMM yyyy HH:mm") + "Z";
+    const std::int64_t minutes = (e.greatest.value - now.value) / 60;
     const std::int64_t days = minutes / 1440;
     out.countdown = days >= 1 ? QString("in %1 d").arg(days)
                               : QString("in %1 h %2 min").arg(minutes / 60).arg(minutes % 60, 2, 10, QChar('0'));
-    out.detail = e->type == SolarEclipseType::Partial
-        ? QString("Magnitude %1, greatest eclipse").arg(e->magnitude, 0, 'f', 2)
-        : QString("Central, gamma %1").arg(e->gamma, 0, 'f', 2);
+    out.detail = e.type == SolarEclipseType::Partial
+        ? QString("Magnitude %1, greatest eclipse").arg(e.magnitude, 0, 'f', 2)
+        : QString("Central, gamma %1").arg(e.gamma, 0, 'f', 2);
+    return out;
+}
+} // namespace
+
+EclipseSummary summarize_eclipse(UtcSeconds now) {
+    const auto e = next_solar_eclipse(now);
+    return e ? describe(*e, now) : EclipseSummary{};
+}
+
+EclipseSummary summarize_eclipse(UtcSeconds now, double lat, double lon) {
+    const auto e = next_solar_eclipse(now);
+    if (!e) return {};
+    EclipseSummary out = describe(*e, now);
+    switch (eclipse_visibility(*e, lat, lon).visibility) {
+    case EclipseVisibility::Visible: out.visibility = "Visible at DE"; break;
+    case EclipseVisibility::Marginal: out.visibility = "Borderline at DE"; break;
+    case EclipseVisibility::None: out.visibility = "Not visible at DE"; break;
+    }
     return out;
 }
 
-EclipseModel::EclipseModel(const WidgetContext&, QObject* parent)
-    : WidgetModel("eclipse", "Next eclipse", parent) {
+EclipseModel::EclipseModel(const WidgetContext& context, QObject* parent)
+    : WidgetModel("eclipse", "Next eclipse", parent), settings_(context.settings) {
     timer_.setInterval(60 * 1000);
     connect(&timer_, &QTimer::timeout, this, &EclipseModel::recompute);
+    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &EclipseModel::recompute);
 }
 
 void EclipseModel::start() { recompute(); timer_.start(); }
 
 void EclipseModel::recompute() {
-    s_ = summarize_eclipse(UtcSeconds{now().toSecsSinceEpoch()});
-    setState("live", "Computed offline from the system clock (Meeus ch. 54); worldwide, not visibility at your station", now());
+    const UtcSeconds t{now().toSecsSinceEpoch()};
+    const bool station = settings_ && settings_->configured();
+    s_ = station ? summarize_eclipse(t, settings_->deLatitude(), settings_->deLongitude()) : summarize_eclipse(t);
+    setState("live", station ? "Computed offline from the system clock (Meeus ch. 54); visibility at DE is approximate"
+                             : "Computed offline from the system clock (Meeus ch. 54); worldwide, set your station for visibility",
+             now());
     emit changed();
 }
 
