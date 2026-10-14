@@ -76,3 +76,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues. #186 (apple, not mine) still had macOS/iPad queued so was not merged; #73 (docs) not mergeable; left alone.
 - G0 slice 5 (PR agent/map-marker-tap): tapping an overlay marker opens the tap popup with the marker's call and optional `OverlayMarker::detail` line plus Set DE / Set DX at the marker position. New pure `hit_test_marker` (visible layers only, nearest within 14 px x ui scale, world copies either side checked); `MapItem::markerTapped`. Shared file: Main.qml (one handler). Test: extended `qt-map-overlay-regression`. 1024x600 offscreen render unchanged (CLI cannot open the popup). ASan/UBSan left to CI. Not validated on device.
 - Next: G0 slice 6/G4 projection entry (Mercator centre longitude, azimuthal, Robinson); G5 azimuth rings and zones (need dataset licence record).
+
+## 2026-10-14 (UTC, run 10)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #201 (apple, not mine) CI still running, #73 (docs) left alone.
+- G5 slice (PR agent/map-azimuth-rings): Map menu Grid gains "Rings": great-circle distance rings every 30 degrees of arc (3336 km) around DE (`ring_points`, pure; seam-split by the renderer; only drawn when DE is set). `MapGrid::AzimuthRings = 4`, persisted in options.ini `[map] grid`. Test: extended `qt-map-view-options-regression` (every ring point at the exact arc distance, render differs with DE). Screenshot fixtures have no DE so rings are not visible there; covered by the render test. ASan/UBSan left to CI. Not validated on device.
+- Next: projection entry (Mercator centre longitude, azimuthal, Robinson); CQ/ITU zones (need dataset licence record).

@@ -80,7 +80,7 @@ Popup {
         RowLayout {
             spacing: Theme.gap / 2
             Repeater {
-                model: [{ t: "None", g: 0 }, { t: "Tropics", g: 1 }, { t: "Lat/Lng", g: 2 }, { t: "Maidenhead", g: 3 }]
+                model: [{ t: "None", g: 0 }, { t: "Tropics", g: 1 }, { t: "Lat/Lng", g: 2 }, { t: "Maidenhead", g: 3 }, { t: "Rings", g: 4 }]
                 Toggle { label: modelData.t; on: menu.map && menu.map.grid === modelData.g
                          onClicked: menu.map.grid = modelData.g }
             }

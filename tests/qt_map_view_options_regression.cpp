@@ -1,3 +1,4 @@
+#include <cmath>
 #include "../src/map/view_options.hpp"
 #include "../src/map/map_renderer.hpp"
 #include <QGuiApplication>
@@ -71,6 +72,18 @@ int main(int argc, char** argv) {
     gs.grid = MapGrid::Maidenhead;
     check(render(gs) != plain, "grid changes the render");
 
+    // Azimuth rings: every point is the requested arc distance from DE, drawn only with DE.
+    for (const auto& pt : ring_points(40.0, -75.0, 60.0)) {
+        const double r = 3.14159265358979323846 / 180.0;
+        const double c = std::sin(40 * r) * std::sin(pt.lat * r) + std::cos(40 * r) * std::cos(pt.lat * r) * std::cos((pt.lon + 75.0) * r);
+        check(std::fabs(std::acos(std::fmax(-1.0, std::fmin(1.0, c))) / r - 60.0) < 1e-6, "ring point at 60 deg from DE");
+    }
+    check(ring_points(0, 0, 90).size() == 121 && std::fabs(ring_points(10, 20, 30).front().lat - ring_points(10, 20, 30).back().lat) < 1e-9 , "ring sampled");
+    check(grid_lines(MapGrid::AzimuthRings).empty(), "rings are not graticule lines");
+    gs.grid = MapGrid::AzimuthRings;
+    const auto norings = render(gs);
+    gs.de = Location{40.0, -75.0};
+    check(render(gs) != norings, "azimuth rings drawn around DE");
     // Night shade off removes the shading from the render.
     MapScene sc; sc.sun = SubsolarPoint{20.0, 0.0}; sc.night_shade = true;
     const auto on = render(sc);

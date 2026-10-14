@@ -144,6 +144,19 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                                      px(split.segments[j].second.x, split.segments[j].second.y));
             }
         }
+        if (scene.grid == MapGrid::AzimuthRings && scene.de) {
+            QPen gp(dark ? QColor(230, 238, 240, 110) : QColor(27, 42, 48, 100)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp);
+            for (double d = azimuth_ring_step_deg; d < 180.0; d += azimuth_ring_step_deg) {
+                const auto ring = ring_points(scene.de->latitude, scene.de->longitude, d);
+                for (std::size_t i = 1; i < ring.size(); ++i) {
+                    const auto split = map_split_equirectangular({ring[i - 1].lat, ring[i - 1].lon}, {ring[i].lat, ring[i].lon});
+                    for (std::size_t j = 0; j < split.count; ++j)
+                        painter.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
+                                         px(split.segments[j].second.x, split.segments[j].second.y));
+                }
+            }
+        }
         if (scene.de && scene.dx) {
             painter.setPen(QPen(route, 2)); painter.setBrush(sea);
             const auto de = at(*scene.de), dx = at(*scene.dx);
