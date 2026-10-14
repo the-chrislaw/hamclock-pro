@@ -112,6 +112,22 @@ int main(int argc, char** argv) {
         bool known = name == "AO-7" || name == "ISS" || name == "SO-50" || name == "FO-29" || name == "AO-91";
         check(!known || !tx.isEmpty(), "transmitters joined by NORAD id for a satellite in the fixture");
         for (const auto& v : tx) check(v.toMap()["down"].toString().endsWith("MHz") || v.toMap()["up"].toString().endsWith("MHz"), "transmitter frequencies formatted");
+        {
+            // Show/hide track: toggles the first row's satellite in the saved choice.
+            const bool was = d["tracked"].toBool();
+            model.toggleTracked();
+            check(model.detail()["tracked"].toBool() == !was, "toggleTracked flips the tracked state");
+            QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+            check(ini.value("satellites/tracked").toStringList().contains(name, Qt::CaseInsensitive) == !was, "choice saved to options.ini");
+            model.toggleTracked();
+            check(model.detail()["tracked"].toBool() == was, "toggled back");
+            ini.remove("satellites/tracked");
+            ini.sync();
+            model.recompute();
+        }
+        check(toggle_tracked_names({}, "AO-7") == QStringList({"AO-7"}) &&
+              toggle_tracked_names({"AO-7", "ISS"}, "iss") == QStringList({"AO-7"}) &&
+              toggle_tracked_names({"AO-7", "ISS"}, "FO-29") == QStringList({"ISS", "FO-29"}), "toggle_tracked_names");
         model.selectRow(0);
         check(model.detail().isEmpty(), "second tap closes the detail");
         check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&

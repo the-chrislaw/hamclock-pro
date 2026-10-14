@@ -70,6 +70,18 @@ std::vector<Tle> choose_tracked(const std::vector<Tle>& tles, const QStringList&
     return out;
 }
 
+QStringList toggle_tracked_names(const QStringList& current, const QString& name) {
+    QStringList out;
+    bool removed = false;
+    for (const QString& c : current) {
+        if (c.compare(name, Qt::CaseInsensitive) == 0) removed = true;
+        else out << c;
+    }
+    if (!removed) out << name;
+    while (out.size() > kMaxTracked) out.removeFirst();
+    return out;
+}
+
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time) {
     OverlayLayer layer;
     layer.id = "satellites";
@@ -145,6 +157,8 @@ void SatellitesModel::recompute() {
     }
     std::vector<Tle> tracked = choose_tracked(tles, wanted);
     auto publish_layer = [&](const std::vector<Tle>& pick) {
+        tracked_names_.clear();
+        for (const Tle& tle : pick) tracked_names_ << satellite_short_name(QString::fromStdString(tle.name));
         if (pick.empty()) MapOverlays::instance().remove_layer("satellites");
         else MapOverlays::instance().set_layer(satellite_overlay_layer(pick, t));
     };
@@ -206,6 +220,15 @@ void SatellitesModel::selectRow(int index) {
     refresh_detail();
 }
 
+void SatellitesModel::toggleTracked() {
+    if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_) return;
+    const QString name = satellite_short_name(QString::fromStdString(listed_[selected_].tle.name));
+    QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+    ini.setValue("satellites/tracked", toggle_tracked_names(tracked_names_, name));
+    ini.sync();
+    recompute();
+}
+
 void SatellitesModel::refresh_detail() {
     QVariantMap d;
     if (selected_ >= 0 && selected_ < static_cast<int>(listed_.size()) && settings_ && settings_->configured()) {
@@ -216,6 +239,7 @@ void SatellitesModel::refresh_detail() {
         LookAngle la;
         if (p.valid() && p.look(t, obs, la)) {
             d["name"] = satellite_short_name(QString::fromStdString(l.tle.name));
+            d["tracked"] = tracked_names_.contains(d["name"].toString(), Qt::CaseInsensitive);
             d["az"] = qRound(la.az_deg);
             d["compass"] = compass_point(la.az_deg);
             d["el"] = qRound(la.el_deg);

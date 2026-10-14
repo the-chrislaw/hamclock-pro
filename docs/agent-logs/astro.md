@@ -120,3 +120,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Pass alert (backlog D7, partial): `pass_alert_text` gives "NAME rises in N min" within 5 min of AOS and "NAME above horizon" during a pass; the Satellites model exposes it as `alert` and the card shows it as an accent line, with the matching row highlighted. No sound/notification and no settings for the lead time yet. Unit test covers the boundaries; satellites tests pass. No screenshot (alert only shows when a pass is imminent, which the fixtures do not produce); ASan/UBSan left to CI.
 - Not mine: #288/#289 CI still running at start, #73 conflicting; left alone. No new `[D]` QA issues.
 - Next: settings control for tracked satellites, user-supplied TLE, hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 22
+- Show/Hide track (D3 detail box; stands in for the settings control): the detail box has a "Show track on map" / "Hide track on map" action that adds or removes the satellite in `[satellites] tracked=` (max two, oldest drops off) and republishes the map layer. Pure `toggle_tracked_names` plus a model test of the flip and the saved ini value. Full ctest passes (142/142); no screenshot (the detail box needs a tap); ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #294/#296/#297/#298 CI still running at start. No new `[D]` QA issues.
+- Next: Set as DX (needs G's tap mechanism), user-supplied TLE, hams.at pane (D8).

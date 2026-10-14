@@ -43,6 +43,9 @@ public:
     QString alert() const { return alert_; }
     // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
     Q_INVOKABLE void selectRow(int index);
+    // Adds the open detail's satellite to the map tracks, or removes it if already tracked; saved
+    // to [satellites] tracked= in options.ini (at most kMaxTracked, the oldest choice drops off).
+    Q_INVOKABLE void toggleTracked();
 
 signals:
     void changed();
@@ -67,6 +70,7 @@ private:
     int selected_ = -1;
     QVariantMap detail_;
     QString alert_;
+    QStringList tracked_names_;   // short names currently drawn on the map
     QTimer detail_timer_;
 };
 
@@ -88,6 +92,10 @@ std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
 constexpr int kMaxTracked = 2;
 // The sets whose short name matches `wanted` (case-insensitive, in order), at most kMaxTracked.
 std::vector<Tle> choose_tracked(const std::vector<Tle>& tles, const QStringList& wanted);
+
+// `current` with `name` removed if present (case-insensitive), else appended; only the last
+// kMaxTracked entries are kept.
+QStringList toggle_tracked_names(const QStringList& current, const QString& name);
 
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);
