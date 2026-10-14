@@ -80,6 +80,8 @@ public:
     Q_INVOKABLE void resetView();
     // Drag pan by pixels (only effective when zoomed in).
     Q_INVOKABLE void panBy(double dx, double dy);
+    // Zoom by a factor about a pixel (pinch, wheel, double tap); flat map only.
+    Q_INVOKABLE void zoomAt(double x, double y, double factor);
     void paint(QPainter* painter) override;
 
 signals:
@@ -106,6 +108,8 @@ protected:
     void mousePressEvent(QMouseEvent* e) override;
     void mouseMoveEvent(QMouseEvent* e) override;
     void mouseReleaseEvent(QMouseEvent* e) override;
+    void mouseDoubleClickEvent(QMouseEvent* e) override;
+    void wheelEvent(QWheelEvent* e) override;
 
 private:
     QPointF press_, last_;

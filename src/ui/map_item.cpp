@@ -5,6 +5,8 @@
 #include <QDateTime>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QWheelEvent>
+#include <cmath>
 #include <algorithm>
 #include <exception>
 
@@ -90,6 +92,36 @@ void MapItem::setZoom(double z) {
     if (z <= 1.0) { scene_.pan_lon.reset(); scene_.pan_lat.reset(); }
     emit zoomChanged();
     update();
+}
+
+// Zoom by `factor` keeping the location under (x, y) fixed; flat map only.
+void MapItem::zoomAt(double x, double y, double factor) {
+    if (scene_.projection != MapProjection::Equirectangular || width() <= 0 || height() <= 0 || !(factor > 0)) return;
+    const auto before = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
+    if (before.scale <= 0) return;
+    const auto at = before.location_at(x, y);
+    const double z = std::clamp(scene_.zoom * factor, 1.0, MapViewport::max_zoom);
+    if (z == scene_.zoom) return;
+    setZoom(z);
+    if (z <= 1.0) return;
+    const auto after = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
+    const auto c = after.center_for_anchor(at, x, y);
+    scene_.pan_lon = c.lon;
+    scene_.pan_lat = c.lat;
+    update();
+}
+
+void MapItem::wheelEvent(QWheelEvent* e) {
+    const double dy = e->angleDelta().y();
+    if (dy == 0) return;
+    zoomAt(e->position().x(), e->position().y(), std::pow(1.0015, dy)); // 120 units (one notch) ~ 1.2x
+    e->accept();
+}
+
+void MapItem::mouseDoubleClickEvent(QMouseEvent* e) {
+    dragging_ = true; // the second release of a double tap is not a Set DE/DX tap
+    zoomAt(e->position().x(), e->position().y(), scene_.zoom >= MapViewport::max_zoom ? 1.0 / MapViewport::max_zoom : 2.0);
+    if (scene_.zoom <= 1.0) resetView();
 }
 
 void MapItem::resetView() {

@@ -26,6 +26,10 @@ struct MapViewport {
     // Inverse of x_of/y_of for a pixel inside the item; latitude is clamped to +/-90.
     struct LatLon { double lat, lon; };
     LatLon location_at(double px, double py) const;
+    // Centre (lon, lat) that puts location `at` under pixel (px, py) at this scale.
+    LatLon center_for_anchor(LatLon at, double px, double py) const {
+        return {at.lat + (py - height / 2.0) / scale, at.lon - (px - width / 2.0) / scale};
+    }
     double world_width() const { return 360.0 * scale; }
     double world_height() const { return 180.0 * scale; }
     // Pixel x of normalized map x=0 (the -180 meridian) in the central copy.
