@@ -90,7 +90,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 **Audit additions (C):**
 6. WSPR and RBN in Live Spots: of DE / by DE, by call or grid, max distance or count, band statistics, map paths.
 7. More On-The-Air programmes (WWFF, IOTA, GMA, LLOTA, WWTOTA, TOWERS, WWBOTA) with age/sort/mode/band filters.
-8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent).
+8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only) — ✅ first slice (card, fixed 100 km; settings and map overlay later). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent).
 12. UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
 13. Cluster login with SSID and native commands after login.
 14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
@@ -206,7 +206,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Partial: decimal only; add DMS and grid entry (see A0b) |
 | DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port, login SSID (1–99) and receive-only post-login commands done; watch list and UDP spot input (N1MM/DXLog `<spot>` XML or plain "DX de" lines, off by default, localhost or LAN) done; WSJT-X binary protocol, multicast, "UDP sets DX" missing |
 | **HamAlert.org** telnet login + password | Personal spot alerts | C | Partial: user/password saved in the owner-only credentials file (password C++ only), pane connects to hamalert.org:7300; no map overlay, trigger names or per-alert filters yet |
-| **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Missing |
+| **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Partial: card lists nearest stations within a fixed 100 km (plain and compressed positions); server, radius setting and map overlay missing |
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
 | gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
