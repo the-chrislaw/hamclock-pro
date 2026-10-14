@@ -19,3 +19,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H3 slice 1: NWS marine warnings pane (`src/widgets/marine`): api.weather.gov alerts parser, model (worst alert, area, issued/until, counts by type; expired alerts dropped by clock), compact card. Fixture is a real capture (2026-10-13 22:52Z) trimmed to 6 alerts and named `active` to match the fixture transport. Terms recorded in the roadmap. Screenshots checked at 800x480, 1024x600, 1920x1080 light/dark; ASan/UBSan run clean.
 - Next: H3 slice 2: fire-weather (Red Flag Warning) pane in `firewx`, then marine region filter; then lightning.
 - Blocked: nothing.
+
+## 2026-10-14 00:00 UTC
+- Step 1: #107 (area G overlay API) had macOS/Pi jobs still running, #73 mergeable state unknown; left alone. No PRs of mine open. No `qa` issues for [H].
+- H3 slice 2: fire-weather pane (`src/widgets/firewx`): same api.weather.gov alerts feed (Red Flag Warning, Fire Weather Watch, Fire Warning, Extreme Fire Danger), model with short headline for compact cards, "starts ..." line for future watches, issued/until times, expired alerts dropped by clock. Fixture is a real capture (2026-10-13 23:51Z); no Red Flag Warning was active then, so it holds one Fire Weather Watch (no invented data; Red Flag handled by rank/sort unit checks only). Screenshots checked at 800x480, 1024x600, 1920x1080 light/dark (fixed headline clip and caption fall-through). ASan/UBSan run clean.
+- Note: marine and firewx fixtures are both named `active` (URL path), so screenshot runs need separate `--fixtures` dirs.
+- Next: marine region filter, then lightning (blocked on a terms-checked source), quakes/storms overlays once #107 merges.
+- Blocked: nothing.
