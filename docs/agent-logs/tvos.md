@@ -10,3 +10,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (second run)
 - Backlog 2: added .github/workflows/tvos.yml (macos-14: host build + tests, tvOS Simulator cross build, tests run via simctl spawn) and a standalone Qt-free cmake/TvOSCore project + cmake/TvOSToolchain.cmake. Shared CMake untouched (no option needed yet). Linux verified natively: 5/5 core tests pass.
 - Issue #157 still has no owner reply. Next: item 3 needs the Qt-free SWPC parser port (blocked on #157 answer 1/4); will proceed once answered.
+
+## 2026-10-14 (third run)
+- Owner approved all four design recommendations on #157 (compat layer, TV panes, iCloud KVS settings, HCP_CORE_WITHOUT_QT). Design PR and tvos.yml already merged.
+- Backlog 3 prep: Qt-free SWPC port in apple/tvos/Core (strict JSON reader + Kp/flux/X-ray parsers, ISO time). Tested on the same real NOAA fixtures as the Qt oracle; added to the standalone TvOSCore build (6/6 pass on Linux). Other areas' parsers untouched, so no shared CMake option was needed yet.
+- Next: SwiftUI app target (Space weather + clock) with C bridge to this core and Simulator screenshot artifact.
