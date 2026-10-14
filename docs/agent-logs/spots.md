@@ -78,3 +78,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Not verified: port 14580 is not reachable from the sandbox, so the live login reply is untested. Card not on the default dashboard, so no screenshots; not added to the pane chooser (area A's file); not validated on device.
 - Not done: radius/server settings, map overlay, Mic-E decoding, Meshtastic, band-activity heatmap.
 - Next: APRS map overlay, HamAlert map overlay, OTA filter controls in Settings, DXCC use in labels and watch entries.
+
+## 2026-10-14 (run 14)
+- Step 1: nothing of mine open; #205 (qa log) has a failing iPad Simulator check and #73 is stale, both other areas', left alone. No open `[C]` qa issues.
+- Backlog item 11 (slice): new `bandactivity/band_activity.hpp` (`summarize`: per-band spot totals split by continent, in band order, resolver injected). `DxSpotList::activity()` uses it with the bundled DXCC table; `DxClusterModel.activity` property feeds a "Busiest 20m · 12 (EU 7 NA 5)" line in the DX cluster card (continent split hidden in compact mode). No AppSettings change. Tests pass normally and under ASan/UBSan (leak check off).
+- Not done: standalone band × continent heatmap pane, PSKReporter/WSPR/RBN as sources, screenshots (cluster stays Not configured without a callsign, so the line cannot be rendered here). Not validated on device.
+- Next: APRS/HamAlert map overlays, OTA filter controls in Settings, DXCC country in card/labels, Meshtastic.
