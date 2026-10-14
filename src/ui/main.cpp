@@ -51,7 +51,10 @@ constexpr int kSmallScreenHeight = 800;
 hamclock::Transport fixture_transport(const QString& dir) {
     return [dir](const QUrl& url, hamclock::FetchDone done) {
         hamclock::FetchResult result;
-        QFile file(QDir(dir).filePath(QFileInfo(url.path()).fileName()));
+        // A trailing slash (Launch Library) falls back to the last path segment.
+        auto path = url.path();
+        while (path.endsWith('/')) path.chop(1);
+        QFile file(QDir(dir).filePath(QFileInfo(path).fileName()));
         if (file.open(QIODevice::ReadOnly)) {
             result.http_status = 200;
             result.body = file.readAll();

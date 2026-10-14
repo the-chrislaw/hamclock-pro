@@ -125,3 +125,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Show/Hide track (D3 detail box; stands in for the settings control): the detail box has a "Show track on map" / "Hide track on map" action that adds or removes the satellite in `[satellites] tracked=` (max two, oldest drops off) and republishes the map layer. Pure `toggle_tracked_names` plus a model test of the flip and the saved ini value. Full ctest passes (142/142); no screenshot (the detail box needs a tap); ASan/UBSan left to CI.
 - Not mine: #73 conflicting; #294/#296/#297/#298 CI still running at start. No new `[D]` QA issues.
 - Next: Set as DX (needs G's tap mechanism), user-supplied TLE, hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 23
+- Launches pane (backlog D13, first slice): new `launches` widget parses Launch Library 2 upcoming launches (hourly, cached, Data source policy updated); card shows the next launch with a T- countdown (past launches dropped after a 2 h grace), provider, site, status and the next three in non-compact slots; approximate times marked. Shared changes: `launches` added to the Sky & Space category in PaneChooser.qml; the `--fixtures` transport now ignores a trailing slash in the URL path (backward compatible). Full ctest passes (144/144); rendered offscreen at 800x480 and 1024x600 and 1920x1080 (not on-device), no truncation. ASan/UBSan left to CI.
+- Not mine: #306 CI running, #73 conflicting; left alone. No new `[D]` QA issues.
+- Next: balloons pane (D14), user-supplied TLE, hams.at pane (D8, needs API docs), launch pad map markers.
