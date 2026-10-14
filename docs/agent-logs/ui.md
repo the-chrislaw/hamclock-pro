@@ -78,3 +78,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 15)
 - Backlog A13 slice: the station card shows a callsign banner (configured stations only); tapping it cycles call / "ON AIR" / "73 DE call" (`banner_text.hpp`, `StationModel.bannerText/cycleBanner`, `banner-text-regression`). Per session only; fg/bg colours, rainbow and custom titles are pending. The fixture station is unconfigured, so the banner was not visible in 800x480, 1024x600, 1920x1080 screenshots (no regressions seen). ctest 133/133; ASan/UBSan left to CI. Not validated on a device.
 - #236 (area G) checks running; #73 stale; neither mine. Next: "Find" request slice, side panes.
+
+## 2026-10-14 (hourly run, 16)
+- Backlog 0b slice: Settings > Station has a "Find a place" field and Find button. `LocationTools::search` makes one Nominatim request per press through the shared transport (honest User-Agent, max 1 request/s, min 3 characters, errors and "No match" shown) and fills latitude, longitude and grid. Offline test extended (`location-tools-regression`: injected transport, rate limit, failure). ctest 135/135. Not done: time zone suggestion from the result, "Use my location". Settings is not reachable from `--screenshot`, so layout was not checked visually. ASan/UBSan left to CI. Not validated on a device.
+- #73 (conflicting, docs) and #242 (area F, no checks yet) open; neither mine, left alone.

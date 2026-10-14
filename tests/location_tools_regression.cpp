@@ -1,5 +1,6 @@
 #include "ui/location_tools.hpp"
 
+#include <QCoreApplication>
 #include <QFile>
 #include <cmath>
 #include <cstdio>
@@ -11,6 +12,7 @@ static int failures = 0;
 static bool near(double a, double b, double eps = 1e-4) { return std::fabs(a - b) < eps; }
 
 int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
     LocationTools t;
     CHECK(near(t.parseCoordinate("40.5", true), 40.5));
     CHECK(near(t.parseCoordinate("-74", false), -74));
@@ -46,5 +48,30 @@ int main(int argc, char** argv) {
     }
     CHECK(t.parseSearchReply("not json").isEmpty());
     CHECK(t.parseSearchReply("[{\"lat\":\"x\",\"lon\":\"1\"},{\"lat\":\"95\",\"lon\":\"1\"}]").isEmpty());
+    // Search: injected transport, one request per second, errors reported.
+    {
+        LocationTools s;
+        QVariantList got; QString err; int signals_seen = 0, calls = 0;
+        QUrl seen;
+        QObject::connect(&s, &LocationTools::searchFinished, [&](const QVariantList& r, const QString& e) { got = r; err = e; ++signals_seen; });
+        s.search("Portland");
+        CHECK(signals_seen == 1 && !err.isEmpty());                  // no transport
+        QFile f2(argc > 1 ? argv[1] : ""); f2.open(QIODevice::ReadOnly);
+        const QByteArray body = f2.readAll();
+        s.setTransport([&](const QUrl& u, hamclock::FetchDone done) { ++calls; seen = u; done({200, body, {}}); });
+        s.search("ab");
+        CHECK(calls == 0 && !err.isEmpty());                         // too short
+        s.search("Portland, Oregon");
+        CHECK(calls == 1 && err.isEmpty() && got.size() == 1);
+        CHECK(seen.host() == "nominatim.openstreetmap.org" && seen.toString().contains("q=Portland"));
+        s.search("Portland, Oregon");
+        CHECK(calls == 1 && err.contains("wait"));                   // rate limited
+        LocationTools bad;
+        bad.setTransport([&](const QUrl&, hamclock::FetchDone done) { done({0, {}, "offline"}); });
+        QString berr;
+        QObject::connect(&bad, &LocationTools::searchFinished, [&](const QVariantList&, const QString& e) { berr = e; });
+        bad.search("Portland");
+        CHECK(berr.contains("offline"));
+    }
     return failures ? 1 : 0;
 }
