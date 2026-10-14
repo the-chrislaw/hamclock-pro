@@ -66,3 +66,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 12)
 - Backlog 0c slice: the DE and DX boxes show the next sunrise and sunset as "Rise in 3h 12m · Set in 14h 5m" (soonest first; "Sun up/down all day" in polar regions), from the offline `astro_sun` code (`src/ui/sun_text.hpp`, `StationModel.deSun/dxSun`, `sun-text-regression`). Screenshots at 800x480, 1024x600, 1920x1080 with a configured station: the line wraps to two lines in the 1024x600 column, nothing clipped. Observed (not mine, not changed): `Main.qml` safe-area bindings log "Cannot read property 'left' of null" once at startup in `--screenshot`. ctest 130/130; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 open (stale, not mine). Next: "Find" request slice, DX local time/zone from coordinates, side panes.
+
+## 2026-10-14 (hourly run, 13)
+- Backlog 0c slice: tapping the path line in the station card toggles short path / long path ("Long path · 30023 KM · 270 DEG / TRUE"), using the existing offline `geometry()`; antipodal/coincident pairs keep the "Set a DX target" prompt (`path_detail` in `path_text.hpp`, `StationModel.toggleLongPath`, extended `path-text-regression`). The toggle is per session, not saved. Units (imperial) and magnetic bearing (WMM) still pending. ctest 132/132; configured-station layout not checked by screenshot this run. ASan/UBSan left to CI. Not validated on a device.
+- #223 checks running, #220 no checks yet, #73 stale (none mine). Next: "Find" request slice, imperial units, side panes.

@@ -208,11 +208,16 @@ jobs:
       - name: Simulator build and screenshot (experimental)
         continue-on-error: true
         run: |
+          # Qt's documented flow: configure once with the Xcode generator (no
+          # SYSROOT override) and pick the SDK at build time.
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
-            -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
-          cmake --build build-sim --config Debug --target hamclock-pro -- \
-            -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
+          if ! cmake --build build-sim --config Debug --target hamclock-pro -- \
+              -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
+              > sim-build.log 2>&1; then
+            grep -E "error:|ld: |BUILD FAILED" sim-build.log | head -40
+            exit 1
+          fi
           APP=$(find build-sim -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
           UDID=$(xcrun simctl list devices available | grep -m1 'iPad' | grep -oE '[0-9A-F-]{36}')
           xcrun simctl boot "$UDID"

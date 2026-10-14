@@ -4,6 +4,7 @@
 #include "land.hpp"
 #include "path.hpp"
 #include "projection.hpp"
+#include "sky_points.hpp"
 #include <QLinearGradient>
 #include <QFont>
 #include <QPainter>
@@ -134,6 +135,21 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawEllipse(sun, 5, 5);
             painter.drawLine(QPointF(sun.x() - 8, sun.y()), QPointF(sun.x() + 8, sun.y()));
             painter.drawLine(QPointF(sun.x(), sun.y() - 8), QPointF(sun.x(), sun.y() + 8));
+        }
+        if (scene.sky_points) {
+            const QColor c(dark ? "#d8dde6" : "#59606e");
+            painter.setBrush(Qt::NoBrush);
+            if (scene.moon) { // open circle with a crescent-ish inner dot
+                const auto p = at(*scene.moon);
+                painter.setPen(QPen(c, 2)); painter.drawEllipse(p, 5 * ui, 5 * ui);
+                painter.setBrush(c); painter.drawEllipse(p, 2 * ui, 2 * ui);
+            }
+            if (scene.de) { // antipode: X
+                const auto p = at(antipode(*scene.de)); const double r = 4 * ui;
+                painter.setPen(QPen(c, 2));
+                painter.drawLine(QPointF(p.x() - r, p.y() - r), QPointF(p.x() + r, p.y() + r));
+                painter.drawLine(QPointF(p.x() - r, p.y() + r), QPointF(p.x() + r, p.y() - r));
+            }
         }
         if (scene.route_visible) {
             painter.setPen(QPen(route, 2));

@@ -24,6 +24,7 @@ public:
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
     void add(const dxcluster::DxSpot& spot);
+    const std::deque<dxcluster::DxSpot>& spots() const { return spots_; }
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
     int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
     // Per-band spot counts by continent over every stored spot (any filter): [{band, total, NA, SA, EU, AF, AS, OC}].
@@ -61,6 +62,7 @@ public:
     int watchedCount() const { return list_.watchedCount(); }
     QVariantList activity() const { return list_.activity(); }
     void refreshWatchList(); // re-reads the watch list from settings
+    void setMapVisible(bool visible); // per-source map on/off (default on)
     void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
     dxcluster::UdpSpotListener& udp() { return udp_; }
     QString bandFilter() const { return band_filter_; }
@@ -75,10 +77,13 @@ public:
     static QStringList bandChoices();
     static QStringList modeChoices();
     TelnetClient& client() { return client_; }
+    ~DxClusterModel() override;
 signals:
     void countChanged();
     void filterChanged();
 private:
+    void publishOverlay();
+    bool map_visible_ = true;
     void on_line(const QString& line);
     void on_state(TelnetClient::State state);
     AppSettings* settings_;

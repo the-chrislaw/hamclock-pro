@@ -25,6 +25,8 @@ struct MapScene {
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
     MapGrid grid = MapGrid::None;
+    bool sky_points = false;            // draw sublunar point and DE antipode
+    std::optional<Location> moon;       // sublunar point
     std::optional<double> center_lon;   // fixed centre longitude; unset = DE
     double zoom = 1;                    // 1..4; >1 centres on DE unless panned
     std::optional<double> pan_lon, pan_lat; // user pan; unset = follow DE/DX

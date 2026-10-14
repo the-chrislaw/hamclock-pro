@@ -83,6 +83,7 @@ Card {
             font.pixelSize: Theme.fontBody
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
+            TapHandler { onTapped: station.toggleLongPath() }
         }
         ColumnLayout {
             visible: !station.configured

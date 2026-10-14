@@ -2,7 +2,9 @@
 #include "../../ui/app_settings.hpp"
 #include "../bandactivity/band_activity.hpp"
 #include "../watchlist/watch_match.hpp"
+#include "dx_overlay.hpp"
 #include "dxcc_table.hpp"
+#include "../../map/overlay.hpp"
 #include <algorithm>
 
 namespace hamclock {
@@ -139,6 +141,21 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
     });
 }
 
+DxClusterModel::~DxClusterModel() { MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId); }
+
+void DxClusterModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Only while the cluster link is live; stale or lost links never leave spots on the map.
+void DxClusterModel::publishOverlay() {
+    if (map_visible_ && state() == "live")
+        MapOverlays::instance().set_layer(dxcluster::overlay_layer(list_.spots(), dxcluster::bundled_entity_resolver()));
+    else
+        MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId);
+}
+
 void DxClusterModel::refreshUdp() {
     const int port = settings_ ? settings_->udpSpotPort() : 0;
     const bool lan = settings_ && settings_->udpSpotLan();
@@ -171,6 +188,7 @@ void DxClusterModel::on_state(TelnetClient::State state) {
     case S::Waiting: setState("offline", "Cluster connection lost; retrying"); break;
     case S::Idle: break;
     }
+    publishOverlay();
 }
 
 void DxClusterModel::on_line(const QString& line) {
@@ -179,6 +197,7 @@ void DxClusterModel::on_line(const QString& line) {
     list_.add(*spot);
     emit countChanged();
     setState("live", "Cluster " + (settings_ ? settings_->clusterHost() : QString()), now());
+    publishOverlay();
 }
 
 void register_widget_dxcluster(WidgetRegistry& registry, const WidgetContext& context) {

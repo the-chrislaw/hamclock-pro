@@ -34,7 +34,8 @@ add_library(hamclock-map-core STATIC
     src/map/viewport.cpp
     src/map/map_renderer.cpp
     src/domain/geometry.cpp
-    src/domain/solar_position.cpp)
+    src/domain/solar_position.cpp
+    src/domain/astro_moon.cpp)
 target_link_libraries(hamclock-map-core PUBLIC Qt6::Core Qt6::Gui)
 # Legacy QWidget map used by the old dashboard/preview tools only.
 add_library(hamclock-world-map STATIC src/qt/world_map_widget.cpp)

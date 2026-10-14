@@ -74,3 +74,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - QA #203: quakes and fires "Nearest ..." lines were elided at 800x480/1024x600. Both now wrap to up to 2 lines; the quakes strongest-place text moved out of the Metric caption into its own wrapping line. QML only, no model change. Rendered quakes and fires with a saved station at 800x480, 1024x600, 1920x1080 light/dark: no TRUNCATED output, nothing clipped; quakes/fires tests pass. Not validated on a device.
 - Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-14 12:00 UTC
+- Step 1: merged #221 (F4 iPad CI, all five checks green). #73 (other area) has merge conflicts, #220 had no checks yet; left alone. No `qa` issues for [H]. #142 allowlist: api.netlogger.org and data.blitzortung.org still unreachable (netlogger.org site itself answers but has no documented API), metoc.navy.mil 403; lightning, nets and JTWC stay blocked.
+- H2 slice 3: storms forecast positions on the map. Parses the NHC forecast/advisory text (`parse_forecast`: six forecast and two outlook points with valid time and wind; day/month resolved from the issuance), one PolledSource per storm for the three strongest. Dots (3-4 px, coloured by forecast intensity, tap shows "Trudy forecast 14 18:00Z · 55 kt") are added after the storm markers; used only when the text's storm id and advisory number match the index and the page is fresh, otherwise not drawn. The overlay API has no lines, so no connecting track or cone; the KMZ track needs a zip reader. Fixtures: real forecast advisory and a trimmed real index (Trudy, advisory 4, captured 2026-10-14). Full suite 132/132; ASan/UBSan storms test run. Pane unchanged, so no screenshots.
+- Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
+- Blocked: lightning and NetLogger on allowlist (#142).
