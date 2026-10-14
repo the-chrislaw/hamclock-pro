@@ -61,3 +61,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, twelfth run)
 - #232 (area C) had both Linux checks green but Apple jobs running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E11 slice: sensors card shows a pressure trend (Rising/Falling/Steady) under the BME280 pressure, from an in-memory history (one sample/min, 3 h window, needs 30 min, scaled to a 3 h change, steady within +-1 hPa). Hidden without history or sensor. Unit tests for the history; full suite passes (release build); ASan/UBSan left to CI; no screenshot (card needs hardware). Not run on a Pi. Next: calibration offsets (needs a setting), DX city/popup, gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, thirteenth run)
+- Merged #238 (area B, green). #239/#240 (areas C/D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E11 slice: BME280 corrections. `[sensors] temp_offset_c` and `pressure_offset_hpa` in options.ini are added to the readings (dew point and trend follow the corrected values); empty, garbage or implausible offsets (>20 C, >50 hPa) are ignored. No Settings control yet (area A page). Unit tests plus a model test with a temp options.ini; release full suite and ASan/UBSan sensors test pass. No screenshot (card needs hardware); not run on a Pi. Next: DX city/popup (needs a reverse-geocode source and terms check), gpiod backend, header radio display (area A).
+

@@ -214,7 +214,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
-| BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (sensors planned) |
+| BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (kernel IIO driver; corrections via options.ini `[sensors] temp_offset_c`/`pressure_offset_hpa`, no Settings control yet) |
 | Brightness dim/bright %, display schedule | Display | A | Planned (F27) |
 | Mercator map centre longitude; colour choices | Map/appearance | A | Missing |
 | Local passwords guarding restart/exit/unlock/new DE-DX/configurations | Kiosk protection | A | Missing |
