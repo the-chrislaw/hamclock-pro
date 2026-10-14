@@ -66,3 +66,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #238 (area B, green). #239/#240 (areas C/D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - E11 slice: BME280 corrections. `[sensors] temp_offset_c` and `pressure_offset_hpa` in options.ini are added to the readings (dew point and trend follow the corrected values); empty, garbage or implausible offsets (>20 C, >50 hPa) are ignored. No Settings control yet (area A page). Unit tests plus a model test with a temp options.ini; release full suite and ASan/UBSan sensors test pass. No screenshot (card needs hardware); not run on a Pi. Next: DX city/popup (needs a reverse-geocode source and terms check), gpiod backend, header radio display (area A).
 
+
+## 2026-10-14 (UTC, fourteenth run)
+- Merged #245 (docs, green). #242 (no checks yet), #248/#250 (areas tvOS/D), #73 (area A, conflicting): not mine. No open `qa` issues for E.
+- E15 slice: new read-only `adsb` card polling the local PiAware/dump1090 `aircraft.json` (localhost:8080, GET only, 5 s): aircraft heard in the last 60 s and how many carry a position. No receiver -> "unconfigured"; receiver clock >60 s from ours -> stale; garbage -> error. Loopback fake HTTP server test; not run against a real receiver. No settings (host/port) or map overlay yet (needs area B/A). Not on the default dashboard so no screenshot. Next: DX city/popup (reverse-geocode terms), gpiod backend, header radio display.

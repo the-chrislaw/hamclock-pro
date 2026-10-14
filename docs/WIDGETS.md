@@ -135,7 +135,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
 13. NetLogger active nets pane.
 14. 🟡 (output interface with null and fake backends done; no hardware backend yet) GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
-15. PiAware ADS-B link.
+15. 🟡 (read-only aircraft count card from the local PiAware aircraft.json done; map overlay pending) PiAware ADS-B link.
 
 ### F. Apple platforms: macOS and iPad (owns `src/platform/apple*`, `src/platform/credential_store*`, `cmake/Apple*.cmake`, `.github/workflows/apple.yml`, `packaging/apple/`)
 Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.0 work is under way. The agent sandbox cannot run Xcode, so every change is verified on GitHub's macOS runners via `apple.yml`.
@@ -211,7 +211,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
 | rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; defaults only, no settings yet) |
-| PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
+| PiAware ADS-B receiver host | Aircraft on the map | E | Partial (count card from localhost:8080 only; no settings, no map overlay) |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
 | BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (kernel IIO driver; corrections via options.ini `[sensors] temp_offset_c`/`pressure_offset_hpa`, no Settings control yet) |
@@ -262,4 +262,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | GPS (gpsd JSON on localhost:2947, read-only): fix quality, position, Maidenhead grid, satellites in use; unconfigured when gpsd is absent; does not change DE yet, no NMEA serial or time use; tested against a loopback fake gpsd, not a real receiver; not on the default dashboard | E | Partial |
 | Radio (rigctld on localhost:4532, strictly read-only: only `f` and `m` are ever sent; falls back to flrig XML-RPC on localhost:12345 asking only `rig.get_vfo`/`rig.get_mode`): frequency, band, mode; unconfigured when rigctld is absent, error replies are never shown as live; tested against a loopback fake rigctld, not a real rig; no flrig, not on the header or default dashboard | E | Partial |
 | Rotator (rotctld on localhost:4533, strictly read-only: only `p` is ever sent): azimuth and elevation; unconfigured when rotctld is absent, error replies and out-of-range values are never shown as live; tested against a loopback fake rotctld; not run with a real rotator; no tracking or move commands; not on the default dashboard | E | Partial |
+| ADS-B (PiAware/dump1090 aircraft.json on localhost:8080, GET only): aircraft heard in the last 60 s and how many have a position; unconfigured without a receiver, a receiver clock more than 60 s off is stale, garbage is an error; loopback fake-server test, not run against a real receiver; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |
