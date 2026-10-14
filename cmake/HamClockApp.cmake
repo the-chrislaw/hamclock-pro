@@ -24,6 +24,8 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/main.cpp
     src/ui/station_model.cpp
     src/ui/time_zone_search.cpp
+    src/ui/location_tools.cpp
+    src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
     src/qt/de_time_zone.cpp
@@ -131,6 +133,14 @@ if(BUILD_TESTING)
     set_target_properties(time-zone-search-regression PROPERTIES AUTOMOC ON)
     add_test(NAME time-zone-search-regression COMMAND time-zone-search-regression)
     set_tests_properties(time-zone-search-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(location-tools-regression tests/location_tools_regression.cpp src/ui/location_tools.cpp
+        src/domain/locator_input.cpp src/domain/geometry.cpp)
+    target_include_directories(location-tools-regression PRIVATE src)
+    target_link_libraries(location-tools-regression PRIVATE Qt6::Core)
+    set_target_properties(location-tools-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME location-tools-regression COMMAND location-tools-regression
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/sources/nominatim-search.json)
+    set_tests_properties(location-tools-regression PROPERTIES TIMEOUT 30)
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)

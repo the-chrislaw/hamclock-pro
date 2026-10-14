@@ -4,6 +4,7 @@
 #include "map_item.hpp"
 #include "station_model.hpp"
 #include "time_zone_search.hpp"
+#include "location_tools.hpp"
 #include "../net/polled_source.hpp"
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
@@ -117,6 +118,7 @@ int main(int argc, char** argv) {
     }
     hamclock::StationModel station_model(settings);
     hamclock::TimeZoneSearch time_zone_search;
+    hamclock::LocationTools location_tools;
     hamclock::MapItem::setSettings(&settings);
 
     QQuickStyle::setStyle("Basic"); // fully themed by our QML, identical on every platform
@@ -144,6 +146,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("widgetRegistry", &registry);
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
+    engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
