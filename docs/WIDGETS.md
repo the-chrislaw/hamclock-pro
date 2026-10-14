@@ -134,7 +134,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 11. BME280 environment panes (temperature, pressure, humidity, dew point; corrections); CPU temperature, Wi-Fi RSSI and disk-use history.
 12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
 13. NetLogger active nets pane.
-14. GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
+14. 🟡 (output interface with null and fake backends done; no hardware backend yet) GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
 15. PiAware ADS-B link.
 
 ### F. Apple platforms: macOS and iPad (owns `src/platform/apple*`, `src/platform/credential_store*`, `cmake/Apple*.cmake`, `.github/workflows/apple.yml`, `packaging/apple/`)

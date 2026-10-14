@@ -45,3 +45,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, eighth run)
 - #186 (area F, a Linux-green but macOS universal job failed), #191 (area D, Apple jobs running), #73 (area A, conflicting): not mine, left alone. No open `qa` issues for E.
 - E12 slice: clock sync status. New `src/platform/ntp_status` (read-only `chronyc tracking`, falling back to `timedatectl show -p NTPSynchronized`; no network, no clock changes) shown as a "Clock" metric on the sensors card ("Synced, 12 ms" / "Not synchronised"; hidden where neither tool exists). Parsers tested on sample text; release + ASan/UBSan sensors tests. Not run on a Pi. NTP server choice and GPS time are still pending. Next: DX city/popup, flrig, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, ninth run)
+- #208 (area C, macOS/iPad jobs failing or running), #207 (area D, no checks yet), #73 (area A): not mine, left alone. No open `qa` issues for E.
+- E14 slice: `src/platform/gpio` output interface (`GpioOutputs`, BCM line parsing 2..27, Null default backend that drives nothing, in-memory Fake for tests). No hardware backend yet (needs on-device testing); nothing consumes it yet. Offline test; release + ASan/UBSan. Next: gpiod backend, ON AIR/alarm wiring, DX city/popup, flrig.
