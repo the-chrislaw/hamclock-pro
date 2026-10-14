@@ -8,7 +8,10 @@ Button {
     id: control
     property bool primary: false
     implicitHeight: Theme.touch
-    implicitWidth: Math.max(Theme.touch, contentItem.implicitWidth + 2 * Theme.pad)
+    leftPadding: Theme.pad
+    rightPadding: Theme.pad
+    // Size from the content plus the padding the control really applies, so labels never elide.
+    implicitWidth: Math.max(Theme.touch, implicitContentWidth + leftPadding + rightPadding)
     font.pixelSize: Theme.fontBody
     font.weight: Font.DemiBold
     focusPolicy: Qt.StrongFocus
