@@ -125,3 +125,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - `bandsmatrix` reads optional `[bandsmatrix] mode = ssb|cw|digital` and `power_w` (1..1500) from the options file (same mechanism as the sensors offsets); the pane label shows the mode and power used. Unknown mode or out-of-range power falls back to SSB 100 W. Test covers CW 5 W and bad values. No QML change, so no screenshots; no in-app settings UI yet (needs a shared settings page). Not validated on device.
 - Other open PRs (#73, #294, #295) belong to others; left alone. Only [B] issue is #281, already answered.
 - Next: antenna gain option, long-path, in-app settings UI, MUF map style.
+
+## 2026-10-14 (UTC): HF path reliability antenna gain (backlog 13, fourth slice)
+
+- `bandsmatrix` reads optional `[bandsmatrix] antenna_gain_db` (0..30, both ends combined over isotropic, default 6) from the options file; the pane label now ends with the gain in dBi. Out-of-range values fall back to 6. Test extended (12 dBi accepted, 500 ignored). Label text only, no layout change, no screenshots. Not validated on device.
+- No mergeable PRs: #301 and #303 (others) had checks running, #73 (not mine) conflicts. No open [B] issues.
+- Next: long-path option, in-app settings UI, MUF map style; tropo needs a terms-checked source.
