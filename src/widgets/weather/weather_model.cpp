@@ -72,7 +72,11 @@ QString WeatherModel::wind(const End& e) {
 QString WeatherModel::air(const End& e) {
     if (!e.now) return {};
     QStringList parts{QString("%1% RH").arg(e.now->humidity_pct)};
-    if (e.now->pressure_hpa) parts << QString("%1 hPa").arg(std::lround(*e.now->pressure_hpa));
+    if (e.now->pressure_hpa) {
+        QString p = QString("%1 hPa").arg(std::lround(*e.now->pressure_hpa));
+        if (e.now->pressure_change_hpa) p += " " + weather::pressure_trend_word(*e.now->pressure_change_hpa).toLower();
+        parts << p;
+    }
     if (e.now->cloud_pct) parts << QString("%1% cloud").arg(*e.now->cloud_pct);
     return parts.join(" · ");
 }

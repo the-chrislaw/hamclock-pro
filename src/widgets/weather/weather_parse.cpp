@@ -1,4 +1,5 @@
 #include "weather_parse.hpp"
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -31,8 +32,22 @@ std::optional<Current> parse_current(const QByteArray& body) {
     c.weather_code = static_cast<int>(v);
     if (number(cur, "pressure_msl", 800, 1100, v)) c.pressure_hpa = v;
     if (number(cur, "cloud_cover", 0, 100, v)) c.cloud_pct = static_cast<int>(std::lround(v));
+    // Hourly series (past_hours=3&forecast_hours=1): oldest first, so last - first is the 3 h change.
+    const auto series = root.value("hourly").toObject().value("pressure_msl").toArray();
+    if (series.size() >= 2) {
+        const QJsonValue first = series.first(), last = series.last();
+        if (first.isDouble() && last.isDouble() && std::isfinite(first.toDouble()) &&
+            first.toDouble() >= 800 && first.toDouble() <= 1100 && last.toDouble() >= 800 && last.toDouble() <= 1100)
+            c.pressure_change_hpa = last.toDouble() - first.toDouble();
+    }
     c.is_day = cur.value("is_day").toDouble(1) != 0;
     return c;
+}
+
+QString pressure_trend_word(double change_hpa) {
+    if (change_hpa > 1.0) return "Rising";
+    if (change_hpa < -1.0) return "Falling";
+    return "Steady";
 }
 
 QString wmo_description(int code) {
@@ -72,7 +87,7 @@ double celsius_to_fahrenheit(double c) { return c * 9.0 / 5.0 + 32.0; }
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
-                   "weather_code,is_day,pressure_msl,cloud_cover&timezone=UTC")
+                   "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&past_hours=3&forecast_hours=1&timezone=UTC")
         .arg(latitude, 0, 'f', 2).arg(longitude, 0, 'f', 2);
 }
 

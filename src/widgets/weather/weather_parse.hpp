@@ -15,11 +15,14 @@ struct Current {
     bool is_day = true;
     std::optional<double> pressure_hpa;  // mean sea level; absent if the service omits it
     std::optional<int> cloud_pct;
+    std::optional<double> pressure_change_hpa;  // last hourly value minus the one 3 h earlier
 };
 
 // Open-Meteo `current` block (units: °C, %, km/h, degrees). Anything missing,
 // non-numeric or out of physical range rejects the whole document.
 std::optional<Current> parse_current(const QByteArray& body);
+// "Rising" / "Falling" / "Steady" for a 3-hour change (steady within ±1 hPa).
+QString pressure_trend_word(double change_hpa);
 QString wmo_description(int code);        // "Clear sky", "Light rain", …
 QString compass_point(int degrees);       // 16-point rose, direction wind comes FROM
 double celsius_to_fahrenheit(double c);
