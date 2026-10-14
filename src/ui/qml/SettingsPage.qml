@@ -194,6 +194,14 @@ Rectangle {
                             onClicked: appSettings.saveClockFormat(appSettings.dateOrder, modelData[0])
                         }
                     }
+                    Repeater {
+                        model: [[false, "Week starts Mon"], [true, "Week starts Sun"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.weekStartsSunday === modelData[0]
+                            onClicked: appSettings.saveWeekStart(modelData[0])
+                        }
+                    }
                 }
             }
 

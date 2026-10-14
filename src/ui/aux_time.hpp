@@ -18,7 +18,15 @@ inline double local_sidereal_hours(qint64 unix_secs, double longitude_deg) {
     return std::fmod(std::fmod(deg, 360.0) + 360.0, 360.0) / 15.0;
 }
 
-inline QString aux_time_text(int mode, qint64 unix_secs, double longitude_deg) {
+// Week of the year. Monday start: ISO 8601. Sunday start: US style, week 1 is the week
+// (Sunday..Saturday) containing 1 January.
+inline int week_of_year(const QDate& d, bool sunday_start) {
+    if (!sunday_start) return d.weekNumber();
+    const int jan1_dow = QDate(d.year(), 1, 1).dayOfWeek() % 7;  // Sunday = 0
+    return (d.dayOfYear() - 1 + jan1_dow) / 7 + 1;
+}
+
+inline QString aux_time_text(int mode, qint64 unix_secs, double longitude_deg, bool sunday_week = false) {
     const double jd = static_cast<double>(unix_secs) / 86400.0 + 2440587.5;
     switch (((mode % kAuxTimeModes) + kAuxTimeModes) % kAuxTimeModes) {
     case 1: return QStringLiteral("JD %1").arg(jd, 0, 'f', 5);
@@ -34,7 +42,7 @@ inline QString aux_time_text(int mode, qint64 unix_secs, double longitude_deg) {
     case 4: return QStringLiteral("UNIX %1").arg(unix_secs);
     default: {
         const auto d = QDateTime::fromSecsSinceEpoch(unix_secs, Qt::UTC).date();
-        return QStringLiteral("Day %1 of %2 · week %3").arg(d.dayOfYear()).arg(d.daysInYear()).arg(d.weekNumber());
+        return QStringLiteral("Day %1 of %2 · week %3").arg(d.dayOfYear()).arg(d.daysInYear()).arg(week_of_year(d, sunday_week));
     }
     }
 }

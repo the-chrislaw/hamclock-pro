@@ -38,6 +38,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(bool imperialUnits READ imperialUnits NOTIFY optionsChanged)
     Q_PROPERTY(int dateOrder READ dateOrder NOTIFY optionsChanged)
     Q_PROPERTY(bool clock12h READ clock12h NOTIFY optionsChanged)
+    Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
@@ -73,6 +74,7 @@ public:
     int udpSpotPort() const { return udp_port_; }                      // 0 = UDP spot input off
     int dateOrder() const { return date_order_; }                      // 0 D M Y, 1 M D Y, 2 ISO
     bool clock12h() const { return clock_12h_; }
+    bool weekStartsSunday() const { return week_sunday_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
     // On-the-air display filter; empty / 0 = no restriction.
@@ -126,6 +128,7 @@ public:
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
     Q_INVOKABLE QString saveImperialUnits(bool imperial);
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
+    Q_INVOKABLE QString saveWeekStart(bool sunday);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
@@ -164,6 +167,7 @@ private:
     bool imperial_ = false;
     int date_order_ = 0;
     bool clock_12h_ = false;
+    bool week_sunday_ = false;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot

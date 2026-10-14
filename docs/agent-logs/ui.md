@@ -106,3 +106,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 22)
 - Backlog 0c slice: the DX box shows "Local 06:08 · Tokyo (auto)", the DX local time using the offline nearest-city zone hint (`zone_local_text` in `clock_text.hpp`, `StationModel.dxLocal`, `clock-text-regression` extended). Hidden when no zone is within 1500 km. Honest limit: borders are not modelled, so the zone can be wrong near them; manual override still pending. Screenshots at 800x480 and 1024x600 with a configured station (DX Tokyo): fits in two lines at worst, no clipping; 1920x1080 rendered. ctest 142/142; ASan/UBSan left to CI. Not validated on a device.
 - #73 (docs, conflicting) and #293 (area G) open; not mine, left alone.
+
+## 2026-10-14 (hourly run, 23)
+- Backlog A14 slice: Settings > "Clock format" has a week start choice (Mon = ISO 8601, Sun = US, week 1 contains 1 January), saved in `options.ini` (`clock/week_start`, `AppSettings.saveWeekStart`); it sets the week number in the auxiliary time line (`week_of_year` in `aux_time.hpp`, `aux-time-text-regression` extended). Calendar widgets are not wired to it. Settings is not reachable from `--screenshot`, so layout was not checked visually. ctest 142/142; ASan/UBSan left to CI. Not validated on a device.
+- #300/#301 (others) still had macOS checks running; #73 stale. Left alone.

@@ -101,6 +101,7 @@ void AppSettings::loadOptions() {
     date_order_ = ini.value("clock/date_order", 0).toInt();
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
     clock_12h_ = ini.value("clock/h12", false).toBool();
+    week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -408,6 +409,16 @@ QString AppSettings::saveUdpSpots(int port, bool lan) {
     if (ini.status() != QSettings::NoError) return "Could not save the UDP spot settings.";
     udp_port_ = port;
     udp_lan_ = lan;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveWeekStart(bool sunday) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("clock/week_start", sunday ? 0 : 1);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the week start.";
+    week_sunday_ = sunday;
     emit optionsChanged();
     return {};
 }
