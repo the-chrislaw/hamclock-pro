@@ -28,6 +28,37 @@ QString satellite_short_name(const QString& tle_name) {
     return amp > 0 ? name.left(amp) : name;
 }
 
+OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time) {
+    OverlayLayer layer;
+    layer.id = "satellites";
+    layer.labels = OverlayLabelMode::Call;
+    layer.min_label_distance_px = 30;
+    constexpr int kStepS = 180, kBackSteps = 3, kForwardSteps = 17;
+    for (const Tle& tle : tles) {
+        SatellitePropagator p(tle);
+        if (!p.valid()) continue;
+        for (int i = -kBackSteps; i <= kForwardSteps; ++i) {
+            SubSatellitePoint sp;
+            if (i == 0 || !p.sub_point(unix_time + i * kStepS, sp)) continue;
+            OverlayMarker m;
+            m.where = Location{sp.lat_deg, sp.lon_deg};
+            m.color = QColor(i < 0 ? "#7a8a99" : "#4fb0c6");
+            m.size_px = 1.5;
+            layer.markers.push_back(m);
+        }
+        SubSatellitePoint now_pt;
+        if (!p.sub_point(unix_time, now_pt)) continue;
+        OverlayMarker m;
+        m.where = Location{now_pt.lat_deg, now_pt.lon_deg};
+        m.call = satellite_short_name(QString::fromStdString(tle.name));
+        m.color = QColor("#4fb0c6");
+        m.shape = OverlayShape::Triangle;
+        m.size_px = 5;
+        layer.markers.push_back(m);
+    }
+    return layer;
+}
+
 SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("satellites", "Satellites", parent), settings_(context.settings),
       source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)) {
@@ -52,6 +83,8 @@ void SatellitesModel::load() {
 
 void SatellitesModel::recompute() {
     rows_.clear();
+    if (tles_.empty()) MapOverlays::instance().remove_layer("satellites");
+    else MapOverlays::instance().set_layer(satellite_overlay_layer(tles_, static_cast<double>(now().toSecsSinceEpoch())));
     if (tles_.empty() || !settings_ || !settings_->configured()) {
         emit changed();
         return;

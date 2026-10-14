@@ -26,3 +26,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Fixed QA issue #118 (Sun & Moon pane clipped Moonset): Moonrise/Moonset now share one "Moon rise/set" row, and Phase, rise/set and Now are dropped (last first) when the body cannot fit them instead of being sliced. Checked offscreen at 800x480, 1024x600, 1920x1080 (not on-device).
 - Not mine: #127, #73 left alone.
 - Next: satellite ground track on the map, user-chosen satellites, TLE age (D3/D7), EME (D5).
+
+## 2026-10-14 (UTC), run 4
+- Satellite ground track on the map (backlog D3): overlay layer "satellites" with each tracked bird's labelled sub-point and a dotted track (-10 to +50 min, 3 min steps) via area G's marker API (no polyline primitive exists, so dots). Test checks layer, labelled points and coordinate ranges; ASan/UBSan run on satellite and beacon tests.
+- Not mine: #135, #73 left alone.
+- Next: user-chosen satellites (max two), TLE age (D7), EME (D5).

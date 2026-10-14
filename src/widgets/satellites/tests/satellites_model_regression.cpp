@@ -67,6 +67,18 @@ int main(int argc, char** argv) {
     }
     check(sane, "rows have name, time and 10-90 degree peak elevation");
 
+    {
+        const OverlayLayer* layer = nullptr;
+        for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = &l;
+        check(layer != nullptr && layer->markers.size() >= 21, "satellites layer published with tracks");
+        int labelled = 0; bool ok = layer != nullptr;
+        if (layer) for (const auto& m : layer->markers) {
+            if (!m.call.isEmpty()) ++labelled;
+            ok = ok && m.where.latitude >= -90 && m.where.latitude <= 90 && m.where.longitude >= -180 && m.where.longitude <= 180;
+        }
+        check(labelled >= 3 && ok, "one labelled sub-point per bird, coordinates in range");
+    }
+
     down = true;
     model.source().refreshNow();
     settle();
