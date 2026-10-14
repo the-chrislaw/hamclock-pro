@@ -17,6 +17,7 @@ struct MapViewOptions {
     bool path = true;
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
+    bool sky_points = false; // sublunar point and DE antipode markers
     static constexpr int center_auto = 999; // centre on DE
     int center_lon = center_auto; // map centre longitude (-180..180) or center_auto
     int rotation_s = 0;   // style rotation interval in seconds, 0 = off

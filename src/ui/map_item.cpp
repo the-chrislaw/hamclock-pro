@@ -1,4 +1,5 @@
 #include "map_item.hpp"
+#include "../map/sky_points.hpp"
 #include "app_settings.hpp"
 #include "../map/path.hpp"
 #include <QDateTime>
@@ -25,7 +26,10 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     }
     auto refresh_sun = [this] {
         // The Sun moves 0.25 degrees a minute; the minute-rounded position is plenty.
-        scene_.sun = subsolar_point({QDateTime::currentSecsSinceEpoch() / 60 * 60});
+        const UtcSeconds now{QDateTime::currentSecsSinceEpoch() / 60 * 60};
+        scene_.sun = subsolar_point(now);
+        const auto mp = sublunar_point(now);
+        scene_.moon = Location{mp.latitude_deg, mp.longitude_deg};
         update();
     };
     refresh_sun();
@@ -33,6 +37,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.route_visible = options_.path;
     scene_.night_shade = options_.night_shade;
     scene_.grid = static_cast<MapGrid>(options_.grid);
+    scene_.sky_points = options_.sky_points;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -149,6 +154,14 @@ void MapItem::setNightShade(bool on) {
     options_.night_shade = scene_.night_shade = on;
     saveOptions();
     emit nightShadeChanged();
+    update();
+}
+
+void MapItem::setSkyPoints(bool on) {
+    if (on == options_.sky_points) return;
+    options_.sky_points = scene_.sky_points = on;
+    saveOptions();
+    emit skyPointsChanged();
     update();
 }
 
