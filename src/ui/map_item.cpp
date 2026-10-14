@@ -2,7 +2,9 @@
 #include "app_settings.hpp"
 #include "../map/path.hpp"
 #include <QDateTime>
+#include <QMouseEvent>
 #include <QPainter>
+#include <algorithm>
 #include <exception>
 
 namespace hamclock {
@@ -16,6 +18,7 @@ void MapItem::setSettings(AppSettings* settings) { g_settings = settings; }
 MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     setAntialiasing(true);
     setOpaquePainting(true);
+    setAcceptedMouseButtons(Qt::LeftButton);
     if (g_settings) {
         connect(g_settings, &AppSettings::stationChanged, this, &MapItem::syncStation);
         syncStation();
@@ -56,6 +59,53 @@ void MapItem::setUiScale(double s) {
     scene_.ui_scale = s;
     emit uiScaleChanged();
     update();
+}
+
+void MapItem::setZoom(double z) {
+    z = std::clamp(z, 1.0, MapViewport::max_zoom);
+    if (z == scene_.zoom) return;
+    // Zooming in keeps the current centre so the view does not jump.
+    if (z > 1.0 && !scene_.pan_lon) {
+        const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
+        scene_.pan_lon = vp.center_lon;
+        scene_.pan_lat = vp.center_lat;
+    }
+    scene_.zoom = z;
+    if (z <= 1.0) { scene_.pan_lon.reset(); scene_.pan_lat.reset(); }
+    emit zoomChanged();
+    update();
+}
+
+void MapItem::resetView() {
+    scene_.pan_lon.reset();
+    scene_.pan_lat.reset();
+    setZoom(1.0);
+    update();
+}
+
+void MapItem::panBy(double dx, double dy) {
+    if (scene_.zoom <= 1.0 || width() <= 0 || height() <= 0) return;
+    const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
+    if (vp.scale <= 0) return;
+    scene_.pan_lon = vp.center_lon - dx / vp.scale;
+    scene_.pan_lat = vp.center_lat + dy / vp.scale;
+    update();
+}
+
+void MapItem::mousePressEvent(QMouseEvent* e) { press_ = last_ = e->position(); dragging_ = false; }
+
+void MapItem::mouseMoveEvent(QMouseEvent* e) {
+    if (!dragging_ && (e->position() - press_).manhattanLength() > 10) dragging_ = true;
+    if (dragging_) panBy(e->position().x() - last_.x(), e->position().y() - last_.y());
+    last_ = e->position();
+}
+
+void MapItem::mouseReleaseEvent(QMouseEvent* e) {
+    if (dragging_ || width() <= 0 || height() <= 0) return;
+    const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
+    if (vp.scale <= 0) return;
+    const auto loc = vp.location_at(e->position().x(), e->position().y());
+    emit tapped(loc.lat, loc.lon);
 }
 
 void MapItem::setShowPath(bool show) {

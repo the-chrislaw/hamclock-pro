@@ -114,12 +114,39 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 WorldMap {
+                    id: worldMap
                     // The renderer fills any size (crops polar rows, keeps +/-70
                     // degrees), so the map takes the whole card body.
                     anchors.fill: parent
                     dark: Theme.dark
                     uiScale: Theme.scale
                     showPath: mapCard.showPath
+                }
+                // Zoom 1-4x and reset (drag pans when zoomed; the item's tapped(lat, lon)
+                // signal feeds Set DE / Set DX in a later change).
+                Row {
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: 4 * Theme.scale
+                    spacing: 4 * Theme.scale
+                    Repeater {
+                        model: [{ t: "+", d: 1 }, { t: "\u2212", d: -1 }, { t: "\u21ba", d: 0 }]
+                        Rectangle {
+                            width: 28 * Theme.scale; height: width; radius: 4 * Theme.scale
+                            color: Theme.dark ? "#cc10181b" : "#ccffffff"
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.t
+                                color: Theme.dark ? "#e6eef0" : "#1b2a30"
+                                font.pixelSize: 16 * Theme.scale
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: modelData.d === 0 ? worldMap.resetView()
+                                                             : worldMap.zoom = Math.max(1, Math.min(4, worldMap.zoom + modelData.d))
+                            }
+                        }
+                    }
                 }
             }
         }

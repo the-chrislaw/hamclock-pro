@@ -34,3 +34,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: #122 ([G] qa) first. #130 (not mine) had macOS still running; #73 (docs, not mine) conflicts; left alone.
 - Label declutter (PR agent/map-label-declutter, fixes #122): DE/DX labels and markers are laid out first and act as obstacles; overlay labels go through new `place_label` (right of the marker, flipped left at the map edge, clamped vertically, skipped when overlapping any used rect). `MapScene::ui_scale` / `MapItem.uiScale` (bound to `Theme.scale` in Main.qml, shared file, one line) scales label font and marker radii. Test: extended `qt-map-overlay-regression`. Offscreen 1024x600 and 1920x1080 checked: labels readable, KH6RS flips at the edge. Not validated on device.
 - Next: G4 projections (Mercator centre longitude, azimuthal, Robinson), zoom, tap Set DE/DX.
+
+## 2026-10-14 (UTC, run 3)
+
+- Orient: no `[G]` qa issues (#120 is B). #139 (not mine) still had a macOS job running; #73 (docs, not mine) stale; left alone.
+- G4 slice a (PR agent/map-zoom-tap): `MapViewport::fill` takes zoom (1-4x), pan lon/lat; `location_at` inverts a pixel to lat/lon. `MapItem`: `zoom`, `resetView()`, `panBy()`, drag-to-pan, and `tapped(lat, lon)` for a tap without drag. Main.qml: small +/-/reset buttons on the map card (shared, minimal). Test: extended `qt-map-viewport-regression`. 1024x600 dark screenshot checked offscreen. Not validated on device.
+- Next: G4 slice b: Set DE / Set DX popup on `tapped` (needs AppSettings station write, area A coordination), then Mercator centre longitude, azimuthal, Robinson.

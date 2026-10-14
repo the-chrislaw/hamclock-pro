@@ -40,6 +40,23 @@ int main(int argc, char** argv) {
     // Focus latitude shifts the crop but stays inside the world.
     v = MapViewport::fill(1024, 600, 0, 75.0, 80.0);
     check(v.y_of(77.5) > 0 && v.y_of(77.5) < 600 && v.origin_y() <= 1e-6, "polar DE/DX stay visible");
+    // Zoom, pan and inverse (tap) maths.
+    v = MapViewport::fill(1024, 600, 0);
+    const double base_scale = v.scale;
+    auto z = MapViewport::fill(1024, 600, 0, std::nullopt, std::nullopt, 2.0, 10.0, 20.0);
+    check(near(z.scale, 2 * base_scale), "zoom 2 doubles the scale");
+    check(near(z.x_of(10.0), 512) && near(z.y_of(20.0), 300), "pan centre sits mid-item");
+    const auto at = z.location_at(512, 300);
+    check(near(at.lat, 20.0) && near(at.lon, 10.0), "tap at centre returns the centre");
+    const auto back = z.location_at(z.x_of(-100.0), z.y_of(45.0));
+    check(near(back.lat, 45.0) && near(back.lon, -100.0), "location_at inverts x_of/y_of");
+    z = MapViewport::fill(1024, 600, 0, std::nullopt, std::nullopt, 99.0, 0.0, 89.0);
+    check(near(z.scale, 4 * base_scale), "zoom clamps to 4");
+    check(z.origin_y() <= 1e-6 && z.origin_y() + z.world_height() >= 600 - 1e-6, "pan keeps the world covering the item");
+    z = MapViewport::fill(1024, 600, 0, std::nullopt, std::nullopt, 0.1);
+    check(near(z.scale, base_scale), "zoom below 1 clamps to 1");
+    z = MapViewport::fill(1024, 600, 55.0, std::nullopt, std::nullopt, 3.0);
+    check(near(z.center_lon, 55.0), "zoomed view centres on the preferred longitude");
     v = MapViewport::fill(0, 0, 0);
     check(v.scale == 0, "empty size is harmless");
 

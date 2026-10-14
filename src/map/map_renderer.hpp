@@ -22,6 +22,8 @@ struct MapScene {
     double ui_scale = 1; // Theme.scale: grows labels and markers on TVs
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
+    double zoom = 1;                    // 1..4; >1 centres on DE unless panned
+    std::optional<double> pan_lon, pan_lat; // user pan; unset = follow DE/DX
 };
 class MapRenderer {
 public:
