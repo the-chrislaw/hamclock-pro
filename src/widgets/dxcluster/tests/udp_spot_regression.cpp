@@ -4,6 +4,7 @@
 #include <QEventLoop>
 #include <QTimeZone>
 #include <QTimer>
+#include <QNetworkProxy>
 #include <QUdpSocket>
 #include <iostream>
 
@@ -57,6 +58,7 @@ int main(int argc, char** argv) {
     QString dx;
     QObject::connect(&l, &UdpSpotListener::spotReceived, [&](const DxSpot& s) { ++got; dx = s.dx; });
     QUdpSocket tx;
+    tx.setProxy(QNetworkProxy::NoProxy);
     tx.writeDatagram("garbage", QHostAddress::LocalHost, quint16(port));
     tx.writeDatagram(xml, QHostAddress::LocalHost, quint16(port));
     QEventLoop loop;
