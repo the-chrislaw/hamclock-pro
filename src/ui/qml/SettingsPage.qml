@@ -56,13 +56,25 @@ Rectangle {
                     spacing: Theme.gap * 0.8
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
                                 field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
+                    FormField { id: deGrid; label: "Or grid square (fills the home coordinates)"
+                                placeholder: "e.g. FN31pr"
+                                field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+                                Connections {
+                                    target: deGrid.field
+                                    function onEditingFinished() {
+                                        const g = locationTools.fromGrid(deGrid.text)
+                                        if (g.latitude === undefined) return
+                                        deLat.text = g.latitude.toFixed(4)
+                                        deLon.text = g.longitude.toFixed(4)
+                                    }
+                                } }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap
-                        FormField { id: deLat; label: "Home latitude (°N, negative = S)"
+                        FormField { id: deLat; label: "Home latitude (e.g. 40.7 or 40:44:55N)"
                                     text: appSettings.configured ? appSettings.deLatitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
-                        FormField { id: deLon; label: "Home longitude (°E, negative = W)"
+                        FormField { id: deLon; label: "Home longitude (e.g. -74 or 74:00:21W)"
                                     text: appSettings.configured ? appSettings.deLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
@@ -85,8 +97,9 @@ Rectangle {
                             text: "Save station"
                             primary: true
                             onClicked: {
-                                const values = [num(deLat.text), num(deLon.text), num(dxLat.text), num(dxLon.text)]
-                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees."; return }
+                                const values = [locationTools.parseCoordinate(deLat.text, true), locationTools.parseCoordinate(deLon.text, false),
+                                                locationTools.parseCoordinate(dxLat.text, true), locationTools.parseCoordinate(dxLon.text, false)]
+                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees or degrees:minutes:seconds (N/S, E/W)."; return }
                                 stationError.text = appSettings.saveStation(callsign.text, values[0], values[1],
                                                                             values[2], values[3], zone.zoneId)
                             }
