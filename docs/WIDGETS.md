@@ -85,7 +85,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 2. PSKReporter (F14): reception reports for your callsign (respect its query-rate limits), map overlay.
 3. POTA and SOTA activator spots (public APIs).
 4. Watch lists (F16): highlight callsigns/prefixes/DXCC entities; alert badge.
-5. Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table.
+5. ✅ (table + lookup + country role on DX cluster rows; not shown in the card yet) Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table (`dxcluster/dxcc_table`, AD1C cty.dat, MIT).
 
 **Audit additions (C):**
 6. WSPR and RBN in Live Spots: of DE / by DE, by call or grid, max distance or count, band statistics, map paths.
@@ -239,7 +239,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | D-RAP: highest affected frequency and the D-RAP map style (SWPC; not on the default dashboard) | B | **Live** |
 | Aurora: peak OVATION aurora probability per hemisphere and the Aurora map style (SWPC; not on the default dashboard) | B | **Live** |
 | Space weather impact: R/S/G levels ranked worst first with HF/aurora/GPS effect (SWPC; not on the default dashboard) | B | **Live** |
-| DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
+| DX cluster: telnet client, spot parser, spot list card | C | Partial (bundled DXCC prefix table, `country` role on rows, not displayed yet; band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
 | Next solar eclipse: date, type, greatest-eclipse time and countdown, worldwide (Meeus ch. 54, offline, checked against NASA catalogue values; not visibility at DE) | D | Partial (not on the default dashboard) |

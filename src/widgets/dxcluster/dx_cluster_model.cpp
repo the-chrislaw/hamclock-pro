@@ -1,6 +1,7 @@
 #include "dx_cluster_model.hpp"
 #include "../../ui/app_settings.hpp"
 #include "../watchlist/watch_match.hpp"
+#include "dxcc_table.hpp"
 #include <algorithm>
 
 namespace hamclock {
@@ -17,13 +18,17 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     case TimeRole: return s.time.toString("HH:mm") + "Z";
     case CommentRole: return s.comment;
     case WatchedRole: return is_watched_[size_t(shown_[size_t(index.row())])] != 0;
+    case CountryRole: {
+        const auto* e = dxcluster::DxccTable::bundled().lookup(s.dx);
+        return e ? e->name : QString();
+    }
     }
     return {};
 }
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}};
 }
 
 void DxSpotList::rebuild() {
