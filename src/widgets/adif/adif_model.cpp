@@ -1,4 +1,5 @@
 #include "adif_model.hpp"
+#include "../dxcluster/dxcc_table.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QFile>
 #include <QFileInfo>
@@ -27,6 +28,8 @@ void AdifModel::load(const QString& path) {
     }
     qsos_.clear();
     calls_.clear();
+    entities_.clear();
+    slots_.clear();
     loaded_ = false;
     if (path.isEmpty()) {
         setState("unconfigured", "Set an ADIF log file in Settings");
@@ -42,13 +45,42 @@ void AdifModel::load(const QString& path) {
     }
     qsos_ = adif::parse(QString::fromUtf8(file.readAll()));
     std::stable_sort(qsos_.begin(), qsos_.end(), [](const adif::Qso& a, const adif::Qso& b) { return a.time > b.time; });
-    for (const auto& q : qsos_) calls_.insert(adif::base_call(q.call));
+    for (const auto& q : qsos_) {
+        calls_.insert(adif::base_call(q.call));
+        const QString e = entityFor(q.call);
+        if (e.isEmpty()) continue;
+        entities_.insert(e);
+        if (!q.band.isEmpty()) slots_.insert(e + '|' + q.band);
+    }
     loaded_ = true;
     setState("live", QString("%1 QSOs in log").arg(qsos_.size()), QFileInfo(file).lastModified().toUTC());
     emit logChanged();
 }
 
 bool AdifModel::worked(const QString& call) const { return calls_.contains(adif::base_call(call)); }
+
+QString AdifModel::entityFor(const QString& call) const {
+    if (entity_of_) return entity_of_(call).toUpper();
+    const auto* e = dxcluster::DxccTable::bundled().lookup(call);
+    return e ? e->primary_prefix.toUpper() : QString();
+}
+
+void AdifModel::setEntityResolver(std::function<QString(const QString&)> resolver) {
+    entity_of_ = std::move(resolver);
+    if (loaded_) load(path_);
+}
+
+bool AdifModel::entityNeeded(const QString& call) const {
+    if (!loaded_) return false;
+    const QString e = entityFor(call);
+    return !e.isEmpty() && !entities_.contains(e);
+}
+
+bool AdifModel::bandSlotNeeded(const QString& call, const QString& band) const {
+    if (!loaded_ || band.isEmpty()) return false;
+    const QString e = entityFor(call);
+    return !e.isEmpty() && !slots_.contains(e + '|' + band.toLower());
+}
 
 QVariantList AdifModel::recent() const {
     QVariantList out;

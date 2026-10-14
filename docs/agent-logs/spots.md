@@ -119,3 +119,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 4 (slice): DXCC-entity watching. Watch entries of the form `@PREFIX` (cty.dat primary prefix, e.g. `@VP8`) match every call resolving to that entity; `watchlist::matches` takes an optional entity resolver, `DxSpotList::set_entity_resolver` injects one (default: bundled table). Settings hint text updated. No AppSettings field change (same `watch/list` key; older lists unaffected). Tests pass normally and under ASan/UBSan (leak check off).
 - Not done: entity names (instead of prefixes) in entries, watching on HamAlert/OTA cards. No screenshot (cluster Not configured without a callsign). Not validated on device.
 - Next: OTA filter controls in Settings, Meshtastic, ONTA/ADIF overlays.
+
+## 2026-10-14 (run 21)
+- Step 1: nothing of mine open; #255 (ui, macOS checks queued) and #73 (stale docs) are other areas', left alone. Open `[A]`/`[D]`/`[G]` qa issues only, no `[C]`.
+- Backlog item 15 (slice): NADXCC/NABand queries. `AdifModel::entityNeeded(call)` and `bandSlotNeeded(call, band)` use a DXCC resolver (bundled cty.dat table by default, injectable) over the loaded log; both return false without data or for unknown entities. No AppSettings change. Test with a synthetic resolver passes normally and under ASan/UBSan (leak check off).
+- Not done: wiring into DX cluster/HamAlert rows and watch keywords (NADXCC etc.), NAPref/NAGrid, ADIF map overlay. Not validated on device.
+- Next: wire "needed" badge into the DX cluster card, OTA filter controls in Settings, Meshtastic.
