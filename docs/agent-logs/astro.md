@@ -31,3 +31,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite ground track on the map (backlog D3): overlay layer "satellites" with each tracked bird's labelled sub-point and a dotted track (-10 to +50 min, 3 min steps) via area G's marker API (no polyline primitive exists, so dots). Test checks layer, labelled points and coordinate ranges; ASan/UBSan run on satellite and beacon tests.
 - Not mine: #135, #73 left alone.
 - Next: user-chosen satellites (max two), TLE age (D7), EME (D5).
+
+## 2026-10-14 (UTC), run 11
+- Yearly sunrise/sunset series (backlog D11, domain slice): `sun_year_series(year, lat, lon)` in `astro_sun.*` returns per-day rise/set minutes (UTC) and polar state; test checks London June/December solstice rows against almanac times and Tromso midnight sun/polar night. No UI yet (chart pane is the next slice). Full ctest green locally; ASan/UBSan left to CI.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues.
+- Next: grayline chart pane, SatNOGS transmitters, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).

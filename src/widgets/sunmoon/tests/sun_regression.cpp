@@ -65,6 +65,21 @@ int main(int argc, char** argv) {
     const auto next = next_sun_event({utc(2026, 6, 21, 21, 0)}, SunEventKind::Rise, 51.5074, -0.1278);
     check(next && std::llabs(next->value - utc(2026, 6, 22, 3, 43)) <= 120, "next sunrise is tomorrow");
 
+    // Yearly series: 365/366 days, London solstice rows match the almanac times,
+    // Tromso has midnight-sun and polar-night stretches.
+    const auto y2026 = sun_year_series(2026, 51.5074, -0.1278);
+    check(y2026.size() == 365 && sun_year_series(2028, 0, 0).size() == 366, "year series length");
+    check(y2026[0].day_of_year == 1 && y2026[364].day_of_year == 365, "year series day numbers");
+    // 2026-06-21 is day 172; 03:43 UTC = 223 min, 20:21 UTC = 1221 min.
+    check(std::fabs(y2026[171].rise_min - 223) <= 2 && std::fabs(y2026[171].set_min - 1221) <= 2, "series June solstice");
+    check(std::fabs(y2026[354].rise_min - 484) <= 2 && std::fabs(y2026[354].set_min - 953) <= 2, "series December solstice");
+    const auto tromso = sun_year_series(2026, 69.65, 18.96);
+    check(tromso[171].polar == PolarState::MidnightSun && tromso[171].rise_min < 0, "series Tromso midnight sun");
+    check(tromso[354].polar == PolarState::PolarNight, "series Tromso polar night");
+    bool bad_year = false;
+    try { sun_year_series(1800, 0, 0); } catch (const std::invalid_argument&) { bad_year = true; }
+    check(bad_year, "year out of range rejected");
+
     // Hostile input.
     bool threw = false;
     try { sun_events_for_utc_day(0, 91, 0); } catch (const std::invalid_argument&) { threw = true; }
