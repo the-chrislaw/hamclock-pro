@@ -56,7 +56,11 @@ Card {
                 Text { text: model.frequency; color: Theme.ink; font.pixelSize: Theme.fontBody; Layout.preferredWidth: Theme.fontBody * 5 }
                 Text { text: model.band; color: Theme.secondary; font.pixelSize: Theme.fontBody; Layout.preferredWidth: Theme.fontBody * 3 }
                 Text { text: (model.watched ? "★ " : "") + model.dx; color: model.watched ? Theme.accent : Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody }
-                Text { text: model.comment; color: Theme.secondary; font.pixelSize: Theme.fontBody; elide: Text.ElideRight; Layout.fillWidth: true }
+                Text {
+                    text: root.compact ? (model.country || model.comment)
+                                       : (model.country && model.comment ? model.country + " · " + model.comment : (model.country || model.comment))
+                    color: Theme.secondary; font.pixelSize: Theme.fontBody; elide: Text.ElideRight; Layout.fillWidth: true
+                }
             }
         }
     }
