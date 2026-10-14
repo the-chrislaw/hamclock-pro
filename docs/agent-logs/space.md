@@ -58,3 +58,12 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Checked by offscreen screenshots at 800x480, 1024x600 and 1920x1080 (storm state from a synthetic fixture, screenshot only; the test fixture is the real quiet capture). Compact card shows level and word; the full layout was not rendered. Not validated on device.
 - No open green PRs were mergeable this run (#161 and #163 had checks still running, #73 mergeability unknown); left alone.
 - Next: 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Aurora pane and map style (backlog 8, part)
+
+- New `solaraurora` widget ("Aurora"): SWPC OVATION nowcast `json/ovation_aurora_latest.json` (~900 kB, 1 degree grid, public, same SWPC terms) polled every 10 min. Card shows peak aurora probability north and south and the observation time. It publishes the `aurora` map style (360x180 image, green to red, legend "Aurora %", credit NOAA SWPC OVATION) and removes it when the grid is over 3 h old or the model goes away, so an old nowcast is never drawn as live.
+- Fixture is a real capture trimmed to |lat| >= 55, even longitudes, non-zero cells (parser treats missing cells as 0). Tests cover parsing, hemisphere peaks, image orientation, staleness removal of the style; ASan/UBSan run on the widget test.
+- Checked by offscreen screenshots at 800x480, 1024x600, 1920x1080 (dark; fixture time shifted to look current); the map style itself was not viewed on the map because style selection UI does not exist yet. Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- No green PRs to merge this run (#171, #172 had checks running; #73 is not mine).
+- Next: 7 (DRAP, `text/drap_global_frequencies.txt` reachable), wire auto Aurora/DRAP switch to live Kp/X-ray.

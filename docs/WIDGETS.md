@@ -71,7 +71,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 **Audit additions (B):**
 7. DRAP pane and DRAP map style.
-8. Aurora pane, Aurora map style, and automatic switch to the Aurora/DRAP map when activity is high.
+8. 🟡 Aurora pane and Aurora map style done (`solaraurora`: SWPC OVATION `json/ovation_aurora_latest.json`, peak probability per hemisphere, publishes the `aurora` map style while the grid is under 3 h old, polled every 10 min; not on the default dashboard). The automatic switch to Aurora/DRAP is in the framework (`set_auto_space_weather`) but not wired to Kp/X-ray yet.
 9. ✅ DST (Disturbance) pane (`solardst`: SWPC `products/kyoto-dst.json`, latest hourly Dst with Quiet/Weak/Moderate/Intense/Super word, 24 h low and 48 h plot; polled every 30 min; hidden when the latest record is over 6 h old; not on the default dashboard).
 10. ✅ NOAA R/S/G scales pane (`solarscales`: SWPC `products/noaa-scales.json`, current R/S/G, 24 h max and tomorrow's outlook; polled every 10 min; not on the default dashboard).
 11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
@@ -236,6 +236,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | NOAA scales: R/S/G radio blackout, radiation and geomagnetic storm levels with tomorrow's outlook (SWPC; not on the default dashboard) | B | **Live** |
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
 | Dst index: latest hourly Dst (Kyoto WDC via SWPC) with storm word, 24 h low and 48 h plot (not on the default dashboard) | B | **Live** |
+| Aurora: peak OVATION aurora probability per hemisphere and the Aurora map style (SWPC; not on the default dashboard) | B | **Live** |
 | Space weather impact: R/S/G levels ranked worst first with HF/aurora/GPS effect (SWPC; not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
