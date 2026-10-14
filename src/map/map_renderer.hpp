@@ -28,6 +28,7 @@ struct MapScene {
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
     MapGrid grid = MapGrid::None;
+    bool borders = false;               // country borders on the base map
     bool gray = false;                  // grayscale base map
     bool sky_points = false;            // draw sublunar point and DE antipode
     std::optional<Location> moon;       // sublunar point
@@ -51,6 +52,7 @@ private:
     mutable QImage base_, proj_; // caches: equirectangular base, projected raster
     mutable QString base_key_, proj_key_;
     QPainterPath coast_;
+    QPainterPath borders_;
     std::vector<QPainterPath> land_;
 };
 }

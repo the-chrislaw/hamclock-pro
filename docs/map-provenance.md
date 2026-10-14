@@ -38,3 +38,10 @@ Compare the reported hash with the value above before accepting a changed output
 Local validation: standalone C++ projection and asset checks compiled with warnings enabled and AddressSanitizer/UndefinedBehaviorSanitizer, then passed. Fixtures cover origin, poles, dateline normalization, both crossing directions, seam endpoint, inverse/forward round trips, near-east endpoint, invalid inputs, all bundled coordinate bounds and complete part coverage. Python synthetic checks verified accepted minimal geometry and rejection of truncation, invalid coordinate, invalid part offset and traversal-only ZIP members.
 
 Unknown/unimplemented here: azimuthal projection, land fill, islands omitted by 110m generalization, live data overlays, full final HamClock 4.22 map inventory, and Pi performance. This layer establishes a licensed real coastline foundation and does not claim feature parity.
+
+## Country borders (G5)
+
+- Dataset: Natural Earth, 1:110m cultural vectors, **Admin 0 – Boundary Lines (land)**, `ne_110m_admin_0_boundary_lines_land.zip`, fetched from `https://naturalearth.s3.amazonaws.com/110m_cultural/` on October 14, 2026. Archive SHA-256: `bb2954981570498a4b4344f8e83fa54caa5858e15e800094112407d2bd2f940d` (also recorded in `src/map/borders.hpp`).
+- Licence: public domain per the [Natural Earth terms](https://www.naturalearthdata.com/about/terms-of-use/), same as the coastline and land assets above. Voluntary credit: Made with Natural Earth.
+- Converter: `tools/import_borders.py` (derived from `import_coastline.py`: bounded reads, only the root `.shp` member, no extraction). Output `src/map/borders.hpp` (3108 points, 333 parts).
+- Caveat: Natural Earth draws de facto boundaries at 110m generalisation; lines are indicative only, not an authoritative statement of any border. US states and cities are not included yet.

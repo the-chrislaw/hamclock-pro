@@ -117,6 +117,11 @@ int main(int argc, char** argv) {
       check(gm.save(ini), "save gray"); MapViewOptions r; r.load(ini); check(r.gray, "gray round trip");
       MapScene gs; gs.sun.reset(); const auto colour = render(gs); gs.gray = true; const auto img = render(gs);
       check(img != colour, "gray renders differently"); }
+    { MapViewOptions bm; check(!bm.borders, "borders default off"); bm.borders = true;
+      check(bm.save(ini), "save borders"); MapViewOptions r; r.load(ini); check(r.borders, "borders round trip");
+      for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
+          MapScene bs; bs.sun.reset(); bs.projection = proj; const auto off = render(bs); bs.borders = true;
+          check(render(bs) != off, "borders render differently"); } }
     { MapViewOptions lp; check(!lp.long_path, "long path default off"); lp.long_path = true;
       check(lp.save(ini), "save long path"); MapViewOptions r; r.load(ini); check(r.long_path, "long path round trip"); }
     { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};
