@@ -97,7 +97,7 @@ Popup {
         RowLayout {
             spacing: Theme.gap / 2
             Repeater {
-                model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }]
+                model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }, { t: "Azim one", p: 3 }]
                 Toggle { label: modelData.t; on: menu.map && menu.map.projection === modelData.p
                          onClicked: menu.map.projection = modelData.p }
             }
