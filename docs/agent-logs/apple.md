@@ -108,3 +108,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Read main run 38610417758 (first TestFlight run): Configure succeeded but archive died instantly with "build-tf/hamclock-pro.xcodeproj does not exist"; the CMake project is `HamClockPro`, so the Xcode project is `HamClockPro.xcodeproj`. Fixed the path (scheme `hamclock-pro` is the app target). Untested until the next main run. No on-device claims.
 - The Simulator job still fails at link on the kit's device-tagged static archives (Qt 6.5.3; informational). Time-box expires after this run's follow-up; if it still fails I will stop and record the options.
 - Next: read the TestFlight result after merge (signing/provisioning errors -> "Owner input needed" if a distribution certificate is required).
+
+## 2026-10-14 (eighteenth hourly run)
+- No qa issues for area F; #73/#279/#283/#284 are other areas' (no checks yet), left alone.
+- Read main run 38622861499: TestFlight archive failed on automatic signing ("Revoke certificate: Your account already has an Apple Development signing certificate ... private key is not installed"; no iOS development profiles). The Simulator job step passed (still informational; screenshot not verified). Change: archive unsigned (`CODE_SIGNING_ALLOWED=NO`) and let `-exportArchive` sign with the cloud-managed distribution certificate. Untested until a main run; if export also fails, "Owner input needed: iOS distribution certificate" (e.g. a Distribution .p12 secret).
