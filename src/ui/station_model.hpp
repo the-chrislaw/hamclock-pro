@@ -1,5 +1,6 @@
 #pragma once
 // Station header data for QML: UTC and DE local clocks, DE/DX grids, path.
+#include "path_text.hpp"
 #include <QObject>
 #include <QString>
 #include <QTimer>
@@ -20,6 +21,7 @@ class StationModel : public QObject {
     Q_PROPERTY(QString deCoordinates READ deCoordinates NOTIFY stationChanged)
     Q_PROPERTY(QString dxCoordinates READ dxCoordinates NOTIFY stationChanged)
     Q_PROPERTY(QString distanceText READ distanceText NOTIFY stationChanged)
+    Q_PROPERTY(QString pathText READ pathText NOTIFY stationChanged)
     Q_PROPERTY(QString bearingText READ bearingText NOTIFY stationChanged)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
 public:
@@ -36,6 +38,7 @@ public:
     QString dxCoordinates() const { return dx_coordinates_; }
     QString distanceText() const { return distance_; }
     QString bearingText() const { return bearing_; }
+    QString pathText() const { return path_summary(distance_, bearing_); }
     bool configured() const;
 
 signals:
