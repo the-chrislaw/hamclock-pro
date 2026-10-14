@@ -5,9 +5,11 @@
 namespace hamclock {
 
 SensorsModel::SensorsModel(const WidgetContext&, QString thermal_root, QString wireless_path,
-                           QString disk_path, QString iio_root, QObject* parent)
+                           QString disk_path, QString iio_root,
+                           std::function<std::optional<platform::ClockSync>()> clock_reader, QObject* parent)
     : WidgetModel("sensors", "Host sensors", parent), root_(std::move(thermal_root)),
-      wireless_(std::move(wireless_path)), diskPath_(std::move(disk_path)), iio_(std::move(iio_root)) {
+      wireless_(std::move(wireless_path)), diskPath_(std::move(disk_path)), iio_(std::move(iio_root)),
+      clockReader_(std::move(clock_reader)) {
     timer_.setInterval(10000);
     connect(&timer_, &QTimer::timeout, this, &SensorsModel::refresh);
 }
@@ -19,7 +21,8 @@ void SensorsModel::refresh() {
     wifi_ = sensors::read_wifi_dbm(wireless_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
     env_ = sensors::read_env_sensor(iio_);
-    if (temp_ || wifi_ || disk_ || env_.any()) setState("live", "Host sensors", now());
+    clock_ = clockReader_ ? clockReader_() : std::nullopt;
+    if (temp_ || wifi_ || disk_ || env_.any() || clock_) setState("live", "Host sensors", now());
     else setState("unconfigured", "No host sensors available on this device");
     emit changed();
 }

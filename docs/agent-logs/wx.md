@@ -41,3 +41,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, seventh run)
 - #73 (area A, conflicting), #182/#183/#184 (areas tvOS/D/C) had CI still running: not mine, left alone. No open `qa` issues for E.
 - E6 slice: DX/DE local time. Weather request now uses `timezone=auto`; the parsed `utc_offset_seconds` gives "14:32 (UTC-7)" on each end of the weather card (hidden if the service omits it). City name and a new-DE/DX popup are still pending. Offline tests incl. offset formatting; release + ASan/UBSan weather tests. Card not visually checked (no station in the screenshot harness); not validated on-device. Next: flrig, DX city/popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, eighth run)
+- #186 (area F, a Linux-green but macOS universal job failed), #191 (area D, Apple jobs running), #73 (area A, conflicting): not mine, left alone. No open `qa` issues for E.
+- E12 slice: clock sync status. New `src/platform/ntp_status` (read-only `chronyc tracking`, falling back to `timedatectl show -p NTPSynchronized`; no network, no clock changes) shown as a "Clock" metric on the sensors card ("Synced, 12 ms" / "Not synchronised"; hidden where neither tool exists). Parsers tested on sample text; release + ASan/UBSan sensors tests. Not run on a Pi. NTP server choice and GPS time are still pending. Next: DX city/popup, flrig, E3 feeds (terms check).

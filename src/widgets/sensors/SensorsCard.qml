@@ -35,6 +35,11 @@ Card {
             value: visible ? root.widget.wifi : ""
         }
         Metric {
+            label: "Clock"
+            visible: root.widget && root.widget.hasClock
+            value: visible ? root.widget.clock : ""
+        }
+        Metric {
             label: "Disk"
             visible: root.widget && root.widget.hasDisk
             value: visible ? root.widget.disk : ""
