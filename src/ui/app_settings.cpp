@@ -104,6 +104,8 @@ void AppSettings::loadOptions() {
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
     clock_12h_ = ini.value("clock/h12", false).toBool();
     week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
+    overscan_ = ini.value("display/overscan", 0).toInt();
+    if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -434,6 +436,17 @@ QString AppSettings::saveWeekStart(bool sunday) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the week start.";
     week_sunday_ = sunday;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOverscan(int percent) {
+    if (percent < 0 || percent > 10) return "The overscan inset must be between 0 and 10 %.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/overscan", percent);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the overscan inset.";
+    overscan_ = percent;
     emit optionsChanged();
     return {};
 }

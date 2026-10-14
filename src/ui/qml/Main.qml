@@ -27,6 +27,9 @@ ApplicationWindow {
 
     Binding { target: Theme; property: "dense"; value: window.width <= 1280 && window.height <= 720 }
 
+    readonly property real overscanX: width * appSettings.overscanPercent / 100
+    readonly property real overscanY: height * appSettings.overscanPercent / 100
+
     Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
@@ -61,10 +64,10 @@ ApplicationWindow {
         id: page
         anchors.fill: parent
         anchors.margins: Theme.pad
-        anchors.topMargin: (Theme.dense ? Theme.pad : 0) + safeArea.top
-        anchors.leftMargin: Theme.pad + safeArea.left
-        anchors.rightMargin: Theme.pad + safeArea.right
-        anchors.bottomMargin: Theme.pad + safeArea.bottom
+        anchors.topMargin: (Theme.dense ? Theme.pad : 0) + safeArea.top + window.overscanY
+        anchors.leftMargin: Theme.pad + safeArea.left + window.overscanX
+        anchors.rightMargin: Theme.pad + safeArea.right + window.overscanX
+        anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
         spacing: Theme.gap
 
         StationCard {
