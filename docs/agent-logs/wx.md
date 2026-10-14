@@ -21,3 +21,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, second run)
 - Merged #128 (sunmoon, area D; green). #73 (area A) left alone. 
 - Fixed qa #117: weather card columns now share the width equally and the compact layout shows temperature + short summary only (wind/humidity/air dropped first). Rendered at 800x480, 1024x600 and 1920x1080 dark with a station at the fixture position; columns no longer collide. Not validated on-device. Next: DX time zone/city, new-DE/DX popup, BME280 behind an interface, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, third run)
+- #137 (area D) CI still running, #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
+- E11 slice: BME280/BMP280 on the sensors card via the kernel IIO driver (sysfs; temp, pressure, humidity, dew point by Magnus formula). Absent hardware hides the metrics. Tested against a fake IIO tree, release build; not run on a Pi. No calibration offsets or history yet. Next: DX time zone/city, new-DE/DX popup, E3 feeds (terms check).

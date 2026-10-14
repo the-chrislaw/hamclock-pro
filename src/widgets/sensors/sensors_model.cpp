@@ -5,9 +5,9 @@
 namespace hamclock {
 
 SensorsModel::SensorsModel(const WidgetContext&, QString thermal_root, QString wireless_path,
-                           QString disk_path, QObject* parent)
+                           QString disk_path, QString iio_root, QObject* parent)
     : WidgetModel("sensors", "Host sensors", parent), root_(std::move(thermal_root)),
-      wireless_(std::move(wireless_path)), diskPath_(std::move(disk_path)) {
+      wireless_(std::move(wireless_path)), diskPath_(std::move(disk_path)), iio_(std::move(iio_root)) {
     timer_.setInterval(10000);
     connect(&timer_, &QTimer::timeout, this, &SensorsModel::refresh);
 }
@@ -18,7 +18,8 @@ void SensorsModel::refresh() {
     temp_ = sensors::read_cpu_temp(root_);
     wifi_ = sensors::read_wifi_dbm(wireless_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
-    if (temp_ || wifi_ || disk_) setState("live", "Host sensors", now());
+    env_ = sensors::read_env_sensor(iio_);
+    if (temp_ || wifi_ || disk_ || env_.any()) setState("live", "Host sensors", now());
     else setState("unconfigured", "No host sensors available on this device");
     emit changed();
 }
@@ -33,6 +34,21 @@ QString SensorsModel::wifi() const {
 
 QString SensorsModel::disk() const {
     return disk_ ? QString("%1% used").arg(std::lround(*disk_ * 100)) : QString();
+}
+
+QString SensorsModel::envTemp() const {
+    return env_.temp_c ? QString("%1 °C").arg(*env_.temp_c, 0, 'f', 1) : QString();
+}
+QString SensorsModel::envPressure() const {
+    return env_.pressure_hpa ? QString("%1 hPa").arg(std::lround(*env_.pressure_hpa)) : QString();
+}
+QString SensorsModel::envHumidity() const {
+    return env_.humidity_pct ? QString("%1%").arg(std::lround(*env_.humidity_pct)) : QString();
+}
+QString SensorsModel::envDewPoint() const {
+    if (!env_.temp_c || !env_.humidity_pct) return QString();
+    const auto d = sensors::dew_point_c(*env_.temp_c, *env_.humidity_pct);
+    return d ? QString("%1 °C").arg(*d, 0, 'f', 1) : QString();
 }
 
 QString SensorsModel::cpuNote() const {

@@ -14,6 +14,22 @@ Card {
             caption: available && !root.compact ? root.widget.cpuNote : ""
         }
         Metric {
+            label: "Air temp"
+            visible: root.widget && root.widget.envTemp !== ""
+            value: visible ? root.widget.envTemp : ""
+        }
+        Metric {
+            label: "Pressure"
+            visible: root.widget && root.widget.envPressure !== ""
+            value: visible ? root.widget.envPressure : ""
+        }
+        Metric {
+            label: "Humidity"
+            visible: root.widget && root.widget.envHumidity !== ""
+            value: visible ? root.widget.envHumidity : ""
+            caption: visible && !root.compact && root.widget.envDewPoint !== "" ? "Dew point " + root.widget.envDewPoint : ""
+        }
+        Metric {
             label: "Wi-Fi"
             visible: root.widget && root.widget.hasWifi
             value: visible ? root.widget.wifi : ""

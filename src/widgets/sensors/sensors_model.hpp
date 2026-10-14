@@ -1,6 +1,7 @@
 #pragma once
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
+#include "sensors_read.hpp"
 #include <optional>
 
 namespace hamclock {
@@ -14,11 +15,16 @@ class SensorsModel : public WidgetModel {
     Q_PROPERTY(QString cpuNote READ cpuNote NOTIFY changed)
     Q_PROPERTY(bool hasWifi READ hasWifi NOTIFY changed)
     Q_PROPERTY(QString wifi READ wifi NOTIFY changed)
+    Q_PROPERTY(bool hasEnv READ hasEnv NOTIFY changed)
+    Q_PROPERTY(QString envTemp READ envTemp NOTIFY changed)
+    Q_PROPERTY(QString envPressure READ envPressure NOTIFY changed)
+    Q_PROPERTY(QString envHumidity READ envHumidity NOTIFY changed)
+    Q_PROPERTY(QString envDewPoint READ envDewPoint NOTIFY changed)
     Q_PROPERTY(bool hasDisk READ hasDisk NOTIFY changed)
     Q_PROPERTY(QString disk READ disk NOTIFY changed)
 public:
     explicit SensorsModel(const WidgetContext& context, QString thermal_root = "/sys/class/thermal", QString wireless_path = "/proc/net/wireless",
-                          QString disk_path = "/",
+                          QString disk_path = "/", QString iio_root = "/sys/bus/iio/devices",
                           QObject* parent = nullptr);
     void start();
     bool hasCpuTemp() const { return temp_.has_value(); }
@@ -26,6 +32,11 @@ public:
     QString cpuNote() const;
     bool hasWifi() const { return wifi_.has_value(); }
     QString wifi() const;
+    bool hasEnv() const { return env_.any(); }
+    QString envTemp() const;
+    QString envPressure() const;
+    QString envHumidity() const;
+    QString envDewPoint() const;
     bool hasDisk() const { return disk_.has_value(); }
     QString disk() const;
 public slots:
@@ -33,7 +44,8 @@ public slots:
 signals:
     void changed();
 private:
-    QString root_, wireless_, diskPath_;
+    QString root_, wireless_, diskPath_, iio_;
+    sensors::EnvReading env_;
     QTimer timer_;
     std::optional<double> temp_, disk_;
     std::optional<int> wifi_;
