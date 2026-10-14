@@ -23,3 +23,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #110 (space) and #73 not mine, left alone.
 - Backlog items 3/14 (slice): POTA activator spots on the map through area G's overlay API (`ota_overlay`, layer `ota`; green dots, labelled by call). SOTA spots carry no coordinates so they are not drawn (a summit table would be needed). The layer is published only while the feed is live and removed when stale/offline; `OtaModel::setMapVisible` is the per-source on/off hook (Settings toggle not wired yet). Tests cover live, cap, hide and stale removal; ASan/UBSan clean. Not validated on device or screenshotted (card/map composition belongs to areas A/G).
 - Next: PSKReporter (item 2), prefix to DXCC table (item 5, which unlocks DX cluster spots on the map).
+
+## 2026-10-14 (run 5)
+- Step 1: nothing of mine open; #73 still conflicting and #126 (space) has iPad CI running, both not mine, left alone. No open `[C]` qa issues.
+- Backlog item 2 (slice): new `src/widgets/pskreporter/`: XML parser (malformed rows skipped, newest first), query URL builder (callsign validated, `/` encoded, appcontact), `PskModel` over one PolledSource at 5 min (PSKReporter's requested rate) that is recreated when the station callsign changes and stays Not configured while it is empty. Compact card. Data source policy recorded in the roadmap (probe from the sandbox returned HTTP 200). Tests pass normally and under ASan/UBSan.
+- Not done: map overlay (needs locator to lat/lon and a label policy), "heard by me / I heard" direction, band statistics, farthest-reception distance. The card is not on the default dashboard, so no screenshot; not validated on device.
+- Next: prefix to DXCC table (item 5, unlocks DX cluster spots on the map), PSKReporter map paths, HamAlert.

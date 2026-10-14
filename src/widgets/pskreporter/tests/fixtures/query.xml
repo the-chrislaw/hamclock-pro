@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<receptionReports >
+  <lastSequenceNumber value="73683766608"/>
+  <maxFlowStartSeconds value="1791913305"/>
+  <receptionReport receiverCallsign="MM0ZBH" receiverLocator="IO86IB" senderCallsign="W1AW" senderLocator="FN31PR" frequency="21029304" flowStartSeconds="1791913278" mode="CW" isSender="1" receiverDXCC="Scotland" receiverDXCCCode="GM" senderLotwUpload="2026-10-07" senderEqslAuthGuar="A" sNR="14" />
+</receptionReports>

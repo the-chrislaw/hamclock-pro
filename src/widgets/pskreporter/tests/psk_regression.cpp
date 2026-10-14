@@ -1,0 +1,96 @@
+// PSKReporter widget: parser, query URL and model, offline.
+// Fixture is a trimmed real response captured 2026-10-13 ~17:40 UTC.
+#include "../psk_model.hpp"
+#include "../psk_parse.hpp"
+#include "../../../ui/app_settings.hpp"
+#include <QCoreApplication>
+#include <QDir>
+#include <QTemporaryDir>
+#include <QFile>
+#include <QTimeZone>
+#include <QTimer>
+#include <iostream>
+
+namespace {
+int checks = 0, failures = 0;
+void check(bool ok, const char* label) {
+    ++checks;
+    if (!ok) { ++failures; std::cerr << "FAIL: " << label << '\n'; }
+}
+} // namespace
+
+int main(int argc, char** argv) {
+    QCoreApplication app(argc, argv);
+    using namespace hamclock;
+    if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
+    QFile file(QDir(argv[1]).filePath("query.xml"));
+    check(file.open(QIODevice::ReadOnly), "fixture present");
+    const QByteArray body = file.readAll();
+
+    const auto feed = psk::parse_reports(body);
+    check(feed.ok && feed.reports.size() == 1, "one report");
+    const auto& r = feed.reports.front();
+    check(r.receiver == "MM0ZBH" && r.receiver_grid == "IO86IB" && r.sender == "W1AW", "calls and grids");
+    check(r.freq_khz == 21029.304 && r.band == "15m" && r.mode == "CW", "frequency, band, mode");
+    check(r.has_snr && r.snr_db == 14, "SNR");
+    check(r.time == QDateTime::fromSecsSinceEpoch(1791913278, QTimeZone::utc()), "time is UTC");
+
+    check(psk::parse_reports("<receptionReports/>").ok && psk::parse_reports("<receptionReports/>").reports.empty(),
+          "empty document is ok");
+    check(!psk::parse_reports("").ok && !psk::parse_reports("<html><p>").ok && !psk::parse_reports("nope").ok,
+          "non-reports rejected");
+    const auto mixed = psk::parse_reports(
+        R"(<receptionReports>
+          <receptionReport receiverCallsign="" frequency="14074000" flowStartSeconds="100" />
+          <receptionReport receiverCallsign="A1B" frequency="x" flowStartSeconds="100" />
+          <receptionReport receiverCallsign="A1B" frequency="14074000" flowStartSeconds="0" />
+          <receptionReport receiverCallsign="old1" frequency="14074000" flowStartSeconds="1000" sNR="-12" />
+          <receptionReport receiverCallsign="new1" frequency="7074000" flowStartSeconds="2000" />
+        </receptionReports>)");
+    check(mixed.ok && mixed.reports.size() == 2, "malformed rows skipped");
+    check(mixed.reports[0].receiver == "NEW1" && !mixed.reports[0].has_snr, "newest first, SNR optional");
+
+    check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
+          "query URL");
+    check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
+    check(psk::query_url("").isEmpty() && psk::query_url("A B&x=1").isEmpty() && psk::query_url("W1AW-5").isEmpty(),
+          "unsafe calls refused");
+
+    QString requested;
+    WidgetContext context;
+    context.transport = [&](const QUrl& url, FetchDone done) {
+        requested = url.toString();
+        FetchResult result;
+        result.http_status = 200;
+        result.body = body;
+        QTimer::singleShot(0, [done, result] { done(result); });
+    };
+    QTemporaryDir tmp;
+    AppSettings settings(tmp.filePath("station.json"), tmp.path());
+    context.settings = &settings;
+    PskModel model(context);
+    auto now = QDateTime::fromSecsSinceEpoch(1791913300, QTimeZone::utc());
+    model.setClock([&] { return now; });
+    model.start();
+    check(model.state() == "unconfigured" && requested.isEmpty(), "no callsign -> unconfigured, no request");
+
+    check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "save callsign");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    if (model.source()) QFile::remove(model.source()->cachePath());
+    model.start();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(requested.contains("senderCallsign=W1AW"), "request uses the settings callsign");
+    check(model.state() == "live" && model.hasData() && model.count() == 1, "report -> live");
+    check(model.bestSnr() == "14 dB" && model.recent().size() == 1, "summary");
+
+    now = now.addSecs(25 * 60);
+    model.source()->setClock([&] { return now; });
+    emit model.ageChanged();
+    check(model.state() == "stale", "old data -> stale");
+
+    check(settings.saveStation("W1AW-5", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "save unsupported callsign");
+    model.start();
+    check(model.state() == "unconfigured" && model.count() == 0, "unsupported callsign -> unconfigured, list dropped");
+    if (failures) std::cerr << failures << " of " << checks << " checks failed\n";
+    return failures ? 1 : 0;
+}
