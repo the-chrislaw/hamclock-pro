@@ -1,4 +1,6 @@
 #include "telnet_client.hpp"
+
+#include "../platform/apple_lifecycle.hpp"
 #include <QTcpSocket>
 #include <algorithm>
 
@@ -31,6 +33,10 @@ TelnetClient::TelnetClient(TelnetSocketFactory factory, QObject* parent)
     : QObject(parent), factory_(std::move(factory)), retry_(this) {
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &TelnetClient::connect_now);
+    auto& lifecycle = AppLifecycle::instance();
+    suspended_ = lifecycle.isSuspended();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &TelnetClient::on_suspended);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &TelnetClient::on_resumed);
 }
 
 std::chrono::seconds TelnetClient::backoff(int failures) {
@@ -79,7 +85,12 @@ bool TelnetClient::looks_like_login_prompt(const QString& partial_line) {
            s.endsWith("your call:") || s.endsWith("please enter your call:");
 }
 
-void TelnetClient::start(const QString& host, int port, const QString& login, const QStringList& commands) {
+bool TelnetClient::looks_like_password_prompt(const QString& partial_line) {
+    return partial_line.trimmed().toLower().endsWith("password:");
+}
+
+void TelnetClient::start(const QString& host, int port, const QString& login, const QStringList& commands,
+                         const QString& password) {
     stop();
     host_ = host.trimmed();
     port_ = port;
@@ -87,21 +98,44 @@ void TelnetClient::start(const QString& host, int port, const QString& login, co
     commands_ = sanitize_commands(commands);
     for (const QChar c : login_) // the login goes onto the wire: no control characters or spaces
         if (!(c.isLetterOrNumber() && c.unicode() < 128) && c != '/' && c != '-') return; // stays Idle
+    password_ = password;
+    for (const QChar c : password_)
+        if (c.unicode() <= 32 || c.unicode() >= 127) return; // stays Idle
     if (host_.isEmpty() || login_.isEmpty() || port_ <= 0 || port_ > 65535) return; // stays Idle
     failures_ = 0;
-    connect_now();
+    wanted_ = true;
+    if (!suspended_) connect_now();
 }
 
-void TelnetClient::stop() {
+void TelnetClient::drop_socket() {
     retry_.stop();
     if (socket_) { socket_->disconnect(this); socket_->close(); socket_->deleteLater(); socket_ = nullptr; }
     set_state(State::Idle);
+}
+
+void TelnetClient::stop() {
+    wanted_ = false;
+    drop_socket();
+}
+
+void TelnetClient::on_suspended() {
+    suspended_ = true;
+    if (wanted_) drop_socket();
+}
+
+void TelnetClient::on_resumed() {
+    if (!suspended_) return;
+    suspended_ = false;
+    if (!wanted_) return;
+    failures_ = 0;
+    connect_now();
 }
 
 void TelnetClient::connect_now() {
     if (socket_) { socket_->disconnect(this); socket_->close(); socket_->deleteLater(); }
     raw_.clear(); text_.clear();
     login_sent_ = false;
+    password_sent_ = false;
     socket_ = factory_(this);
     connect(socket_, &TelnetSocket::connected, this, [this] { set_state(State::LoggingIn); });
     connect(socket_, &TelnetSocket::dataReceived, this, &TelnetClient::on_data);
@@ -120,7 +154,7 @@ void TelnetClient::on_data(const QByteArray& data) {
         QByteArray line = text_.left(newline);
         text_.remove(0, newline + 1);
         if (line.endsWith('\r')) line.chop(1);
-        if (state_ == State::LoggingIn && login_sent_) {
+        if (state_ == State::LoggingIn && login_sent_ && (password_.isEmpty() || password_sent_)) {
             failures_ = 0;
             set_state(State::Online);
             for (const QString& cmd : commands_) socket_->write(cmd.toLatin1() + "\r\n");
@@ -128,6 +162,13 @@ void TelnetClient::on_data(const QByteArray& data) {
         emit lineReceived(QString::fromLatin1(line));
     }
     if (text_.size() > kMaxLineBytes) text_.clear(); // hostile endless line
+    if (state_ == State::LoggingIn && login_sent_ && !password_.isEmpty() && !password_sent_ &&
+        looks_like_password_prompt(QString::fromLatin1(text_))) {
+        password_sent_ = true;
+        text_.clear();
+        socket_->write(password_.toLatin1() + "\r\n");
+        return;
+    }
     if (state_ == State::LoggingIn && !login_sent_ && looks_like_login_prompt(QString::fromLatin1(text_))) {
         login_sent_ = true;
         text_.clear();

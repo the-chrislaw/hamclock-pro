@@ -4,6 +4,7 @@
 #include "land.hpp"
 #include "path.hpp"
 #include "projection.hpp"
+#include "sky_points.hpp"
 #include <QLinearGradient>
 #include <QFont>
 #include <QPainter>
@@ -70,12 +71,15 @@ MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
             hi = hi ? std::max(*hi, l->latitude) : l->latitude;
         }
     return MapViewport::fill(size.width(), size.height(), scene.de ? scene.de->longitude : 0.0, lo, hi,
-                            scene.zoom, scene.pan_lon, scene.pan_lat);
+                            scene.zoom, scene.pan_lon ? scene.pan_lon : scene.center_lon, scene.pan_lat);
 }
 void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) const {
     const bool dark = scene.dark;
-    const QColor sea(dark ? "#374a51" : "#dce8eb"), coast(dark ? "#8b9fa3" : "#647c7e"), route(dark ? "#b4d9e8" : "#315e77");
-    const QColor land(dark ? "#29363b" : "#d6ddce");
+    QColor sea(dark ? "#374a51" : "#dce8eb"), coast(dark ? "#8b9fa3" : "#647c7e");
+    QColor land(dark ? "#29363b" : "#d6ddce");
+    if (scene.gray) // base map only; overlays keep their colours
+        for (QColor* c : {&sea, &coast, &land}) { const int g = qGray(c->rgb()); *c = QColor(g, g, g); }
+    const QColor route(dark ? "#b4d9e8" : "#315e77");
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing);
     painter.fillRect(QRectF(QPointF(), size), sea);
@@ -110,7 +114,14 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawImage(QRectF(0, 0, 1, 1), scene.style->image);
             painter.setOpacity(1.0);
         }
-        if (scene.sun) {
+        if (scene.grid != MapGrid::None) {
+            QPen gp(dark ? QColor(230, 238, 240, 90) : QColor(27, 42, 48, 80)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp); painter.setBrush(Qt::NoBrush);
+            for (const auto& l : grid_lines(scene.grid))
+                painter.drawLine(QPointF((l.lon1 + 180.0) / 360.0, (90.0 - l.lat1) / 180.0),
+                                 QPointF((l.lon2 + 180.0) / 360.0, (90.0 - l.lat2) / 180.0));
+        }
+        if (scene.sun && scene.night_shade) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, dark ? 90 : 55));
             painter.drawPolygon(night);
@@ -128,6 +139,21 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawLine(QPointF(sun.x() - 8, sun.y()), QPointF(sun.x() + 8, sun.y()));
             painter.drawLine(QPointF(sun.x(), sun.y() - 8), QPointF(sun.x(), sun.y() + 8));
         }
+        if (scene.sky_points) {
+            const QColor c(dark ? "#d8dde6" : "#59606e");
+            painter.setBrush(Qt::NoBrush);
+            if (scene.moon) { // open circle with a crescent-ish inner dot
+                const auto p = at(*scene.moon);
+                painter.setPen(QPen(c, 2)); painter.drawEllipse(p, 5 * ui, 5 * ui);
+                painter.setBrush(c); painter.drawEllipse(p, 2 * ui, 2 * ui);
+            }
+            if (scene.de) { // antipode: X
+                const auto p = at(antipode(*scene.de)); const double r = 4 * ui;
+                painter.setPen(QPen(c, 2));
+                painter.drawLine(QPointF(p.x() - r, p.y() - r), QPointF(p.x() + r, p.y() + r));
+                painter.drawLine(QPointF(p.x() - r, p.y() + r), QPointF(p.x() + r, p.y() - r));
+            }
+        }
         if (scene.route_visible) {
             painter.setPen(QPen(route, 2));
             for (std::size_t i = 1; i < scene.route.size(); ++i) {
@@ -135,6 +161,19 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                 for (std::size_t j = 0; j < split.count; ++j)
                     painter.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
                                      px(split.segments[j].second.x, split.segments[j].second.y));
+            }
+        }
+        if (scene.grid == MapGrid::AzimuthRings && scene.de) {
+            QPen gp(dark ? QColor(230, 238, 240, 110) : QColor(27, 42, 48, 100)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp);
+            for (double d = azimuth_ring_step_deg; d < 180.0; d += azimuth_ring_step_deg) {
+                const auto ring = ring_points(scene.de->latitude, scene.de->longitude, d);
+                for (std::size_t i = 1; i < ring.size(); ++i) {
+                    const auto split = map_split_equirectangular({ring[i - 1].lat, ring[i - 1].lon}, {ring[i].lat, ring[i].lon});
+                    for (std::size_t j = 0; j < split.count; ++j)
+                        painter.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
+                                         px(split.segments[j].second.x, split.segments[j].second.y));
+                }
             }
         }
         if (scene.de && scene.dx) {

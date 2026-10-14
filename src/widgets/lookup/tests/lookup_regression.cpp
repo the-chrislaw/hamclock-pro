@@ -60,6 +60,17 @@ int main(int argc, char** argv) {
     check(QString::fromLatin1(url.toEncoded()).contains("password=p%26ss%3Dw%20d") && url.host() == "xmldata.qrz.com" && url.scheme() == "https",
           "password percent-encoded, https");
 
+    // Path from DE to a grid centre (DE at 0N 0E; JJ00 centre is 0.5N 1E).
+    check(LookupModel::pathText(0, 0, "").isEmpty() && LookupModel::pathText(0, 0, "ZZ99").isEmpty() &&
+              LookupModel::pathText(0, 0, "FN3").isEmpty(),
+          "no path for empty or malformed grid");
+    {
+        const QString p = LookupModel::pathText(41.7, -72.7, "FN31pr");
+        check(p.contains(" km") && p.endsWith("SP"), "path text shape");
+        const QString east = LookupModel::pathText(0, 0, "JJ00");  // centre 0.5N 1E: ~124 km, bearing ~63
+        check(east.startsWith("124 km") && east.contains("63°"), "path distance and bearing");
+    }
+
     // Model with a fake transport.
     QTemporaryDir dir;
     AppSettings settings(dir.filePath("station.conf"), dir.path());

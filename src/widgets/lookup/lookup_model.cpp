@@ -1,6 +1,9 @@
 #include "lookup_model.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../domain/geometry.hpp"
+#include "../../domain/locator_input.hpp"
 #include <QPointer>
+#include <cmath>
 
 namespace hamclock {
 
@@ -27,6 +30,29 @@ QString LookupModel::location() const {
     if (!current_) return {};
     return current_->qth.isEmpty() ? current_->country
            : current_->country.isEmpty() ? current_->qth : current_->qth + ", " + current_->country;
+}
+
+QString LookupModel::path() const {
+    if (!current_ || !settings_ || !settings_->configured()) return {};
+    return pathText(settings_->deLatitude(), settings_->deLongitude(), current_->grid);
+}
+
+QString LookupModel::pathText(double de_lat, double de_lon, const QString& grid) {
+    const QString g = grid.trimmed();
+    if (g.size() != 2 && g.size() != 4 && g.size() != 6) return {};
+    try {
+        Location dx = location_from_maidenhead(g.toStdString());
+        // The decoder returns the south-west corner; aim at the middle of the cell.
+        const double lon_cell = g.size() == 2 ? 20.0 : g.size() == 4 ? 2.0 : 5.0 / 60.0;
+        const double lat_cell = g.size() == 2 ? 10.0 : g.size() == 4 ? 1.0 : 2.5 / 60.0;
+        dx.longitude += lon_cell / 2;
+        dx.latitude += lat_cell / 2;
+        const GeometryResult r = geometry({de_lat, de_lon}, dx);
+        if (r.status != BearingStatus::Defined) return QString("%1 km").arg(std::lround(r.distance_km));
+        return QString("%1 km · %2° SP").arg(std::lround(r.distance_km)).arg(std::lround(r.short_bearing_deg) % 360);
+    } catch (const std::exception&) {
+        return {};
+    }
 }
 
 void LookupModel::refreshState() {

@@ -3,7 +3,10 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "dx_spot_parse.hpp"
+#include "udp_spot.hpp"
 #include <QAbstractListModel>
+#include <QVariantList>
+#include <functional>
 #include <deque>
 #include <vector>
 
@@ -13,7 +16,7 @@ namespace hamclock {
 class DxSpotList : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole };
+    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole, OtaRole };
     using QAbstractListModel::QAbstractListModel;
     int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(shown_.size()); }
     int totalCount() const { return int(spots_.size()); }
@@ -21,8 +24,14 @@ public:
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
     void add(const dxcluster::DxSpot& spot);
+    const std::deque<dxcluster::DxSpot>& spots() const { return spots_; }
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
+    // Call -> DXCC primary prefix for "@PREFIX" watch entries; default is the bundled table (a qrc resource, so tests inject one).
+    void set_entity_resolver(std::function<QString(const QString&)> r) { entity_of_ = std::move(r); }
     int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
+    // Per-band spot counts by continent over every stored spot (any filter): [{band, total, NA, SA, EU, AF, AS, OC}].
+    // Default resolver is the bundled DXCC table.
+    QVariantList activity(const std::function<QString(const QString&)>& continent_of = {}) const;
     static constexpr int kCapacity = 50;
 private:
     bool matches(const dxcluster::DxSpot& s) const {
@@ -32,6 +41,7 @@ private:
     std::vector<int> shown_;              // indexes into spots_ passing the filter
     void rebuild();
     QString band_, mode_;
+    std::function<QString(const QString&)> entity_of_;
     QStringList watch_;
     std::vector<char> is_watched_; // parallel to spots_
     int watched_ = 0;
@@ -43,6 +53,7 @@ class DxClusterModel : public WidgetModel {
     Q_PROPERTY(int spotCount READ spotCount NOTIFY countChanged)
     Q_PROPERTY(int totalCount READ totalCount NOTIFY countChanged)
     Q_PROPERTY(int watchedCount READ watchedCount NOTIFY countChanged)
+    Q_PROPERTY(QVariantList activity READ activity NOTIFY countChanged)
     Q_PROPERTY(QString bandFilter READ bandFilter WRITE setBandFilter NOTIFY filterChanged)
     Q_PROPERTY(QString modeFilter READ modeFilter WRITE setModeFilter NOTIFY filterChanged)
 public:
@@ -52,7 +63,11 @@ public:
     int spotCount() const { return list_.rowCount(); }
     int totalCount() const { return list_.totalCount(); }
     int watchedCount() const { return list_.watchedCount(); }
+    QVariantList activity() const { return list_.activity(); }
     void refreshWatchList(); // re-reads the watch list from settings
+    void setMapVisible(bool visible); // per-source map on/off (default on)
+    void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
+    dxcluster::UdpSpotListener& udp() { return udp_; }
     QString bandFilter() const { return band_filter_; }
     QString modeFilter() const { return mode_filter_; }
     // Unknown values are ignored; "" shows everything.
@@ -65,15 +80,19 @@ public:
     static QStringList bandChoices();
     static QStringList modeChoices();
     TelnetClient& client() { return client_; }
+    ~DxClusterModel() override;
 signals:
     void countChanged();
     void filterChanged();
 private:
+    void publishOverlay();
+    bool map_visible_ = true;
     void on_line(const QString& line);
     void on_state(TelnetClient::State state);
     AppSettings* settings_;
     TelnetClient client_;
     DxSpotList list_;
+    dxcluster::UdpSpotListener udp_;
     QString band_filter_, mode_filter_;
 };
 

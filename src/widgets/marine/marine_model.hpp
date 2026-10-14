@@ -17,6 +17,7 @@ class MarineModel : public WidgetModel {
     Q_PROPERTY(QString headlineArea READ headlineArea NOTIFY alertsChanged)
     Q_PROPERTY(QString headlineTimes READ headlineTimes NOTIFY alertsChanged)
     Q_PROPERTY(QString summary READ summary NOTIFY alertsChanged)
+    Q_PROPERTY(QString nearDe READ nearDe NOTIFY alertsChanged)
 public:
     explicit MarineModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -29,7 +30,12 @@ public:
     QString headlineTimes() const;  // "issued 13 20:42Z · until 14 04:00Z"
     QString summary() const;        // "26 Gale Warning · 76 Small Craft Advisory"
 
+    // "Gulf of Mexico: 2 · Gale Warning until 14 04:00Z" or "Gulf of Mexico: none active";
+    // empty without a station in US waters or before the regional query has answered.
+    QString nearDe() const;
+
     PolledSource& source() { return *source_; }
+    PolledSource* regionSource() { return region_; }
 
 signals:
     void alertsChanged();
@@ -37,8 +43,13 @@ signals:
 private:
     std::vector<marine::Alert> active() const;
     void refreshState();
+    void resetRegionSource();
 
+    WidgetContext context_;
     PolledSource* source_;
+    PolledSource* region_ = nullptr;
+    QString region_code_;
+    marine::Feed region_feed_;
     marine::Feed feed_;
 };
 

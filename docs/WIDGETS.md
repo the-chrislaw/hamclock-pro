@@ -33,13 +33,13 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 ### A. UI shell and design (owns `src/ui/`, `cmake/HamClockApp.cmake`, `docs/WIDGETS.md` contract section)
 0. 🟡 **Top priority: one-page slot layout** (done: no scrolling, three pane slots, chooser, choices saved; map now fills its item without the widget's inner margin; done: dense small-screen shell (no header, tight spacing, settings button in the station card) and tap-anywhere/swipe pane switching; done: long-press pane options (change, step, empty, reset); done: per-slot rotation (off/5/10/30/60 s, set from the long-press menu, saved) with custom rotation sets (long-press: add/remove the shown widget; empty set = all widgets); pending: category picker, side panes, `compact` layouts in each widget card). Remove page scrolling. Build the fixed slot grid (station column + pane row + map, scaling from 800×480 to 4K), a pane chooser (tap pane title → list of widgets; keyboard/remote accessible), per-slot choice saved in settings, optional rotation interval per slot. Default arrangement at 1024×600: station column left, three panes on top (Space weather, Solar wind, DX cluster), map filling the rest. Verify by screenshots at 800×480, 1024×600, 1280×800, 1920×1080 that nothing is clipped and nothing scrolls. Real-screen issues to fix: docs/hardware-validation.md.
-0c. **Owner priority (Oct 13): station column parity with the original's DE/DX panels.** Do this right after A0, before 0b. Owner found the left column missing much of the original. Each item compact enough for the 7-inch 1024×600 column; verify by screenshot:
+0c. 🟡 (done: tap the clock to swap UTC and DE local; DE and DX next sunrise/sunset countdown lines; tap the path line to toggle short/long path; Metric/Imperial distance units in Settings, saved) **Owner priority (Oct 13): station column parity with the original's DE/DX panels.** Do this right after A0, before 0b. Owner found the left column missing much of the original. Each item compact enough for the 7-inch 1024×600 column; verify by screenshot:
    - Callsign banner: call in large type with fg/bg colours (rainbow option), tap to cycle call / custom title / ON AIR (A13).
    - DE box: local time and date in selectable formats (digital 12/24 h, analog, calendar, annotated analog), DE sunrise and sunset shown as "in 3h 12m" / "ago" or "at" times (data from area D's astro code).
    - DX box: DX local time with automatic time zone from DX coordinates (manual override), DX sunrise/sunset, prefix → country name, short-path and long-path distance/bearing with a tap toggle, true or magnetic bearing (WMM), units Imperial/Metric.
    - Tap targets as in the original: tap DE or DX to set a new location (grid, lat/lng or search, reusing 0b), tap the clock for Big Clock / stopwatch / countdown, tap UTC to toggle UTC/local.
    - Auxiliary time line (date, day of year, JD/MJD, sidereal, UNIX) selectable (A14 subset).
-0b. **Settings: location lookup.** "Find" button: search an address or place via OpenStreetMap Nominatim (honest User-Agent, max 1 request/second, only on button press; sample in tests/fixtures/sources), fills latitude, longitude, grid square and suggests the time zone; Maidenhead grid entry as an alternative; on macOS/iPad also "Use my location" via the OS location service (with area F).
+0b. 🟡 (done: DMS and decimal coordinate entry, Maidenhead grid entry that fills DE, offline Nominatim reply parser `LocationTools`, "Find" button (one Nominatim request per press, max 1/s, fills lat/lon/grid); pending: zone suggestion, "Use my location") **Settings: location lookup.** "Find" button: search an address or place via OpenStreetMap Nominatim (honest User-Agent, max 1 request/second, only on button press; sample in tests/fixtures/sources), fills latitude, longitude, grid square and suggests the time zone; Maidenhead grid entry as an alternative; on macOS/iPad also "Use my location" via the OS location service (with area F).
 1. Match `design/dashboard.html` closely: header, sidebar, card spacing, typography, map toolbar; smooth touch scrolling; pressed/focus states.
 2. TV mode: overscan inset setting, remote/keyboard focus order across cards, focus ring, large type.
 3. Settings: locator entry (Maidenhead) as alternative to lat/lon, time-zone picker list, map click to set DX.
@@ -54,7 +54,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 10. Map overlays: Tropics, lat/lng, Maidenhead (fields and 4-char), azimuth rings, CQ and ITU zones, cities (tap snaps to city), country borders and US states, DE antipode, sublunar point, long-path drawing, gray display mode.
 11. Hover/long-press info box: lat/lng, grid, prefix/country, distance/bearing, local mean time, weather, details of the object under the pointer.
 12. DE/DX panels: DE formats (All info, Simple analog, Calendar, Annotated analog, Digital 12/24 h), DX time zone (auto/manual), sunrise/set "in/ago" vs "at", SP/LP toggle, true or magnetic bearing (WMM), units Imperial/Metric/British.
-13. Callsign banner: call / rotating titles / ON AIR text, fg/bg colours, rainbow option.
+13. Callsign banner (done: tap cycles call / ON AIR / 73 DE call): call / rotating titles / ON AIR text, fg/bg colours, rainbow option.
 14. Clocks: auxiliary time (Date, DOY, JD, MJD, Sidereal, Solar, UNIX), change-time ("time travel") menu, date order and week start, daily and one-time alarms (sound, optional GPIO), Big Clock option parity (LST, +digital, numbers, coloured hands, DE WX, Space WX, satellite).
 15. Kiosk management: brightness min/max, light-sensor auto-dim where available, daily on/off schedule per weekday, idle blanking, screen lock, restart/exit/reboot/shutdown menu, per-action passwords via the credential store.
 16. Saved configurations (save/restore/update/delete/rename) and demo mode.
@@ -70,14 +70,14 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 6. ✅ NOAA alerts/watches/warnings feed for storms and radio blackouts (`solaralerts`: SWPC `products/alerts.json`, newest message per product, cancellations, expired warnings and old alerts dropped).
 
 **Audit additions (B):**
-7. DRAP pane and DRAP map style.
-8. Aurora pane, Aurora map style, and automatic switch to the Aurora/DRAP map when activity is high.
-9. DST (Disturbance) pane.
+7. ✅ DRAP pane and DRAP map style done (`solardrap`: SWPC `text/drap_global_frequencies.txt`, highest affected frequency, publishes the `drap` map style while the table is under 2 h old, polled every 10 min; not on the default dashboard).
+8. ✅ Aurora pane and Aurora map style done (`solaraurora`: SWPC OVATION `json/ovation_aurora_latest.json`, peak probability per hemisphere, publishes the `aurora` map style while the grid is under 3 h old, polled every 10 min; not on the default dashboard). The automatic switch to Aurora/DRAP is wired: `spaceweather` feeds fresh Kp and X-ray flux to `set_auto_space_weather` (stale values are passed as unknown); the settings toggle to choose it arrives with the map styles UI.
+9. ✅ DST (Disturbance) pane (`solardst`: SWPC `products/kyoto-dst.json`, latest hourly Dst with Quiet/Weak/Moderate/Intense/Super word, 24 h low and 48 h plot; polled every 30 min; hidden when the latest record is over 6 h old; not on the default dashboard).
 10. ✅ NOAA R/S/G scales pane (`solarscales`: SWPC `products/noaa-scales.json`, current R/S/G, 24 h max and tomorrow's outlook; polled every 10 min; not on the default dashboard).
 11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
-12. Space-weather stats ranked by impact.
+12. ✅ Space-weather stats ranked by impact (`solarimpact`: the SWPC R/S/G levels from `noaa-scales.json`, worst first with a one-line HF/aurora/GPS effect from the NOAA scale definitions; polled every 10 min; not on the default dashboard). Kp, Dst and X-ray are not yet folded into the ranking.
 13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
-14. HamQSL (N0NBH) HF and VHF condition panes (check terms first).
+14. ✅ HamQSL (N0NBH) HF and VHF conditions pane (`solarhamqsl`: `https://www.hamqsl.com/solarxml.php`, calculated day/night HF band words and VHF openings, credit shown; polled hourly; hidden when the report is over 6 h old; not on the default dashboard).
 15. Tropo map style (check source terms first).
 
 ### C. Spots (owns `src/widgets/dxcluster/`, `pskreporter/`, `ota/`, `src/net/telnet*`)
@@ -85,36 +85,44 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 2. PSKReporter (F14): reception reports for your callsign (respect its query-rate limits), map overlay.
 3. POTA and SOTA activator spots (public APIs).
 4. Watch lists (F16): highlight callsigns/prefixes/DXCC entities; alert badge.
-5. Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table.
+5. ✅ (table + lookup + country role on DX cluster rows; not shown in the card yet) Callsign prefix → DXCC entity/country lookup (F12) from a bundled, licensed prefix table (`dxcluster/dxcc_table`, AD1C cty.dat, MIT).
 
 **Audit additions (C):**
 6. WSPR and RBN in Live Spots: of DE / by DE, by call or grid, max distance or count, band statistics, map paths.
 7. More On-The-Air programmes (WWFF, IOTA, GMA, LLOTA, WWTOTA, TOWERS, WWBOTA) with age/sort/mode/band filters.
-8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent).
+8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only) — ✅ first slice (card, fixed 100 km; settings and map overlay later). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent) — ✅ first slice (counts over the DX cluster's recent spots, shown as a "Busiest band" line in the DX cluster card; standalone heatmap pane, PSK/WSPR/RBN sources later).
 12. UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
 13. Cluster login with SSID and native commands after login.
 14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
 15. ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
-16. IOTA reference names and xOTA markers parsed from comments.
+16. 🟡 (xOTA reference parsed from comments and shown as a badge on DX cluster rows; IOTA reference names not done) IOTA reference names and xOTA markers parsed from comments.
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.
 2. ✅ Moon phase, rise/set, elevation/azimuth at DE (F04) (offline).
-3. 🟡 (SGP4, look angles, pass search, TLE download, next-passes pane and map sub-points with ground track done; the user's choice of up to two satellites next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
+3. 🟡 (SGP4, look angles with range rate and Doppler formulas, pass search, TLE download, next-passes pane and map sub-points with ground track done; the map tracks at most two satellites, chosen by `[satellites] tracked=` in options.ini or else the two soonest passes; a settings control for the choice next) Satellites (F05): CelesTrak TLEs (cached daily), SGP4 propagation (vendored library with licence recorded), next passes at DE, live ground track on map, up to two tracked satellites.
 4. ✅ NCDXF/IARU beacons (F19): current transmitting beacon per band, the five on-air beacons marked on the map (offline schedule).
-5. EME planning (F06): Moon position at DE and DX, mutual window.
+5. 🟡 (offline pane done: Moon az/el at DE and DX, next mutual window, distance and path loss vs perigee; moon image/tool link and per-band sky temperature not done) EME planning (F06): Moon position at DE and DX, mutual window.
 
 **Audit additions (D):**
-6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
-7. Satellite rise/set alert; maximum TLE age; user-supplied TLE.
-8. hams.at upcoming activations pane. 9. Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
+6. 🟡 (sky plot of the next pass in the Satellites pane done; DX panel placement not) Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
+7. 🟡 (maximum TLE age of 30 days done) Satellite rise/set alert; user-supplied TLE.
+8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. ✅ Planets on the map (offline): Mercury to Saturn sub-planet points as overlay layer "planets", plus a pane of the planets above the horizon at DE; Uranus and Neptune not included. 11. 🟡 (offline chart pane `daylight` done: weekly sunrise/sunset curves in UTC with today marked; DE local time and axis labels not done) Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
+
+**Owner request (Oct 14): satellite detail box.** Tapping a satellite (map marker or Satellites pane row) opens a small, non-modal box using area G's tap-for-details mechanism (G0); closes on tap outside or Back. Contents, compact at 1024×600:
+- Now: azimuth/elevation, range, above/below horizon, sunlit/eclipsed, range rate.
+- Next pass: AOS / TCA / LOS times (local and UTC), max elevation, AOS and LOS azimuths with compass letters, countdown; "more passes" lists the next 5.
+- Listen/Transmit: each transmitter's downlink and uplink frequency and mode (FM, linear/inverting, CW beacon, packet/APRS), CTCSS tone where the database has it, and live Doppler-corrected frequencies (from SGP4 range rate, updated each second; uplink and downlink corrected in opposite senses, inverting transponders handled).
+- Status: active/inactive from the database; show "frequency data from SatNOGS DB (CC BY-SA 4.0)" attribution.
+- Actions: show ground track + footprint on the map; Set as DX (sub-satellite point).
+Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters/?format=json`, open data, CC BY-SA 4.0; poll at most daily, cache, honest User-Agent), joined to TLEs by NORAD id. Tests: Doppler maths against a hand-computed case, NORAD join, inverting-transponder sign, fixture-based parse. If `db.satnogs.org` is not reachable, open "Owner input needed: allowlist domains".
 
 ### E. Weather, lookup, events, radio (owns `src/widgets/weather/`, `lookup/`, `events/`, `radio/`)
 1. ✅ DE/DX weather (F10) via Open-Meteo (no key): temperature, wind, conditions, at both ends.
 2. 🟡 Callsign lookup (QRZ XML or HamQTH; card + session handling done, spotted-call wiring pending) using the account in Settings: name, grid, country for DX and spotted calls; session key handling, no password logging.
 3. Contests (F17) and DXpeditions calendars; on-the-air events (F18) — check each feed's terms first.
-4. Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
+4. 🟡 (read-only rigctld frequency/mode card done, with a read-only flrig XML-RPC fallback on localhost:12345; header display pending) Radio control (F20): read frequency/mode from rigctld/flrig on localhost or LAN (read-only first), show on header; rotator later. Safety review before any transmit-affecting command.
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
 
 **Audit additions (E):**
@@ -122,19 +130,19 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 7. Weather and clouds map styles; Windy and WEFAX links.
 8. Hazard panes and map overlays: quakes (USGS), tropical storms (NHC/JTWC), NWS marine and fire-weather warnings, lightning with range rings, active fires (NASA FIRMS); check each feed's terms first.
 9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
-10. Rotator pane (rotctld) that can track the selected satellite or DX.
+10. 🟡 (read-only rotctld position card done; tracking the selected satellite or DX pending the radio/rotator safety review) Rotator pane (rotctld) that can track the selected satellite or DX.
 11. BME280 environment panes (temperature, pressure, humidity, dew point; corrections); CPU temperature, Wi-Fi RSSI and disk-use history.
 12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
 13. NetLogger active nets pane.
-14. GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
+14. 🟡 (output interface with null and fake backends done; no hardware backend yet) GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
 15. PiAware ADS-B link.
 
 ### F. Apple platforms: macOS and iPad (owns `src/platform/apple*`, `src/platform/credential_store*`, `cmake/Apple*.cmake`, `.github/workflows/apple.yml`, `packaging/apple/`)
 Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.0 work is under way. The agent sandbox cannot run Xcode, so every change is verified on GitHub's macOS runners via `apple.yml`.
 1. ✅ `apple.yml` CI: build and ctest on macOS (Homebrew Qt), and build the app for the iOS Simulator (Qt for iOS via `aqtinstall`, pinned version); upload the macOS app and a Simulator screenshot as artifacts.
 2. ✅ (store + tests; AppSettings wiring pending area A) Credential store: `src/platform/credential_store` with macOS/iOS Keychain and a 0600-file fallback elsewhere; AppSettings uses it (coordinate with area A in the PR).
-3. 🟡 (Info.plist, category, version, app icon, unsigned dmg done; signing/notarization steps wired in apple.yml and skipped until secrets exist; universal build job added, informational until green) macOS app polish: app icon, Info.plist (name, version, category), universal (arm64 + x86_64) build, `.dmg`; signing and notarization steps wired but skipped until the owner provides an Apple Developer ID (open "Owner input needed: Apple Developer account").
-4. iPad: iOS CMake target, safe-area and orientation handling, touch-first layout check at iPad sizes (1180×820, 1366×1024), app lifecycle (pause polling and the DX cluster connection in background, resume cleanly), no QtWidgets dependency (requires area A's QPainter map renderer, backlog A4).
+3. 🟡 (Info.plist, category, version, app icon, unsigned dmg done; signing/notarization steps wired in apple.yml and skipped until secrets exist; universal build job green; the signed/notarized dmg is now built from it) macOS app polish: app icon, Info.plist (name, version, category), universal (arm64 + x86_64) build, `.dmg`; signing and notarization steps wired but skipped until the owner provides an Apple Developer ID (open "Owner input needed: Apple Developer account").
+4. 🟡 (app lifecycle: `AppLifecycle` + PolledSource pause/resume done; DX cluster/rigctld/gpsd connections and safe-area insets done; iPad layout check pending) iPad: iOS CMake target, safe-area and orientation handling, touch-first layout check at iPad sizes (1180×820, 1366×1024), app lifecycle (pause polling and the DX cluster connection in background, resume cleanly), no QtWidgets dependency (requires area A's QPainter map renderer, backlog A4).
 5. App Store readiness: privacy manifest, no private APIs, attribution screen for data sources (NOAA, NASA, Natural Earth, Open-Meteo…), TestFlight upload once the owner's account exists.
 
 **Audit additions (F):**
@@ -148,7 +156,7 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 ### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
 Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
 **Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
-0. 🔴 **Owner priority (Oct 14): map controls on the map, as in the original.** The original's core interaction is the map's own buttons/menu, not separate panes. Today the overlays exist (named layers with a `visible` flag) but there is no way to toggle them, so do this before the remaining G items:
+0. 🔴 (slices 1-3 done: Map button, layer/night/path/label toggles, saved; tap empty map -> Set DE/Set DX popup; base style choice + rotation in the menu, saved; grids, projection, marker detail popup remain) **Owner priority (Oct 14): map controls on the map, as in the original.** The original's core interaction is the map's own buttons/menu, not separate panes. Today the overlays exist (named layers with a `visible` flag) but there is no way to toggle them, so do this before the remaining G items:
    - A small "Map" button in a corner of the map card (large enough to tap on the 7-inch screen, keyboard/remote accessible) opening a Map View menu.
    - Layers, each on/off independently of which panes are shown: DX cluster spots, PSKReporter/RBN/WSPR, POTA/SOTA, satellites, NCDXF beacons, quakes, storms, other hazards, DE/DX path, night shading, labels (None/Prefix/Call/Dot).
    - Base style (Countries/Terrain and the styles registered through G3), with style rotation on/off.
@@ -161,8 +169,8 @@ Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout
 1. Port the map from the QWidget renderer to a pure QPainter/Qt Quick renderer (unblocks the iPad build); map fills its card (crop polar latitudes rather than letterbox). Keep the PR small; land it before anything else.
 2. ✅ (markers, labels, min distance, DE path; tap/legend later) Overlay API (moved up): a small interface other areas use to draw their objects (spots, satellites, APRS, hazards, beacons) with labels None/Prefix/Call/Dot and a minimum label distance, plus great-circle path drawing from DE. Document it in `docs/map-overlays.md` with one worked example. Areas B, C, D, E and H start their map items as soon as this merges.
 3. ✅ (registry, rotation, auto space-weather pick, legend; settings UI comes with the first image style) Map styles framework (moved up): selectable base styles with rotation 20/60/90/120 s and automatic space-weather style, and a colour-scale legend. Individual image styles (DRAP, MUF, aurora, clouds…) come from the owning areas via this framework.
-4. ✅ (zoom 1–4×, drag pan, reset, tap → `tapped(lat, lon)`; Set DE/DX popup and projections remain) Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
-5. Grids and zones: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, borders and US states, cities (licensed data), DE antipode, sublunar point, long-path drawing, gray mode.
+4. ✅ (zoom 1–4×, drag pan, reset, tap → `tapped(lat, lon)`, Set DE/DX popup, centre longitude; pure azimuthal-equidistant and Robinson maths with tests are in `src/map/projection.*`, renderer and menu entries remain) Projections: Mercator with centre longitude, Azimuthal (DE-centred), Azimuthal-one, Robinson; zoom 1–4×, recenter/reset; tap popup Set DE / Set DX.
+5. Grids and zones: Tropics, lat/lng grid, Maidenhead fields/squares, azimuth rings, CQ and ITU zones, borders and US states, cities (licensed data), DE antipode and sublunar point (done: Map menu "Moon / antipode"), long-path drawing (done: Map menu "Long path"), gray mode (done: Map menu "Gray map").
 
 Map items owned by other areas (each starts once G2/G3 merge, using only the overlay/styles API; G reviews nothing, the API is the contract):
 - C: DX cluster, PSKReporter/RBN/WSPR and POTA/SOTA spots on the map with paths from DE.
@@ -179,6 +187,13 @@ Takes over E8 and E13. Each feed: check terms first and record them in the roadm
 4. Lightning with range rings from DE, active fires (NASA FIRMS): overlays/badges.
 5. NetLogger active nets pane.
 
+### I. Apple TV (owns `apple/tvos/`, `cmake/TvOS*.cmake`, `docs/apple-tv*.md`, `.github/workflows/tvos.yml`, `docs/agent-logs/tvos.md`)
+Native SwiftUI tvOS app over the shared C++ core (Qt has no tvOS support); design in [docs/apple-tv.md](apple-tv.md). Unsigned Simulator builds only until the owner approves signing (#58).
+1. 🟡 Design doc for owner review (written; awaiting owner comments).
+2. `tvos.yml`: build the C++ core for the tvOS Simulator and run its unit tests on macOS.
+3. Minimal SwiftUI app: clock + live NOAA SWPC space weather, Simulator screenshot artifact.
+4. Remaining dashboard panes, map with shared overlay data, settings (after the design review).
+
 ### QA. Quality reviewer (no feature ownership; writes only `docs/agent-logs/qa.md`, `docs/hardware-validation.md` notes and GitHub issues)
 Runs every 4 hours: reviews PRs merged since its last run, builds main, renders screenshots at 800×480 and 1024×600 (light/dark) with all widget fixtures, compares behaviour against the original (docs/FEATURE-AUDIT.md) and the contract (one page, no clipping, compact panes, honest states, portability), and opens a focused GitHub issue per problem labelled `qa` with the owning area in the title (e.g. "[B] Space weather X-ray clipped at 1024x600"). Agents treat open `qa` issues in their area as top of their backlog. Never edits feature code.
 
@@ -189,17 +204,17 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | Original setting | Purpose | Owner | Status |
 |---|---|---|---|
 | Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Partial: decimal only; add DMS and grid entry (see A0b) |
-| DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port, login SSID (1–99) and receive-only post-login commands done; watch list and UDP/multicast missing |
-| **HamAlert.org** telnet login + password | Personal spot alerts | C | Missing |
-| **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Missing |
+| DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port, login SSID (1–99) and receive-only post-login commands done; watch list and UDP spot input (N1MM/DXLog `<spot>` XML or plain "DX de" lines, off by default, localhost or LAN) done; WSJT-X binary protocol, multicast, "UDP sets DX" missing |
+| **HamAlert.org** telnet login + password | Personal spot alerts | C | Partial: user/password saved in the owner-only credentials file (password C++ only), pane connects to hamalert.org:7300; map overlay done (entity centres, live only; Settings toggle not wired); trigger names and per-alert filters missing |
+| **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Partial: card lists nearest stations within a fixed 100 km (plain and compressed positions); server, radius setting and map overlay missing |
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
-| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd planned) |
+| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
-| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio planned) |
+| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; defaults only, no settings yet) |
 | PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
-| BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (sensors planned) |
+| BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (kernel IIO driver; corrections via options.ini `[sensors] temp_offset_c`/`pressure_offset_hpa`, no Settings control yet) |
 | Brightness dim/bright %, display schedule | Display | A | Planned (F27) |
 | Mercator map centre longitude; colour choices | Map/appearance | A | Missing |
 | Local passwords guarding restart/exit/unlock/new DE-DX/configurations | Kiosk protection | A | Missing |
@@ -212,7 +227,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Widget | Area | State |
 |---|---|---|
 | Station + clocks + DE local time | A | Working (QML); dashboard page scrolls (touch flick) when widgets exceed the screen, map keeps a full 2:1 size |
-| World map, day/night, path | G | Working (QML, pure QPainter renderer, no QtWidgets; styles registry with legend (no image styles published yet); fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
+| World map, day/night, path | G | Working (Map button + View menu: per-layer on/off, night shade, path, label mode, saved in options.ini [map]; base style + rotation entries (shown once styles are published); projection/grid entries follow; QML, pure QPainter renderer, no QtWidgets; styles registry with legend (no image styles published yet); fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |
@@ -220,18 +235,31 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Solar imagery: NASA SDO AIA 193/304 and HMI, tap to cycle (F09) | B | **Live** |
 | NOAA scales: R/S/G radio blackout, radiation and geomagnetic storm levels with tomorrow's outlook (SWPC; not on the default dashboard) | B | **Live** |
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
-| DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
-| Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
-| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working (EME not started) |
+| HamQSL (N0NBH) calculated HF day/night band conditions and VHF openings (not on the default dashboard) | B | **Live** |
+| Dst index: latest hourly Dst (Kyoto WDC via SWPC) with storm word, 24 h low and 48 h plot (not on the default dashboard) | B | **Live** |
+| D-RAP: highest affected frequency and the D-RAP map style (SWPC; not on the default dashboard) | B | **Live** |
+| Aurora: peak OVATION aurora probability per hemisphere and the Aurora map style (SWPC; not on the default dashboard) | B | **Live** |
+| Space weather impact: R/S/G levels ranked worst first with HF/aurora/GPS effect (SWPC; not on the default dashboard) | B | **Live** |
+| DX cluster: telnet client, spot parser, spot list card | C | Partial (bundled DXCC prefix table, `country` role on rows, shown before the comment in the card (country only when compact); band/mode filters and watch-list highlight with ★ count on the card; spots drawn on the map at the DXCC entity centre (one marker per entity, newest first, prefix labels, DE path, only while the cluster link is live; `DxClusterModel::setMapVisible` is the per-source hook, Settings toggle not wired); DXCC-entity watching via `@PREFIX` watch entries (e.g. `@VP8`, cty.dat primary prefix); shows Not configured until a cluster host is set) |
+| Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache; shows distance and short-path bearing from DE to the grid centre | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
+| Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
+| Next solar eclipse: date, type, greatest-eclipse time and countdown, worldwide (Meeus ch. 54, offline, checked against NASA catalogue values; not visibility at DE) | D | Partial (not on the default dashboard) |
+| Planets: Mercury, Venus, Mars, Jupiter, Saturn above the horizon at DE (elevation, azimuth) and their sub-planet points on the map (JPL approximate elements, about 0.2°, offline; checked against almanac oppositions and elongations; not on the default dashboard) | D | Working |
+| EME: Moon az/el at DE and DX, next mutual window (Moon above both horizons), distance and path loss vs perigee (offline) | D | Partial (not on the default dashboard; geometric visibility only) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover, 3 h pressure trend; no forecast or popup yet) |
-| Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live) | H | **Live** |
-| Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane + map overlay: diamonds sized and coloured by category, labelled with the storm name, removed when data is not live; forecast tracks and JTWC not yet) | H | **Live** |
-| NWS fire-weather alerts (api.weather.gov: Red Flag Warning, Fire Weather Watch, Fire Warning, Extreme Fire Danger; worst alert, area, issued/until, start time of a future watch, expired alerts dropped; nationwide, no region filter or map overlay yet; no Red Flag Warning was active when the fixture was captured, so it holds a Fire Weather Watch) | H | **Live** |
-| NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, no region filter or map overlay yet) | H | **Live** |
-| Satellites: next passes at DE for popular amateur birds (ISS, SO-50, AO-7, FO-29, AO-73, RS-44, AO-91, AO-85) from CelesTrak TLEs (daily, cached) via vendored SGP4; peak elevation >= 10 deg; no map track, sky plot, alerts or TLE-age limit yet | D | Partial (not on the default dashboard; fixture is a real capture) |
+| Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live; nearest quake to DE) | H | **Live** |
+| Tropical storms (NHC active storms: name, class, category, wind, pressure, movement, advisory time; pane + map overlay: diamonds sized and coloured by category, labelled with the storm name, removed when data is not live; official forecast positions (12 h-5 day, from the NHC forecast advisory text) as small dots coloured by forecast intensity, tap for time and wind; no cone or line (overlay API has none), JTWC not yet) | H | **Live** |
+| NWS fire-weather alerts (api.weather.gov: Red Flag Warning, Fire Weather Watch, Fire Warning, Extreme Fire Danger; worst alert, area, issued/until, start time of a future watch, expired alerts dropped; nationwide plus an "At DE" row from the same API's `point=` query for the saved station, no map overlay yet; no Red Flag Warning was active when the fixture was captured, so it holds a Fire Weather Watch) | H | **Live** |
+| NWS marine warnings and advisories (api.weather.gov: worst alert, area, issued/until times, counts by type, expired alerts dropped; nationwide, plus a line for the marine region nearest DE with its expiry; no map overlay yet) | H | **Live** |
+| Active fires (NASA FIRMS VIIRS NOAA-20, contiguous US + Hawaii, last 24 h: detection count, high-confidence count, strongest FRP and position, newest overpass; pane + map overlay: triangles for the 60 strongest non-low-confidence detections, removed when data is not live; nearest non-low-confidence detection to the saved DE (distance, bearing, overpass time); no global/regional choice yet; keyless public CSV, so no FIRMS MAP_KEY is used) | H | **Live** (fixture is a real trimmed capture) |
+| Satellites: next passes at DE for popular amateur birds (ISS, SO-50, AO-7, FO-29, AO-73, RS-44, AO-91, AO-85) from CelesTrak TLEs (daily, cached) via vendored SGP4; peak elevation >= 10 deg; map track for at most two birds (options.ini choice, no settings control yet), sky plot of the next pass when the slot has room, no alerts yet; elements over 30 days old are dropped | D | Partial (not on the default dashboard; fixture is a real capture); SatNOGS transmitter parser, NORAD join and transponder maths done in the domain layer (no fetch or UI yet) |
 | NCDXF/IARU beacons: which beacon is on each of the five bands now (fixed schedule, offline; the five on-air beacons are marked on the map, positions from approximate locators) | D | Working |
-| On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; POTA spots drawn on the map via the overlay API (SOTA has no position in its feed), only while live; no filters yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
+| On the air: POTA + SOTA activator spots merged newest first (call, reference, frequency, mode, age; QRT dropped; POTA spots drawn on the map via the overlay API (SOTA has no position in its feed), only while live; display filter by program/band/mode/max age in `OtaModel::setFilter`, applied to list, count and map, Settings controls not wired yet) | C | Partial (not shown on the default dashboard yet; fixtures are real captures) |
 | PSKReporter: who heard my callsign in the last 15 min (count, best SNR, newest receivers with grid, band, mode, SNR, age); queried every 5 min only when a callsign is set, shows Not configured otherwise; receivers drawn on the map (grid-square centre, path from DE, only while live; `PskModel::setMapVisible` is the per-source hook, Settings toggle not wired); not on the default dashboard; fixture is a real capture | C | Partial |
 | ADIF log: QSO count and newest QSOs from a local .adi file (path in Settings, read-only, reloaded when the file changes; unconfigured when empty); `worked(call)` ignores /P and EA8/ parts; not on the default dashboard; no not-in-log watch keywords, DXCC/band slots or map overlay yet; parser tested on synthetic ADIF (no real log available) | C | Partial |
-| Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; BME280/BMP280 via kernel IIO sysfs (air temperature, pressure, humidity, dew point; not tested on a Pi; no corrections or history yet); not on the default dashboard | E | Partial |
+| HamAlert: personal spot alerts over telnet (hamalert.org:7300, `DX de` lines); `TelnetClient` gained an optional password step (sent once after a `password:` prompt, never logged); Not configured until user and password are saved; compact card (count + newest, list when not compact); receive-only; not on the default dashboard; tested with a fake socket, not against the live service | C | Partial |
+| Host sensors: clock sync status (chronyc/timedatectl, read-only, via src/platform/ntp_status), CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; BME280/BMP280 via kernel IIO sysfs (air temperature, pressure, humidity, dew point; not tested on a Pi; pressure trend after 30 min of in-memory history; no corrections or persistent history yet); not on the default dashboard | E | Partial |
+| GPS (gpsd JSON on localhost:2947, read-only): fix quality, position, Maidenhead grid, satellites in use; unconfigured when gpsd is absent; does not change DE yet, no NMEA serial or time use; tested against a loopback fake gpsd, not a real receiver; not on the default dashboard | E | Partial |
+| Radio (rigctld on localhost:4532, strictly read-only: only `f` and `m` are ever sent; falls back to flrig XML-RPC on localhost:12345 asking only `rig.get_vfo`/`rig.get_mode`): frequency, band, mode; unconfigured when rigctld is absent, error replies are never shown as live; tested against a loopback fake rigctld, not a real rig; no flrig, not on the header or default dashboard | E | Partial |
+| Rotator (rotctld on localhost:4533, strictly read-only: only `p` is ever sent): azimuth and elevation; unconfigured when rotctld is absent, error replies and out-of-range values are never shown as live; tested against a loopback fake rotctld; not run with a real rotator; no tracking or move commands; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |

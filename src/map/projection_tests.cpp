@@ -42,6 +42,45 @@ int run_map_tests() {
     }
     check(next == coastline_point_count, "coastline coverage");
     for (const auto p : coastline_points) check(valid_location({p.latitude,p.longitude}), "coastline coordinate");
+    // Azimuthal equidistant: centre, cardinal directions, antipode, round trips.
+    {
+        auto close = [](double a, double b, double e = 1e-9) { return std::abs(a - b) < e; };
+        const Location de{40.0, -105.0};
+        const auto c0 = map_project_azimuthal(de, de);
+        check(close(c0.x, 0) && close(c0.y, 0), "azimuthal centre");
+        const auto n = map_project_azimuthal({0, 0}, {90, 0});
+        check(close(n.x, 0) && close(n.y, 0.5), "azimuthal north pole is half way up");
+        const auto e = map_project_azimuthal({0, 0}, {0, 90});
+        check(close(e.x, 0.5) && close(e.y, 0), "azimuthal east 90");
+        const auto s = map_project_azimuthal({0, 0}, {-45, 0});
+        check(close(s.x, 0) && close(s.y, -0.25), "azimuthal south 45");
+        check(close(std::hypot(map_project_azimuthal(de, {-40, 75}).x, map_project_azimuthal(de, {-40, 75}).y), 1.0, 1e-9), "azimuthal antipode on rim");
+        // distance from the centre is the great-circle angle: Denver to London is ~69 degrees (7,600 km)
+        const auto lo = map_project_azimuthal(de, {51.5, -0.1});
+        check(close(std::hypot(lo.x, lo.y) * 180.0, 69.0, 3.0) , "azimuthal Denver-London distance");
+        for (const Location p : {Location{51.5, -0.1}, Location{-33.9, 151.2}, Location{85, 10}, Location{-60, -170}, Location{40, 10}}) {
+            const auto r = map_unproject_azimuthal(de, map_project_azimuthal(de, p));
+            check(close(r.latitude, p.latitude, 1e-7) && close(std::remainder(r.longitude - p.longitude, 360.0), 0, 1e-7), "azimuthal round trip");
+        }
+        bool rejected = false; try { (void)map_unproject_azimuthal(de, {0.9, 0.9}); } catch (const std::invalid_argument&) { rejected = true; }
+        check(rejected, "azimuthal outside disc rejected");
+    }
+    // Robinson: table knots, symmetry, round trips, outline.
+    {
+        auto close = [](double a, double b, double e = 1e-9) { return std::abs(a - b) < e; };
+        check(close(map_project_robinson({0, 0}).x, 0.5) && close(map_project_robinson({0, 0}).y, 0.5), "robinson origin");
+        check(close(map_project_robinson({90, 0}).y, 0.0) && close(map_project_robinson({-90, 0}).y, 1.0), "robinson poles");
+        check(close(map_project_robinson({90, 180}).x, 0.5 + 0.5322 / 2), "robinson pole line is 0.5322 of the equator");
+        check(close(map_project_robinson({0, 180}).x, 1.0) && close(map_project_robinson({0, -180}).x, 0.0), "robinson equator edges");
+        check(close(map_project_robinson({45, 0}).y, 0.5 - 0.5571 / 2), "robinson 45 N knot");
+        check(close(map_project_robinson({-45, 20}).y, 1.0 - map_project_robinson({45, 20}).y), "robinson north/south symmetry");
+        for (const Location p : {Location{37.7, -122.4}, Location{-33.9, 151.2}, Location{72.3, 100}, Location{-1.5, -179}, Location{0, 0}}) {
+            const auto r = map_unproject_robinson(map_project_robinson(p));
+            check(close(r.latitude, p.latitude, 1e-9) && close(r.longitude, p.longitude, 1e-9), "robinson round trip");
+        }
+        bool rejected = false; try { (void)map_unproject_robinson({0.0, 0.0}); } catch (const std::invalid_argument&) { rejected = true; }
+        check(rejected, "robinson outside outline rejected");
+    }
     return failures;
 }
 }

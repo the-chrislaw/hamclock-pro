@@ -2,6 +2,7 @@
 // Vallado verification case (object 88888), plus structural checks on a real
 // amateur-satellite TLE from the CelesTrak fixture. Offline.
 #include "../../../domain/astro_satellite.hpp"
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -31,6 +32,20 @@ int main(int argc, char** argv) {
     check(p.teme(p.epoch_unix() + 360 * 60, r), "88888 propagates at +360 min");
     check(std::fabs(r[0] - 2456.10705566) < 1e-2 && std::fabs(r[1] + 6071.93853760) < 1e-2
               && std::fabs(r[2] - 1222.89727783) < 1e-2, "88888 t=360 matches published vector");
+
+    // Range rate: matches a 10 s finite difference, and Doppler signs/size.
+    {
+        const Observer obs{51.5, -0.1, 0.0};
+        const double t = p.epoch_unix() + 600;
+        LookAngle a, b, c;
+        check(p.look(t, obs, a) && p.look(t - 5, obs, b) && p.look(t + 5, obs, c), "88888 look");
+        check(std::fabs(a.range_rate_km_s - (c.range_km - b.range_km) / 10.0) < 0.05, "range rate ~ finite difference");
+        check(std::fabs(a.range_rate_km_s) < 8.0, "range rate below orbital speed");
+    }
+    check(std::fabs(doppler_downlink_hz(145.8e6, 7.0) - 145.8e6 * (1 - 7.0 / 299792.458)) < 1e-3, "downlink formula");
+    check(doppler_downlink_hz(145.8e6, 7.0) < 145.8e6 && doppler_downlink_hz(145.8e6, -7.0) > 145.8e6, "receding lowers downlink");
+    check(std::fabs(doppler_downlink_hz(145.8e6, 7.0) - 145.8e6 + 3404.0) < 5.0, "7 km/s at 145.8 MHz is ~3.4 kHz");
+    check(doppler_uplink_hz(435.0e6, 7.0) > 435.0e6, "uplink pre-compensates upward when receding");
 
     SatellitePropagator bad(Tle{"x", "1 garbage", "2 garbage"});
     check(!bad.valid(), "garbage TLE rejected");
@@ -72,6 +87,23 @@ int main(int argc, char** argv) {
         sane = sane && std::fabs(a.el_deg - ps.max_el_deg) < 0.01;
         ao7.look(ps.aos + 1, de, a);
         sane = sane && a.el_deg > -0.2 && a.el_deg < 2.0;
+    }
+    if (!passes.empty()) {
+        const auto& ps = *std::max_element(passes.begin(), passes.end(),
+            [](const SatPass& a, const SatPass& b) { return a.max_el_deg < b.max_el_deg; });
+        const auto tr = ao7.pass_track(de, ps, 30);
+        check(tr.size() == 30, "track has requested sample count");
+        check(!tr.empty() && tr.front().t == ps.aos && tr.back().t == ps.los, "track spans AOS to LOS");
+        bool ok = !tr.empty() && tr.front().el_deg > -0.5 && tr.front().el_deg < 0.5
+                  && tr.back().el_deg > -0.5 && tr.back().el_deg < 0.5;
+        double peak = -90;
+        for (const auto& s : tr) {
+            peak = std::max(peak, s.el_deg);
+            ok = ok && s.az_deg >= 0 && s.az_deg < 360 && s.el_deg > -0.5;
+        }
+        check(ok, "track starts and ends on the horizon, azimuth in range");
+        check(peak <= ps.max_el_deg + 1e-6 && peak > ps.max_el_deg - 15, "track peak consistent with pass maximum");
+        check(ao7.pass_track(de, ps, 1).empty(), "fewer than two samples rejected");
     }
     check(sane, "passes ordered, short, peak elevation consistent");
     for (std::size_t i = 1; i < passes.size(); ++i) check(passes[i].aos > passes[i - 1].los, "passes do not overlap");

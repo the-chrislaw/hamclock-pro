@@ -38,6 +38,21 @@ int run_path_tests() {
     const auto almost = map_short_path({0,0},{0,179.999999},8);
     for (const auto point : almost) check(valid_location(point), "defined near antipode");
     bool bad_de=false;try {(void)map_short_path({91,0},{0,0});}catch(const std::invalid_argument&) {bad_de=true;}check(bad_de,"invalid DE");
+    // Long path: complementary arc with exact endpoints and equal spacing.
+    for (const auto& pair : {std::pair<Location,Location>{{37.7749,-122.4194},{51.5074,-0.1278}},
+                             std::pair<Location,Location>{{0,0},{0,90}}, std::pair<Location,Location>{{0,170},{0,-170}}}) {
+        const unsigned n = 64;
+        const auto lp = map_long_path(pair.first, pair.second, n);
+        const auto g = geometry(pair.first, pair.second);
+        check(lp.size()==n+1 && lp.front().longitude==pair.first.longitude && lp.back().latitude==pair.second.latitude, "long path endpoints");
+        double sum = 0;
+        for (std::size_t i = 1; i < lp.size(); ++i) sum += geometry(lp[i-1], lp[i]).distance_km;
+        check(std::abs(sum - g.long_distance_km) < 1e-3 * g.long_distance_km, "long path length is the long arc");
+    }
+    const auto lq = map_long_path({0,0},{0,90},4);
+    check(near(lq[1].longitude,-67.5) && near(lq[1].latitude,0), "long path equator heads west");
+    check(map_long_path({90,20},{90,140}).size()==1, "long path coincident");
+    bool lrej=false;try {(void)map_long_path({0,0},{0,180});}catch(const std::invalid_argument&) {lrej=true;}check(lrej,"long path antipodal rejected");
     return failures;
 }
 }

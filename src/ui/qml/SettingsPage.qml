@@ -20,11 +20,20 @@ Rectangle {
         boundsBehavior: Flickable.StopAtBounds
         ScrollIndicator.vertical: ScrollIndicator {}
 
+        // Mouse wheel / trackpad scrolling (Flickable only handles touch drags).
+        WheelHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: function (event) {
+                const dy = event.pixelDelta.y !== 0 ? event.pixelDelta.y : event.angleDelta.y / 2
+                flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, flick.contentY - dy))
+            }
+        }
+
         ColumnLayout {
             id: column
-            x: Theme.pad
-            y: Theme.pad
             width: Math.min(flick.width - 2 * Theme.pad, 640 * Theme.scale)
+            x: Math.max(Theme.pad, (flick.width - width) / 2)
+            y: Theme.pad
             spacing: Theme.gap
 
             RowLayout {
@@ -50,10 +59,44 @@ Rectangle {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap
-                        FormField { id: deLat; label: "Home latitude (°N, negative = S)"
+                        FormField { id: place; label: "Find a place (address or city; sent to OpenStreetMap when you press Find)"
+                                    placeholder: "e.g. Portland, Oregon"
+                                    Keys.onReturnPressed: findButton.clicked() }
+                        AppButton { id: findButton; text: "Find"; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { placeStatus.text = "Searching..."; locationTools.search(place.text) } }
+                    }
+                    Text { id: placeStatus; visible: text.length > 0; color: Theme.secondary
+                           font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    Connections {
+                        target: locationTools
+                        function onSearchFinished(results, error) {
+                            if (error.length) { placeStatus.text = error; return }
+                            const r = results[0]
+                            deLat.text = r.latitude.toFixed(4)
+                            deLon.text = r.longitude.toFixed(4)
+                            deGrid.text = locationTools.gridFor(r.latitude, r.longitude)
+                            placeStatus.text = "Using: " + r.name
+                        }
+                    }
+                    FormField { id: deGrid; label: "Or grid square (fills the home coordinates)"
+                                placeholder: "e.g. FN31pr"
+                                field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
+                                Connections {
+                                    target: deGrid.field
+                                    function onEditingFinished() {
+                                        const g = locationTools.fromGrid(deGrid.text)
+                                        if (g.latitude === undefined) return
+                                        deLat.text = g.latitude.toFixed(4)
+                                        deLon.text = g.longitude.toFixed(4)
+                                    }
+                                } }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: deLat; label: "Home latitude (e.g. 40.7 or 40:44:55N)"
                                     text: appSettings.configured ? appSettings.deLatitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
-                        FormField { id: deLon; label: "Home longitude (°E, negative = W)"
+                        FormField { id: deLon; label: "Home longitude (e.g. -74 or 74:00:21W)"
                                     text: appSettings.configured ? appSettings.deLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
@@ -67,7 +110,8 @@ Rectangle {
                                     text: appSettings.configured ? appSettings.dxLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
-                    FormField { id: zone; label: "Time zone (IANA, e.g. America/Los_Angeles)"; text: appSettings.deZone }
+                    TimeZonePicker { id: zone; label: "Time zone"
+                                     zoneId: appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone() }
                     RowLayout {
                         Text { id: stationError; color: Theme.bad; font.pixelSize: Theme.fontCaption
                                wrapMode: Text.WordWrap; Layout.fillWidth: true }
@@ -75,10 +119,11 @@ Rectangle {
                             text: "Save station"
                             primary: true
                             onClicked: {
-                                const values = [num(deLat.text), num(deLon.text), num(dxLat.text), num(dxLon.text)]
-                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees."; return }
+                                const values = [locationTools.parseCoordinate(deLat.text, true), locationTools.parseCoordinate(deLon.text, false),
+                                                locationTools.parseCoordinate(dxLat.text, true), locationTools.parseCoordinate(dxLon.text, false)]
+                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees or degrees:minutes:seconds (N/S, E/W)."; return }
                                 stationError.text = appSettings.saveStation(callsign.text, values[0], values[1],
-                                                                            values[2], values[3], zone.text)
+                                                                            values[2], values[3], zone.zoneId)
                             }
                         }
                     }
@@ -96,6 +141,22 @@ Rectangle {
                             text: modelData[1]
                             primary: appSettings.appearance === modelData[0]
                             onClicked: appSettings.appearance = modelData[0]
+                        }
+                    }
+                }
+            }
+
+            Card {
+                title: "Distance units"
+                Layout.fillWidth: true
+                RowLayout {
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: [[false, "Metric (km)"], [true, "Imperial (miles)"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.imperialUnits === modelData[0]
+                            onClicked: appSettings.saveImperialUnits(modelData[0])
                         }
                     }
                 }
@@ -125,8 +186,17 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                        AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
+                                    text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
+                                    onClicked: lan = !lan; Layout.preferredWidth: 2 }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
-                    FormField { id: watchList; label: "Watch list (calls or prefixes like VP8*, space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
+                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save cluster"; primary: true
@@ -138,6 +208,32 @@ Rectangle {
                                             clusterError.text = appSettings.saveWatchList(watchList.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAdifPath(adifPath.text)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
+                                    } }
+                    }
+                }
+            }
+
+            Card {
+                title: "HamAlert"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.8
+                    Text {
+                        text: "Optional. Personal spot alerts from hamalert.org (telnet). Stored only on this device, readable by you alone. Leave the user name empty to turn it off."
+                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    FormField { id: hamAlertUser; label: "HamAlert user name"; text: appSettings.hamAlertUser; Layout.fillWidth: true }
+                    FormField { id: hamAlertPassword; label: "Password"; echoMode: TextInput.Password; Layout.fillWidth: true
+                                placeholder: appSettings.hasHamAlertPassword ? "Saved — leave empty to keep" : "" }
+                    RowLayout {
+                        Text { id: hamAlertError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                        AppButton { text: "Save HamAlert"; primary: true
+                                    onClicked: {
+                                        hamAlertError.text = appSettings.saveHamAlert(hamAlertUser.text, hamAlertPassword.text)
+                                        hamAlertPassword.text = ""
                                     } }
                     }
                 }

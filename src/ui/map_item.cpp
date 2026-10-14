@@ -1,4 +1,5 @@
 #include "map_item.hpp"
+#include "../map/sky_points.hpp"
 #include "app_settings.hpp"
 #include "../map/path.hpp"
 #include <QDateTime>
@@ -25,21 +26,35 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     }
     auto refresh_sun = [this] {
         // The Sun moves 0.25 degrees a minute; the minute-rounded position is plenty.
-        scene_.sun = subsolar_point({QDateTime::currentSecsSinceEpoch() / 60 * 60});
+        const UtcSeconds now{QDateTime::currentSecsSinceEpoch() / 60 * 60};
+        scene_.sun = subsolar_point(now);
+        const auto mp = sublunar_point(now);
+        scene_.moon = Location{mp.latitude_deg, mp.longitude_deg};
         update();
     };
     refresh_sun();
-    scene_.overlays = MapOverlays::instance().layers();
+    if (g_settings) options_.load(g_settings->optionsPath());
+    scene_.route_visible = options_.path;
+    scene_.night_shade = options_.night_shade;
+    scene_.grid = static_cast<MapGrid>(options_.grid);
+    scene_.sky_points = options_.sky_points;
+    scene_.gray = options_.gray;
+    if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
+    syncOverlays();
+    applyStyleOptions();
     auto sync_style = [this] {
         const auto* st = MapStyles::instance().active(QDateTime::currentMSecsSinceEpoch());
         scene_.style = st ? std::optional<MapStyle>(*st) : std::nullopt;
     };
     sync_style();
-    style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); });
+    style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); emit styleChanged(); });
     // The registry is process-wide; the callback only ever runs on the GUI thread.
-    overlay_token_ = MapOverlays::instance().on_change([this] { scene_.overlays = MapOverlays::instance().layers(); update(); });
+    overlay_token_ = MapOverlays::instance().on_change([this] { syncOverlays(); emit layersChanged(); });
     minute_timer_.setInterval(kSolarRefreshMs);
-    connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] { sync_style(); refresh_sun(); });
+    connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] {
+        // Styles published after start join the rotation.
+        if (options_.rotation_s > 0 && MapStyles::instance().styles().size() != rotation_count_) applyStyleOptions();
+        sync_style(); refresh_sun(); });
     minute_timer_.start();
     connect(this, &QQuickItem::widthChanged, this, [this] { update(); });
     connect(this, &QQuickItem::heightChanged, this, [this] { update(); });
@@ -104,13 +119,143 @@ void MapItem::mouseReleaseEvent(QMouseEvent* e) {
     if (dragging_ || width() <= 0 || height() <= 0) return;
     const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
     if (vp.scale <= 0) return;
+    const auto hit = hit_test_marker(scene_.overlays, vp, e->position().x(), e->position().y(), 14 * std::max(1.0, scene_.ui_scale));
+    if (hit.marker) {
+        emit markerTapped(hit.layer->id, hit.marker->call, hit.marker->detail, hit.marker->where.latitude, hit.marker->where.longitude);
+        return;
+    }
     const auto loc = vp.location_at(e->position().x(), e->position().y());
     emit tapped(loc.lat, loc.lon);
 }
 
+void MapItem::syncOverlays() {
+    scene_.overlays = options_.apply(MapOverlays::instance().layers());
+    update();
+}
+
+void MapItem::saveOptions() {
+    if (g_settings && !options_.save(g_settings->optionsPath())) qWarning("Could not save the map view options.");
+}
+
+QStringList MapItem::layerIds() const {
+    QStringList ids;
+    for (const auto& l : MapOverlays::instance().layers()) ids << l.id;
+    return ids;
+}
+
+void MapItem::setLayerVisible(const QString& id, bool on) {
+    if (options_.layer_visible(id) == on) return;
+    options_.set_layer_visible(id, on);
+    saveOptions();
+    syncOverlays();
+}
+
+void MapItem::setNightShade(bool on) {
+    if (on == options_.night_shade) return;
+    options_.night_shade = scene_.night_shade = on;
+    saveOptions();
+    emit nightShadeChanged();
+    update();
+}
+
+void MapItem::setSkyPoints(bool on) {
+    if (on == options_.sky_points) return;
+    options_.sky_points = scene_.sky_points = on;
+    saveOptions();
+    emit skyPointsChanged();
+    update();
+}
+
+void MapItem::setGray(bool on) {
+    if (on == options_.gray) return;
+    options_.gray = scene_.gray = on;
+    saveOptions();
+    emit grayChanged();
+    update();
+}
+
+void MapItem::setLongPath(bool on) {
+    if (on == options_.long_path) return;
+    options_.long_path = on;
+    saveOptions();
+    syncStation();
+    emit longPathChanged();
+}
+
+void MapItem::setCenterLon(int lon) {
+    if (lon != MapViewOptions::center_auto) lon = std::clamp(lon, -180, 180);
+    if (lon == options_.center_lon) return;
+    options_.center_lon = lon;
+    if (lon == MapViewOptions::center_auto) scene_.center_lon.reset(); else scene_.center_lon = lon;
+    resetView();
+    saveOptions();
+    emit centerLonChanged();
+    update();
+}
+
+void MapItem::setGrid(int g) {
+    g = std::clamp(g, 0, map_grid_count - 1);
+    if (g == options_.grid) return;
+    options_.grid = g;
+    scene_.grid = static_cast<MapGrid>(g);
+    saveOptions();
+    emit gridChanged();
+    update();
+}
+
+void MapItem::setLabelMode(int mode) {
+    mode = std::clamp(mode, -1, static_cast<int>(OverlayLabelMode::Dot));
+    if (mode == options_.label_mode) return;
+    options_.label_mode = mode;
+    saveOptions();
+    syncOverlays();
+    emit labelModeChanged();
+}
+
+// The registry is process-wide; the saved choice is pushed into it. Styles that are
+// not published (yet) are skipped by the registry, never faked.
+void MapItem::applyStyleOptions() {
+    auto& reg = MapStyles::instance();
+    reg.select(options_.style);
+    std::vector<QString> ids;
+    if (options_.rotation_s > 0)
+        for (const auto& st : reg.styles()) ids.push_back(st.id);
+    rotation_count_ = ids.size();
+    reg.set_rotation(options_.rotation_s, std::move(ids));
+}
+
+QStringList MapItem::styleIds() const {
+    QStringList ids;
+    for (const auto& st : MapStyles::instance().styles()) ids << st.id;
+    return ids;
+}
+
+QVariantList MapItem::rotationChoices() const {
+    QVariantList out;
+    for (int s : style_rotation_intervals()) out << s;
+    return out;
+}
+
+void MapItem::setStyle(const QString& id) {
+    if (id == options_.style) return;
+    options_.style = id;
+    saveOptions();
+    applyStyleOptions();
+}
+
+void MapItem::setRotation(int seconds) {
+    const auto& allowed = style_rotation_intervals();
+    if (seconds != 0 && std::find(allowed.begin(), allowed.end(), seconds) == allowed.end()) seconds = 0;
+    if (seconds == options_.rotation_s) return;
+    options_.rotation_s = seconds;
+    saveOptions();
+    applyStyleOptions();
+}
+
 void MapItem::setShowPath(bool show) {
     if (show == scene_.route_visible) return;
-    scene_.route_visible = show;
+    scene_.route_visible = options_.path = show;
+    saveOptions();
     emit showPathChanged();
     update();
 }
@@ -125,7 +270,8 @@ void MapItem::syncStation() {
             const auto result = geometry(station.de, station.dx);
             scene_.de = station.de;
             scene_.dx = station.dx;
-            if (result.status != BearingStatus::Antipodal) scene_.route = map_short_path(station.de, station.dx);
+            if (result.status != BearingStatus::Antipodal) scene_.route = options_.long_path ? map_long_path(station.de, station.dx)
+                                                                  : map_short_path(station.de, station.dx);
         } catch (const std::exception&) {
             scene_.de.reset();
             scene_.dx.reset();

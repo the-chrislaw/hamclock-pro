@@ -60,4 +60,20 @@ std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, 
     }
     return std::nullopt;
 }
+
+MarkerHit hit_test_marker(const std::vector<OverlayLayer>& layers, const MapViewport& vp, double px, double py, double radius_px) {
+    MarkerHit best;
+    double best_d2 = radius_px * radius_px;
+    for (const auto& layer : layers) {
+        if (!layer.visible) continue;
+        for (const auto& m : layer.markers) {
+            const double x = vp.x_of(m.where.longitude), y = vp.y_of(m.where.latitude);
+            for (int k = -1; k <= 1; ++k) {
+                const double dx = x + k * vp.world_width() - px, dy = y - py, d2 = dx * dx + dy * dy;
+                if (d2 <= best_d2) { best_d2 = d2; best = {&layer, &m}; }
+            }
+        }
+    }
+    return best;
+}
 }

@@ -3,6 +3,7 @@
 // beacons) publish markers in named layers and never touch the renderer.
 // QtGui only. See docs/map-overlays.md.
 #include "../domain/geometry.hpp"
+#include "viewport.hpp"
 #include <QColor>
 #include <QPointF>
 #include <QString>
@@ -23,6 +24,7 @@ struct OverlayMarker {
     OverlayShape shape = OverlayShape::Dot;
     double size_px = 4;
     bool path_from_de = false; // draw the short great-circle path from DE
+    QString detail;            // one line shown when the marker is tapped (optional)
 };
 struct OverlayLayer {
     QString id;
@@ -43,6 +45,12 @@ std::vector<bool> select_labels(const std::vector<QPointF>& anchors, double min_
 // shifted vertically inside `view`. Empty when it fits neither side or overlaps
 // a rect in `used`.
 std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, QSizeF text, const std::vector<QRectF>& used);
+
+// Nearest visible marker within `radius_px` of pixel (px, py), or nullptr.
+// Hidden layers never match; the world copies either side of the centre are
+// checked so markers near the date line stay tappable.
+struct MarkerHit { const OverlayLayer* layer = nullptr; const OverlayMarker* marker = nullptr; };
+MarkerHit hit_test_marker(const std::vector<OverlayLayer>& layers, const MapViewport& vp, double px, double py, double radius_px);
 
 // Registry the app publishes layers into; the map listens for changes.
 class MapOverlays {

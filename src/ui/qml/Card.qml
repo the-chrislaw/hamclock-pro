@@ -47,6 +47,8 @@ Rectangle {
                 font.pixelSize: Theme.fontTitle
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
+                wrapMode: Text.WordWrap
+                maximumLineCount: 2
                 Layout.fillWidth: true
                 Layout.minimumHeight: card.chooser && !Theme.dense ? Theme.touch * 0.7 : 0
                 verticalAlignment: Text.AlignVCenter
@@ -75,6 +77,7 @@ Rectangle {
             // The status reason may be shortened; the data age never is.
             Text {
                 id: statusLine
+                objectName: "elideOk"  // long error reasons are shortened on purpose
                 text: widget ? widget.statusText : ""
                 color: Theme.secondary
                 font.pixelSize: Theme.fontCaption

@@ -6,6 +6,7 @@ Card {
     id: root
     ColumnLayout {
         width: parent.width
+        height: parent.height  // bars take what the pane leaves instead of being clipped
         spacing: Theme.gap
         RowLayout {
             Layout.fillWidth: true
@@ -25,12 +26,15 @@ Card {
                 Layout.fillWidth: true
             }
         }
+        // Compact slots keep the Kp bars (they are what a storm watcher needs)
+        // and drop the 30-day flux line, which would push them out of the pane.
         TrendLine {
+            visible: !root.compact
             values: root.widget ? root.widget.fluxHistory : []
             Layout.fillWidth: true
         }
         Text {
-            text: "Kp, 3 hours per bar (faded = forecast)"
+            text: root.compact ? "Kp, 3 h per bar (faded = forecast)" : "Kp, 3 hours per bar (faded = forecast)"
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
             Layout.topMargin: Theme.gap * 0.5
@@ -38,6 +42,9 @@ Card {
         KpBars {
             bars: root.widget ? root.widget.kpBars : []
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 16 * Theme.scale
+            Layout.maximumHeight: 90 * Theme.scale
         }
     }
 }

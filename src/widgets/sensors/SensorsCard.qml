@@ -22,6 +22,7 @@ Card {
             label: "Pressure"
             visible: root.widget && root.widget.envPressure !== ""
             value: visible ? root.widget.envPressure : ""
+            caption: visible && root.widget.envTrend !== "" ? root.widget.envTrend : ""
         }
         Metric {
             label: "Humidity"
@@ -33,6 +34,11 @@ Card {
             label: "Wi-Fi"
             visible: root.widget && root.widget.hasWifi
             value: visible ? root.widget.wifi : ""
+        }
+        Metric {
+            label: "Clock"
+            visible: root.widget && root.widget.hasClock
+            value: visible ? root.widget.clock : ""
         }
         Metric {
             label: "Disk"

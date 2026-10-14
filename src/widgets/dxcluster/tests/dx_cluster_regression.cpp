@@ -1,7 +1,11 @@
 // DX cluster: telnet client (fake socket), spot parser and model, offline.
 #include "../dx_cluster_model.hpp"
+#include "../../../map/overlay.hpp"
 #include "../dx_spot_parse.hpp"
 #include "../../../net/telnet_client.hpp"
+#include "../../../platform/apple_lifecycle.hpp"
+#include <QEventLoop>
+#include <QTimer>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -23,6 +27,12 @@ public:
     QString host; int port = 0; QByteArray written;
 };
 } // namespace
+
+static void QTest_wait_ms(int ms) {
+    QEventLoop loop;
+    QTimer::singleShot(ms, &loop, &QEventLoop::quit);
+    loop.exec();
+}
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
@@ -46,6 +56,16 @@ int main(int argc, char** argv) {
     check(b && b->spotter == "DL1XYZ-#" && b->band == "40m" && b->mode == "FT8", "skimmer spotter and FT8");
     const auto c = parse_spot_line(lines[2], now);
     check(c && c->band == "2m" && c->grid.isEmpty(), "no grid is fine");
+    {
+        const auto ref = [](const char* c) { const auto r = parse_ota_ref(c); return r.program + ":" + r.ref; };
+        check(ref("CW POTA K-1234 up 1") == "POTA:K-1234", "POTA ref");
+        check(ref("SOTA w7w/kg-001") == "SOTA:W7W/KG-001", "SOTA ref, lowercase");
+        check(ref("IOTA EU-005 QRP") == "IOTA:EU-005", "IOTA ref");
+        check(ref("KFF-1234 FT8") == "WWFF:KFF-1234", "WWFF ref");
+        check(ref("CQ DX 599") == ":" && ref("TEST-12345X") == ":", "no false refs");
+        const auto o = parse_spot_line("DX de W3LPL: 14025.0 K1ABC POTA K-1234 CW 1234Z", now);
+        check(o && o->ota_program == "POTA" && o->ota_ref == "K-1234", "spot carries the reference");
+    }
     check(parse_spot_line("DX de W3LPL: 14025.0 K1ABC CQ 2359Z", now)->time.date() == QDate(2026, 10, 12),
           "future time rolls back a day");
     for (const char* bad : {"", "Hello", "DX de W3LPL: abc K1ABC CQ 1234Z", "DX de W3LPL: 14025.0 K1ABC CQ 2561Z",
@@ -86,6 +106,24 @@ int main(int argc, char** argv) {
     client.stop();
     check(client.state() == TelnetClient::State::Idle, "stop cancels retry");
 
+    // App suspend: socket dropped, no retries; resume reconnects at once and resets the backoff.
+    {
+        client.start("cluster.example", 7300, "K1ABC");
+        const auto before = sockets.size();
+        auto& lifecycle = hamclock::AppLifecycle::instance();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        check(client.state() == TelnetClient::State::Idle, "suspend closes the connection");
+        QTest_wait_ms(50);
+        check(sockets.size() == before, "no reconnect while suspended");
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Connecting && client.consecutiveFailures() == 0,
+              "resume reconnects immediately");
+        client.stop();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Idle, "stopped client stays stopped across suspend");
+    }
+
     // Model: unconfigured without settings; spots flow when lines arrive.
     WidgetContext ctx;
     DxClusterModel model(ctx, [&](QObject* p) -> TelnetSocket* { return new FakeSocket(p); });
@@ -95,8 +133,20 @@ int main(int argc, char** argv) {
     emit model.client().lineReceived(lines[0]);
     emit model.client().lineReceived("not a spot");
     check(model.spotCount() == 1, "only valid spots listed");
+    {
+        // Live link => layer published (the bundled DXCC table is a qrc resource, absent in unit tests, so no markers here).
+        const auto& layers = MapOverlays::instance().layers();
+        check(model.state() == "live" && layers.size() == 1 && layers[0].id == "dx-cluster", "live -> map layer published");
+        model.setMapVisible(false);
+        check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+        model.setMapVisible(true);
+        check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    }
     auto* list = qobject_cast<QAbstractListModel*>(model.spots());
     check(list && list->data(list->index(0), DxSpotList::DxRole) == "K1ABC", "newest spot first");
+    check(list->data(list->index(0), DxSpotList::OtaRole).toString().isEmpty(), "no reference, no ota text");
+    emit model.client().lineReceived("DX de W3LPL:     14074.0  K1POT       FT8 POTA K-1234                 1235Z FN20");
+    check(list->data(list->index(0), DxSpotList::OtaRole) == "POTA K-1234", "ota role names program and reference");
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 

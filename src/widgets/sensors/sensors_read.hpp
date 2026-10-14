@@ -4,6 +4,8 @@
 #include <QByteArray>
 #include <QString>
 #include <optional>
+#include <vector>
+#include <utility>
 
 namespace hamclock::sensors {
 
@@ -33,7 +35,23 @@ struct EnvReading {
 };
 EnvReading read_env_sensor(const QString& iio_root = "/sys/bus/iio/devices");
 
+// Adds user corrections (decimal text, e.g. "-1.5") to temperature and pressure.
+// Empty, unparsable or implausible (|temp| > 20 C, |pressure| > 50 hPa) values are ignored.
+void apply_offsets(EnvReading& reading, const QString& temp_offset_c, const QString& pressure_offset_hpa);
+
 // Magnus-formula dew point (C); absent for humidity outside 1..100 %.
 std::optional<double> dew_point_c(double temp_c, double humidity_pct);
+
+// In-memory pressure samples (at most one per minute, last 3 h) for a trend word.
+// Needs at least 30 minutes of history; the change is scaled to a 3 h equivalent
+// and "Steady" lies within +-1 hPa of that, like the weather card's trend.
+class PressureHistory {
+public:
+    void add(qint64 epoch_s, double hpa);
+    std::optional<double> change_per_3h() const;
+    QString trend_word() const;  // "Rising" / "Falling" / "Steady", empty if too little history
+private:
+    std::vector<std::pair<qint64, double>> samples_;
+};
 
 } // namespace hamclock::sensors

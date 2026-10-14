@@ -3,8 +3,12 @@
 #include "app_settings.hpp"
 #include "map_item.hpp"
 #include "station_model.hpp"
+#include "time_zone_search.hpp"
+#include "location_tools.hpp"
 #include "../net/polled_source.hpp"
 #include "../widgets/widget_registry.hpp"
+#include "../platform/apple_lifecycle.hpp"
+#include "../platform/apple_safearea.hpp"
 #include <QGuiApplication>
 #include <QCommandLineParser>
 #include <QDir>
@@ -14,13 +18,30 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickItem>
 #include <QQuickWindow>
+#include <QWindow>
 #include <QScreen>
 #include <QTimer>
 #include <QtQml>
 #include <cstdio>
 
 namespace {
+    // Counts visible, non-empty Text-like items whose text is cut off (issue
+    // #152). Items that elide on purpose set objectName "elideOk".
+    int count_truncated(QQuickItem* item) {
+        if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
+        int found = 0;
+        const QVariant truncated = item->property("truncated");
+        if (truncated.isValid() && truncated.toBool() && item->objectName() != "elideOk" &&
+            !item->property("text").toString().isEmpty() && item->width() > 0 && item->height() > 0) {
+            std::fprintf(stderr, "TRUNCATED: \"%s\"\n", qPrintable(item->property("text").toString()));
+            ++found;
+        }
+        for (auto* child : item->childItems()) found += count_truncated(child);
+        return found;
+    }
+
 constexpr int kScreenshotDelayMs = 1500;
 constexpr int kSmallScreenWidth = 1280;
 constexpr int kSmallScreenHeight = 800;
@@ -53,6 +74,7 @@ int main(int argc, char** argv) {
     QGuiApplication::setApplicationName("hamclock-pro");
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
     QGuiApplication::setApplicationVersion("0.1.0");
+    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
 
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");
@@ -68,7 +90,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
-    for (const auto& option : {station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
+    for (const auto& option : {allow_truncation, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     parser.process(app);
 
@@ -96,6 +119,9 @@ int main(int argc, char** argv) {
         }
     }
     hamclock::StationModel station_model(settings);
+    hamclock::TimeZoneSearch time_zone_search;
+    hamclock::LocationTools location_tools;
+    location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 
     QQuickStyle::setStyle("Basic"); // fully themed by our QML, identical on every platform
@@ -111,6 +137,9 @@ int main(int argc, char** argv) {
     const bool start_fullscreen = parser.isSet(fullscreen) ||
         (!parser.isSet(windowed) && !parser.isSet(screenshot) && small_screen);
 
+    // Declared before the engine so it outlives it: QML bindings on safeArea
+    // re-evaluate during engine teardown and must not see a null object.
+    hamclock::SafeArea safe_area;
     QQmlApplicationEngine engine;
     // In screenshot mode any QML warning (binding error, missing type) fails
     // the run, so CI catches broken QML that would otherwise render blank.
@@ -122,10 +151,14 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("appSettings", &settings);
     engine.rootContext()->setContextProperty("widgetRegistry", &registry);
     engine.rootContext()->setContextProperty("station", &station_model);
+    engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
+    engine.rootContext()->setContextProperty("locationTools", &location_tools);
+    engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
+    safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
 
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
@@ -133,11 +166,12 @@ int main(int argc, char** argv) {
         if (!window || parts.size() != 2) return 2;
         window->resize(parts[0].toInt(), parts[1].toInt());
         const auto out = parser.value(screenshot);
-        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings] {
+        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation)] {
+            const int truncated = count_truncated(window->contentItem());
             const bool saved = window->grabWindow().save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
                          qPrintable(out));
-            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : 0);
+            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : 0);
         });
     }
     return app.exec();

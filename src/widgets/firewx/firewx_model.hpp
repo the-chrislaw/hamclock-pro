@@ -19,6 +19,7 @@ class FirewxModel : public WidgetModel {
     Q_PROPERTY(QString headlineTimes READ headlineTimes NOTIFY alertsChanged)
     Q_PROPERTY(QString headlineStart READ headlineStart NOTIFY alertsChanged)
     Q_PROPERTY(QString summary READ summary NOTIFY alertsChanged)
+    Q_PROPERTY(QString atDe READ atDe NOTIFY alertsChanged)
 public:
     explicit FirewxModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -33,7 +34,12 @@ public:
     QString headlineStart() const;  // "starts 15 13:00Z" while the alert is still ahead
     QString summary() const;        // "2 Red Flag Warning · 1 Fire Weather Watch"
 
+    // "At DE: Red Flag Warning · until 17 05:00Z" or "At DE: none active"; empty
+    // without a configured station or before the point query has answered.
+    QString atDe() const;
+
     PolledSource& source() { return *source_; }
+    PolledSource* pointSource() { return point_; }
 
 signals:
     void alertsChanged();
@@ -41,9 +47,13 @@ signals:
 private:
     std::vector<firewx::Alert> active() const;
     void refreshState();
+    void resetPointSource();
 
+    WidgetContext context_;
     PolledSource* source_;
+    PolledSource* point_ = nullptr;
     firewx::Feed feed_;
+    firewx::Feed point_feed_;
 };
 
 void register_widget_firewx(WidgetRegistry& registry, const WidgetContext& context);

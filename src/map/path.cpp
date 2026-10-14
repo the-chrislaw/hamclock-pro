@@ -5,8 +5,8 @@ namespace hamclock {
 namespace {
 constexpr double pi = 3.1415926535897932384626433832795;
 double rad(double degrees) { return degrees * pi / 180.0; }
-}
-std::vector<Location> map_short_path(Location de, Location dx, unsigned subdivisions) {
+
+std::vector<Location> route_points(Location de, Location dx, unsigned subdivisions, bool long_way) {
     if (subdivisions < 1 || subdivisions > 512)
         throw std::invalid_argument("map path subdivisions must be 1..512");
     const auto route = geometry(de, dx); // Validates both endpoints and degeneracies.
@@ -22,14 +22,17 @@ std::vector<Location> map_short_path(Location de, Location dx, unsigned subdivis
     const double dot = std::sin(lat) * std::sin(other_lat)
         + std::cos(lat) * std::cos(other_lat) * std::cos(delta);
     const double sine = std::hypot(east, north);
-    const double angle = std::atan2(sine, dot);
+    const double short_angle = std::atan2(sine, dot);
+    // Long path: the other way round the same great circle.
+    const double angle = long_way ? 2 * pi - short_angle : short_angle;
+    const double sign = long_way ? -1.0 : 1.0;
     // Local north/east basis avoids subtracting nearly equal endpoint vectors.
     const double ex = -std::sin(lon), ey = std::cos(lon);
     const double nx = -std::sin(lat) * std::cos(lon);
     const double ny = -std::sin(lat) * std::sin(lon), nz = std::cos(lat);
-    const double tx = (east * ex + north * nx) / sine;
-    const double ty = (east * ey + north * ny) / sine;
-    const double tz = north * nz / sine;
+    const double tx = sign * (east * ex + north * nx) / sine;
+    const double ty = sign * (east * ey + north * ny) / sine;
+    const double tz = sign * north * nz / sine;
     const double ax = std::cos(lat) * std::cos(lon);
     const double ay = std::cos(lat) * std::sin(lon), az = std::sin(lat);
     std::vector<Location> points;
@@ -44,5 +47,12 @@ std::vector<Location> map_short_path(Location de, Location dx, unsigned subdivis
     }
     points.push_back(dx);
     return points;
+}
+} // namespace
+std::vector<Location> map_short_path(Location de, Location dx, unsigned subdivisions) {
+    return route_points(de, dx, subdivisions, false);
+}
+std::vector<Location> map_long_path(Location de, Location dx, unsigned subdivisions) {
+    return route_points(de, dx, subdivisions, true);
 }
 }

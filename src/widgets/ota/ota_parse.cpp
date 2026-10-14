@@ -1,4 +1,5 @@
 #include "ota_parse.hpp"
+#include "../dxcluster/dx_spot_parse.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -114,5 +115,17 @@ std::vector<Spot> merge(const Feed& pota, const Feed& sota) {
 }
 
 QString format_frequency(double khz) { return QString::number(khz / 1000.0, 'f', 3); }
+
+std::vector<Spot> filter(const std::vector<Spot>& spots, const Filter& f, const QDateTime& now) {
+    std::vector<Spot> out;
+    for (const auto& s : spots) {
+        if (!f.program.isEmpty() && s.program != f.program) continue;
+        if (!f.mode.isEmpty() && s.mode.compare(f.mode, Qt::CaseInsensitive) != 0) continue;
+        if (!f.band.isEmpty() && dxcluster::band_for_khz(s.freq_khz) != f.band) continue;
+        if (f.max_age_min > 0 && s.time.secsTo(now) > qint64(f.max_age_min) * 60) continue;
+        out.push_back(s);
+    }
+    return out;
+}
 
 } // namespace hamclock::ota

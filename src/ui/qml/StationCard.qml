@@ -13,38 +13,53 @@ Card {
         width: parent.width
         spacing: Theme.gap * 0.8
 
+        // Callsign banner: tap to cycle call / ON AIR / 73 DE call.
+        Text {
+            visible: station.configured
+            Layout.fillWidth: true
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: Theme.fontValue
+            text: station.bannerText
+            color: Theme.accent
+            font.pixelSize: Theme.fontTitle * 1.6
+            font.weight: Font.Bold
+            Accessible.role: Accessible.Button
+            Accessible.name: "Callsign banner " + text
+            Accessible.onPressAction: station.cycleBanner()
+            TapHandler { onTapped: station.cycleBanner() }
+        }
+
+        // Tap the clock to swap the big clock between UTC and DE local time.
         ColumnLayout {
+            id: clockBox
+            property bool local: false
+            readonly property bool showLocal: local && station.deClock.length > 0
             spacing: 0
             Layout.fillWidth: true
             Text {
                 Layout.fillWidth: true
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: Theme.fontValue
-                text: station.utcTime
+                text: clockBox.showLocal ? station.deClock : station.utcTime
                 color: Theme.ink
                 font.pixelSize: Theme.fontClock
                 font.weight: Font.Light
-                Accessible.name: "UTC time " + text
+                Accessible.name: (clockBox.showLocal ? "Local time " : "UTC time ") + text
             }
             Text {
-                text: station.utcDate + " · UTC"
+                text: clockBox.showLocal ? station.deDate + " · local" : station.utcDate + " · UTC"
                 color: Theme.secondary
                 font.pixelSize: Theme.fontCaption
             }
-        }
-        RowLayout {
-            spacing: Theme.gap * 0.6
             Text {
                 visible: station.deTime.length > 0
-                text: station.deTime
-                color: Theme.ink
-                font.pixelSize: Theme.fontValue
-            }
-            Text {
-                text: station.deTime.length > 0 ? "local" : ""
+                text: clockBox.showLocal ? station.utcTime + " UTC" : station.deTime + " local"
                 color: Theme.secondary
-                font.pixelSize: Theme.fontCaption
+                font.pixelSize: Theme.fontBody
             }
+            TapHandler { onTapped: clockBox.local = !clockBox.local }
+            Accessible.role: Accessible.Button
+            Accessible.onPressAction: clockBox.local = !clockBox.local
         }
         Text {
             text: station.deZoneLabel
@@ -58,8 +73,8 @@ Card {
 
         Repeater {
             model: station.configured ? [
-                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates },
-                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates }
+                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun },
+                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun }
             ] : []
             delegate: ColumnLayout {
                 spacing: 1
@@ -67,15 +82,24 @@ Card {
                 Text { text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: modelData.grid; color: Theme.ink; font.pixelSize: Theme.fontTitle * 1.3; font.weight: Font.DemiBold }
                 Text { text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text {
+                    visible: modelData.sun.length > 0
+                    text: "☀ " + modelData.sun
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontCaption
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                }
             }
         }
         Text {
             visible: station.configured
-            text: station.distanceText + "  ·  " + station.bearingText
+            text: station.pathText
             color: Theme.ink
             font.pixelSize: Theme.fontBody
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
+            TapHandler { onTapped: station.toggleLongPath() }
         }
         ColumnLayout {
             visible: !station.configured

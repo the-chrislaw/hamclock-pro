@@ -6,10 +6,13 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
 #include <QVariantMap>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -68,6 +71,20 @@ int main(int argc, char** argv) {
     check(sane, "rows have name, time and 10-90 degree peak elevation");
 
     {
+        const auto sky = model.skyTrack();
+        bool ok = sky.size() >= 2;
+        double peak = 0;
+        for (const auto& v : sky) {
+            const auto m = v.toMap();
+            ok = ok && m["az"].toDouble() >= 0 && m["az"].toDouble() <= 360 && m["el"].toDouble() >= -1 && m["el"].toDouble() <= 90;
+            peak = std::max(peak, m["el"].toDouble());
+        }
+        check(ok && sky.size() <= 24, "sky track: samples in range");
+        check(!sky.isEmpty() && std::abs(sky.first().toMap()["el"].toDouble() - 10) < 1.5 &&
+              std::abs(sky.last().toMap()["el"].toDouble() - 10) < 1.5, "sky track starts and ends at the 10 degree pass threshold");
+        check(peak <= rows.first().toMap()["maxEl"].toInt() + 1.5 && peak > 5, "sky track peak is within the first pass maximum");
+    }
+    {
         const OverlayLayer* layer = nullptr;
         for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = &l;
         check(layer != nullptr && layer->markers.size() >= 21, "satellites layer published with tracks");
@@ -76,7 +93,35 @@ int main(int argc, char** argv) {
             if (!m.call.isEmpty()) ++labelled;
             ok = ok && m.where.latitude >= -90 && m.where.latitude <= 90 && m.where.longitude >= -180 && m.where.longitude <= 180;
         }
-        check(labelled >= 3 && ok, "one labelled sub-point per bird, coordinates in range");
+        check(labelled == 2 && ok, "default: two labelled sub-points (soonest passes), coordinates in range");
+    }
+    {
+        // User choice from options.ini wins, capped at two; unknown names are ignored.
+        QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        ini.setValue("satellites/tracked", QStringList{"nonesuch", "ao-7", "ISS", "FO-29"});
+        ini.sync();
+        model.recompute();
+        QStringList names;
+        for (const auto& l : MapOverlays::instance().layers())
+            if (l.id == "satellites") for (const auto& m : l.markers) if (!m.call.isEmpty()) names << m.call;
+        names.sort();
+        check(names == QStringList({"AO-7", "ISS"}), "chosen satellites only, at most two");
+        ini.remove("satellites/tracked");
+        ini.sync();
+        model.recompute();
+    }
+
+    // Elements older than 30 days are dropped, not propagated as if live.
+    {
+        QDateTime later = t0.addDays(60);
+        model.setClock([&] { return later; });
+        model.recompute();
+        bool layer = false;
+        for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = true;
+        check(model.hasData() && model.allStale() && model.rows().isEmpty() && !layer, "60-day-old elements -> stale, no rows or tracks");
+        model.setClock([&] { return t0; });
+        model.recompute();
+        check(!model.allStale() && !model.rows().isEmpty(), "fresh again");
     }
 
     down = true;

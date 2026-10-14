@@ -20,3 +20,4 @@ The cloud agents' sandbox cannot reach outside websites, so these one-time sampl
 
 Not included: the NG3K DXpedition list and the WA7BNM contest calendar are copyrighted listings whose terms must be checked (and recorded in the roadmap's Data source policy) before any use; ask the owner via an "Owner input needed" issue if unclear.
 | swpc-noaa-scales.json | https://services.swpc.noaa.gov/products/noaa-scales.json | NOAA R/S/G scales: now ("0"), past 24 h max ("-1"), 3-day outlook ("1"-"3"). Full file, ~1 kB. Captured 2026-10-14. |
+| satnogs-transmitters.json | https://db.satnogs.org/api/transmitters/?format=json&satellite__norad_cat_id=7530 (also 27607, 43017, 25544, 24278) | SatNOGS DB transmitters (CC BY-SA 4.0), a few records each for AO-7, SO-50, AO-91, ISS and FO-29 (inverting transponder), unused fields removed. Captured 2026-10-14. |

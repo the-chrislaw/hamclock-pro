@@ -25,3 +25,44 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, third run)
 - #137 (area D) CI still running, #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
 - E11 slice: BME280/BMP280 on the sensors card via the kernel IIO driver (sysfs; temp, pressure, humidity, dew point by Magnus formula). Absent hardware hides the metrics. Tested against a fake IIO tree, release build; not run on a Pi. No calibration offsets or history yet. Next: DX time zone/city, new-DE/DX popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fourth run)
+- Merged #154 (docs, green). #156/#158 CI was still running, #73 conflicting: not mine. No open `qa` issues for E.
+- E5/E12 slice: new read-only `gps` widget, gpsd JSON client on localhost:2947 (fix quality, position, grid, satellites used). No gpsd -> "unconfigured"; retries every 15 s; no fix is never shown as live. Does not set DE and does not use GPS time yet. Tested against a loopback fake gpsd (release + ASan/UBSan); not run with a real receiver. Not on the default dashboard so no screenshot. Next: use fix for DE (needs area A setting), NTP choice, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fifth run)
+- #161 and #165 (areas G/D) still had CI running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: new read-only `radio` widget, rigctld client on localhost:4532 polling only `f` and `m` (test asserts nothing else is sent). Shows frequency, band, mode; unconfigured without rigctld; RPRT errors are not live. Tested against a loopback fake rigctld (release + ASan/UBSan); not run with a real rig. Not on the default dashboard so no screenshot. Next: flrig, header display, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, sixth run)
+- #175 (area D) had both Linux checks green but Apple jobs still running; #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
+- E10 slice: new read-only `rotator` widget, rotctld client on localhost:4533 sending only `p` (test asserts nothing else is sent). Azimuth/elevation; unconfigured without rotctld; RPRT errors and out-of-range values are not live. Loopback fake rotctld test; not run with a real rotator. No move/track commands (safety review pending). Not on the default dashboard so no screenshot. Next: flrig, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, seventh run)
+- #73 (area A, conflicting), #182/#183/#184 (areas tvOS/D/C) had CI still running: not mine, left alone. No open `qa` issues for E.
+- E6 slice: DX/DE local time. Weather request now uses `timezone=auto`; the parsed `utc_offset_seconds` gives "14:32 (UTC-7)" on each end of the weather card (hidden if the service omits it). City name and a new-DE/DX popup are still pending. Offline tests incl. offset formatting; release + ASan/UBSan weather tests. Card not visually checked (no station in the screenshot harness); not validated on-device. Next: flrig, DX city/popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, eighth run)
+- #186 (area F, a Linux-green but macOS universal job failed), #191 (area D, Apple jobs running), #73 (area A, conflicting): not mine, left alone. No open `qa` issues for E.
+- E12 slice: clock sync status. New `src/platform/ntp_status` (read-only `chronyc tracking`, falling back to `timedatectl show -p NTPSynchronized`; no network, no clock changes) shown as a "Clock" metric on the sensors card ("Synced, 12 ms" / "Not synchronised"; hidden where neither tool exists). Parsers tested on sample text; release + ASan/UBSan sensors tests. Not run on a Pi. NTP server choice and GPS time are still pending. Next: DX city/popup, flrig, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, ninth run)
+- #208 (area C, macOS/iPad jobs failing or running), #207 (area D, no checks yet), #73 (area A): not mine, left alone. No open `qa` issues for E.
+- E14 slice: `src/platform/gpio` output interface (`GpioOutputs`, BCM line parsing 2..27, Null default backend that drives nothing, in-memory Fake for tests). No hardware backend yet (needs on-device testing); nothing consumes it yet. Offline test; release + ASan/UBSan. Next: gpiod backend, ON AIR/alarm wiring, DX city/popup, flrig.
+
+## 2026-10-14 (UTC, tenth run)
+- Merged #214 (dxcluster, green). #207 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E4 slice: read-only flrig fallback for the radio card. XML-RPC to localhost:12345 asking only `rig.get_vfo` and `rig.get_mode`; used only while rigctld is not connected (rigctld wins), retries every 15 s, faults/garbage are never shown as live. Parser tests plus a loopback fake flrig HTTP server; release + ASan/UBSan radio tests. Not run with real flrig. Next: header display, DX city/popup, gpiod backend, E3 feeds (owner input #200).
+
+## 2026-10-14 (UTC, eleventh run)
+- #218/#219 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E2 slice: lookup card shows "5210 km · 52° SP" (distance and short-path bearing from DE to the centre of the returned grid; hidden without a DE or a valid grid). Uses the existing geometry/locator helpers. Offline tests for malformed grids and a known cell; full suite passes (release). ASan/UBSan and screenshots were not run locally (card needs an account, not in the screenshot harness). Spotted-call wiring still pending (needs area C selection). Next: header radio display, DX city/popup, gpiod backend.
+
+## 2026-10-14 (UTC, twelfth run)
+- #232 (area C) had both Linux checks green but Apple jobs running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card shows a pressure trend (Rising/Falling/Steady) under the BME280 pressure, from an in-memory history (one sample/min, 3 h window, needs 30 min, scaled to a 3 h change, steady within +-1 hPa). Hidden without history or sensor. Unit tests for the history; full suite passes (release build); ASan/UBSan left to CI; no screenshot (card needs hardware). Not run on a Pi. Next: calibration offsets (needs a setting), DX city/popup, gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, thirteenth run)
+- Merged #238 (area B, green). #239/#240 (areas C/D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E11 slice: BME280 corrections. `[sensors] temp_offset_c` and `pressure_offset_hpa` in options.ini are added to the readings (dew point and trend follow the corrected values); empty, garbage or implausible offsets (>20 C, >50 hPa) are ignored. No Settings control yet (area A page). Unit tests plus a model test with a temp options.ini; release full suite and ASan/UBSan sensors test pass. No screenshot (card needs hardware); not run on a Pi. Next: DX city/popup (needs a reverse-geocode source and terms check), gpiod backend, header radio display (area A).
+

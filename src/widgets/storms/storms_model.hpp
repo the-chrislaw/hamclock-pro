@@ -2,7 +2,9 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "storms_parse.hpp"
+#include <QHash>
 #include <QVariantList>
+#include <map>
 
 namespace hamclock {
 
@@ -35,6 +37,8 @@ public:
     ~StormsModel() override;
 
     PolledSource& source() { return *source_; }
+    // Forecast positions currently drawn (live storms with a current, matching advisory).
+    std::map<QString, storms::Forecast> forecasts() const;
 
 signals:
     void stormsChanged();
@@ -43,10 +47,19 @@ private:
     void refreshState();
     void refreshStateImpl();
     void publishOverlay();
+    void syncForecastSources();
 
+    Transport transport_;
     PolledSource* source_;
     storms::Feed feed_;
     bool map_visible_ = true;
+    struct ForecastSource {
+        PolledSource* source = nullptr;
+        QString url;
+        QString advisory;  // advisory number the index announced
+        QDateTime issued;
+    };
+    QHash<QString, ForecastSource> forecast_sources_;  // by storm id
 };
 
 void register_widget_storms(WidgetRegistry& registry, const WidgetContext& context);

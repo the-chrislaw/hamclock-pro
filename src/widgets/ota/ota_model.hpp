@@ -24,6 +24,9 @@ public:
     // Spots are drawn on the map only while the data is live; off hides them.
     void setMapVisible(bool visible);
     bool mapVisible() const { return map_visible_; }
+    // Display filter for the list, the count and the map layer.
+    void setFilter(const ota::Filter& filter);
+    const ota::Filter& filter() const { return filter_; }
     ~OtaModel() override;
 
     PolledSource& potaSource() { return *pota_; }
@@ -34,6 +37,7 @@ signals:
 
 private:
     void reparse();
+    void applyFilter();
     void refreshState();
     void refreshStateImpl();
     void publishOverlay();
@@ -41,7 +45,9 @@ private:
     PolledSource* pota_;
     PolledSource* sota_;
     ota::Feed pota_feed_, sota_feed_;
-    std::vector<ota::Spot> spots_;
+    std::vector<ota::Spot> all_spots_;
+    std::vector<ota::Spot> spots_;  // after the display filter
+    ota::Filter filter_;
     bool map_visible_ = true;
 };
 

@@ -28,12 +28,14 @@ add_library(hamclock-map-core STATIC
     src/qt/land_fill_path.cpp
     src/map/path.cpp
     src/map/overlay.cpp
+    src/map/view_options.cpp
     src/map/styles.cpp
     src/map/projection.cpp
     src/map/viewport.cpp
     src/map/map_renderer.cpp
     src/domain/geometry.cpp
-    src/domain/solar_position.cpp)
+    src/domain/solar_position.cpp
+    src/domain/astro_moon.cpp)
 target_link_libraries(hamclock-map-core PUBLIC Qt6::Core Qt6::Gui)
 # Legacy QWidget map used by the old dashboard/preview tools only.
 add_library(hamclock-world-map STATIC src/qt/world_map_widget.cpp)
@@ -102,6 +104,13 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME qt-map-overlay-regression COMMAND qt-map-overlay-regression)
     set_tests_properties(qt-map-overlay-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+    add_executable(qt-map-view-options-regression tests/qt_map_view_options_regression.cpp)
+    target_link_libraries(qt-map-view-options-regression PRIVATE hamclock-map-core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-view-options-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-view-options-regression COMMAND qt-map-view-options-regression)
+    set_tests_properties(qt-map-view-options-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
     add_executable(qt-map-styles-regression tests/qt_map_styles_regression.cpp)
     target_link_libraries(qt-map-styles-regression PRIVATE hamclock-map-core)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
