@@ -17,6 +17,19 @@ QString band_for_khz(double khz) {
     return {};
 }
 
+OtaRef parse_ota_ref(const QString& comment) {
+    static const struct { const char* program; QRegularExpression re; } rules[] = {
+        {"WWFF", QRegularExpression(R"((?<![A-Z0-9/-])([A-Z0-9]{1,2}FF-\d{4})(?![A-Z0-9-]))", QRegularExpression::CaseInsensitiveOption)},
+        {"SOTA", QRegularExpression(R"((?<![A-Z0-9/-])([A-Z0-9]{1,3}/[A-Z]{2}-\d{3})(?![A-Z0-9-]))", QRegularExpression::CaseInsensitiveOption)},
+        {"IOTA", QRegularExpression(R"((?<![A-Z0-9/-])((?:AF|AN|AS|EU|NA|OC|SA)-\d{3})(?![A-Z0-9-]))", QRegularExpression::CaseInsensitiveOption)},
+        {"POTA", QRegularExpression(R"((?<![A-Z0-9/-])([A-Z]{1,2}-\d{4,5})(?![A-Z0-9-]))", QRegularExpression::CaseInsensitiveOption)}};
+    for (const auto& r : rules) {
+        const auto m = r.re.match(comment);
+        if (m.hasMatch()) return {r.program, m.captured(1).toUpper()};
+    }
+    return {};
+}
+
 std::optional<DxSpot> parse_spot_line(const QString& line, const QDateTime& now_utc) {
     static const QRegularExpression re(
         R"(^DX de ([A-Z0-9/#-]{3,16}):?\s+(\d{3,7}\.\d{1,2})\s+([A-Z0-9/]{3,16})\s+(.*?)\s*(\d{2})(\d{2})Z(?:\s+([A-R]{2}\d{2}(?:[A-X]{2})?))?\s*$)",
@@ -40,6 +53,9 @@ std::optional<DxSpot> parse_spot_line(const QString& line, const QDateTime& now_
     static const QRegularExpression mode_re(R"(\b(CW|SSB|FT8|FT4|RTTY|PSK\d*)\b)", QRegularExpression::CaseInsensitiveOption);
     const auto mm = mode_re.match(spot.comment);
     if (mm.hasMatch()) spot.mode = mm.captured(1).toUpper();
+    const OtaRef ota = parse_ota_ref(spot.comment);
+    spot.ota_program = ota.program;
+    spot.ota_ref = ota.ref;
     return spot;
 }
 

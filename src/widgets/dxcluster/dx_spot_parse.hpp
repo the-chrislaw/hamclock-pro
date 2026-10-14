@@ -15,10 +15,16 @@ struct DxSpot {
     QString grid;         // optional trailing locator, else empty
     QString band;         // "20m" etc., empty when outside the amateur bands
     QString mode;         // CW/SSB/FT8/FT4/RTTY when named in the comment, else empty
+    QString ota_program;  // IOTA/POTA/SOTA/WWFF when the comment names a reference, else empty
+    QString ota_ref;      // e.g. "EU-005", "K-1234", "W7W/KG-001", "KFF-1234"
 };
 
 // Returns nothing for any line that is not a well-formed spot.
 std::optional<DxSpot> parse_spot_line(const QString& line, const QDateTime& now_utc);
 QString band_for_khz(double khz);
+
+struct OtaRef { QString program, ref; };
+// First on-the-air reference named in a spot comment (WWFF, SOTA, IOTA, POTA, in that order); empty when none.
+OtaRef parse_ota_ref(const QString& comment);
 
 } // namespace hamclock::dxcluster

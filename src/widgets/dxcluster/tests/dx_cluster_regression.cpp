@@ -46,6 +46,16 @@ int main(int argc, char** argv) {
     check(b && b->spotter == "DL1XYZ-#" && b->band == "40m" && b->mode == "FT8", "skimmer spotter and FT8");
     const auto c = parse_spot_line(lines[2], now);
     check(c && c->band == "2m" && c->grid.isEmpty(), "no grid is fine");
+    {
+        const auto ref = [](const char* c) { const auto r = parse_ota_ref(c); return r.program + ":" + r.ref; };
+        check(ref("CW POTA K-1234 up 1") == "POTA:K-1234", "POTA ref");
+        check(ref("SOTA w7w/kg-001") == "SOTA:W7W/KG-001", "SOTA ref, lowercase");
+        check(ref("IOTA EU-005 QRP") == "IOTA:EU-005", "IOTA ref");
+        check(ref("KFF-1234 FT8") == "WWFF:KFF-1234", "WWFF ref");
+        check(ref("CQ DX 599") == ":" && ref("TEST-12345X") == ":", "no false refs");
+        const auto o = parse_spot_line("DX de W3LPL: 14025.0 K1ABC POTA K-1234 CW 1234Z", now);
+        check(o && o->ota_program == "POTA" && o->ota_ref == "K-1234", "spot carries the reference");
+    }
     check(parse_spot_line("DX de W3LPL: 14025.0 K1ABC CQ 2359Z", now)->time.date() == QDate(2026, 10, 12),
           "future time rolls back a day");
     for (const char* bad : {"", "Hello", "DX de W3LPL: abc K1ABC CQ 1234Z", "DX de W3LPL: 14025.0 K1ABC CQ 2561Z",
