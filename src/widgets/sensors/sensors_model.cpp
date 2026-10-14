@@ -1,15 +1,17 @@
 #include "sensors_model.hpp"
 #include "sensors_read.hpp"
+#include "../../ui/app_settings.hpp"
+#include <QSettings>
 #include <cmath>
 
 namespace hamclock {
 
-SensorsModel::SensorsModel(const WidgetContext&, QString thermal_root, QString wireless_path,
+SensorsModel::SensorsModel(const WidgetContext& context, QString thermal_root, QString wireless_path,
                            QString disk_path, QString iio_root,
                            std::function<std::optional<platform::ClockSync>()> clock_reader, QObject* parent)
     : WidgetModel("sensors", "Host sensors", parent), root_(std::move(thermal_root)),
       wireless_(std::move(wireless_path)), diskPath_(std::move(disk_path)), iio_(std::move(iio_root)),
-      clockReader_(std::move(clock_reader)) {
+      clockReader_(std::move(clock_reader)), settings_(context.settings) {
     timer_.setInterval(10000);
     connect(&timer_, &QTimer::timeout, this, &SensorsModel::refresh);
 }
@@ -21,6 +23,12 @@ void SensorsModel::refresh() {
     wifi_ = sensors::read_wifi_dbm(wireless_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
     env_ = sensors::read_env_sensor(iio_);
+    if (settings_ && env_.any()) {
+        // Optional corrections for a sensor that reads off: [sensors] temp_offset_c / pressure_offset_hpa.
+        QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+        sensors::apply_offsets(env_, ini.value("sensors/temp_offset_c").toString(),
+                               ini.value("sensors/pressure_offset_hpa").toString());
+    }
     if (env_.pressure_hpa) pressure_.add(now().toSecsSinceEpoch(), *env_.pressure_hpa);
     clock_ = clockReader_ ? clockReader_() : std::nullopt;
     if (temp_ || wifi_ || disk_ || env_.any() || clock_) setState("live", "Host sensors", now());

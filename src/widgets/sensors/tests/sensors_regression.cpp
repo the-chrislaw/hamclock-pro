@@ -2,6 +2,7 @@
 #include "../sensors_model.hpp"
 #include "../sensors_read.hpp"
 #include "../../../platform/ntp_status.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -104,6 +105,27 @@ int main(int argc, char** argv) {
     envOnly.refresh();
     check(envOnly.state() == "live" && envOnly.envTemp() == "21.5 °C" && envOnly.envPressure() == "1013 hPa"
               && envOnly.envHumidity() == "50%" && !envOnly.envDewPoint().isEmpty(), "env sensor shown");
+    {
+        sensors::EnvReading r{21.5, 1013.0, 50.0};
+        sensors::apply_offsets(r, "-1.5", " 3 ");
+        check(std::abs(*r.temp_c - 20.0) < 1e-9 && std::abs(*r.pressure_hpa - 1016.0) < 1e-9, "offsets applied");
+        sensors::EnvReading q{21.5, 1013.0, 50.0};
+        sensors::apply_offsets(q, "", "abc");
+        check(*q.temp_c == 21.5 && *q.pressure_hpa == 1013.0, "empty/garbage offsets ignored");
+        sensors::apply_offsets(q, "99", "-500");
+        check(*q.temp_c == 21.5 && *q.pressure_hpa == 1013.0, "implausible offsets ignored");
+        sensors::EnvReading none;
+        sensors::apply_offsets(none, "1", "1");
+        check(!none.any(), "absent readings stay absent");
+        QTemporaryDir cfg;
+        AppSettings settings(cfg.filePath("station.conf"), cfg.path());
+        put(settings.optionsPath(), "[sensors]\ntemp_offset_c=-1.5\npressure_offset_hpa=3\n");
+        WidgetContext c2;
+        c2.settings = &settings;
+        SensorsModel cal(c2, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", iio.path(), nullptr);
+        cal.refresh();
+        check(cal.envTemp() == "20.0 °C" && cal.envPressure() == "1016 hPa", "model applies options.ini offsets");
+    }
     SensorsModel clockOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio",
                            [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2}); });
     clockOnly.refresh();

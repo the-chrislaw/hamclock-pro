@@ -111,3 +111,17 @@ QString PressureHistory::trend_word() const {
 }
 
 } // namespace hamclock::sensors
+
+namespace hamclock::sensors {
+namespace {
+std::optional<double> parse_offset(const QString& text, double limit) {
+    bool ok = false;
+    const double v = text.trimmed().toDouble(&ok);
+    return ok && std::isfinite(v) && std::abs(v) <= limit ? std::optional<double>(v) : std::nullopt;
+}
+}
+void apply_offsets(EnvReading& reading, const QString& temp_offset_c, const QString& pressure_offset_hpa) {
+    if (reading.temp_c) if (const auto o = parse_offset(temp_offset_c, 20)) *reading.temp_c += *o;
+    if (reading.pressure_hpa) if (const auto o = parse_offset(pressure_offset_hpa, 50)) *reading.pressure_hpa += *o;
+}
+}

@@ -58,6 +58,7 @@ private:
     sensors::PressureHistory pressure_;
     std::function<std::optional<platform::ClockSync>()> clockReader_;
     std::optional<platform::ClockSync> clock_;
+    AppSettings* settings_ = nullptr;
     QTimer timer_;
     std::optional<double> temp_, disk_;
     std::optional<int> wifi_;
