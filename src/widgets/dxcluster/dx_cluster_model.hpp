@@ -3,6 +3,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "dx_spot_parse.hpp"
+#include "udp_spot.hpp"
 #include <QAbstractListModel>
 #include <deque>
 #include <vector>
@@ -53,6 +54,8 @@ public:
     int totalCount() const { return list_.totalCount(); }
     int watchedCount() const { return list_.watchedCount(); }
     void refreshWatchList(); // re-reads the watch list from settings
+    void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
+    dxcluster::UdpSpotListener& udp() { return udp_; }
     QString bandFilter() const { return band_filter_; }
     QString modeFilter() const { return mode_filter_; }
     // Unknown values are ignored; "" shows everything.
@@ -74,6 +77,7 @@ private:
     AppSettings* settings_;
     TelnetClient client_;
     DxSpotList list_;
+    dxcluster::UdpSpotListener udp_;
     QString band_filter_, mode_filter_;
 };
 

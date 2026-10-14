@@ -27,6 +27,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString watchListText READ watchListText NOTIFY optionsChanged)
     Q_PROPERTY(QString adifPath READ adifPath NOTIFY optionsChanged)
+    Q_PROPERTY(int udpSpotPort READ udpSpotPort NOTIFY optionsChanged)
+    Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
@@ -56,6 +58,8 @@ public:
     QString clusterCommandsText() const { return cluster_commands_.join('\n'); }
     QStringList watchList() const { return watch_list_; }              // uppercase calls / prefixes with *
     QString watchListText() const { return watch_list_.join(' '); }
+    int udpSpotPort() const { return udp_port_; }                      // 0 = UDP spot input off
+    bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
     QString lookupService() const { return lookup_service_; }
     QString lookupUser() const { return lookup_user_; }
@@ -88,6 +92,7 @@ public:
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
+    Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -113,6 +118,8 @@ private:
     QStringList cluster_commands_;
     QStringList watch_list_;
     QString adif_path_;
+    int udp_port_ = 0;
+    bool udp_lan_ = false;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
