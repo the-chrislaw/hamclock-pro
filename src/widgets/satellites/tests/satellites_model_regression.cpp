@@ -79,6 +79,19 @@ int main(int argc, char** argv) {
         check(labelled >= 3 && ok, "one labelled sub-point per bird, coordinates in range");
     }
 
+    // Elements older than 30 days are dropped, not propagated as if live.
+    {
+        QDateTime later = t0.addDays(60);
+        model.setClock([&] { return later; });
+        model.recompute();
+        bool layer = false;
+        for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = true;
+        check(model.hasData() && model.allStale() && model.rows().isEmpty() && !layer, "60-day-old elements -> stale, no rows or tracks");
+        model.setClock([&] { return t0; });
+        model.recompute();
+        check(!model.allStale() && !model.rows().isEmpty(), "fresh again");
+    }
+
     down = true;
     model.source().refreshNow();
     settle();
