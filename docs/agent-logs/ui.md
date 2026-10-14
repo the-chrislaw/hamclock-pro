@@ -90,3 +90,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 18)
 - Backlog 0c/A14 slice: auxiliary time line under the station clock; tap cycles "Day N of 365 · week W", JD, MJD, local sidereal time (DE longitude, Greenwich when unconfigured), UNIX (`aux_time.hpp`, `StationModel.auxTime/cycleAuxTime`, `aux-time-text-regression` checked against J2000 values). Per session only; date order/week start, time travel and alarms pending. ctest 138/138; 800x480, 1024x600, 1920x1080 screenshots show no clipping. ASan/UBSan left to CI. Not validated on a device.
 - Only #73 open (conflicting docs, not mine). Pre-existing warnings in legacy src/qt dialogs remain (retire task).
+
+## 2026-10-14 (hourly run, 19)
+- Issue #261: the station card title is now "Station" while the banner shows the plain callsign, so the callsign appears once (the title stays as the chooser tap target); ON AIR / 73 modes show the callsign as the title. New `banner_is_callsign()` (`banner-text-regression` extended) and `StationModel.bannerIsCallsign`. Screenshot at 1024x600 with `callsign=W1TEST`: one callsign, no clipping; 800x480 rendered too. ctest 138/138; ASan/UBSan left to CI. Not validated on a device.
+- #271 (docs, not mine) had macOS checks running; #73 stale. Left alone.

@@ -5,7 +5,8 @@ import HamClock
 // Callsign, UTC and DE local clocks, DE/DX locators and path summary.
 Card {
     id: root
-    title: station.configured ? station.callsign : "Your station"
+    // The banner already shows the callsign; do not repeat it in the title.
+    title: !station.configured ? "Your station" : station.bannerIsCallsign ? "Station" : station.callsign
     signal setupRequested()
     signal settingsRequested()
 
