@@ -41,7 +41,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
    - Auxiliary time line (date, day of year, JD/MJD, sidereal, UNIX) selectable (A14 subset).
 0b. 🟡 (done: DMS and decimal coordinate entry, Maidenhead grid entry that fills DE, offline Nominatim reply parser `LocationTools`, "Find" button (one Nominatim request per press, max 1/s, fills lat/lon/grid); pending: zone suggestion, "Use my location") **Settings: location lookup.** "Find" button: search an address or place via OpenStreetMap Nominatim (honest User-Agent, max 1 request/second, only on button press; sample in tests/fixtures/sources), fills latitude, longitude, grid square and suggests the time zone; Maidenhead grid entry as an alternative; on macOS/iPad also "Use my location" via the OS location service (with area F).
 1. Match `design/dashboard.html` closely: header, sidebar, card spacing, typography, map toolbar; smooth touch scrolling; pressed/focus states.
-2. TV mode: overscan inset setting, remote/keyboard focus order across cards, focus ring, large type.
+2. 🟡 (done: overscan inset 0–10 % in Settings, saved; pending: remote/keyboard focus order, focus ring) TV mode: overscan inset setting, remote/keyboard focus order across cards, focus ring, large type.
 3. Settings: locator entry (Maidenhead) as alternative to lat/lon, time-zone picker list, map click to set DX.
 4. Map: full-card map, pan-free zoom presets, grayline band styling, DE/DX labels; then port the map drawing from QWidget to a pure QPainter renderer.
 5. Port Big Clock, Stopwatch, Countdown, DE time settings dialogs into QML pages; then retire the Qt Widgets programs (`hamclock-pro-dashboard`, `-editor`, `-map-preview`).

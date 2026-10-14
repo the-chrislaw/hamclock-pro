@@ -110,3 +110,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 23)
 - Backlog A14 slice: Settings > "Clock format" has a week start choice (Mon = ISO 8601, Sun = US, week 1 contains 1 January), saved in `options.ini` (`clock/week_start`, `AppSettings.saveWeekStart`); it sets the week number in the auxiliary time line (`week_of_year` in `aux_time.hpp`, `aux-time-text-regression` extended). Calendar widgets are not wired to it. Settings is not reachable from `--screenshot`, so layout was not checked visually. ctest 142/142; ASan/UBSan left to CI. Not validated on a device.
 - #300/#301 (others) still had macOS checks running; #73 stale. Left alone.
+
+## 2026-10-14 (hourly run, 24)
+- Backlog A2 slice: Settings > "TV overscan" (Off, 2-10 %) keeps a margin of that share of width/height free on every edge, saved in `options.ini` (`display/overscan`, `AppSettings.saveOverscan`, validated 0..10; `widget-core-regression` extended). Added to the safe-area margins in `Main.qml`. Screenshot at 1024x600 with 6 % shows the inset and no clipping; 1920x1080 rendered. Settings page layout not viewable via `--screenshot`. Focus order and focus ring still pending. ctest 144/144; ASan/UBSan left to CI. Not validated on a device.
+- Merged #308 (green). #309 checks running; #73 stale. Left alone.

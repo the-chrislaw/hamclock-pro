@@ -206,6 +206,34 @@ Rectangle {
             }
 
             Card {
+                title: "TV overscan"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Inset kept free on every edge, for TVs that crop the picture."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [0, 2, 4, 6, 8, 10]
+                            AppButton {
+                                text: modelData === 0 ? "Off" : modelData + " %"
+                                primary: appSettings.overscanPercent === modelData
+                                onClicked: appSettings.saveOverscan(modelData)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {
