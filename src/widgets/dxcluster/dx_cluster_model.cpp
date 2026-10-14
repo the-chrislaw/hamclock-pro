@@ -1,5 +1,6 @@
 #include "dx_cluster_model.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../bandactivity/band_activity.hpp"
 #include "../watchlist/watch_match.hpp"
 #include "dxcc_table.hpp"
 #include <algorithm>
@@ -56,6 +57,24 @@ void DxSpotList::add(const dxcluster::DxSpot& spot) {
     watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     rebuild();
     endResetModel();
+}
+
+QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& continent_of) const {
+    auto resolver = continent_of;
+    if (!resolver)
+        resolver = [](const QString& call) {
+            const auto* e = dxcluster::DxccTable::bundled().lookup(call);
+            return e ? e->continent : QString();
+        };
+    QStringList order = DxClusterModel::bandChoices();
+    order.removeAll(QString());
+    QVariantList out;
+    for (const auto& r : bandactivity::summarize(spots_, order, resolver)) {
+        QVariantMap m{{"band", r.band}, {"total", r.total}};
+        for (const auto& c : bandactivity::continents()) m.insert(c, r.by_continent.count(c) ? r.by_continent.at(c) : 0);
+        out << m;
+    }
+    return out;
 }
 
 void DxSpotList::set_watch(const QStringList& entries) {
