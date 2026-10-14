@@ -14,6 +14,8 @@ class StationModel : public QObject {
     Q_PROPERTY(QString utcTime READ utcTime NOTIFY tick)
     Q_PROPERTY(QString utcDate READ utcDate NOTIFY tick)
     Q_PROPERTY(QString deTime READ deTime NOTIFY tick)
+    Q_PROPERTY(QString deClock READ deClock NOTIFY tick)
+    Q_PROPERTY(QString deDate READ deDate NOTIFY tick)
     Q_PROPERTY(QString deZoneLabel READ deZoneLabel NOTIFY tick)
     Q_PROPERTY(QString callsign READ callsign NOTIFY stationChanged)
     Q_PROPERTY(QString deGrid READ deGrid NOTIFY stationChanged)
@@ -30,6 +32,8 @@ public:
     QString utcTime() const;
     QString utcDate() const;
     QString deTime() const;      // empty when no valid DE zone
+    QString deClock() const;     // HH:mm:ss at DE, empty when no valid zone
+    QString deDate() const;
     QString deZoneLabel() const;
     QString callsign() const { return callsign_; }
     QString deGrid() const { return de_grid_; }
