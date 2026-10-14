@@ -7,6 +7,7 @@
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDir>
+#include <QEventLoop>
 #include <QFile>
 #include <QTemporaryDir>
 #include <QTimeZone>
@@ -29,6 +30,18 @@ int main(int argc, char** argv) {
     QFile file(QDir(argv[1]).filePath("forecast"));
     check(file.open(QIODevice::ReadOnly), "fixture readable");
     const QByteArray body = file.readAll();
+
+    QFile rev(QDir(argv[1]).filePath("reverse"));
+    check(rev.open(QIODevice::ReadOnly), "reverse fixture readable");
+    const QByteArray rev_body = rev.readAll();
+    check(weather::parse_place(rev_body) == "San Francisco, US", "place from real reverse reply");
+    check(weather::parse_place(R"({"address":{"village":"Tiny","country_code":"nz"}})") == "Tiny, NZ", "village fallback");
+    check(weather::parse_place(R"({"address":{"state":"Texas","country_code":"us"}})") == "Texas, US", "state fallback");
+    check(weather::parse_place(R"({"address":{"city":"Oslo","country_code":"x1"}})") == "Oslo", "bad country code dropped");
+    check(weather::parse_place(R"({"error":"Unable to geocode"})").isEmpty(), "open sea gives no place");
+    check(weather::parse_place("garbage").isEmpty(), "garbage gives no place");
+    check(weather::reverse_url(37.774, -122.416).contains("lat=37.77&lon=-122.42") &&
+          weather::reverse_url(1, 2).contains("zoom=10"), "reverse url");
 
     const auto c = weather::parse_current(body);
     check(c && c->temperature_c == 15.7 && c->humidity_pct == 61, "temperature and humidity");
@@ -89,11 +102,13 @@ int main(int argc, char** argv) {
     context.settings = &settings;
     int requests = 0;
     bool fail_all = false;
-    context.transport = [&](const QUrl&, FetchDone done) {
-        ++requests;
+    int place_requests = 0;
+    context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult r;
+        const bool place = url.host().contains("nominatim");
+        (place ? place_requests : requests)++;
         if (fail_all) r.error = "Host unreachable";
-        else { r.http_status = 200; r.body = body; }
+        else { r.http_status = 200; r.body = place ? rev_body : body; }
         QTimer::singleShot(0, [done, r] { done(r); });
     };
     WeatherModel model(context);
@@ -122,6 +137,16 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     for (auto* s : {model.deSource(), model.dxSource()}) s->setClock([&] { return now; });
     check(model.dxTemp() == "15.7 °C" && model.state() == "live", "both ends fresh -> live");
+
+    // Place names: delayed so a burst of DX changes collapses, then one request per end.
+    check(place_requests == 0 && model.deCity().isEmpty(), "no place request before the delay");
+    {
+        QEventLoop loop;
+        QTimer::singleShot(3000, &loop, &QEventLoop::quit);
+        loop.exec();
+    }
+    check(place_requests == 2, "one place request per end after the delay");
+    check(model.deCity() == "San Francisco, US" && model.dxCity() == "San Francisco, US", "city names stored");
 
     fail_all = true;
     model.setClock([&] { return now.addSecs(3 * 3600); });

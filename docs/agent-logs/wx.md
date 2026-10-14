@@ -94,3 +94,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, twentieth run)
 - #306/#307/#73 are other areas' PRs with Apple jobs queued or conflicts: not mine, left alone. No open `qa` issues for E.
 - E12 slice (NTP): the sensors card's clock line now also shows chrony's stratum and reference source ("Synced, 3 ms, stratum 2 via time.example"). The source name is shown only if it is plain host/address characters (<= 64), otherwise dropped. Display only, read-only `chronyc tracking`; no source selection yet (would need privileged config, out of scope). Tests updated and extended; full release suite and ASan/UBSan sensors tests pass. Not run on a Pi. Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, twenty-first run)
+- #73 (area A) open and conflicting: not mine, left alone. No open `qa` issues for E.
+- E3 paused: NG3K ADXO is copyrighted with no reuse terms (same as the parked contest calendar); opened "Owner input needed: DXpedition calendar source (E3)" (#315) with options.
+- E6 slice: weather card labels now read "DE · San Francisco, US" / "DX · ...", from OSM Nominatim reverse (zoom 10). Policy recorded in the roadmap: one request per end on position change, delayed 1.2 s / 2.4 s so DX bursts collapse and ends never coincide (<1 req/s), weekly refresh, disk cache; status line credits OpenStreetMap contributors. Real reply fixture, offline parser/URL tests, model test with a fake transport; full release suite and ASan/UBSan weather test pass. No screenshot (needs a station, not in the harness); not run on a device. Next: DX city popup on new DE/DX (area G wiring), serial GPS reader, gpiod backend.
