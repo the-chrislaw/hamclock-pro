@@ -21,3 +21,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Beacons map markers (backlog D4): the five on-air NCDXF beacons are published as overlay layer "beacons" (diamond + callsign) via area G's overlay API; `ncdxf_beacon_location()` gives the locator centre. Test covers locator centres and the layer. Screenshot at 1024x600 dark checked offscreen (not on-device).
 - Not mine: #73 conflicting, #111 CI pending; left alone.
 - Next: satellite ground track on the map, user-chosen satellites, TLE age (D3/D7), EME (D5).
+
+## 2026-10-14 (UTC), run 3
+- Fixed QA issue #118 (Sun & Moon pane clipped Moonset): Moonrise/Moonset now share one "Moon rise/set" row, and Phase, rise/set and Now are dropped (last first) when the body cannot fit them instead of being sliced. Checked offscreen at 800x480, 1024x600, 1920x1080 (not on-device).
+- Not mine: #127, #73 left alone.
+- Next: satellite ground track on the map, user-chosen satellites, TLE age (D3/D7), EME (D5).
