@@ -50,3 +50,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H1 slice 3: quakes pane shows "Nearest M4.1 · 820 km NW of DE · 3 h ago" using the saved DE station (great-circle distance, 8-point bearing); hidden until a station is configured and refreshed when the station changes. Tests cover no-station and with-station. Debug and ASan/UBSan quakes tests pass. The quakes card is not on the default dashboard, so I could not screenshot the new row at 800x480, 1024x600, 1920x1080; it is a single elided text line. Not validated visually.
 - Next: marine/firewx filter by DE, fires near DE; lightning and nets once #142 is resolved.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-14 06:00 UTC
+- Step 1: merged #177 (F4, green). #73 (other area) has merge conflicts, #178 CI still running; left alone. No `qa` issues for [H]. #142 allowlist still open; lightning, nets, JTWC stay blocked.
+- H3 slice 3: fire-weather pane shows "At DE: Fire Watch · until 17 05:00Z" / "At DE: none active" via api.weather.gov `alerts/active?point=` for the saved station (second PolledSource, rebuilt on station change; hidden without a station, hidden when the point data is stale so it never reads as "none active"). Marine not done: its zones are offshore, so a point query does not apply; a marine region filter needs zone geometry and is still open. Fixture `point-empty.json` is a real capture (Denver, 2026-10-14 05:45Z, nothing active); the non-empty case reuses the real `active` body. Screenshots checked at 800x480, 1024x600, 1920x1080 (shortened event name and 2-line wrap fixed a clipped "until"). Debug suite 109/109 and ASan/UBSan firewx test pass.
+- Next: marine region filter (needs zones), fires near DE; lightning and nets once #142 is resolved.
+- Blocked: lightning and NetLogger on allowlist (#142).
