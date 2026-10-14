@@ -47,3 +47,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; no PRs of mine open. Main Apple runs now complete green (universal + signing path ran to the end; signing skipped, no secrets yet).
 - F4 slice 1: `AppLifecycle` (src/platform/apple_lifecycle.*) turns iOS `Qt::ApplicationSuspended` into suspended/resumed signals (desktop never suspends); `PolledSource` gained `pause()`/`resume()` (small change in area A/B's file, backward compatible) and subscribes to it: no polling while suspended, on resume it fetches at once if data is overdue or failing, otherwise waits out the remaining interval. One line in main.cpp attaches it. `app-lifecycle-regression` covers it on Linux.
 - Next: pause/reconnect for the DX cluster and rigctld/rotctld sockets (they should subscribe to AppLifecycle), safe-area handling, iPad layout check.
+
+## 2026-10-14 (seventh hourly run)
+- No qa issues for area F; #73/#182/#184 are other areas' (checks running), left alone.
+- F4 slice 2: `TelnetClient` (DX cluster / HamAlert transport) subscribes to `AppLifecycle`: on suspend it closes the socket and cancels the backoff timer; on resume it reconnects at once with the backoff reset; a client stopped by the user stays stopped. Small backward-compatible change in `src/net/telnet_client.*` (shared net file); `dx_cluster_regression` covers suspend/resume/stop on Linux.
+- Next: same for the rigctld/rotctld/gpsd sockets, safe-area handling, iPad layout check.

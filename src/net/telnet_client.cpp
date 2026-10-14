@@ -1,4 +1,6 @@
 #include "telnet_client.hpp"
+
+#include "../platform/apple_lifecycle.hpp"
 #include <QTcpSocket>
 #include <algorithm>
 
@@ -31,6 +33,10 @@ TelnetClient::TelnetClient(TelnetSocketFactory factory, QObject* parent)
     : QObject(parent), factory_(std::move(factory)), retry_(this) {
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &TelnetClient::connect_now);
+    auto& lifecycle = AppLifecycle::instance();
+    suspended_ = lifecycle.isSuspended();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &TelnetClient::on_suspended);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &TelnetClient::on_resumed);
 }
 
 std::chrono::seconds TelnetClient::backoff(int failures) {
@@ -97,13 +103,32 @@ void TelnetClient::start(const QString& host, int port, const QString& login, co
         if (c.unicode() <= 32 || c.unicode() >= 127) return; // stays Idle
     if (host_.isEmpty() || login_.isEmpty() || port_ <= 0 || port_ > 65535) return; // stays Idle
     failures_ = 0;
-    connect_now();
+    wanted_ = true;
+    if (!suspended_) connect_now();
 }
 
-void TelnetClient::stop() {
+void TelnetClient::drop_socket() {
     retry_.stop();
     if (socket_) { socket_->disconnect(this); socket_->close(); socket_->deleteLater(); socket_ = nullptr; }
     set_state(State::Idle);
+}
+
+void TelnetClient::stop() {
+    wanted_ = false;
+    drop_socket();
+}
+
+void TelnetClient::on_suspended() {
+    suspended_ = true;
+    if (wanted_) drop_socket();
+}
+
+void TelnetClient::on_resumed() {
+    if (!suspended_) return;
+    suspended_ = false;
+    if (!wanted_) return;
+    failures_ = 0;
+    connect_now();
 }
 
 void TelnetClient::connect_now() {

@@ -2,6 +2,9 @@
 #include "../dx_cluster_model.hpp"
 #include "../dx_spot_parse.hpp"
 #include "../../../net/telnet_client.hpp"
+#include "../../../platform/apple_lifecycle.hpp"
+#include <QEventLoop>
+#include <QTimer>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -23,6 +26,12 @@ public:
     QString host; int port = 0; QByteArray written;
 };
 } // namespace
+
+static void QTest_wait_ms(int ms) {
+    QEventLoop loop;
+    QTimer::singleShot(ms, &loop, &QEventLoop::quit);
+    loop.exec();
+}
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
@@ -95,6 +104,24 @@ int main(int argc, char** argv) {
     check(client.state() == TelnetClient::State::Waiting && client.consecutiveFailures() == 1, "drop schedules a retry");
     client.stop();
     check(client.state() == TelnetClient::State::Idle, "stop cancels retry");
+
+    // App suspend: socket dropped, no retries; resume reconnects at once and resets the backoff.
+    {
+        client.start("cluster.example", 7300, "K1ABC");
+        const auto before = sockets.size();
+        auto& lifecycle = hamclock::AppLifecycle::instance();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        check(client.state() == TelnetClient::State::Idle, "suspend closes the connection");
+        QTest_wait_ms(50);
+        check(sockets.size() == before, "no reconnect while suspended");
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Connecting && client.consecutiveFailures() == 0,
+              "resume reconnects immediately");
+        client.stop();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Idle, "stopped client stays stopped across suspend");
+    }
 
     // Model: unconfigured without settings; spots flow when lines arrive.
     WidgetContext ctx;

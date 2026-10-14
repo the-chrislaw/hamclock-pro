@@ -3,7 +3,8 @@
 // CC-Cluster). The TCP socket is injected (TelnetSocket) so tests run offline.
 // It strips telnet option negotiation (refusing every option), splits lines,
 // sends the callsign once when a login prompt appears, and reconnects with
-// exponential backoff.
+// exponential backoff. While the app is suspended (AppLifecycle) it closes the
+// socket and stays quiet, then reconnects at once on resume.
 #include <QByteArray>
 #include <QObject>
 #include <QString>
@@ -62,6 +63,9 @@ signals:
 
 private:
     void connect_now();
+    void on_suspended();
+    void on_resumed();
+    void drop_socket();
     void on_data(const QByteArray& data);
     void on_closed(const QString& error);
     void set_state(State state);
@@ -78,6 +82,8 @@ private:
     bool login_sent_ = false;
     bool password_sent_ = false;
     int failures_ = 0;
+    bool wanted_ = false;    // start() accepted the settings and stop() has not been called
+    bool suspended_ = false; // app suspended (iPadOS drops sockets); reconnect on resume
 };
 
 // Header-only so settings code can filter without linking the client.
