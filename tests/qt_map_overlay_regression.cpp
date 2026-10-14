@@ -67,5 +67,23 @@ int main(int argc, char** argv) {
     MapRenderer().paint(p2, QSizeF(720, 360), scene);
     p2.end();
     check(img2.pixelColor(360, 180) != QColor(255, 0, 0), "hidden layer not drawn");
+    {
+        // Issue #141: a painter with a base scale (Retina / contents scale) must place the
+        // land exactly where the overlays go. Painting at 1x under scale(2) must match a direct 2x render.
+        MapScene s2; s2.de = Location{51.5, -0.1}; s2.dx = Location{-33.9, 151.2};
+        OverlayLayer l2; l2.id = "t"; OverlayMarker mk; mk.where = {21.3, -157.9}; mk.size_px = 4; mk.color = QColor(255, 0, 0);
+        l2.markers = {mk}; s2.overlays = {l2};
+        for (const QSizeF sz : {QSizeF(1024, 600), QSizeF(1024, 630)}) {
+            QImage a(int(sz.width()) * 2, int(sz.height()) * 2, QImage::Format_ARGB32), b = a;
+            QPainter pa(&a); pa.scale(2, 2); MapRenderer().paint(pa, sz, s2); pa.end();
+            MapScene big = s2; big.ui_scale = 2.0;
+            QPainter pb(&b); MapRenderer().paint(pb, QSizeF(sz.width() * 2, sz.height() * 2), big); pb.end();
+            long diff = 0;
+            for (int y = 0; y < a.height(); y += 2)
+                for (int x = 0; x < a.width(); x += 2)
+                    if (qGray(a.pixel(x, y)) / 24 != qGray(b.pixel(x, y)) / 24) ++diff;
+            check(diff * 50 < long(a.width()) * a.height() / 4, "base-scaled painter matches direct render (land and overlays share one transform)");
+        }
+    }
     return failures == 0 ? 0 : 1;
 }

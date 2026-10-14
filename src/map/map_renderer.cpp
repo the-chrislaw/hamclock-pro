@@ -97,7 +97,7 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         t.translate(vp.origin_x() + k * W, vp.origin_y());
         t.scale(W, H);
         painter.save();
-        painter.setTransform(t, false);
+        painter.setTransform(t, true); // combine: keep the caller's base (contents/device) scale
         painter.setPen(Qt::NoPen);
         painter.setBrush(land);
         for (const auto& path : land_) painter.drawPath(path);
