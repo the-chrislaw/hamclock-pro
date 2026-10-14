@@ -5,6 +5,8 @@
 
 namespace hamclock {
 
+class AppSettings;
+
 // Satellite fire detections (NASA FIRMS, VIIRS NOAA-20, contiguous US and Hawaii,
 // last 24 h). A successful fetch with no rows reads "No detections", not missing data.
 class FiresModel : public WidgetModel {
@@ -14,6 +16,7 @@ class FiresModel : public WidgetModel {
     Q_PROPERTY(int highCount READ highCount NOTIFY firesChanged)
     Q_PROPERTY(QString summary READ summary NOTIFY firesChanged)
     Q_PROPERTY(QString detail READ detail NOTIFY firesChanged)
+    Q_PROPERTY(QString nearestText READ nearestText NOTIFY firesChanged)
 public:
     explicit FiresModel(const WidgetContext& context, QObject* parent = nullptr);
     ~FiresModel() override;
@@ -24,6 +27,9 @@ public:
     int highCount() const;
     QString summary() const;  // "1,300 detections"
     QString detail() const;   // "strongest 120 MW at 32.1N 86.8W · newest 13 18:38Z"
+
+    // "Nearest 320 km NW of DE · 13 18:38Z" (non-low confidence); empty without a saved station.
+    QString nearestText() const;
 
     // Detections are drawn on the map only while the data is live.
     void setMapVisible(bool visible);
@@ -39,6 +45,7 @@ private:
     void refreshStateImpl();
     void publishOverlay();
 
+    AppSettings* settings_;
     PolledSource* source_;
     fires::Feed feed_;
     bool map_visible_ = true;

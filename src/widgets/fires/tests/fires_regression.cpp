@@ -6,6 +6,8 @@
 #include "../fires_parse.hpp"
 #include "../../../map/overlay.hpp"
 #include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
+#include <QTemporaryDir>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -49,7 +51,10 @@ int main(int argc, char** argv) {
     const auto padded = fires::parse(head + "1,2,2026-10-13,54,high,3\n");
     check(padded.detections.size() == 1 && padded.detections[0].acquired.time() == QTime(0, 54) && padded.detections[0].confidence == fires::Detection::High, "short time padded");
 
+    QTemporaryDir tmp;
+    AppSettings settings(tmp.filePath("station.conf"), tmp.path());
     WidgetContext context;
+    context.settings = &settings;
     bool fail_all = false;
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
@@ -72,6 +77,10 @@ int main(int argc, char** argv) {
     check(model.summary() == "40 detections", "summary");
     check(model.highCount() > 0 && model.highCount() < 40, "high-confidence count");
     check(model.detail().startsWith("strongest 120 MW at 32.1N 86.8W · newest 13 "), "detail text");
+    check(model.nearestText().isEmpty(), "no station -> no nearest line");
+    check(settings.saveStation("K5ABC", 32.0, -86.5, 51.5, -0.1, "").isEmpty(), "station saved");
+    const auto near = model.nearestText();
+    check(near.startsWith("Nearest ") && near.contains(" km ") && near.contains(" of DE · ") && near.endsWith("Z"), "nearest line with station");
     {
         const auto& layers = MapOverlays::instance().layers();
         check(layers.size() == 1 && layers[0].id == "fires", "live -> fires on the map");

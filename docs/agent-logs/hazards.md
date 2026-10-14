@@ -62,3 +62,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H3 marine region slice: marine pane shows "Gulf of Mexico: 2 · Gale Warning until 14 04:00Z" / "…: none active" for the NWS marine region nearest the saved DE (`alerts/active?region=GM|AT|PA|AL|PI|GL`). Region chosen from coarse coastline boxes (`marine::region_for`), empty inland so the line is hidden; hidden when regional data is stale. Fixture `region-empty.json` is a real GM capture (2026-10-14 06:52Z, nothing active); the non-empty case reuses the real `active` body. Tests cover region mapping, no-station, empty, alerts, stale. Coastline boxes are approximate (e.g. Florida east/west coast, Great Lakes edge), not geometry.
 - Next: fires near DE; marine map overlay needs zone geometry; lightning and nets once #142 is resolved.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-14 08:00 UTC
+- Step 1: no PRs of mine open; #194, #186, #73 are other areas, left alone. No `qa` issues for [H]. #142 allowlist still open; lightning, nets, JTWC stay blocked.
+- H4 slice 2: fires card shows "Nearest 320 km NW of DE · 13 18:38Z" (nearest non-low-confidence detection to the saved station; hidden without a station, refreshed on station change). Tests cover no-station and with-station. Full suite 118/118 and ASan/UBSan fires test pass. Fires is not on the default dashboard, so the new single elided line was not screenshotted at 800x480/1024x600/1920x1080 (full-app screenshots render, but without the card); not validated visually.
+- Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
+- Blocked: lightning and NetLogger on allowlist (#142).
