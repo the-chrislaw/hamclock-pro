@@ -8,9 +8,12 @@ on:
 permissions:
   contents: read
 
+# Rapid merges to main used to cancel each other's runs, so the main-only
+# signing/notarization path never completed. Only PR runs are superseded now;
+# each main push gets its own group and runs to completion.
 concurrency:
-  group: apple-${{ github.ref }}
-  cancel-in-progress: true
+  group: apple-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Qt for iOS/macOS used by the iOS job. Shared code must still build on Qt 6.4.

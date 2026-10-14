@@ -37,3 +37,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #158 (green, other area); #73 still conflicting (other area, left alone); #159 checks running. No qa issues for area F.
 - F3 slice 5: universal job is now the distributable: no longer continue-on-error, runs macdeployqt, uploads an unsigned universal dmg, and the signing/notarization steps moved onto it (same secrets-skip behaviour). The plain macos job keeps build/tests/unsigned dmg.
 - Next: F4 iPad once the map renderer port lands; AppSettings credential wiring with area A.
+
+## 2026-10-14 (fifth hourly run)
+- No qa issues for area F. #73 (other area, stale/conflicting), #166/#167 (other areas) still running checks; left alone.
+- Found that nearly every Apple run on main was `cancelled` by `cancel-in-progress` when merges landed minutes apart, so the main-only signing/notarization and universal-dmg path never finished. Concurrency now cancels only superseded PR runs; each main push runs to completion.
+- Next: confirm a main run completes green; F4 iPad when the map renderer port lands; AppSettings credential wiring with area A.
