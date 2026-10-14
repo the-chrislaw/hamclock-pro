@@ -38,3 +38,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H2 slice 2: storms map overlay (`storms_overlay.*`): one diamond per storm at its NHC position, strongest first, name label, colour by category (yellow < cat 1, orange cat 1-2, red cat 3+), `setMapVisible`, layer removed when data is not live. Tests cover order, colour, position, size, off/on, stale removal; debug and ASan/UBSan suites pass. Pane unchanged so no new screenshots. Forecast tracks need cone/track data (NHC GIS/KMZ) and are not done.
 - Next: marine region filter, nets (NetLogger), lightning (needs a terms-checked source), fires (FIRMS key via settings).
 - Blocked: nothing.
+
+## 2026-10-14 04:00 UTC
+- Step 1: no PRs of mine open. #161 (area G) had CI running, #73 (other area) left alone. No `qa` issues for [H]. #142 (allowlist: NetLogger, lightning, JTWC) still open; api.netlogger.org and data.blitzortung.org unreachable, metoc.navy.mil gives 403.
+- H4 slice 1: active fires (`src/widgets/fires`): NASA FIRMS keyless regional VIIRS CSV (US + Hawaii, 24 h, ~110 KB), parser by header column, model (count, high-confidence count, strongest FRP, newest overpass), compact card, map overlay (60 strongest non-low-confidence, triangles, red >= 50 MW). Fixture is 40 rows trimmed from a real capture (2026-10-14). Terms recorded in the roadmap. Screenshots checked at 800x480, 1024x600, 1920x1080 light/dark (detail line shown at all sizes). ASan/UBSan run.
+- Next: marine region filter; lightning and nets once #142 is resolved; fires near DE once the station is reachable from the widget context.
+- Blocked: lightning and NetLogger on allowlist (#142).
