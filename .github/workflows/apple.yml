@@ -221,7 +221,12 @@ jobs:
           find "$QTIOS" -path '*objects-*' -name '*.o' > objs.txt
           echo "retagging $(wc -l < objs.txt) objects"
           head -1 objs.txt | xargs xcrun vtool -show-build | head -8
-          xargs -P 4 -I{} sh -c 'xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "{}" "{}" >/dev/null 2>&1 || xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "{}" "{}"' < objs.txt
+          # (a while loop: BSD xargs -I limits the replaced command to 255 bytes)
+          while IFS= read -r o; do
+            xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "$o" "$o" >/dev/null 2>&1 ||
+              xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "$o" "$o" >/dev/null ||
+              echo "retag failed: $o"
+          done < objs.txt
           head -1 objs.txt | xargs xcrun vtool -show-build | head -8
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
