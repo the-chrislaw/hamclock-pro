@@ -21,6 +21,7 @@ QString coordinates(double latitude, double longitude) {
 
 StationModel::StationModel(AppSettings& settings, QObject* parent) : QObject(parent), settings_(settings) {
     connect(&settings_, &AppSettings::stationChanged, this, &StationModel::reload);
+    connect(&settings_, &AppSettings::optionsChanged, this, &StationModel::stationChanged);
     reload();
     // Align ticks to whole seconds so the displayed second changes on time.
     timer_.setTimerType(Qt::PreciseTimer);
@@ -62,7 +63,7 @@ QString StationModel::deZoneLabel() const {
 
 QString StationModel::pathText() const {
     if (!has_geometry_) return path_summary(distance_, bearing_);
-    return path_detail(geometry_, long_path_);
+    return path_detail(geometry_, long_path_, settings_.imperialUnits());
 }
 
 void StationModel::toggleLongPath() {

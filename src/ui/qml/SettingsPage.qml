@@ -125,6 +125,22 @@ Rectangle {
             }
 
             Card {
+                title: "Distance units"
+                Layout.fillWidth: true
+                RowLayout {
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: [[false, "Metric (km)"], [true, "Imperial (miles)"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.imperialUnits === modelData[0]
+                            onClicked: appSettings.saveImperialUnits(modelData[0])
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {

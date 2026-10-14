@@ -70,3 +70,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 13)
 - Backlog 0c slice: tapping the path line in the station card toggles short path / long path ("Long path · 30023 KM · 270 DEG / TRUE"), using the existing offline `geometry()`; antipodal/coincident pairs keep the "Set a DX target" prompt (`path_detail` in `path_text.hpp`, `StationModel.toggleLongPath`, extended `path-text-regression`). The toggle is per session, not saved. Units (imperial) and magnetic bearing (WMM) still pending. ctest 132/132; configured-station layout not checked by screenshot this run. ASan/UBSan left to CI. Not validated on a device.
 - #223 checks running, #220 no checks yet, #73 stale (none mine). Next: "Find" request slice, imperial units, side panes.
+
+## 2026-10-14 (hourly run, 14)
+- Backlog 0c/A12 slice: Settings > "Distance units" (Metric / Imperial) saved in `options.ini` (`units/imperial`, `AppSettings.imperialUnits/saveImperialUnits`); the station card path line shows "MI" instead of "KM" when imperial (`path_detail` gained an `imperial` argument; `path-text-regression` extended). The unconfigured/legacy distance string and magnetic bearing (WMM) are unchanged. Settings is not reachable from `--screenshot`, so the new card was not checked visually. Not validated on a device.
+- #228 (area G) had the iPad check running; #73 stale. Not mine. Next: "Find" request slice, side panes.
