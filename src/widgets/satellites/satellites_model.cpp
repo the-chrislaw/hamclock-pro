@@ -41,6 +41,12 @@ QString satellite_short_name(const QString& tle_name) {
     return amp > 0 ? name.left(amp) : name;
 }
 
+QString pass_alert_text(const QString& name, qint64 aos, qint64 los, qint64 now, int lead_s) {
+    if (now >= aos && now < los) return name + " above horizon";
+    if (aos > now && aos - now <= lead_s) return name + QString(" rises in %1 min").arg(std::max<qint64>(1, (aos - now + 30) / 60));
+    return QString();
+}
+
 std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time) {
     std::vector<Tle> out;
     for (const Tle& tle : tles) {
@@ -126,6 +132,7 @@ void SatellitesModel::recompute() {
     rows_.clear();
     sky_track_.clear();
     listed_.clear();
+    alert_.clear();
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
@@ -178,8 +185,11 @@ void SatellitesModel::recompute() {
         if (until <= 0) when = "now";
         else if (until < 90 * 60) when = QString("in %1 min").arg((until + 30) / 60);
         else when = QDateTime::fromSecsSinceEpoch(r.pass.aos, QTimeZone::utc()).toString("HH:mm") + "Z";
-        rows_.append(QVariantMap{{"name", satellite_short_name(QString::fromStdString(r.tle.name))},
-                                 {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)}, {"live", until <= 0}});
+        const QString short_name = satellite_short_name(QString::fromStdString(r.tle.name));
+        const QString alert = pass_alert_text(short_name, r.pass.aos, r.pass.los, static_cast<qint64>(t));
+        if (alert_.isEmpty()) alert_ = alert;
+        rows_.append(QVariantMap{{"name", short_name}, {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)},
+                                 {"live", until <= 0}, {"soon", !alert.isEmpty()}});
     }
     refresh_detail();
     emit changed();

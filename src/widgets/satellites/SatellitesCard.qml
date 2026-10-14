@@ -9,8 +9,16 @@ Card {
     readonly property bool showSky: width > 240 * Theme.scale && height > 150 * Theme.scale && widget && widget.skyTrack.length > 1
     readonly property var d: widget ? widget.detail : ({})
     readonly property bool showDetail: d && d.name !== undefined
+    Text {
+        id: alertLine
+        visible: !root.showDetail && root.widget && root.widget.alert !== ""
+        text: root.widget ? root.widget.alert : ""
+        color: Theme.accent; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+        elide: Text.ElideRight; width: parent.width
+    }
     RowLayout {
         visible: !root.showDetail
+        y: alertLine.visible ? alertLine.height + Theme.gap * 0.4 : 0
         width: parent.width
         spacing: Theme.gap * 1.5
         GridLayout {
@@ -27,7 +35,7 @@ Card {
                     readonly property var row: root.widget.rows[Math.floor(index / cols)]
                     readonly property int col: index % cols
                     text: col === 0 ? row.name : col === 1 ? row.when : "max " + row.maxEl + "°"
-                    color: col === 0 ? Theme.ink : Theme.secondary
+                    color: row.soon ? Theme.accent : col === 0 ? Theme.ink : Theme.secondary
                     font.pixelSize: Theme.fontCaption * (col === 0 ? 1.3 : 1)
                     font.weight: col === 0 || row.live ? Font.DemiBold : Font.Normal
                     elide: Text.ElideRight
