@@ -152,6 +152,19 @@ int main(int argc, char** argv) {
         return call == "K1POT" ? (band == "20m" ? QStringLiteral("NEW DXCC") : QStringLiteral("NEW BAND")) : QString();
     });
     check(list->data(list->index(0), DxSpotList::NeededRole).toString() == "NEW DXCC", "resolver gets call and band (14074 is 20m)");
+    {
+        auto* dl = qobject_cast<DxSpotList*>(model.spots());
+        dl->set_watch({"NADXCC"});
+        check(dl->watchedCount() == 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "NADXCC keyword watches the needed-entity spot");
+        dl->set_watch({"NABAND"});
+        check(dl->watchedCount() == 1, "NABAND keyword also matches any needed slot");
+        model.setNeededResolver([](const QString&, const QString&) { return QStringLiteral("NEW BAND"); });
+        dl->set_watch({"NADXCC"});
+        check(dl->watchedCount() == 0, "NADXCC ignores a new-band-only spot");
+        dl->set_watch({"NABAND"});
+        check(dl->watchedCount() == dl->totalCount(), "resolver change re-evaluates NABAND");
+        dl->set_watch({});
+    }
     model.setNeededResolver({});
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
