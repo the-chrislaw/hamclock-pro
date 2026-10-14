@@ -31,6 +31,12 @@ QString compass_point(int degrees);       // 16-point rose, direction wind comes
 double celsius_to_fahrenheit(double c);
 // "14:32 (UTC-7)" for a UTC instant and offset in seconds.
 QString local_time_text(const QDateTime& utc, int offset_s);
+// Place label from a Nominatim `reverse` reply (addressdetails=1): the city, town
+// or village (else county/state) plus the ISO country code, e.g. "San Francisco, US".
+// Empty for an error reply (open sea) or an unusable one.
+QString parse_place(const QByteArray& body);
+// Nominatim reverse request (zoom 10 = city level); coordinates rounded to 2 decimals.
+QString reverse_url(double latitude, double longitude);
 // Request URL for a point; coordinates rounded to 2 decimals (~1 km).
 QString request_url(double latitude, double longitude);
 

@@ -12,6 +12,11 @@ using namespace std::chrono_literals;
 constexpr PollPolicy kPolicy{15min, 90min, 1h};
 // Grid cells are ~11 km; a larger gap means the document is for another place.
 constexpr double kMaxOffsetDeg = 0.5;
+// Nominatim usage policy: at most 1 request/s, identifying User-Agent, cache
+// results. Place names barely change, so refresh weekly; the first fetch of
+// each end is delayed (DE 1.2 s, DX 2.4 s) so a burst of DX changes collapses
+// into one request and the two ends never fire together.
+constexpr PollPolicy kPlacePolicy{std::chrono::hours(24 * 7), std::chrono::hours(24 * 30), 6h};
 } // namespace
 
 WeatherModel::WeatherModel(const WidgetContext& context, QObject* parent)
@@ -37,6 +42,9 @@ void WeatherModel::rebuildEnd(End& end, const QString& cache_name, double lat, d
     const double rlat = std::round(lat * 100) / 100, rlon = std::round(lon * 100) / 100;
     if (end.source && end.lat == rlat && end.lon == rlon) return;
     delete end.source;
+    delete end.place_source;
+    end.place_source = nullptr;
+    end.place.clear();
     end.now.reset();
     end.lat = rlat;
     end.lon = rlon;
@@ -48,6 +56,17 @@ void WeatherModel::rebuildEnd(End& end, const QString& cache_name, double lat, d
     connect(end.source, &PolledSource::updated, this, [this, e] { parse(*e); refreshState(); emit changed(); });
     connect(end.source, &PolledSource::failed, this, &WeatherModel::refreshState);
     end.source->start();
+
+    const bool is_de = &end == &de_;
+    end.place_source = new PolledSource("nominatim-" + cache_name + "-" + tag(rlat) + "-" + tag(rlon),
+                                        QUrl(weather::reverse_url(rlat, rlon)), kPlacePolicy, context_.transport, this);
+    connect(end.place_source, &PolledSource::updated, this, [this, e] { parsePlace(*e); emit changed(); });
+    PolledSource* ps = end.place_source;
+    QTimer::singleShot(is_de ? 1200 : 2400, ps, [ps] { ps->start(); });
+}
+
+void WeatherModel::parsePlace(End& end) {
+    end.place = weather::parse_place(end.place_source->body());
 }
 
 void WeatherModel::parse(End& end) {
@@ -114,7 +133,8 @@ void WeatherModel::refreshState() {
         setState("stale", "Open-Meteo (" + parts.join("; ") + ")", oldest);
         return;
     }
-    setState("live", "Weather by Open-Meteo.com", oldest);
+    setState("live", de_.place.isEmpty() && dx_.place.isEmpty() ? "Weather by Open-Meteo.com"
+                                                                : "Weather by Open-Meteo.com · places © OpenStreetMap contributors", oldest);
 }
 
 void register_widget_weather(WidgetRegistry& registry, const WidgetContext& context) {
