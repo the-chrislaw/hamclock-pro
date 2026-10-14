@@ -77,6 +77,23 @@ void AppSettings::loadOptions() {
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
+    ota_program_ = ini.value("ota/program").toString();
+    if (ota_program_ != "POTA" && ota_program_ != "SOTA") ota_program_.clear();
+    static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
+    static const QRegularExpression mode_re("^[A-Za-z0-9-]{1,10}$");
+    ota_band_ = ini.value("ota/band").toString();
+    if (!band_re.match(ota_band_).hasMatch()) ota_band_.clear();
+    ota_mode_ = ini.value("ota/mode").toString();
+    if (!mode_re.match(ota_mode_).hasMatch()) ota_mode_.clear();
+    const int age = ini.value("ota/max_age_min", 0).toInt();
+    ota_max_age_min_ = age > 0 && age <= 1440 ? age : 0;
+    static const QRegularExpression aprs_host_re("^[A-Za-z0-9.-]{1,253}$");
+    const QString ah = ini.value("aprs/host").toString();
+    if (aprs_host_re.match(ah).hasMatch()) aprs_host_ = ah;
+    const int ap = ini.value("aprs/port", 14580).toInt();
+    aprs_port_ = ap > 0 && ap < 65536 ? ap : 14580;
+    const int ar = ini.value("aprs/radius_km", 100).toInt();
+    aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
@@ -306,6 +323,53 @@ QString AppSettings::saveAdifPath(const QString& path) {
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
     emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min) {
+    const auto prog = program.trimmed().toUpper();
+    const auto b = band.trimmed().toLower();
+    const auto m = mode.trimmed().toUpper();
+    static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
+    static const QRegularExpression mode_re("^[A-Z0-9-]{1,10}$");
+    if (!prog.isEmpty() && prog != "POTA" && prog != "SOTA") return "Program must be POTA, SOTA or empty.";
+    if (!b.isEmpty() && !band_re.match(b).hasMatch()) return "Band looks like 20m or 70cm.";
+    if (!m.isEmpty() && !mode_re.match(m).hasMatch()) return "Mode: letters and digits only (CW, SSB, FT8).";
+    if (max_age_min < 0 || max_age_min > 1440) return "Maximum age is 0-1440 minutes (0 = any).";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("ota/program", prog);
+    ini.setValue("ota/band", b);
+    ini.setValue("ota/mode", m);
+    ini.setValue("ota/max_age_min", max_age_min);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the filter.";
+    ota_program_ = prog;
+    ota_band_ = b;
+    ota_mode_ = m;
+    ota_max_age_min_ = max_age_min;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
+    static const QRegularExpression host_re("^[A-Za-z0-9.-]{1,253}$");
+    QString h = host.trimmed();
+    if (h.isEmpty()) h = "rotate.aprs2.net";
+    if (!host_re.match(h).hasMatch()) return "APRS server may contain only letters, digits, dots and hyphens.";
+    if (port <= 0 || port >= 65536) return "APRS port must be 1-65535.";
+    if (radius_km < 1 || radius_km > 500) return "APRS radius is 1-500 km.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("aprs/host", h);
+    ini.setValue("aprs/port", port);
+    ini.setValue("aprs/radius_km", radius_km);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the APRS settings.";
+    const bool changed = h != aprs_host_ || port != aprs_port_ || radius_km != aprs_radius_km_;
+    aprs_host_ = h;
+    aprs_port_ = port;
+    aprs_radius_km_ = radius_km;
+    emit optionsChanged();
+    if (changed) emit aprsChanged();
     return {};
 }
 

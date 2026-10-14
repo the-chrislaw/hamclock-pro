@@ -93,6 +93,10 @@ int main(int argc, char** argv) {
     check(s.next_rise.endsWith("UTC") && s.next_set.endsWith("UTC"), "summary rise/set text");
     check(s.position.contains("Az") && s.position.contains("El"), "summary position text");
 
+    // Disc inputs: elongation near 180 at full moon; hemisphere flag mirrors the lit side.
+    check(std::fabs(angdiff(s.elongation_deg, 180)) < 5 && !s.southern, "summary elongation and northern flag");
+    check(summarize_moon({utc(2025, 3, 14, 12, 0)}, -33.87, 151.21).southern, "southern observer flagged");
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

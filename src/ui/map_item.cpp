@@ -348,6 +348,10 @@ void MapItem::syncStation() {
 
 void MapItem::paint(QPainter* painter) {
     if (width() <= 0 || height() <= 0) return;
+    // Labels keep clear of the overlaid map buttons (Main.qml: Map menu top left,
+    // +/-/reset top right), sized from the same Theme.scale.
+    const double ui = std::max(1.0, scene_.ui_scale);
+    scene_.reserved = {QRectF(0, 0, 92 * ui, 42 * ui), QRectF(width() - 100 * ui, 0, 100 * ui, 36 * ui)};
     renderer_.paint(*painter, QSizeF(width(), height()), scene_);
 }
 

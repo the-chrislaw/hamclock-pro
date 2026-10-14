@@ -347,7 +347,7 @@ jobs:
           </dict></plist>
           PLIST
           set -o pipefail
-          xcodebuild archive -project build-tf/hamclock-pro.xcodeproj -scheme hamclock-pro \
+          xcodebuild archive -project build-tf/HamClockPro.xcodeproj -scheme hamclock-pro \
             -configuration Release -sdk iphoneos -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
             CURRENT_PROJECT_VERSION="$BUILD" "${AUTH[@]}" 2>&1 | tee tf-archive.log | tail -5 \

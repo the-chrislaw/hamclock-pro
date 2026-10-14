@@ -25,6 +25,7 @@ struct MapScene {
     std::optional<SubsolarPoint> sun;
     bool dark = false;
     double ui_scale = 1; // Theme.scale: grows labels and markers on TVs
+    std::vector<QRectF> reserved;       // item-pixel rects labels must avoid (map buttons)
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
     MapGrid grid = MapGrid::None;

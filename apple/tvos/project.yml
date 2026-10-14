@@ -1,0 +1,25 @@
+# XcodeGen spec (brew install xcodegen). Unsigned Simulator builds only; no signing
+# until the owner approves (issue #58). Needs build-tvos/libhamclock-core.a from
+# cmake/TvOSCore built with cmake/TvOSToolchain.cmake.
+name: HamClockTV
+options:
+  bundleIdPrefix: com.chrislaw.hamclockpro
+  deploymentTarget:
+    tvOS: "17.0"
+targets:
+  HamClockTV:
+    type: application
+    platform: tvOS
+    sources: [App/Sources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.chrislaw.hamclockpro.tv
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_OBJC_BRIDGING_HEADER: App/hcp-bridging-header.h
+        HEADER_SEARCH_PATHS: ["$(SRCROOT)/Core"]
+        LIBRARY_SEARCH_PATHS: ["$(SRCROOT)/../../build-tvos"]
+        OTHER_LDFLAGS: ["-lhamclock-core", "-lc++"]
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGN_IDENTITY: ""

@@ -27,6 +27,13 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString watchListText READ watchListText NOTIFY optionsChanged)
     Q_PROPERTY(QString adifPath READ adifPath NOTIFY optionsChanged)
+    Q_PROPERTY(QString otaProgram READ otaProgram NOTIFY optionsChanged)
+    Q_PROPERTY(QString otaBand READ otaBand NOTIFY optionsChanged)
+    Q_PROPERTY(QString otaMode READ otaMode NOTIFY optionsChanged)
+    Q_PROPERTY(int otaMaxAgeMin READ otaMaxAgeMin NOTIFY optionsChanged)
+    Q_PROPERTY(QString aprsHost READ aprsHost NOTIFY optionsChanged)
+    Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
+    Q_PROPERTY(int aprsRadiusKm READ aprsRadiusKm NOTIFY optionsChanged)
     Q_PROPERTY(int udpSpotPort READ udpSpotPort NOTIFY optionsChanged)
     Q_PROPERTY(bool imperialUnits READ imperialUnits NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
@@ -64,6 +71,15 @@ public:
     int udpSpotPort() const { return udp_port_; }                      // 0 = UDP spot input off
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
+    // On-the-air display filter; empty / 0 = no restriction.
+    QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA" or empty
+    QString otaBand() const { return ota_band_; }        // e.g. "20m"
+    QString otaMode() const { return ota_mode_; }        // e.g. "CW"
+    int otaMaxAgeMin() const { return ota_max_age_min_; }
+    // APRS-IS server (receive-only) and search radius around DE.
+    QString aprsHost() const { return aprs_host_; }
+    int aprsPort() const { return aprs_port_; }
+    int aprsRadiusKm() const { return aprs_radius_km_; }
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
     QString lookupService() const { return lookup_service_; }
     QString lookupUser() const { return lookup_user_; }
@@ -100,6 +116,10 @@ public:
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
+    // program: POTA, SOTA or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
+    Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
+    // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.
+    Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
     Q_INVOKABLE QString saveImperialUnits(bool imperial);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
@@ -110,6 +130,7 @@ public:
 
 signals:
     void stationChanged();
+    void aprsChanged(); // only when the APRS-IS server, port or radius actually changed
     void appearanceChanged();
     void optionsChanged();
     void accountsChanged();
@@ -129,6 +150,10 @@ private:
     QStringList cluster_commands_;
     QStringList watch_list_;
     QString adif_path_;
+    QString ota_program_, ota_band_, ota_mode_;
+    int ota_max_age_min_ = 0;
+    QString aprs_host_ = "rotate.aprs2.net";
+    int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;
     bool imperial_ = false;

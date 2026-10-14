@@ -102,3 +102,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Owner priority #269: device build to TestFlight before more Simulator work. Added the `iPad TestFlight upload` job to apple.yml (main pushes only, skips cleanly without ASC secrets or `APPLE_TEAM_ID`): Qt 6.8.3 iOS device build via the Xcode generator, `xcodebuild archive` with cloud automatic signing through the API key (`-allowProvisioningUpdates`), build number = run number, export `app-store-connect` with destination `upload`. Key file deleted on exit, nothing echoed. Pushed onto the open #268 branch (one-PR rule). Untested until a main run; if cloud signing cannot create the distribution certificate I will open "Owner input needed: iOS distribution certificate".
 - Simulator work is now time-boxed to two more runs (#268 is the first).
 - Next: read the first main-run result of the TestFlight job, fix, and add the owner as internal tester if the API allows.
+
+## 2026-10-14 (seventeenth hourly run)
+- No new qa issues for area F; #73/#274-#277 are other areas' (checks queued), left alone.
+- Read main run 38610417758 (first TestFlight run): Configure succeeded but archive died instantly with "build-tf/hamclock-pro.xcodeproj does not exist"; the CMake project is `HamClockPro`, so the Xcode project is `HamClockPro.xcodeproj`. Fixed the path (scheme `hamclock-pro` is the app target). Untested until the next main run. No on-device claims.
+- The Simulator job still fails at link on the kit's device-tagged static archives (Qt 6.5.3; informational). Time-box expires after this run's follow-up; if it still fails I will stop and record the options.
+- Next: read the TestFlight result after merge (signing/provisioning errors -> "Owner input needed" if a distribution certificate is required).

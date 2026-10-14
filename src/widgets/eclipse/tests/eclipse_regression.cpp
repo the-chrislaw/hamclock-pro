@@ -54,6 +54,21 @@ int main(int argc, char** argv) {
     check(s.when.startsWith("12 Aug 2026 17:4"), "summary time");
     check(s.countdown == "in 11 d", "summary countdown");
 
+    // Visibility from the 2024-04-08 eclipse (NASA path: Dallas total, Denver ~65% partial).
+    const SolarEclipse e2024 = *next_solar_eclipse(UtcSeconds{utc(2024, 1, 1)});
+    const auto dallas = eclipse_visibility(e2024, 32.78, -96.80);
+    check(dallas.visibility == EclipseVisibility::Visible && dallas.min_separation_deg < 0.25, "Dallas sees it");
+    check(dallas.sun_elevation_deg > 50 && dallas.sun_elevation_deg < 75, "Dallas sun high");
+    check(eclipse_visibility(e2024, 39.74, -104.99).visibility == EclipseVisibility::Visible, "Denver sees partial");
+    check(eclipse_visibility(e2024, 51.5, -0.13).visibility == EclipseVisibility::None, "London: Sun well after");
+    check(eclipse_visibility(e2024, -33.9, 151.2).visibility == EclipseVisibility::None, "Sydney: night");
+    check(eclipse_visibility(e2024, 55.75, 37.6).visibility == EclipseVisibility::None, "Moscow: not visible");
+    check(eclipse_visibility(e2024, 30.0, 31.2).visibility == EclipseVisibility::None, "Cairo: not visible");
+    check(eclipse_visibility(e2024, 35.7, 139.7).visibility == EclipseVisibility::None, "Tokyo: night");
+    bool threw = false;
+    try { eclipse_visibility(e2024, 91, 0); } catch (const std::invalid_argument&) { threw = true; }
+    check(threw, "invalid latitude throws");
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

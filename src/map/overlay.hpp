@@ -39,6 +39,12 @@ struct OverlayLayer {
 // Text a marker shows in a label mode; empty for None and Dot.
 QString overlay_label_text(const OverlayMarker& marker, OverlayLabelMode mode);
 // Greedy, order-preserving: result[i] is true when anchor i keeps its label.
+// Label priority of a layer id (lower wins a collision): satellites, then
+// spots and everything else, then hazards (quakes, fires, storms).
+int overlay_label_priority(const QString& layer_id);
+// Rects along the polyline `px` (consecutive points closer than `max_gap` are
+// joined), so labels can avoid a drawn line.
+std::vector<QRectF> line_obstacles(const std::vector<QPointF>& px, double max_gap, double pad);
 std::vector<bool> select_labels(const std::vector<QPointF>& anchors, double min_distance_px);
 
 // Rect for a label of `text` beside a marker at `anchor` (radius `marker_r`):

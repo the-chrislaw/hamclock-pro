@@ -131,3 +131,15 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 15 (slice): "needed" badge on DX cluster rows. `DxSpotList` has a `needed` role (NEW DXCC / NEW BAND) from an injectable resolver; the registered widget wires it to the ADIF model's `entityNeeded`/`bandSlotNeeded` via the registry by id at run time (no link dependency; no badge without an ADIF log). No AppSettings change. Test with a fake resolver passes normally and under ASan/UBSan (leak check off).
 - Not done: NADXCC/NABand watch keywords, NAPref/NAGrid, ADIF map overlay. No screenshot (cluster Not configured without a callsign). Not validated on device.
 - Next: OTA filter controls in Settings, Meshtastic, ONTA/ADIF overlays.
+
+## 2026-10-14 (run 23)
+- Step 1: merged #271 (docs, green, clean). #73 conflicts (dirty) and #273 had no checks reported yet; both other areas', left alone. Nothing of mine open. No open `[C]` qa issues.
+- Backlog item 7 (slice): OTA filter controls in Settings. `AppSettings` gains `otaProgram/otaBand/otaMode/otaMaxAgeMin` (options.ini `[ota]`, validated, defaults = no restriction, backward compatible) and `saveOtaFilter`; `OtaModel` follows them via `optionsChanged`. Settings Spots card has four fields saved with "Save cluster". Test covers validation, live model update, restart persistence. 138/138 pass; ASan/UBSan left to CI. No screenshot of the Settings page; not validated on device.
+- Not done: WWFF/IOTA/GMA etc. programmes, per-source map toggle in Settings, sort option.
+- Next: Meshtastic, ONTA/ADIF overlays, per-source map toggles.
+
+## 2026-10-14 (run 24)
+- Step 1: nothing of mine open; #279/#280 (other areas) had checks still running and #73 is stale docs, all left alone. Open `[A]`/`[D]`/`[F]`/`[G]` qa issues only, no `[C]`.
+- Settings parity (APRS): `AppSettings` gains `aprsHost/aprsPort/aprsRadiusKm` (options.ini `[aprs]`, validated, defaults rotate.aprs2.net / 14580 / 100, backward compatible), `saveAprs` and an `aprsChanged` signal emitted only on a real change. `AprsModel` uses them for connection and the `r/` filter and reconnects on change. Settings Spots card has three fields saved with "Save cluster". Per-source map toggles already exist in area G's Map menu (layer visibility), so no separate toggle was added. Test covers validation, reconnect, filter radius, no-op save, persistence; 138/138 pass. ASan/UBSan left to CI; no Settings screenshot; not validated on device.
+- Not done: Meshtastic, ONTA/ADIF overlays, WWFF/IOTA/GMA programmes.
+- Next: Meshtastic, ONTA/ADIF overlays.

@@ -46,6 +46,23 @@ int main(int argc, char** argv) {
         check(!gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*48").fix.has_position(), "bad checksum rejected");
         check(!gps::parse_nmea("$GPRMC,123519,V,,,,,,,230394,,*").fix.has_position(), "void RMC has no position");
         check(gps::parse_nmea("garbage").kind == gps::Nmea::Other, "NMEA garbage ignored");
+
+        gps::NmeaStream st;
+        auto a = st.feed("$GPGGA,123519,4807.038,N,01131.0");
+        check(a.isEmpty(), "partial line is held");
+        a = st.feed("00,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n$GPRMC,1");
+        check(a.size() == 1 && gps::parse_nmea(a[0]).kind == gps::Nmea::Gga, "line completed across chunks");
+        check(st.feed(QByteArray(300, 'x') + "\n$X*00\n").size() == 1, "overlong line dropped, next line kept");
+
+        gps::NmeaTracker tr(5);
+        check(!tr.fix(0).has_position() && !tr.utc(0), "tracker empty at start");
+        tr.apply(gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47"), 1000);
+        tr.apply(gps::parse_nmea("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A"), 1000);
+        check(tr.fix(3000).has_position() && tr.fix(3000).mode == 3 && tr.satellites() == 8, "tracker merges GGA and RMC");
+        check(tr.utc(3000) && tr.utc(3000)->time().second() == 21, "UTC advances with elapsed time");
+        check(!tr.fix(7000).has_position() && !tr.utc(7000), "stale fix and time are not reported");
+        tr.apply(gps::parse_nmea("$GPGGA,123519,,,,,0,00,,,M,,M,,*6B"), 7500);
+        check(!tr.fix(7600).has_position(), "no-fix GGA clears the position");
     }
 
     WidgetContext ctx;

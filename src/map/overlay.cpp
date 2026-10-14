@@ -48,6 +48,25 @@ void MapOverlays::notify() const {
 }
 
 namespace hamclock {
+int overlay_label_priority(const QString& id) {
+    if (id.startsWith(QLatin1String("sat"))) return 0;
+    if (id == QLatin1String("quakes") || id == QLatin1String("fires") || id == QLatin1String("storms")) return 2;
+    return 1;
+}
+std::vector<QRectF> line_obstacles(const std::vector<QPointF>& px, double max_gap, double pad) {
+    std::vector<QRectF> out;
+    for (std::size_t i = 1; i < px.size(); ++i) {
+        const QPointF a = px[i - 1], b = px[i];
+        const double len = std::hypot(b.x() - a.x(), b.y() - a.y());
+        if (len > max_gap) continue; // a seam jump, not a drawn segment
+        const int n = std::max(1, int(len / (2 * pad)));
+        for (int k = 0; k <= n; ++k) {
+            const double t = double(k) / n;
+            out.push_back(QRectF(a.x() + (b.x() - a.x()) * t - pad, a.y() + (b.y() - a.y()) * t - pad, 2 * pad, 2 * pad));
+        }
+    }
+    return out;
+}
 std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, QSizeF text, const std::vector<QRectF>& used) {
     const double gap = 3;
     const double top = std::clamp(anchor.y() - text.height() / 2, view.top(), std::max(view.top(), view.bottom() - text.height()));
