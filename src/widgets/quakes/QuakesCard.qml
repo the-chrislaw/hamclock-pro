@@ -11,16 +11,22 @@ Card {
             label: root.compact ? "Quakes " + (widget && widget.hasData ? widget.count : "") + " / 24 h" : "Strongest in 24 h"
             available: widget && widget.hasData && widget.count > 0
             value: available ? "M " + widget.strongestMagnitude.toFixed(1) : ""
-            caption: available ? widget.strongestText + " · " + widget.strongestPlace : (widget && widget.hasData ? "No M2.5+ quakes" : "")
+            caption: available ? widget.strongestText : (widget && widget.hasData ? "No M2.5+ quakes" : "")
             valueColor: available && widget.strongestMagnitude >= 7 ? Theme.bad
                       : available && widget.strongestMagnitude >= 6 ? Theme.warn : Theme.ink
             Layout.fillWidth: true
         }
         Text {
+            visible: widget && widget.hasData && widget.count > 0 && widget.strongestPlace !== ""
+            text: widget ? widget.strongestPlace : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            wrapMode: Text.WordWrap; maximumLineCount: 2; Layout.fillWidth: true
+        }
+        Text {
             visible: widget && widget.nearestText !== ""
             text: widget ? "Nearest " + widget.nearestText : ""
             color: Theme.secondary; font.pixelSize: Theme.fontBody
-            elide: Text.ElideRight; Layout.fillWidth: true
+            wrapMode: Text.WordWrap; maximumLineCount: 2; Layout.fillWidth: true
         }
         Repeater {
             model: root.compact || !widget ? [] : widget.recent

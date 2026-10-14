@@ -68,3 +68,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H4 slice 2: fires card shows "Nearest 320 km NW of DE · 13 18:38Z" (nearest non-low-confidence detection to the saved station; hidden without a station, refreshed on station change). Tests cover no-station and with-station. Full suite 118/118 and ASan/UBSan fires test pass. Fires is not on the default dashboard, so the new single elided line was not screenshotted at 800x480/1024x600/1920x1080 (full-app screenshots render, but without the card); not validated visually.
 - Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-14 10:00 UTC
+- Step 1: no PRs of mine open; #207 (no checks yet) and #211 (CI running) are other areas, left alone. #142 allowlist still open; lightning, nets, JTWC stay blocked.
+- QA #203: quakes and fires "Nearest ..." lines were elided at 800x480/1024x600. Both now wrap to up to 2 lines; the quakes strongest-place text moved out of the Metric caption into its own wrapping line. QML only, no model change. Rendered quakes and fires with a saved station at 800x480, 1024x600, 1920x1080 light/dark: no TRUNCATED output, nothing clipped; quakes/fires tests pass. Not validated on a device.
+- Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
+- Blocked: lightning and NetLogger on allowlist (#142).
