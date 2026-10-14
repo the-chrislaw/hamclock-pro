@@ -90,3 +90,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite detail box (owner request #246, D3): the Satellites model fetches the SatNOGS transmitters daily (cached, `satnogs-transmitters` source) and joins them by NORAD id; tapping a pass row replaces the list with a box: az/el with compass, range, next pass AOS/TCA/LOS (UTC) with AOS/LOS compass points and countdown, up to three active transmitters with Doppler-corrected downlink/uplink (updated each second), CTCSS and linear/inverting, SatNOGS CC BY-SA attribution when not compact. Tap again closes. Test uses the SatNOGS fixture via a URL-aware fake transport. Not done: sunlit/eclipsed, "more passes", map-marker tap and the G0 mechanism, ground-track/Set-as-DX actions. Screenshots and ASan/UBSan left to CI.
 - Not mine: #245/#248 CI still running, #242 no checks, #73 conflicting; left alone.
 - Next: remaining detail-box items, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 16
+- Found the SatNOGS fetch and detail box already on main (my parallel PR #251 conflicted and was closed as redundant). Kept only the useful difference: the transmitters URL is filtered to `service=Amateur&alive=true` (about 330 kB instead of the 4 MB full database); roadmap note updated. No logic change.
+- Not mine: #73 conflicting; left alone.
+- Next: remaining detail-box items (sunlit/eclipsed, Show track, Set as DX, map tap), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).

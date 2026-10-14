@@ -13,7 +13,8 @@ using namespace std::chrono_literals;
 // CelesTrak asks for at most one download per group per 2 h; we fetch daily.
 constexpr PollPolicy kPolicy{24h, 72h, 6h};
 constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle";
-constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json";
+// Amateur-service, alive transmitters only: about 330 kB instead of the whole 4 MB database.
+constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json&service=Amateur&alive=true";
 constexpr double kMinElevation = 10.0;
 constexpr double kHorizonSeconds = 24 * 3600;
 constexpr int kMaxRows = 5;
