@@ -13,38 +13,37 @@ Card {
         width: parent.width
         spacing: Theme.gap * 0.8
 
+        // Tap the clock to swap the big clock between UTC and DE local time.
         ColumnLayout {
+            id: clockBox
+            property bool local: false
+            readonly property bool showLocal: local && station.deClock.length > 0
             spacing: 0
             Layout.fillWidth: true
             Text {
                 Layout.fillWidth: true
                 fontSizeMode: Text.HorizontalFit
                 minimumPixelSize: Theme.fontValue
-                text: station.utcTime
+                text: clockBox.showLocal ? station.deClock : station.utcTime
                 color: Theme.ink
                 font.pixelSize: Theme.fontClock
                 font.weight: Font.Light
-                Accessible.name: "UTC time " + text
+                Accessible.name: (clockBox.showLocal ? "Local time " : "UTC time ") + text
             }
             Text {
-                text: station.utcDate + " · UTC"
+                text: clockBox.showLocal ? station.deDate + " · local" : station.utcDate + " · UTC"
                 color: Theme.secondary
                 font.pixelSize: Theme.fontCaption
             }
-        }
-        RowLayout {
-            spacing: Theme.gap * 0.6
             Text {
                 visible: station.deTime.length > 0
-                text: station.deTime
-                color: Theme.ink
-                font.pixelSize: Theme.fontValue
-            }
-            Text {
-                text: station.deTime.length > 0 ? "local" : ""
+                text: clockBox.showLocal ? station.utcTime + " UTC" : station.deTime + " local"
                 color: Theme.secondary
-                font.pixelSize: Theme.fontCaption
+                font.pixelSize: Theme.fontBody
             }
+            TapHandler { onTapped: clockBox.local = !clockBox.local }
+            Accessible.role: Accessible.Button
+            Accessible.onPressAction: clockBox.local = !clockBox.local
         }
         Text {
             text: station.deZoneLabel

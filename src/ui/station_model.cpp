@@ -1,5 +1,6 @@
 #include "station_model.hpp"
 #include "app_settings.hpp"
+#include "clock_text.hpp"
 #include "../app/station_view.hpp"
 #include "../qt/de_time_zone.hpp"
 #include <QDateTime>
@@ -39,6 +40,16 @@ QString StationModel::deTime() const {
     const auto offset = resolve_de_zone_offset(zone, {now.toSecsSinceEpoch()});
     if (!offset) return {};
     return now.addSecs(offset->value).toString("HH:mm");
+}
+
+QString StationModel::deClock() const {
+    const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
+    return offset ? clock_time(QDateTime::currentDateTimeUtc(), offset->value) : QString();
+}
+
+QString StationModel::deDate() const {
+    const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
+    return offset ? clock_date(QDateTime::currentDateTimeUtc(), offset->value) : QString();
 }
 
 QString StationModel::deZoneLabel() const {
