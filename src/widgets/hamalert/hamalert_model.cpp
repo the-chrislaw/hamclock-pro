@@ -1,5 +1,6 @@
 #include "hamalert_model.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../map/overlay.hpp"
 
 namespace hamclock {
 
@@ -10,12 +11,29 @@ HamAlertModel::HamAlertModel(const WidgetContext& context, TelnetSocketFactory f
     if (settings_) connect(settings_, &AppSettings::accountsChanged, this, &HamAlertModel::start);
 }
 
+HamAlertModel::~HamAlertModel() { MapOverlays::instance().remove_layer(kOverlayLayerId); }
+
+void HamAlertModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Alerted stations at their DXCC entity centre, only while the feed is live.
+void HamAlertModel::publishOverlay() {
+    if (!map_visible_ || state() != "live") { MapOverlays::instance().remove_layer(kOverlayLayerId); return; }
+    auto layer = dxcluster::overlay_layer(spots_, resolver_);
+    layer.id = kOverlayLayerId;
+    for (auto& m : layer.markers) m.color = QColor("#e9c46a");
+    MapOverlays::instance().set_layer(layer);
+}
+
 void HamAlertModel::start() {
     const QString user = settings_ ? settings_->hamAlertUser() : QString();
     const QString password = settings_ ? settings_->hamAlertPassword() : QString();
     client_.stop();
     spots_.clear();
     emit changed();
+    publishOverlay();
     if (user.isEmpty() || password.isEmpty()) {
         setState("unconfigured", "Not configured: add your HamAlert login in Settings");
         return;
@@ -33,6 +51,7 @@ void HamAlertModel::on_state(TelnetClient::State state) {
     case S::Waiting: setState("offline", "HamAlert connection lost; retrying"); break;
     case S::Idle: break;
     }
+    publishOverlay();
 }
 
 void HamAlertModel::on_line(const QString& line) {
@@ -42,6 +61,7 @@ void HamAlertModel::on_line(const QString& line) {
     if (int(spots_.size()) > kCapacity) spots_.pop_back();
     emit changed();
     setState("live", "HamAlert", now());
+    publishOverlay();
 }
 
 QVariantList HamAlertModel::recent() const {

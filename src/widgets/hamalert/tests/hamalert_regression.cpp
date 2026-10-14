@@ -1,6 +1,7 @@
 // HamAlert: telnet login with password (fake socket), spot intake, unconfigured state, credential rules. Offline.
 #include "../hamalert_model.hpp"
 #include "../../../ui/app_settings.hpp"
+#include "../../../map/overlay.hpp"
 #include <QCoreApplication>
 #include <QFile>
 #include <QTemporaryDir>
@@ -53,8 +54,24 @@ int main(int argc, char** argv) {
     check(first["dx"] == "JA1XYZ" && first["band"] == "20m", "spot fields");
     check(sock->written == "K1ABC\r\ns3cret!\r\n", "nothing else is ever sent");
 
+    // Map overlay: own layer, entity-centre markers, only while live.
+    model.setEntityResolver([](const QString& call) -> std::optional<dxcluster::EntityPoint> {
+        if (call.startsWith("JA")) return dxcluster::EntityPoint{36, 138, "JA"};
+        return std::nullopt;
+    });
+    {
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "hamalert" && layers[0].markers.size() == 1, "live spot published as a layer");
+        check(layers[0].markers[0].prefix == "JA" && layers[0].markers[0].color == QColor("#e9c46a"), "marker at entity, own colour");
+    }
+    model.setMapVisible(false);
+    check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+    model.setMapVisible(true);
+    check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+
     emit sock->closed("reset");
     check(model.state() == "offline", "lost connection shown as offline");
+    check(MapOverlays::instance().layers().empty(), "lost link leaves nothing on the map");
 
     // Without a password the client behaves as before (cluster login only).
     TelnetClient plain([&](QObject* p) -> TelnetSocket* { return sock = new FakeSocket(p); });
