@@ -80,6 +80,7 @@ void AppSettings::loadOptions() {
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
+    imperial_ = ini.value("units/imperial", false).toBool();
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -304,6 +305,16 @@ QString AppSettings::saveAdifPath(const QString& path) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveImperialUnits(bool imperial) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("units/imperial", imperial);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the units.";
+    imperial_ = imperial;
     emit optionsChanged();
     return {};
 }

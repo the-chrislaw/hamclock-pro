@@ -17,6 +17,8 @@ int main() {
     CHECK(path_detail(g, false).contains("10008 KM") && path_detail(g, false).contains("90 DEG"));
     CHECK(path_detail(g, true).startsWith("Long path") && path_detail(g, true).contains("30023 KM"));
     CHECK(path_detail(g, true).contains("270 DEG"));
+    CHECK(path_detail(g, false, true).contains("6218 MI") && !path_detail(g, false, true).contains("KM"));
+    CHECK(path_detail(g, true, true).contains("18655 MI"));
     CHECK(path_detail(hamclock::geometry({0, 0}, {0, 0}), true) == "Set a DX target in Settings");
     return failures ? 1 : 0;
 }
