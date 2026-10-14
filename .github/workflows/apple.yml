@@ -353,7 +353,18 @@ jobs:
           KEYFILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
           printf '%s' "$KEY" | base64 --decode > "$KEYFILE"
           trap 'rm -f "$KEYFILE"' EXIT
-          AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEYFILE" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER")
+          # Manual signing: the App Store profile is created through the API (the
+          # key's App Manager role cannot create cloud-managed distribution profiles).
+          python3 -m venv "$RUNNER_TEMP/asc"
+          "$RUNNER_TEMP/asc/bin/pip" install --quiet pyjwt cryptography
+          export ASC_KEY_FILE="$KEYFILE" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER"
+          security find-certificate -c "Apple Distribution" -p "$KC" > "$RUNNER_TEMP/dist.pem"
+          PROFILE_NAME="HamClockPro AppStore ${{ github.run_id }}"
+          read -r PROFILE_ID PROFILE_UUID < <("$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py \
+            create "$BUNDLE_ID" "$RUNNER_TEMP/dist.pem" "$PROFILE_NAME" "$RUNNER_TEMP/profile.mobileprovision")
+          echo "PROFILE_ID=$PROFILE_ID" >> "$GITHUB_ENV"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
           # Build number must rise on every upload: use the run number.
           BUILD="${{ github.run_number }}"
           cat > "$RUNNER_TEMP/export.plist" <<PLIST
@@ -363,25 +374,36 @@ jobs:
             <key>method</key><string>app-store</string>
             <key>teamID</key><string>$TEAM</string>
             <key>destination</key><string>upload</string>
-            <key>signingStyle</key><string>automatic</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
           </dict></plist>
           PLIST
           set -o pipefail
-          # Archive signed with the imported Apple Distribution identity; Xcode creates the
-          # App Store provisioning profile through the API key (-allowProvisioningUpdates).
           xcodebuild archive -project build-tf/HamClockPro.xcodeproj -scheme hamclock-pro \
             -configuration Release -sdk iphoneos -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
-            CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" "${AUTH[@]}" \
+            CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KC" \
             2>&1 | tee tf-archive.log | tail -5 \
             || { grep -E "error:|BUILD FAILED" tf-archive.log | head -30; exit 1; }
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
-            "${AUTH[@]}" 2>&1 | tee tf-export.log | tail -15 \
+            -authenticationKeyPath "$KEYFILE" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            2>&1 | tee tf-export.log | tail -15 \
             || { grep -E "error:|rror Domain" tf-export.log | head -30; exit 1; }
-      - name: Remove signing keychain
+      - name: Remove signing keychain and temporary profile
         if: always() && steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          if [ -n "$PROFILE_ID" ] && [ -x "$RUNNER_TEMP/asc/bin/python" ]; then
+            printf '%s' "$KEY" | base64 --decode > "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+            ASC_KEY_FILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER" \
+              "$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py delete "$PROFILE_ID" || true
+          fi
           security delete-keychain "$KC" || true
           rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP"/AuthKey_*.p8
