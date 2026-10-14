@@ -25,3 +25,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, third run)
 - #137 (area D) CI still running, #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
 - E11 slice: BME280/BMP280 on the sensors card via the kernel IIO driver (sysfs; temp, pressure, humidity, dew point by Magnus formula). Absent hardware hides the metrics. Tested against a fake IIO tree, release build; not run on a Pi. No calibration offsets or history yet. Next: DX time zone/city, new-DE/DX popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fourth run)
+- Merged #154 (docs, green). #156/#158 CI was still running, #73 conflicting: not mine. No open `qa` issues for E.
+- E5/E12 slice: new read-only `gps` widget, gpsd JSON client on localhost:2947 (fix quality, position, grid, satellites used). No gpsd -> "unconfigured"; retries every 15 s; no fix is never shown as live. Does not set DE and does not use GPS time yet. Tested against a loopback fake gpsd (release + ASan/UBSan); not run with a real receiver. Not on the default dashboard so no screenshot. Next: use fix for DE (needs area A setting), NTP choice, DX time zone/city, E3 feeds (terms check).
