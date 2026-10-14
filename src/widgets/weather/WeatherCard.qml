@@ -11,15 +11,19 @@ Card {
             label: "DE weather"
             available: root.widget && root.widget.deTemp.length > 0
             value: available ? root.widget.deTemp : ""
-            caption: available ? root.widget.deSummary + " · " + root.widget.deWind + "\n" + root.widget.deAir : ""
+            caption: available ? root.compact ? root.widget.deSummary : root.widget.deSummary + " · " + root.widget.deWind + "\n" + root.widget.deAir : ""
             Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            Layout.maximumWidth: root.width / 2
         }
         Metric {
             label: "DX weather"
             available: root.widget && root.widget.dxTemp.length > 0
             value: available ? root.widget.dxTemp : ""
-            caption: available ? root.widget.dxSummary + " · " + root.widget.dxWind + "\n" + root.widget.dxAir : ""
+            caption: available ? root.compact ? root.widget.dxSummary : root.widget.dxSummary + " · " + root.widget.dxWind + "\n" + root.widget.dxAir : ""
             Layout.fillWidth: true
+            Layout.preferredWidth: 1
+            Layout.maximumWidth: root.width / 2
         }
     }
 }

@@ -17,3 +17,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, hourly run)
 - #112 (area D) and #73 (area A) are green/old but have merge conflicts and are not mine; left alone. No open `qa` issues.
 - E6 slice: pressure trend. Request adds `hourly=pressure_msl&past_hours=3&forecast_hours=1`; weather card shows "1015 hPa falling/rising/steady" (±1 hPa over 3 h). No trend when the hourly series is missing or has nulls. Trend test uses labelled synthetic documents (no new live fixture; Open-Meteo quota was exhausted last run). Card not visually checked (no station in the screenshot harness). Next: DX time zone/city, new-DE/DX popup, BME280 behind an interface, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, second run)
+- Merged #128 (sunmoon, area D; green). #73 (area A) left alone. 
+- Fixed qa #117: weather card columns now share the width equally and the compact layout shows temperature + short summary only (wind/humidity/air dropped first). Rendered at 800x480, 1024x600 and 1920x1080 dark with a station at the fixture position; columns no longer collide. Not validated on-device. Next: DX time zone/city, new-DE/DX popup, BME280 behind an interface, E3 feeds (terms check).
