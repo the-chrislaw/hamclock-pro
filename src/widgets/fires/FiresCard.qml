@@ -21,5 +21,11 @@ Card {
             color: Theme.secondary; font.pixelSize: Theme.fontBody
             wrapMode: Text.WordWrap; Layout.fillWidth: true
         }
+        Text {
+            visible: widget && widget.nearestText !== ""
+            text: widget ? widget.nearestText : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
     }
 }
