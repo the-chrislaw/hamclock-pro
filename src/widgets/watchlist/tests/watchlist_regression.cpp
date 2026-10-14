@@ -28,6 +28,13 @@ int main(int argc, char** argv) {
     check(!watchlist::matches({}, "K1ABC"), "empty list matches nothing");
     check(!watchlist::matches(list, ""), "empty call matches nothing");
 
+    const auto ent = watchlist::sanitize({"@vp8", "@", "@@X"});
+    check(ent == QStringList({"@VP8"}), "sanitize keeps a single leading @ entity entry");
+    const std::function<QString(const QString&)> res = [](const QString& c) { return c.startsWith("VP8") ? QString("VP8") : QString(); };
+    check(watchlist::matches(ent, "VP8LP", res), "entity entry matches via resolver");
+    check(!watchlist::matches(ent, "W1AW", res), "entity entry does not match another entity");
+    check(!watchlist::matches(ent, "VP8LP"), "entity entry needs a resolver");
+
     DxSpotList spots;
     dxcluster::DxSpot a;
     a.dx = "VP8LP";
@@ -45,6 +52,16 @@ int main(int argc, char** argv) {
     check(spots.watchedCount() == 2, "new spots are checked on arrival");
     for (int i = 0; i < DxSpotList::kCapacity; ++i) spots.add(b);
     check(spots.watchedCount() == 0, "dropped spots leave the count");
+
+    // Entity watching through the spot list resolver: Japan by primary prefix.
+    DxSpotList ja;
+    ja.set_entity_resolver([](const QString& c) { return c.startsWith("JA") ? QString("JA") : QString(); });
+    dxcluster::DxSpot j = a;
+    j.dx = "JA1AA";
+    ja.add(j);
+    ja.add(b);
+    ja.set_watch({"@JA"});
+    check(ja.watchedCount() == 1 && ja.data(ja.index(1), DxSpotList::WatchedRole).toBool(), "@JA watches JA1AA via the entity resolver");
 
     std::cerr << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

@@ -196,7 +196,7 @@ Rectangle {
                                     onClicked: lan = !lan; Layout.preferredWidth: 2 }
                     }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
-                    FormField { id: watchList; label: "Watch list (calls or prefixes like VP8*, space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
+                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save cluster"; primary: true
