@@ -119,6 +119,13 @@ ApplicationWindow {
                     anchors.fill: parent
                     dark: Theme.dark
                     uiScale: Theme.scale
+                    onTapped: function (lat, lon) { mapTapMenu.openAt(lat, lon) }
+                }
+                MapTapMenu {
+                    id: mapTapMenu
+                    parent: mapCard
+                    x: Math.max(4 * Theme.scale, (mapCard.width - width) / 2)
+                    y: Math.max(4 * Theme.scale, mapCard.height - height - 8 * Theme.scale)
                 }
                 Rectangle {
                     id: mapMenuButton
@@ -157,8 +164,7 @@ ApplicationWindow {
                     width: Math.min(implicitWidth, mapCard.width - 8 * Theme.scale)
                     height: Math.min(implicitHeight, mapCard.height - y - 4 * Theme.scale)
                 }
-                // Zoom 1-4x and reset (drag pans when zoomed; the item's tapped(lat, lon)
-                // signal feeds Set DE / Set DX in a later change).
+                // Zoom 1-4x and reset (drag pans when zoomed; a tap opens Set DE / Set DX).
                 Row {
                     anchors.top: parent.top
                     anchors.right: parent.right
