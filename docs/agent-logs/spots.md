@@ -18,3 +18,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 4 (slice): watch list. Header-only matcher `src/widgets/watchlist/watch_match.hpp` (calls, `*`/`?` prefixes, /P and EA8/ parts ignored, sanitised, capped at 200). AppSettings gets `watch/list` + `saveWatchList` (minimal, backward compatible; header-only so the core library needs no new source). DX cluster rows get a `watched` role, ★ and accent colour, plus a ★ count in the card header; Settings DX cluster card gets a watch list field. Tests pass normally and under ASan/UBSan.
 - Not done: DXCC-entity watching (needs item 5 prefix table), alert badge outside the card, other panes (OTA). Screenshots at 800x480/1920x1080 only show the unconfigured/connecting state since the cluster is network-only; not validated on device.
 - Next: PSKReporter (item 2), prefix to DXCC table (item 5).
+
+## 2026-10-14 (run 4)
+- Step 1: nothing of mine open; #110 (space) and #73 not mine, left alone.
+- Backlog items 3/14 (slice): POTA activator spots on the map through area G's overlay API (`ota_overlay`, layer `ota`; green dots, labelled by call). SOTA spots carry no coordinates so they are not drawn (a summit table would be needed). The layer is published only while the feed is live and removed when stale/offline; `OtaModel::setMapVisible` is the per-source on/off hook (Settings toggle not wired yet). Tests cover live, cap, hide and stale removal; ASan/UBSan clean. Not validated on device or screenshotted (card/map composition belongs to areas A/G).
+- Next: PSKReporter (item 2), prefix to DXCC table (item 5, which unlocks DX cluster spots on the map).

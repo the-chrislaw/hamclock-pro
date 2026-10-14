@@ -21,6 +21,11 @@ public:
     int count() const { return static_cast<int>(spots_.size()); }
     QVariantList recent() const;  // newest first: {call, ref, freq, mode, program, age}
 
+    // Spots are drawn on the map only while the data is live; off hides them.
+    void setMapVisible(bool visible);
+    bool mapVisible() const { return map_visible_; }
+    ~OtaModel() override;
+
     PolledSource& potaSource() { return *pota_; }
     PolledSource& sotaSource() { return *sota_; }
 
@@ -30,11 +35,14 @@ signals:
 private:
     void reparse();
     void refreshState();
+    void refreshStateImpl();
+    void publishOverlay();
 
     PolledSource* pota_;
     PolledSource* sota_;
     ota::Feed pota_feed_, sota_feed_;
     std::vector<ota::Spot> spots_;
+    bool map_visible_ = true;
 };
 
 void register_widget_ota(WidgetRegistry& registry, const WidgetContext& context);
