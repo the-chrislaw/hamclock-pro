@@ -6,6 +6,7 @@
 #include "time_zone_search.hpp"
 #include "../net/polled_source.hpp"
 #include "../widgets/widget_registry.hpp"
+#include "../platform/apple_lifecycle.hpp"
 #include <QGuiApplication>
 #include <QCommandLineParser>
 #include <QDir>
@@ -54,6 +55,7 @@ int main(int argc, char** argv) {
     QGuiApplication::setApplicationName("hamclock-pro");
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
     QGuiApplication::setApplicationVersion("0.1.0");
+    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
 
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");

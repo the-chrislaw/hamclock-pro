@@ -42,3 +42,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F. #73 (other area, stale/conflicting), #166/#167 (other areas) still running checks; left alone.
 - Found that nearly every Apple run on main was `cancelled` by `cancel-in-progress` when merges landed minutes apart, so the main-only signing/notarization and universal-dmg path never finished. Concurrency now cancels only superseded PR runs; each main push runs to completion.
 - Next: confirm a main run completes green; F4 iPad when the map renderer port lands; AppSettings credential wiring with area A.
+
+## 2026-10-14 (sixth hourly run)
+- No qa issues for area F; no PRs of mine open. Main Apple runs now complete green (universal + signing path ran to the end; signing skipped, no secrets yet).
+- F4 slice 1: `AppLifecycle` (src/platform/apple_lifecycle.*) turns iOS `Qt::ApplicationSuspended` into suspended/resumed signals (desktop never suspends); `PolledSource` gained `pause()`/`resume()` (small change in area A/B's file, backward compatible) and subscribes to it: no polling while suspended, on resume it fetches at once if data is overdue or failing, otherwise waits out the remaining interval. One line in main.cpp attaches it. `app-lifecycle-regression` covers it on Linux.
+- Next: pause/reconnect for the DX cluster and rigctld/rotctld sockets (they should subscribe to AppLifecycle), safe-area handling, iPad layout check.

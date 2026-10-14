@@ -1,4 +1,5 @@
 #include "polled_source.hpp"
+#include "../platform/apple_lifecycle.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -69,6 +70,10 @@ PolledSource::PolledSource(QString cache_name, QUrl url, PollPolicy policy, Tran
     if (!transport_) throw std::invalid_argument("Transport required");
     timer_.setSingleShot(true);
     connect(&timer_, &QTimer::timeout, this, &PolledSource::fetch);
+    auto& lifecycle = AppLifecycle::instance();
+    paused_ = lifecycle.isSuspended();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &PolledSource::pause);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &PolledSource::resume);
 }
 
 QString PolledSource::cachePath() const { return cache_dir() + "/" + cache_name_ + ".cache"; }
@@ -81,6 +86,23 @@ void PolledSource::start() {
 void PolledSource::refreshNow() {
     timer_.stop();
     fetch();
+}
+
+void PolledSource::pause() {
+    paused_ = true;
+    timer_.stop();
+}
+
+void PolledSource::resume() {
+    if (!paused_) return;
+    paused_ = false;
+    if (in_flight_) return; // its answer re-arms the timer
+    const auto age = fetched_at_.isValid() ? fetched_at_.secsTo(clock_()) : policy_.interval.count();
+    if (failures_ > 0 || !fetched_at_.isValid() || age >= policy_.interval.count()) {
+        fetch();
+        return;
+    }
+    schedule(std::chrono::seconds(std::max<qint64>(1, policy_.interval.count() - age)));
 }
 
 bool PolledSource::isStale(const QDateTime& now_utc) const {
@@ -96,7 +118,7 @@ std::chrono::seconds PolledSource::nextDelay() const {
 }
 
 void PolledSource::fetch() {
-    if (in_flight_) return;
+    if (in_flight_ || paused_) return;
     in_flight_ = true;
     QPointer<PolledSource> self(this);
     transport_(url_, [self](FetchResult result) {
@@ -126,6 +148,7 @@ void PolledSource::handle(FetchResult result) {
 }
 
 void PolledSource::schedule(std::chrono::seconds delay) {
+    if (paused_) return;
     timer_.start(static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(delay).count()));
 }
 
