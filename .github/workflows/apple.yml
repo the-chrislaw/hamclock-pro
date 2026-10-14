@@ -46,6 +46,53 @@ jobs:
         run: |
           macdeployqt build-mac/hamclock-pro.app -dmg
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-macos-unsigned
+          path: |
+            hamclock-pro-macos.zip
+            hamclock-pro-macos-unsigned.dmg
+
+  macos-universal:
+    name: macOS universal build
+    runs-on: macos-14
+    # Produces the distributable dmg: universal (arm64+x86_64), signed/notarized when secrets exist.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Qt install
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Qt
+          key: qt-${{ runner.os }}-${{ env.IOS_QT_VERSION }}-desktop-v1
+      - name: Install Qt (universal desktop)
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/aqt"
+          "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
+          "$RUNNER_TEMP/aqt/bin/aqt" install-qt mac desktop "$IOS_QT_VERSION" clang_64 --outputdir "$HOME/Qt"
+      - name: Install ninja
+        run: brew install ninja
+      - name: Configure and build (arm64 + x86_64)
+        run: |
+          cmake -S . -B build-universal -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_PREFIX_PATH="$HOME/Qt/$IOS_QT_VERSION/macos"
+          cmake --build build-universal
+      - name: Check both architectures
+        run: |
+          lipo -archs build-universal/hamclock-pro.app/Contents/MacOS/hamclock-pro | tee archs.txt
+          grep -q arm64 archs.txt && grep -q x86_64 archs.txt
+      - name: Deploy Qt into the bundle (universal)
+        run: |
+          export PATH="$HOME/Qt/$IOS_QT_VERSION/macos/bin:$PATH"
+          macdeployqt build-universal/hamclock-pro.app -dmg
+          mv build-universal/hamclock-pro.dmg hamclock-pro-macos-universal-unsigned.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-macos-universal-unsigned
+          path: hamclock-pro-macos-universal-unsigned.dmg
       # Signing and notarization (issue #58). Main pushes and tags only, and every
       # step skips cleanly while the secrets are absent. Secrets are only passed
       # through env, never echoed; the keychain is temporary and deleted at the end.
@@ -80,7 +127,7 @@ jobs:
           security list-keychains -d user -s "$KC" login.keychain-db
           IDENTITY="$(security find-identity -v -p codesigning "$KC" | grep 'Developer ID Application' | head -1 | awk -F'"' '{print $2}')"
           test -n "$IDENTITY" || { echo "No Developer ID Application identity in the p12"; exit 1; }
-          APP=build-mac/hamclock-pro.app
+          APP=build-universal/hamclock-pro.app
           find "$APP/Contents" \( -name '*.dylib' -o -name '*.framework' -o -name '*.so' \) -print0 | \
             xargs -0 -n1 codesign --force --options runtime --timestamp --sign "$IDENTITY"
           codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"
@@ -111,45 +158,6 @@ jobs:
         with:
           name: hamclock-pro-macos-signed
           path: hamclock-pro-macos.dmg
-      - uses: actions/upload-artifact@v4
-        with:
-          name: hamclock-pro-macos-unsigned
-          path: |
-            hamclock-pro-macos.zip
-            hamclock-pro-macos-unsigned.dmg
-
-  macos-universal:
-    name: macOS universal build
-    runs-on: macos-14
-    # Informational until the first green run confirms the aqt Qt is universal.
-    continue-on-error: true
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-      - name: Cache Qt install
-        id: qt-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/Qt
-          key: qt-${{ runner.os }}-${{ env.IOS_QT_VERSION }}-desktop-v1
-      - name: Install Qt (universal desktop)
-        if: steps.qt-cache.outputs.cache-hit != 'true'
-        run: |
-          python3 -m venv "$RUNNER_TEMP/aqt"
-          "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
-          "$RUNNER_TEMP/aqt/bin/aqt" install-qt mac desktop "$IOS_QT_VERSION" clang_64 --outputdir "$HOME/Qt"
-      - name: Install ninja
-        run: brew install ninja
-      - name: Configure and build (arm64 + x86_64)
-        run: |
-          cmake -S . -B build-universal -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
-            -DCMAKE_PREFIX_PATH="$HOME/Qt/$IOS_QT_VERSION/macos"
-          cmake --build build-universal
-      - name: Check both architectures
-        run: |
-          lipo -archs build-universal/hamclock-pro.app/Contents/MacOS/hamclock-pro | tee archs.txt
-          grep -q arm64 archs.txt && grep -q x86_64 archs.txt
 
   ios-simulator:
     name: iPad Simulator build

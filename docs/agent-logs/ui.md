@@ -34,3 +34,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #143 (docs, CI green). #145/#146 still had macOS/iPad checks running; #73 stale.
 - Category picker (A8): the pane chooser has tabs (All, Space Wx, DX & Contest, Weather, Sky & Space, Station, Other) that filter the widget list; opens on the current widget's category. Mapping lives in `PaneChooser.qml` (unknown ids fall under Other). ctest 88/88. The popup is not reachable from `--screenshot`, so its layout was not visually checked at 1024x600; only QML load/warnings are covered. Not validated on a device.
 - Next: side panes / PANE_0 overlay, compact-mode adoption by widget owners.
+
+## 2026-10-14 (hourly run, 5)
+- Issue #150 (data never refreshes): added a timer-driven multi-cycle test for `PolledSource` (1 s interval, no `refreshNow`, >= 3 fetches). It passes on current code, so the shared timer/re-arm logic is not the cause; the earlier tests only used `refreshNow`. Remaining suspects are per-widget parsing (X-ray "missing" despite fresh data, area B) and the card age showing the slowest feed (per-value freshness, `Card` footer). ctest 94/94. Not validated on a device.
+- #161/#162 (areas G/H) had checks still running; #73 stale. Next: per-value freshness in `Card`, #151 time zone picker, side panes.
