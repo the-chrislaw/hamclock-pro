@@ -2,6 +2,7 @@
 #include "../domain/geometry.hpp"
 #include <array>
 #include <cstddef>
+#include <optional>
 namespace hamclock {
 struct MapPoint { double x, y; };
 struct MapSegment { MapPoint first, second; };
@@ -25,5 +26,24 @@ Location map_unproject_azimuthal(Location centre, MapPoint point);
 // north at y=0. Plate height/width of the true projection is about 0.506.
 MapPoint map_project_robinson(Location location);
 Location map_unproject_robinson(MapPoint point);
+// Which projection the map draws. Equirectangular is the scrolling/zooming
+// MapViewport; the others are drawn whole, fitted and centred in the item.
+enum class MapProjection { Equirectangular = 0, Azimuthal = 1, Robinson = 2 };
+inline constexpr int map_projection_count = 3;
+// Pixel frame of a whole-world projection inside an item (G4): the ONE
+// transform the base map, overlays, markers and taps share. Azimuthal is
+// centred on `centre` (a disc, square frame); Robinson shifts longitudes so
+// centre.longitude is in the middle. to_pixel is empty for Equirectangular
+// (use MapViewport) or an invalid location; to_location is empty outside the
+// outline.
+struct MapFrame {
+    static constexpr double robinson_aspect = 0.5072; // height / width of the outline
+    MapProjection kind = MapProjection::Equirectangular;
+    Location centre{0, 0};
+    double x = 0, y = 0, w = 0, h = 0; // frame box in item pixels
+    static MapFrame fit(MapProjection kind, Location centre, double width, double height);
+    std::optional<MapPoint> to_pixel(Location location) const;
+    std::optional<Location> to_location(double px, double py) const;
+};
 int run_map_tests();
 }

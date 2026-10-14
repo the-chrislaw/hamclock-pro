@@ -30,6 +30,7 @@ class MapItem : public QQuickPaintedItem {
     Q_PROPERTY(QStringList styleIds READ styleIds NOTIFY styleChanged)
     Q_PROPERTY(QVariantList rotationChoices READ rotationChoices CONSTANT)
     // 0 None, 1 Tropics, 2 Lat/Lng, 3 Maidenhead.
+    Q_PROPERTY(int projection READ projection WRITE setProjection NOTIFY projectionChanged)
     Q_PROPERTY(int grid READ grid WRITE setGrid NOTIFY gridChanged)
     // Centre longitude in degrees, 999 = follow DE.
     Q_PROPERTY(int centerLon READ centerLon WRITE setCenterLon NOTIFY centerLonChanged)
@@ -61,6 +62,8 @@ public:
     void setCenterLon(int lon);
     int grid() const { return options_.grid; }
     void setGrid(int g);
+    int projection() const { return options_.projection; }
+    void setProjection(int p);
     int labelMode() const { return options_.label_mode; }
     void setLabelMode(int mode);
     QStringList layerIds() const;
@@ -90,6 +93,7 @@ signals:
     void longPathChanged();
     void labelModeChanged();
     void gridChanged();
+    void projectionChanged();
     void centerLonChanged();
     void layersChanged();
     void styleChanged();

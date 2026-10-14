@@ -5,6 +5,7 @@
 // even while a layer is not yet published. Saved in options.ini ([map]).
 #include "grid.hpp"
 #include "overlay.hpp"
+#include "projection.hpp"
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -18,6 +19,7 @@ struct MapViewOptions {
     bool long_path = false; // draw the DE/DX path the long way round
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
+    int projection = 0;   // MapProjection
     bool gray = false;       // grayscale base map (land, sea, coast)
     bool sky_points = false; // sublunar point and DE antipode markers
     static constexpr int center_auto = 999; // centre on DE

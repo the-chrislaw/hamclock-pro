@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QImage>
 #include <QPainter>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <iostream>
 using namespace hamclock;
@@ -121,6 +122,33 @@ int main(int argc, char** argv) {
     { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};
       ls.route = map_short_path(*ls.de, *ls.dx); const auto sh = render(ls);
       ls.route = map_long_path(*ls.de, *ls.dx); check(render(ls) != sh, "long path renders differently"); }
+    // Projections (G4): persisted, rendered through one transform with the overlays.
+    { MapViewOptions po; check(po.projection == 0, "projection default flat"); po.projection = 2;
+      check(po.save(ini), "save projection"); MapViewOptions r; r.load(ini); check(r.projection == 2, "projection round trip");
+      QSettings bad(ini, QSettings::IniFormat); bad.setValue("map/projection", 9); bad.sync();
+      MapViewOptions r2; r2.load(ini); check(r2.projection == 0, "bad projection rejected");
+      MapScene ps; ps.sun.reset(); ps.de = Location{39.7, -105}; const auto flat = render(ps);
+      ps.projection = MapProjection::Azimuthal; const auto az = render(ps);
+      ps.projection = MapProjection::Robinson; const auto rb = render(ps);
+      check(az != flat && rb != flat && az != rb, "projections render differently");
+      // The DE marker (a ring in the route colour over sea) sits at the frame's pixel for DE.
+      for (const auto proj : {MapProjection::Azimuthal, MapProjection::Robinson}) {
+          MapScene s; s.sun.reset(); s.projection = proj; s.de = Location{39.7, -105}; s.dx = Location{51.5, -0.1};
+          s.route = map_short_path(*s.de, *s.dx);
+          QImage img(1024, 600, QImage::Format_ARGB32_Premultiplied); img.fill(Qt::white);
+          { QPainter p(&img); MapRenderer().paint(p, QSizeF(1024, 600), s); }
+          const auto frame = MapRenderer::frameFor(QSizeF(1024, 600), s);
+          const auto de = frame.to_pixel(*s.de);
+          check(frame.w > 0 && de && img.pixelColor(int(de->x) - 4, int(de->y)) != img.pixelColor(int(de->x) - 12, int(de->y)), "DE marker drawn at the frame position");
+          // Pixels outside the outline are the space colour, not map.
+          check(img.pixelColor(0, 0) == img.pixelColor(1, 1), "outside the outline is plain");
+      }
+      // Overlay markers hit-test through the same frame.
+      OverlayLayer l; l.id = "t"; OverlayMarker m; m.call = "X"; m.where = {51.5, -0.1}; l.markers.push_back(m);
+      const auto fr = MapFrame::fit(MapProjection::Robinson, {0, 0}, 1024, 600);
+      const auto at = fr.to_pixel(m.where);
+      const std::vector<OverlayLayer> ls{l};
+      check(at && hit_test_marker(ls, fr, at->x + 5, at->y, 14).marker && !hit_test_marker(ls, fr, at->x + 40, at->y, 14).marker, "marker hit through the frame"); }
     // Night shade off removes the shading from the render.
     MapScene sc; sc.sun = SubsolarPoint{20.0, 0.0}; sc.night_shade = true;
     const auto on = render(sc);

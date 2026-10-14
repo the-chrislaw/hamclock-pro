@@ -91,6 +91,15 @@ Popup {
                          onClicked: menu.map.grid = modelData.g }
             }
         }
+        Text { text: "Projection"; color: Theme.ink; font.pixelSize: Theme.fontBody }
+        RowLayout {
+            spacing: Theme.gap / 2
+            Repeater {
+                model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }]
+                Toggle { label: modelData.t; on: menu.map && menu.map.projection === modelData.p
+                         onClicked: menu.map.projection = modelData.p }
+            }
+        }
         Text { text: "Centre"; color: Theme.ink; font.pixelSize: Theme.fontBody }
         RowLayout {
             spacing: Theme.gap / 2

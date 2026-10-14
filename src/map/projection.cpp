@@ -81,16 +81,70 @@ MapPoint map_project_robinson(Location location) {
     const double sign = location.latitude < 0 ? -1.0 : 1.0;
     return {0.5 + row.length * location.longitude / 360.0, 0.5 - sign * row.distance / 2.0};
 }
-Location map_unproject_robinson(MapPoint point) {
-    if (!std::isfinite(point.x) || !std::isfinite(point.y) || point.y < 0 || point.y > 1)
-        throw std::invalid_argument("invalid robinson coordinate");
+namespace {
+bool robinson_inverse(MapPoint point, Location& out) {
+    if (!std::isfinite(point.x) || !std::isfinite(point.y) || point.y < 0 || point.y > 1) return false;
     const double d = std::abs(1.0 - 2.0 * point.y);
     std::size_t i = 0;
     while (i < 17 && robinson_rows[i + 1].distance < d) ++i;
     const double t = (d - robinson_rows[i].distance) / (robinson_rows[i + 1].distance - robinson_rows[i].distance);
     const double abs_lat = std::clamp((static_cast<double>(i) + t) * 5.0, 0.0, 90.0);
     const double lon = (point.x - 0.5) * 360.0 / robinson_row(abs_lat).length;
-    if (std::abs(lon) > 180.0 + 1e-9) throw std::invalid_argument("point outside the robinson outline");
-    return {point.y > 0.5 ? -abs_lat : abs_lat, std::clamp(lon, -180.0, 180.0)};
+    if (std::abs(lon) > 180.0 + 1e-9) return false;
+    out = {point.y > 0.5 ? -abs_lat : abs_lat, std::clamp(lon, -180.0, 180.0)};
+    return true;
+}
+double wrap_lon(double lon) {
+    lon = std::fmod(lon + 180.0, 360.0);
+    if (lon < 0) lon += 360.0;
+    return lon - 180.0;
+}
+}
+Location map_unproject_robinson(MapPoint point) {
+    Location out{};
+    if (!robinson_inverse(point, out)) throw std::invalid_argument("invalid robinson coordinate");
+    return out;
+}
+MapFrame MapFrame::fit(MapProjection kind, Location centre, double width, double height) {
+    MapFrame f;
+    f.kind = kind;
+    f.centre = centre;
+    if (kind == MapProjection::Equirectangular || width <= 0 || height <= 0) return f;
+    if (kind == MapProjection::Azimuthal) {
+        f.w = f.h = std::min(width, height);
+    } else {
+        f.w = std::min(width, height / robinson_aspect);
+        f.h = f.w * robinson_aspect;
+    }
+    f.x = (width - f.w) / 2.0;
+    f.y = (height - f.h) / 2.0;
+    return f;
+}
+std::optional<MapPoint> MapFrame::to_pixel(Location location) const {
+    if (w <= 0 || !valid_location(location)) return std::nullopt;
+    if (kind == MapProjection::Azimuthal) {
+        const auto p = map_project_azimuthal(centre, location);
+        return MapPoint{x + w / 2.0 + p.x * w / 2.0, y + h / 2.0 - p.y * h / 2.0};
+    }
+    if (kind == MapProjection::Robinson) {
+        const auto p = map_project_robinson({location.latitude, wrap_lon(location.longitude - centre.longitude)});
+        return MapPoint{x + p.x * w, y + p.y * h};
+    }
+    return std::nullopt;
+}
+std::optional<Location> MapFrame::to_location(double px, double py) const {
+    if (w <= 0) return std::nullopt;
+    if (kind == MapProjection::Azimuthal) {
+        const MapPoint p{(px - x - w / 2.0) / (w / 2.0), -(py - y - h / 2.0) / (h / 2.0)};
+        if (std::hypot(p.x, p.y) > 1.0) return std::nullopt;
+        return map_unproject_azimuthal(centre, p);
+    }
+    if (kind == MapProjection::Robinson) {
+        Location l{};
+        if (!robinson_inverse({(px - x) / w, (py - y) / h}, l)) return std::nullopt;
+        l.longitude = wrap_lon(l.longitude + centre.longitude);
+        return l;
+    }
+    return std::nullopt;
 }
 }
