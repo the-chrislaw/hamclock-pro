@@ -27,6 +27,7 @@ set_target_properties(hamclock-pro-editor PROPERTIES
 add_library(hamclock-map-core STATIC
     src/qt/land_fill_path.cpp
     src/map/path.cpp
+    src/map/overlay.cpp
     src/map/projection.cpp
     src/map/viewport.cpp
     src/map/map_renderer.cpp
@@ -90,6 +91,16 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME qt-map-viewport-regression COMMAND qt-map-viewport-regression)
     set_tests_properties(qt-map-viewport-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(qt-map-overlay-regression tests/qt_map_overlay_regression.cpp)
+    target_link_libraries(qt-map-overlay-regression PRIVATE hamclock-map-core)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+        target_compile_options(qt-map-overlay-regression PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+    add_test(NAME qt-map-overlay-regression COMMAND qt-map-overlay-regression)
+    set_tests_properties(qt-map-overlay-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
 endif()
 
 add_executable(hamclock-pro-map-preview MACOSX_BUNDLE

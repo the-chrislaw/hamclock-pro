@@ -26,6 +26,9 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
         update();
     };
     refresh_sun();
+    scene_.overlays = MapOverlays::instance().layers();
+    // The registry is process-wide; the callback only ever runs on the GUI thread.
+    overlay_token_ = MapOverlays::instance().on_change([this] { scene_.overlays = MapOverlays::instance().layers(); update(); });
     minute_timer_.setInterval(kSolarRefreshMs);
     connect(&minute_timer_, &QTimer::timeout, this, refresh_sun);
     minute_timer_.start();
@@ -33,7 +36,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     connect(this, &QQuickItem::heightChanged, this, [this] { update(); });
 }
 
-MapItem::~MapItem() = default;
+MapItem::~MapItem() { MapOverlays::instance().remove_listener(overlay_token_); }
 
 void MapItem::setDark(bool dark) {
     if (dark == scene_.dark) return;
