@@ -22,3 +22,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - G2 overlay API (PR agent/map-overlay-api): `src/map/overlay.*` (markers, layers, labels None/Prefix/Call/Dot, minimum label distance, optional DE path, process-wide `MapOverlays` registry), drawn by `MapRenderer` above DE/DX; `MapItem` listens and repaints (shared file touched minimally: `CMakeLists.txt` library/test lists). Docs and worked example in `docs/map-overlays.md`. Test: `qt-map-overlay-regression`.
 - Not validated on device.
 - Next: G3 map styles framework; then G4 projections.
+
+## 2026-10-14 (UTC)
+
+- Orient: no `qa` issues open. #114 (not mine) still had the iPad job running; #73 (docs, not mine) stale, left alone.
+- G3 map styles framework (PR agent/map-styles): `src/map/styles.*` (`MapStyle`, `ColorScale`/`color_at`, process-wide `MapStyles` registry, rotation 20/60/90/120 s, automatic space-weather pick aurora/drap), drawn by `MapRenderer` between coast and night shade plus a gradient legend; `MapItem` follows the registry (shared: `CMakeLists.txt` lists, refresh timer 30 s -> 10 s so rotation steps). Test: `qt-map-styles-regression`; ASan/UBSan run of the map tests clean. Screenshot at 1024x600 unchanged with no style registered. Not validated on device.
+- Next: G4 projections (Mercator centre longitude, azimuthal, Robinson), zoom, tap Set DE/DX.

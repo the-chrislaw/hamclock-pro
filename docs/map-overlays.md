@@ -26,3 +26,12 @@ hamclock::MapOverlays::instance().set_layer(layer);
 ```
 
 Not yet: tap hit-testing, per-layer legend, projection-aware placement (arrives with G4; markers use the current equirectangular viewport).
+
+## Map styles (G3)
+
+`src/map/styles.hpp` lets an area publish a base-map style; the map draws the active one between coast and night shade, with a legend bottom-left.
+
+- `MapStyle`: `id`, `name`, `image` (whole world, equirectangular, north up; null = plain), `opacity`, `legend` (`ColorScale`: `title`, `unit`, ascending `stops`), `credit`.
+- `MapStyles::instance().set_style(style)` / `remove_style(id)`; remove it when the feed is stale or offline, never keep an old image shown as live.
+- Selection: `select(id)` (manual), `set_rotation(20|60|90|120, ids)` (ids not registered are skipped), `set_auto_space_weather(true, {kp, xray_flux})` picks `aurora` (Kp >= 5) else `drap` (M-class flare or stronger) when those ids are registered. Priority: rotation, then auto, then manual. Settings UI to choose these arrives with the first image style.
+- Style ids used by the auto mode: `aurora` and `drap` (area B publishes them).

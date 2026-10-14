@@ -4,6 +4,7 @@
 #include "land.hpp"
 #include "path.hpp"
 #include "projection.hpp"
+#include <QLinearGradient>
 #include <QPainter>
 #include <QPolygonF>
 #include <QTransform>
@@ -31,6 +32,33 @@ MapRenderer::MapRenderer() {
                 coast_.lineTo(split.segments[j].second.x, split.segments[j].second.y);
             }
         }
+}
+namespace {
+// Gradient bar with title, end values and credit in the bottom-left corner.
+void paint_legend(QPainter& p, QSizeF size, const MapStyle& st, bool dark) {
+    const auto& stops = st.legend.stops;
+    if (stops.size() < 2) return;
+    const auto fm = p.fontMetrics();
+    const double barw = std::clamp(size.width() * 0.25, 60.0, 180.0), barh = 8, pad = 4;
+    const QString lo = QString::number(stops.front().value, 'g', 3), hi = QString::number(stops.back().value, 'g', 3);
+    const QString head = st.legend.unit.isEmpty() ? st.legend.title : st.legend.title + " (" + st.legend.unit + ")";
+    const double boxw = barw + 2 * pad, boxh = fm.height() * 2 + barh + 3 * pad;
+    if (boxw > size.width() || boxh > size.height()) return;
+    const QRectF box(pad, size.height() - boxh - pad, boxw, boxh);
+    p.setPen(Qt::NoPen);
+    p.setBrush(dark ? QColor(16, 24, 27, 200) : QColor(255, 255, 255, 200));
+    p.drawRoundedRect(box, 3, 3);
+    p.setPen(dark ? QColor("#e6eef0") : QColor("#1b2a30"));
+    p.drawText(QPointF(box.left() + pad, box.top() + pad + fm.ascent()), head.isEmpty() ? st.name : head);
+    const QRectF bar(box.left() + pad, box.top() + 2 * pad + fm.height(), barw, barh);
+    QLinearGradient g(bar.left(), 0, bar.right(), 0);
+    const double span = stops.back().value - stops.front().value;
+    for (const auto& s : stops) g.setColorAt(span > 0 ? (s.value - stops.front().value) / span : 0.0, s.color);
+    p.fillRect(bar, g);
+    const double ty = bar.bottom() + fm.ascent() + 1;
+    p.drawText(QPointF(bar.left(), ty), lo);
+    p.drawText(QPointF(bar.right() - fm.horizontalAdvance(hi), ty), hi);
+}
 }
 MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
     std::optional<double> lo, hi;
@@ -73,6 +101,12 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         QPen pen(coast); pen.setWidthF(1); pen.setCosmetic(true);
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);
         painter.drawPath(coast_);
+        if (scene.style && !scene.style->image.isNull()) {
+            painter.setOpacity(std::clamp(scene.style->opacity, 0.0, 1.0));
+            painter.setRenderHint(QPainter::SmoothPixmapTransform);
+            painter.drawImage(QRectF(0, 0, 1, 1), scene.style->image);
+            painter.setOpacity(1.0);
+        }
         if (scene.sun) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, dark ? 90 : 55));
@@ -154,6 +188,7 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             }
         }
     }
+    if (scene.style) paint_legend(painter, size, *scene.style, dark);
     painter.restore();
 }
 }
