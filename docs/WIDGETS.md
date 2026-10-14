@@ -194,8 +194,8 @@ Takes over E8 and E13. Each feed: check terms first and record them in the roadm
 ### I. Apple TV (owns `apple/tvos/`, `cmake/TvOS*.cmake`, `docs/apple-tv*.md`, `.github/workflows/tvos.yml`, `docs/agent-logs/tvos.md`)
 Native SwiftUI tvOS app over the shared C++ core (Qt has no tvOS support); design in [docs/apple-tv.md](apple-tv.md). Unsigned Simulator builds only until the owner approves signing (#58).
 1. 🟡 Design doc for owner review (written; awaiting owner comments).
-2. `tvos.yml`: build the C++ core for the tvOS Simulator and run its unit tests on macOS.
-3. Minimal SwiftUI app: clock + live NOAA SWPC space weather, Simulator screenshot artifact.
+2. ✅ `tvos.yml`: build the C++ core for the tvOS Simulator and run its unit tests on macOS.
+3. 🟡 Minimal SwiftUI app: clock + live NOAA SWPC space weather (C ABI `hcpcore.h`, XcodeGen project), Simulator screenshot artifact (first CI run pending).
 4. Remaining dashboard panes, map with shared overlay data, settings (after the design review).
 
 ### QA. Quality reviewer (no feature ownership; writes only `docs/agent-logs/qa.md`, `docs/hardware-validation.md` notes and GitHub issues)

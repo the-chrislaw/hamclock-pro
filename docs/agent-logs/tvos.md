@@ -15,3 +15,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Owner approved all four design recommendations on #157 (compat layer, TV panes, iCloud KVS settings, HCP_CORE_WITHOUT_QT). Design PR and tvos.yml already merged.
 - Backlog 3 prep: Qt-free SWPC port in apple/tvos/Core (strict JSON reader + Kp/flux/X-ray parsers, ISO time). Tested on the same real NOAA fixtures as the Qt oracle; added to the standalone TvOSCore build (6/6 pass on Linux). Other areas' parsers untouched, so no shared CMake option was needed yet.
 - Next: SwiftUI app target (Space weather + clock) with C bridge to this core and Simulator screenshot artifact.
+
+## 2026-10-14 (fourth run)
+- Backlog 3: C ABI (`apple/tvos/Core/hcpcore.h/.cpp`, tested on Linux 7/7), SwiftUI app shell (UTC clock + Kp / solar flux / X-ray cards with Stale/Offline labels, honest User-Agent, NOAA attribution), `project.yml` for XcodeGen, and an `app` job in tvos.yml that builds for the Simulator, launches, and uploads a screenshot artifact.
+- Swift/Xcode could not be run in the Linux sandbox; the first tvos.yml run on the PR is the real check and may need follow-up fixes.
+- Next: fix any CI findings, then item 4 (panes, map, settings).
