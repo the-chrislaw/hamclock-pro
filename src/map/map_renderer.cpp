@@ -378,6 +378,12 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
         QPen pen(coast); pen.setWidthF(1); pen.setCosmetic(true);
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);
         painter.drawPath(coast_);
+        if (scene.borders) {
+            QColor bc = coast; bc.setAlpha(150);
+            QPen bp(bc); bp.setWidthF(1); bp.setCosmetic(true); bp.setStyle(Qt::DashLine);
+            painter.setPen(bp);
+            painter.drawPath(borders_);
+        }
         if (scene.style && !scene.style->image.isNull()) {
             painter.setOpacity(std::clamp(scene.style->opacity, 0.0, 1.0));
             painter.setRenderHint(QPainter::SmoothPixmapTransform);
