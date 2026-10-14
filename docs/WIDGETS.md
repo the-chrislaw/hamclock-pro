@@ -107,7 +107,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 **Audit additions (D):**
 6. Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
 7. 🟡 (maximum TLE age of 30 days done) Satellite rise/set alert; user-supplied TLE.
-8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. Planets on the map. 11. Yearly sunrise/sunset ("grayline") chart.
+8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; visibility and magnitude at DE not done) Next solar eclipse pane. 10. ✅ Planets on the map (offline): Mercury to Saturn sub-planet points as overlay layer "planets", plus a pane of the planets above the horizon at DE; Uranus and Neptune not included. 11. Yearly sunrise/sunset ("grayline") chart.
 12. Moon pane image with phase, linked to the EME tool. 13. Launches pane. 14. Balloons pane.
 
 **Owner request (Oct 14): satellite detail box.** Tapping a satellite (map marker or Satellites pane row) opens a small, non-modal box using area G's tap-for-details mechanism (G0); closes on tap outside or Back. Contents, compact at 1024×600:
@@ -243,6 +243,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
 | Next solar eclipse: date, type, greatest-eclipse time and countdown, worldwide (Meeus ch. 54, offline, checked against NASA catalogue values; not visibility at DE) | D | Partial (not on the default dashboard) |
+| Planets: Mercury, Venus, Mars, Jupiter, Saturn above the horizon at DE (elevation, azimuth) and their sub-planet points on the map (JPL approximate elements, about 0.2°, offline; checked against almanac oppositions and elongations; not on the default dashboard) | D | Working |
 | EME: Moon az/el at DE and DX, next mutual window (Moon above both horizons), distance and path loss vs perigee (offline) | D | Partial (not on the default dashboard; geometric visibility only) |
 | DE/DX current weather (Open-Meteo) | E | Working (conditions, wind, temperature, humidity, pressure, cloud cover, 3 h pressure trend; no forecast or popup yet) |
 | Earthquakes M2.5+ past day (USGS): strongest event, count, recent list (pane + map overlay: dots sized and coloured by magnitude, labelled "M6.8", removed when data is not live; nearest quake to DE) | H | **Live** |

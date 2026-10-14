@@ -51,3 +51,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - User-chosen satellites (backlog D3): the map layer now tracks at most two satellites (was all eight): `[satellites] tracked=AO-7,ISS` in options.ini (read-only, no AppSettings change), else the two with the soonest passes (first two without a station). Test covers default, choice, unknown names, cap. No settings control yet (shared settings UI, left for a later slice).
 - Open PRs: #181, #182 (not mine, CI still running / failing tvOS check), #73 left alone. No `[D]` QA issues.
 - Next: settings control for the choice, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 9
+- Planets (backlog D10): `src/domain/astro_planets.*` (JPL approximate Keplerian elements, precessed to date) and `src/widgets/planets/` (compact pane of the planets above the horizon at DE, highest first; map layer "planets" with the five sub-planet points). Test checks Mars 2025 and 2027, Jupiter 2026 and Saturn 2025 oppositions and Venus inferior conjunction (2025-03-23) to within 2 days, Venus elongations (47.2 deg 2025-01-10, 45.9 deg 2025-06-01) and Mars distance 0.642 AU; ephemeris dates are from memory of almanac listings (my first recollections of two dates were wrong and the test dates were corrected to the published ones, the code was not adjusted to fit). Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device).
+- Not mine: #73 conflicting; #186, #189 have a failing macOS universal build, #190 pending; left alone.
+- Next: settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key), yearly grayline chart (D11).
