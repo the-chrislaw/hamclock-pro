@@ -5,7 +5,9 @@
 #include "../quakes_parse.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
+#include "../../../ui/app_settings.hpp"
 #include <QDir>
+#include <QTemporaryDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QTimeZone>
@@ -55,7 +57,10 @@ int main(int argc, char** argv) {
         {"properties":{"mag":3,"time":1},"geometry":{"coordinates":[200,2,3]}}]})");
     check(skipped.ok && skipped.quakes.empty() && !quakes::strongest(skipped), "malformed rows skipped");
 
+    QTemporaryDir tmp;
+    AppSettings settings(tmp.filePath("station.conf"), tmp.path());
     WidgetContext context;
+    context.settings = &settings;
     bool fail_all = false;
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
@@ -76,6 +81,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "live" && model.hasData() && model.count() == 8, "fresh -> live");
     check(model.strongestMagnitude() == 6.8 && model.strongestText().startsWith("Strong · "), "strongest text");
+    check(model.nearestText().isEmpty(), "no station -> no nearest line");
+    check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "station saved");
+    const auto near = model.nearestText();
+    check(near.startsWith("M") && near.contains(" km ") && near.contains(" of DE · "), "nearest line with station");
     check(model.recent().size() == 6, "recent capped at 6");
     check(model.updatedAt() == feed.generated, "updatedAt is the feed build time");
     {

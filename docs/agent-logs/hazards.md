@@ -44,3 +44,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H4 slice 1: active fires (`src/widgets/fires`): NASA FIRMS keyless regional VIIRS CSV (US + Hawaii, 24 h, ~110 KB), parser by header column, model (count, high-confidence count, strongest FRP, newest overpass), compact card, map overlay (60 strongest non-low-confidence, triangles, red >= 50 MW). Fixture is 40 rows trimmed from a real capture (2026-10-14). Terms recorded in the roadmap. Screenshots checked at 800x480, 1024x600, 1920x1080 light/dark (detail line shown at all sizes). ASan/UBSan run.
 - Next: marine region filter; lightning and nets once #142 is resolved; fires near DE once the station is reachable from the widget context.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-14 05:00 UTC
+- Step 1: merged #168 (F3, green). #169 (G) had CI running, #73 (other area) left alone. No PRs of mine open; no `qa` issues for [H]. #142 allowlist still open: api.netlogger.org, data.blitzortung.org, metoc.navy.mil still unreachable, so lightning, nets and JTWC stay blocked.
+- H1 slice 3: quakes pane shows "Nearest M4.1 · 820 km NW of DE · 3 h ago" using the saved DE station (great-circle distance, 8-point bearing); hidden until a station is configured and refreshed when the station changes. Tests cover no-station and with-station. Debug and ASan/UBSan quakes tests pass. The quakes card is not on the default dashboard, so I could not screenshot the new row at 800x480, 1024x600, 1920x1080; it is a single elided text line. Not validated visually.
+- Next: marine/firewx filter by DE, fires near DE; lightning and nets once #142 is resolved.
+- Blocked: lightning and NetLogger on allowlist (#142).

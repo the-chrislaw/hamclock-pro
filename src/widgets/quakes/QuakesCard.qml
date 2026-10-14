@@ -16,6 +16,12 @@ Card {
                       : available && widget.strongestMagnitude >= 6 ? Theme.warn : Theme.ink
             Layout.fillWidth: true
         }
+        Text {
+            visible: widget && widget.nearestText !== ""
+            text: widget ? "Nearest " + widget.nearestText : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
         Repeater {
             model: root.compact || !widget ? [] : widget.recent
             delegate: RowLayout {
