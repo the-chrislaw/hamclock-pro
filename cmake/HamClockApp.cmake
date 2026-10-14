@@ -22,6 +22,7 @@ set_target_properties(hamclock-widgets PROPERTIES AUTOMOC ON)
 add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/main.cpp
     src/ui/station_model.cpp
+    src/ui/time_zone_search.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
     src/qt/de_time_zone.cpp
@@ -34,7 +35,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -113,6 +114,12 @@ if(BUILD_TESTING)
     add_test(NAME widget-core-regression COMMAND widget-core-regression)
     set_tests_properties(widget-core-regression PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-core;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-core")
+    add_executable(time-zone-search-regression tests/time_zone_search_regression.cpp src/ui/time_zone_search.cpp)
+    target_include_directories(time-zone-search-regression PRIVATE src)
+    target_link_libraries(time-zone-search-regression PRIVATE Qt6::Core)
+    set_target_properties(time-zone-search-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME time-zone-search-regression COMMAND time-zone-search-regression)
+    set_tests_properties(time-zone-search-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)

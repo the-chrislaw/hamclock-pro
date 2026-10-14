@@ -38,3 +38,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 5)
 - Issue #150 (data never refreshes): added a timer-driven multi-cycle test for `PolledSource` (1 s interval, no `refreshNow`, >= 3 fetches). It passes on current code, so the shared timer/re-arm logic is not the cause; the earlier tests only used `refreshNow`. Remaining suspects are per-widget parsing (X-ray "missing" despite fresh data, area B) and the card age showing the slowest feed (per-value freshness, `Card` footer). ctest 94/94. Not validated on a device.
 - #161/#162 (areas G/H) had checks still running; #73 stale. Next: per-value freshness in `Card`, #151 time zone picker, side panes.
+
+## 2026-10-14 (hourly run, 6)
+- Issue #151 (time zone picker): Settings > Station now uses `TimeZonePicker` (button + searchable popup: city/region filter, "City (UTC-7)" labels with the current offset, Up/Down/Enter/Escape, "Use this device's zone"); the system zone is preselected when none is saved. C++ side is `TimeZoneSearch` (`timeZones` context property) with `time-zone-search-regression`. ctest 105/105. Not done: suggesting the zone from DE/DX coordinates (needs a coordinate-to-zone table; with 0b location lookup). The popup is not reachable from `--screenshot`, so its layout is unchecked visually. ASan/UBSan left to CI. Not validated on a device.
+- #170 (area H) had macOS/iPad checks running; #73 stale. Next: coordinate-based zone suggestion, per-value freshness in `Card`, side panes.

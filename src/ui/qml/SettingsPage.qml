@@ -67,7 +67,8 @@ Rectangle {
                                     text: appSettings.configured ? appSettings.dxLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
-                    FormField { id: zone; label: "Time zone (IANA, e.g. America/Los_Angeles)"; text: appSettings.deZone }
+                    TimeZonePicker { id: zone; label: "Time zone"
+                                     zoneId: appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone() }
                     RowLayout {
                         Text { id: stationError; color: Theme.bad; font.pixelSize: Theme.fontCaption
                                wrapMode: Text.WordWrap; Layout.fillWidth: true }
@@ -78,7 +79,7 @@ Rectangle {
                                 const values = [num(deLat.text), num(deLon.text), num(dxLat.text), num(dxLon.text)]
                                 if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees."; return }
                                 stationError.text = appSettings.saveStation(callsign.text, values[0], values[1],
-                                                                            values[2], values[3], zone.text)
+                                                                            values[2], values[3], zone.zoneId)
                             }
                         }
                     }
