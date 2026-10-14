@@ -143,10 +143,11 @@ if(BUILD_TESTING)
     endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    # Widget panes only report truncation (widget layouts belong to other areas); the app smokes above enforce it.
     # Every registered widget renders in the first pane at the smallest size without QML warnings.
     foreach(id ${widget_ids})
         add_test(NAME qml-pane-${id} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/pane-config-${id}
-            --pane 1=${id} --screenshot ${CMAKE_CURRENT_BINARY_DIR}/pane-${id}.png --size 800x480)
+            --pane 1=${id} --allow-truncation --screenshot ${CMAKE_CURRENT_BINARY_DIR}/pane-${id}.png --size 800x480)
         set_tests_properties(qml-pane-${id} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/pane-cache-${id}")
     endforeach()

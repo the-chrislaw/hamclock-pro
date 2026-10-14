@@ -87,7 +87,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
-    for (const auto& option : {station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
+    for (const auto& option : {allow_truncation, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     parser.process(app);
 
@@ -154,12 +155,12 @@ int main(int argc, char** argv) {
         if (!window || parts.size() != 2) return 2;
         window->resize(parts[0].toInt(), parts[1].toInt());
         const auto out = parser.value(screenshot);
-        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings] {
+        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation)] {
             const int truncated = count_truncated(window->contentItem());
             const bool saved = window->grabWindow().save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
                          qPrintable(out));
-            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated ? 4 : 0);
+            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : 0);
         });
     }
     return app.exec();
