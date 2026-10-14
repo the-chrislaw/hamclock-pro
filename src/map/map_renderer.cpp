@@ -2,6 +2,7 @@
 #include "../qt/land_fill_path.hpp"
 #include "borders.hpp"
 #include "states.hpp"
+#include "cities.hpp"
 #include "coastline.hpp"
 #include "land.hpp"
 #include "path.hpp"
@@ -226,6 +227,25 @@ void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, con
             if (!rect) continue;
             used_rects.push_back(*rect);
             painter.setPen(dark ? QColor("#e6eef0") : QColor("#1b2a30"));
+            painter.drawText(QPointF(rect->left(), rect->top() + fm.ascent()), text);
+        }
+    }
+    if (scene.cities) { // lowest priority: biggest cities first, skipping anything already occupied
+        const auto fm = painter.fontMetrics();
+        const QColor ink = dark ? QColor("#c9d3d6") : QColor("#34454b");
+        const double r = 2 * ui;
+        for (const auto& c : cities) {
+            const auto at_c = geo.at({c.latitude, c.longitude});
+            if (!at_c || !view.contains(*at_c)) continue;
+            const QString text = QString::fromLatin1(c.name);
+            const auto rect = place_label(view, *at_c, r, QSizeF(fm.horizontalAdvance(text), fm.height()), used_rects);
+            if (!rect) continue;
+            const QRectF dot(at_c->x() - r, at_c->y() - r, 2 * r, 2 * r);
+            used_rects.push_back(dot);
+            used_rects.push_back(*rect);
+            painter.setPen(Qt::NoPen); painter.setBrush(ink);
+            painter.drawEllipse(*at_c, r, r);
+            painter.setPen(ink);
             painter.drawText(QPointF(rect->left(), rect->top() + fm.ascent()), text);
         }
     }

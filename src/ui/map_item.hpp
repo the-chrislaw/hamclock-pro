@@ -20,6 +20,7 @@ class MapItem : public QQuickPaintedItem {
     Q_PROPERTY(bool longPath READ longPath WRITE setLongPath NOTIFY longPathChanged)
     Q_PROPERTY(bool borders READ borders WRITE setBorders NOTIFY bordersChanged)
     Q_PROPERTY(bool states READ states WRITE setStates NOTIFY statesChanged)
+    Q_PROPERTY(bool cities READ cities WRITE setCities NOTIFY citiesChanged)
     Q_PROPERTY(bool gray READ gray WRITE setGray NOTIFY grayChanged)
     Q_PROPERTY(bool skyPoints READ skyPoints WRITE setSkyPoints NOTIFY skyPointsChanged)
     Q_PROPERTY(bool nightShade READ nightShade WRITE setNightShade NOTIFY nightShadeChanged)
@@ -55,10 +56,12 @@ public:
     bool longPath() const { return options_.long_path; }
     bool borders() const { return options_.borders; }
     bool states() const { return options_.states; }
+    bool cities() const { return options_.cities; }
     bool gray() const { return options_.gray; }
     void setGray(bool on);
     void setBorders(bool on);
     void setStates(bool on);
+    void setCities(bool on);
     bool skyPoints() const { return options_.sky_points; }
     void setSkyPoints(bool on);
     void setLongPath(bool on);
@@ -100,6 +103,7 @@ signals:
     void grayChanged();
     void bordersChanged();
     void statesChanged();
+    void citiesChanged();
     void longPathChanged();
     void labelModeChanged();
     void gridChanged();
