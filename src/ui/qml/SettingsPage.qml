@@ -205,6 +205,15 @@ Rectangle {
                                     text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
                                     onClicked: lan = !lan; Layout.preferredWidth: 2 }
                     }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: aprsHost; label: "APRS-IS server (receive-only)"; text: appSettings.aprsHost; Layout.preferredWidth: 3 }
+                        FormField { id: aprsPort; label: "Port"; text: appSettings.aprsPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                        FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     RowLayout {
                         Layout.fillWidth: true
@@ -229,6 +238,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveAdifPath(adifPath.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
                                     } }
