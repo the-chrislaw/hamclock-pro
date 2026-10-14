@@ -1,7 +1,9 @@
 // Tropical storms widget: parser and model, offline.
 // Fixture is a trimmed real NHC CurrentStorms.json captured 2026-10-13 (two East Pacific storms).
 #include "../storms_model.hpp"
+#include "../storms_overlay.hpp"
 #include "../storms_parse.hpp"
+#include "../../../map/overlay.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
 #include <QDir>
@@ -72,6 +74,18 @@ int main(int argc, char** argv) {
     check(model.headline() == "Simon" && model.headlineIntensity() == "Hurricane cat 1 · 80 kt · 977 mb" && model.headlineCategory() == 1, "headline");
     check(model.headlineDetail() == "moving W 2 kt · 20.2N 107.5W · issued 13 21:00Z", "detail text");
     check(model.others().size() == 1, "one other storm");
+    {
+        const auto& layers = MapOverlays::instance().layers();
+        check(layers.size() == 1 && layers[0].id == "storms" && layers[0].markers.size() == 2, "live -> storms on the map");
+        const auto& m = layers[0].markers;
+        check(m[0].prefix == "Simon" && m[0].color == QColor("#e08a1e") && m[0].shape == OverlayShape::Diamond, "strongest first, cat 1 orange");
+        check(m[0].where.latitude == 20.2 && m[0].where.longitude == -107.5, "marker at storm position");
+        check(m[0].size_px > m[1].size_px, "stronger storm drawn larger");
+        model.setMapVisible(false);
+        check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+        model.setMapVisible(true);
+        check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    }
 
     fail_all = true;
     now = now.addSecs(13 * 3600);
@@ -79,6 +93,7 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
+    check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");
 
     std::cout << "Storms: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

@@ -1,4 +1,6 @@
 #include "storms_model.hpp"
+#include "storms_overlay.hpp"
+#include "../../map/overlay.hpp"
 #include "../../net/polled_source.hpp"
 #include <QTimer>
 
@@ -58,7 +60,25 @@ QVariantList StormsModel::others() const {
     return out;
 }
 
+StormsModel::~StormsModel() { MapOverlays::instance().remove_layer(storms::kOverlayLayerId); }
+
+void StormsModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Never keep markers for data that is not live.
+void StormsModel::publishOverlay() {
+    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(storms::overlay_layer(feed_.storms));
+    else MapOverlays::instance().remove_layer(storms::kOverlayLayerId);
+}
+
 void StormsModel::refreshState() {
+    refreshStateImpl();
+    publishOverlay();
+}
+
+void StormsModel::refreshStateImpl() {
     if (!feed_.ok) {
         if (!source_->lastError().isEmpty()) setState("offline", "NHC unreachable: " + source_->lastError());
         else if (source_->fetchedAt().isValid()) setState("stale", "NHC returned no usable storm data");
