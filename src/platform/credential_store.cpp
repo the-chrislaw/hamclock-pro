@@ -20,7 +20,10 @@ QJsonObject readAll(const QString& path) {
 }
 
 bool writeAll(const QString& path, const QJsonObject& obj) {
-    QDir().mkpath(QFileInfo(path).absolutePath());
+    const QString dir = QFileInfo(path).absolutePath();
+    QDir().mkpath(dir);
+    // Keep the containing directory owner-only too (best effort).
+    QFile::setPermissions(dir, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
     QSaveFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {
         return false;

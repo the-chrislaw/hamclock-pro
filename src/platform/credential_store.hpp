@@ -19,7 +19,8 @@ public:
     virtual bool remove(const QString& key) = 0;
 };
 
-// Owner-only (0600) JSON file; used on Linux/Pi and as the portable fallback.
+// Owner-only (0600) JSON file in a 0700 directory; used on Linux/Pi and as the
+// portable fallback. Values are stored in clear text (no encryption at rest).
 class FileCredentialStore final : public CredentialStore {
 public:
     explicit FileCredentialStore(QString path);
