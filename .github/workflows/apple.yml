@@ -228,6 +228,25 @@ jobs:
               echo "retag failed: $o"
           done < objs.txt
           head -1 objs.txt | xargs xcrun vtool -show-build | head -8
+          # The kit's static libraries (libQt6Quick_debug.a, ...) carry the same
+          # device tag on their members: unpack, retag and repack each archive.
+          find "$QTIOS" -name '*.a' > archives.txt
+          echo "retagging members of $(wc -l < archives.txt) archives"
+          while IFS= read -r a; do
+            if [ -n "$(xcrun ar -t "$a" 2>/dev/null | grep -v '^__.SYMDEF' | sort | uniq -d | head -1)" ]; then
+              echo "skip (duplicate member names): $a"; continue
+            fi
+            d=$(mktemp -d)
+            ( cd "$d" && xcrun ar -x "$a" ) || { echo "unpack failed: $a"; rm -rf "$d"; continue; }
+            for m in "$d"/*.o; do
+              [ -e "$m" ] || continue
+              xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "$m" "$m" >/dev/null 2>&1 ||
+                xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "$m" "$m" >/dev/null 2>&1 ||
+                echo "retag failed: $m"
+            done
+            xcrun libtool -static -o "$d/new.a" "$d"/*.o 2>/dev/null && cp "$d/new.a" "$a" || echo "repack failed: $a"
+            rm -rf "$d"
+          done < archives.txt
           "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
           if ! cmake --build build-sim --config Debug --target hamclock-pro -- \

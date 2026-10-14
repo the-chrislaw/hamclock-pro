@@ -92,3 +92,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; #257/#258/#73 are other areas' (checks running), left alone.
 - Read main run 38594851712 (retag experiment): the retag loop itself reached the objects but died with "xargs: command line cannot be assembled, too long" (BSD `xargs -I` caps the substituted command at 255 bytes; the kit paths are long), so the Simulator link was never tried. Replaced the xargs with a `while read` loop. Still informational; no screenshot or on-device claim yet.
 - Next: read this PR's Simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
+
+## 2026-10-14 (sixteenth hourly run)
+- No qa issues for area F; merged #266 (green, other area); #73 conflicting, #267 checks running, left alone.
+- Read the Simulator log on #266: the object retag worked (the qrc objects now link) but the link still failed on `libQt6Quick_debug.a[arm64][5](qquickhandlerpoint.cpp.o)` built for 'iOS': the kit's static archives carry the device tag too. Experiment: unpack each kit `.a`, retag the members with vtool, repack with libtool (skipping archives with duplicate member names, printed). Still informational; no screenshot or on-device claim yet.
+- Next: read this PR's Simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
