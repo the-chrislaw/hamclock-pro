@@ -1,4 +1,5 @@
 #include "view_options.hpp"
+#include "styles.hpp"
 #include <QSettings>
 #include <algorithm>
 namespace hamclock {
@@ -22,6 +23,10 @@ void MapViewOptions::load(const QString& ini_path) {
     label_mode = (mode >= 0 && mode <= static_cast<int>(OverlayLabelMode::Dot)) ? mode : -1;
     night_shade = ini.value("map/night", true).toBool();
     path = ini.value("map/path", true).toBool();
+    style = ini.value("map/style").toString().left(64);
+    const int rot = ini.value("map/rotation", 0).toInt();
+    const auto& allowed = style_rotation_intervals();
+    rotation_s = std::find(allowed.begin(), allowed.end(), rot) != allowed.end() ? rot : 0;
 }
 bool MapViewOptions::save(const QString& ini_path) const {
     QSettings ini(ini_path, QSettings::IniFormat);
@@ -31,6 +36,8 @@ bool MapViewOptions::save(const QString& ini_path) const {
     ini.setValue("map/labels", label_mode);
     ini.setValue("map/night", night_shade);
     ini.setValue("map/path", path);
+    ini.setValue("map/style", style);
+    ini.setValue("map/rotation", rotation_s);
     ini.sync();
     return ini.status() == QSettings::NoError;
 }

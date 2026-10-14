@@ -156,7 +156,7 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 ### G. Map and overlays (owns `src/map/`, `src/ui/map*`, `src/ui/qml/Map*`, `src/qt/world_map_widget*`, `src/widgets/mapoverlay*`) — split from A on Oct 13
 Takes over map work from area A (A4, A9, A10, and the map part of A0a) so layout and map proceed in parallel.
 **Owner priority (Oct 13): the map is the biggest gap against the original. Spots on the map, projections + tap, grids/zones and propagation styles are all wanted, in parallel.** Order below is chosen so other areas can start drawing on the map as early as possible.
-0. 🔴 (slices 1-2 done: Map button, layer/night/path/label toggles, saved; tap empty map -> Set DE/Set DX popup; styles, grids, projection, marker detail popup remain) **Owner priority (Oct 14): map controls on the map, as in the original.** The original's core interaction is the map's own buttons/menu, not separate panes. Today the overlays exist (named layers with a `visible` flag) but there is no way to toggle them, so do this before the remaining G items:
+0. 🔴 (slices 1-3 done: Map button, layer/night/path/label toggles, saved; tap empty map -> Set DE/Set DX popup; base style choice + rotation in the menu, saved; grids, projection, marker detail popup remain) **Owner priority (Oct 14): map controls on the map, as in the original.** The original's core interaction is the map's own buttons/menu, not separate panes. Today the overlays exist (named layers with a `visible` flag) but there is no way to toggle them, so do this before the remaining G items:
    - A small "Map" button in a corner of the map card (large enough to tap on the 7-inch screen, keyboard/remote accessible) opening a Map View menu.
    - Layers, each on/off independently of which panes are shown: DX cluster spots, PSKReporter/RBN/WSPR, POTA/SOTA, satellites, NCDXF beacons, quakes, storms, other hazards, DE/DX path, night shading, labels (None/Prefix/Call/Dot).
    - Base style (Countries/Terrain and the styles registered through G3), with style rotation on/off.
@@ -227,7 +227,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | Widget | Area | State |
 |---|---|---|
 | Station + clocks + DE local time | A | Working (QML); dashboard page scrolls (touch flick) when widgets exceed the screen, map keeps a full 2:1 size |
-| World map, day/night, path | G | Working (Map button + View menu: per-layer on/off, night shade, path, label mode, saved in options.ini [map]; projection/grid/style entries and tap popups follow; QML, pure QPainter renderer, no QtWidgets; styles registry with legend (no image styles published yet); fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
+| World map, day/night, path | G | Working (Map button + View menu: per-layer on/off, night shade, path, label mode, saved in options.ini [map]; base style + rotation entries (shown once styles are published); projection/grid entries follow; QML, pure QPainter renderer, no QtWidgets; styles registry with legend (no image styles published yet); fills its card, crops polar rows to at least ±70°; the legacy QWidget map remains only for the old dashboard) |
 | Space weather: Kp, SFI, X-ray | B | **Live** |
 | Solar wind speed/density, IMF Bz/Bt with 1 h sparklines (SWPC RTSW) | B | **Live** |
 | Solar trend: sunspot number, 30-day flux trend, 3-day Kp bars (SWPC) | B | **Live** |

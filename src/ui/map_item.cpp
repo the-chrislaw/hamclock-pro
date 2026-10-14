@@ -33,16 +33,20 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.route_visible = options_.path;
     scene_.night_shade = options_.night_shade;
     syncOverlays();
+    applyStyleOptions();
     auto sync_style = [this] {
         const auto* st = MapStyles::instance().active(QDateTime::currentMSecsSinceEpoch());
         scene_.style = st ? std::optional<MapStyle>(*st) : std::nullopt;
     };
     sync_style();
-    style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); });
+    style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); emit styleChanged(); });
     // The registry is process-wide; the callback only ever runs on the GUI thread.
     overlay_token_ = MapOverlays::instance().on_change([this] { syncOverlays(); emit layersChanged(); });
     minute_timer_.setInterval(kSolarRefreshMs);
-    connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] { sync_style(); refresh_sun(); });
+    connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] {
+        // Styles published after start join the rotation.
+        if (options_.rotation_s > 0 && MapStyles::instance().styles().size() != rotation_count_) applyStyleOptions();
+        sync_style(); refresh_sun(); });
     minute_timer_.start();
     connect(this, &QQuickItem::widthChanged, this, [this] { update(); });
     connect(this, &QQuickItem::heightChanged, this, [this] { update(); });
@@ -148,6 +152,46 @@ void MapItem::setLabelMode(int mode) {
     saveOptions();
     syncOverlays();
     emit labelModeChanged();
+}
+
+// The registry is process-wide; the saved choice is pushed into it. Styles that are
+// not published (yet) are skipped by the registry, never faked.
+void MapItem::applyStyleOptions() {
+    auto& reg = MapStyles::instance();
+    reg.select(options_.style);
+    std::vector<QString> ids;
+    if (options_.rotation_s > 0)
+        for (const auto& st : reg.styles()) ids.push_back(st.id);
+    rotation_count_ = ids.size();
+    reg.set_rotation(options_.rotation_s, std::move(ids));
+}
+
+QStringList MapItem::styleIds() const {
+    QStringList ids;
+    for (const auto& st : MapStyles::instance().styles()) ids << st.id;
+    return ids;
+}
+
+QVariantList MapItem::rotationChoices() const {
+    QVariantList out;
+    for (int s : style_rotation_intervals()) out << s;
+    return out;
+}
+
+void MapItem::setStyle(const QString& id) {
+    if (id == options_.style) return;
+    options_.style = id;
+    saveOptions();
+    applyStyleOptions();
+}
+
+void MapItem::setRotation(int seconds) {
+    const auto& allowed = style_rotation_intervals();
+    if (seconds != 0 && std::find(allowed.begin(), allowed.end(), seconds) == allowed.end()) seconds = 0;
+    if (seconds == options_.rotation_s) return;
+    options_.rotation_s = seconds;
+    saveOptions();
+    applyStyleOptions();
 }
 
 void MapItem::setShowPath(bool show) {

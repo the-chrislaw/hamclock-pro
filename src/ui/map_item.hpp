@@ -5,6 +5,7 @@
 #include "../map/map_renderer.hpp"
 #include "../map/view_options.hpp"
 #include <QTimer>
+#include <QVariantList>
 class QMouseEvent;
 
 namespace hamclock {
@@ -20,6 +21,11 @@ class MapItem : public QQuickPaintedItem {
     // -1 = each layer's own labels, else 0 None, 1 Prefix, 2 Call, 3 Dot.
     Q_PROPERTY(int labelMode READ labelMode WRITE setLabelMode NOTIFY labelModeChanged)
     Q_PROPERTY(QStringList layerIds READ layerIds NOTIFY layersChanged)
+    // Base style id ("" = plain map) and rotation interval in seconds (0 = off).
+    Q_PROPERTY(QString style READ style WRITE setStyle NOTIFY styleChanged)
+    Q_PROPERTY(int rotation READ rotation WRITE setRotation NOTIFY styleChanged)
+    Q_PROPERTY(QStringList styleIds READ styleIds NOTIFY styleChanged)
+    Q_PROPERTY(QVariantList rotationChoices READ rotationChoices CONSTANT)
     Q_PROPERTY(double zoom READ zoom WRITE setZoom NOTIFY zoomChanged)
 public:
     explicit MapItem(QQuickItem* parent = nullptr);
@@ -41,6 +47,12 @@ public:
     int labelMode() const { return options_.label_mode; }
     void setLabelMode(int mode);
     QStringList layerIds() const;
+    QString style() const { return options_.style; }
+    void setStyle(const QString& id);
+    int rotation() const { return options_.rotation_s; }
+    void setRotation(int seconds);
+    QStringList styleIds() const;
+    QVariantList rotationChoices() const;
     // Map View menu: per-layer visibility, independent of which panes are shown.
     Q_INVOKABLE bool layerVisible(const QString& id) const { return options_.layer_visible(id); }
     Q_INVOKABLE void setLayerVisible(const QString& id, bool on);
@@ -58,6 +70,7 @@ signals:
     void nightShadeChanged();
     void labelModeChanged();
     void layersChanged();
+    void styleChanged();
     // A tap (no drag) on the map: the location under the finger, for Set DE / Set DX.
     void tapped(double latitude, double longitude);
 
@@ -71,11 +84,13 @@ private:
     bool dragging_ = false;
     void syncStation();
     void syncOverlays();
+    void applyStyleOptions();
     void saveOptions();
     MapViewOptions options_;
     MapRenderer renderer_;
     MapScene scene_;
     QTimer minute_timer_;
+    std::size_t rotation_count_ = 0;
     int overlay_token_ = 0, style_token_ = 0;
 };
 

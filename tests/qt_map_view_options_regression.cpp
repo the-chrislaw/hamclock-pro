@@ -41,6 +41,14 @@ int main(int argc, char** argv) {
     check(o.save(ini), "save");
     MapViewOptions r; r.load(ini);
     check(r.hidden_layers == o.hidden_layers && r.label_mode == 3 && !r.night_shade && !r.path, "round trip");
+    check(r.style.isEmpty() && r.rotation_s == 0, "style defaults");
+    o.style = "aurora"; o.rotation_s = style_rotation_intervals().back();
+    check(o.save(ini), "save style");
+    MapViewOptions rs; rs.load(ini);
+    check(rs.style == "aurora" && rs.rotation_s == o.rotation_s, "style round trip");
+    { QFile g(ini); g.open(QIODevice::WriteOnly | QIODevice::Append); g.write("\n[map]\nrotation=7\n"); }
+    MapViewOptions rb; rb.load(ini);
+    check(rb.rotation_s == 0, "unknown rotation interval rejected");
     MapViewOptions missing; missing.load(dir.filePath("none.ini"));
     check(missing.layer_visible("spots") && missing.night_shade && missing.label_mode == -1, "missing file gives defaults");
 
