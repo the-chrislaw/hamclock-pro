@@ -32,6 +32,9 @@ struct SatPass {
     double max_el_deg = 0;
 };
 
+// One az/el sample of a pass, for the sky plot.
+struct PassSample { std::int64_t t = 0; double az_deg = 0, el_deg = 0; };
+
 class SatellitePropagator {
 public:
     explicit SatellitePropagator(const Tle& tle);
@@ -48,6 +51,9 @@ public:
     // Passes above min_el_deg starting after `from`, within the horizon, up to max_passes.
     std::vector<SatPass> passes(const Observer& obs, double from, double horizon_s,
                                 double min_el_deg, int max_passes) const;
+
+    // Az/el samples from AOS to LOS inclusive, at most `max_samples` (>= 2) evenly spaced.
+    std::vector<PassSample> pass_track(const Observer& obs, const SatPass& pass, int max_samples) const;
 
 private:
     struct Impl;
