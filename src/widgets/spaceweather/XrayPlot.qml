@@ -21,11 +21,13 @@ Canvas {
         ctx.lineWidth = 1
         ctx.strokeStyle = Theme.divider
         ctx.fillStyle = Theme.secondary
-        ctx.font = Math.round(Theme.fontCaption * 0.8) + "px sans-serif"
+        var fontPx = Math.round(Theme.fontCaption * 0.8)
+        ctx.font = fontPx + "px sans-serif"
+        var showLabels = (height - 2 * pad) * 0.2 >= fontPx + 2
         var marks = [["B", 0.2], ["C", 0.4], ["M", 0.6], ["X", 0.8]]
         for (var m = 0; m < marks.length; ++m) {
             ctx.beginPath(); ctx.moveTo(0, y(marks[m][1])); ctx.lineTo(width, y(marks[m][1])); ctx.stroke()
-            if (height > 48) ctx.fillText(marks[m][0], 2, y(marks[m][1]) - 2)
+            if (showLabels) ctx.fillText(marks[m][0], 2, y(marks[m][1]) - 2)
         }
         ctx.lineWidth = Math.max(1.5, 1.5 * Theme.scale)
         ctx.lineJoin = "round"

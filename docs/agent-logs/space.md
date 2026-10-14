@@ -28,3 +28,11 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Space weather card now plots the last 24 h of GOES 0.1-0.8 nm flux (10-minute peaks, log axis A1 to X10, B/C/M/X lines; line turns amber/red at M/X). Separate source `xrays-1-day.json` (~650 kB) polled every 15 min; the existing 6 h feed still drives the class value. Plot disappears if the 24 h data goes out of date.
 - Compact card shows a thin plot without class letters; full card a taller one. Checked by offscreen screenshots at 800x480 and 1024x600 (light) and 1920x1080 (dark); not validated on device. The full (non-compact) layout was not rendered because all default panes are compact.
 - Next: 10 (NOAA R/S/G scales), 9 (DST).
+
+## 2026-10-14 (UTC): QA clipping fixes (#120, #121)
+
+- Solar trend compact card uses short labels ("Sunspots", "SFI 30d") and the caption "Sep mean", so the month stays readable at 800x480.
+- X-ray plot draws class letters only when line spacing is at least the font size (no more overprinting at 1920x1080); the full-size plot may take up to 160 px of free height.
+- Checked by offscreen screenshots at 800x480 and 1920x1080 (dark); not validated on device. QML only, no model changes.
+- Merged other areas' green PRs #124 and #125; #73 (docs) still conflicts and was left alone.
+- Next: 10 (NOAA R/S/G scales), 9 (DST).
