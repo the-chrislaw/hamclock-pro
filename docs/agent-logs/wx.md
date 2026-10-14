@@ -37,3 +37,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, sixth run)
 - #175 (area D) had both Linux checks green but Apple jobs still running; #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
 - E10 slice: new read-only `rotator` widget, rotctld client on localhost:4533 sending only `p` (test asserts nothing else is sent). Azimuth/elevation; unconfigured without rotctld; RPRT errors and out-of-range values are not live. Loopback fake rotctld test; not run with a real rotator. No move/track commands (safety review pending). Not on the default dashboard so no screenshot. Next: flrig, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, seventh run)
+- #73 (area A, conflicting), #182/#183/#184 (areas tvOS/D/C) had CI still running: not mine, left alone. No open `qa` issues for E.
+- E6 slice: DX/DE local time. Weather request now uses `timezone=auto`; the parsed `utc_offset_seconds` gives "14:32 (UTC-7)" on each end of the weather card (hidden if the service omits it). City name and a new-DE/DX popup are still pending. Offline tests incl. offset formatting; release + ASan/UBSan weather tests. Card not visually checked (no station in the screenshot harness); not validated on-device. Next: flrig, DX city/popup, E3 feeds (terms check).

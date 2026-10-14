@@ -40,6 +40,7 @@ std::optional<Current> parse_current(const QByteArray& body) {
             first.toDouble() >= 800 && first.toDouble() <= 1100 && last.toDouble() >= 800 && last.toDouble() <= 1100)
             c.pressure_change_hpa = last.toDouble() - first.toDouble();
     }
+    if (number(root, "utc_offset_seconds", -14 * 3600, 14 * 3600, v)) c.utc_offset_s = static_cast<int>(v);
     c.is_day = cur.value("is_day").toDouble(1) != 0;
     return c;
 }
@@ -48,6 +49,14 @@ QString pressure_trend_word(double change_hpa) {
     if (change_hpa > 1.0) return "Rising";
     if (change_hpa < -1.0) return "Falling";
     return "Steady";
+}
+
+QString local_time_text(const QDateTime& utc, int offset_s) {
+    const QString t = utc.toUTC().addSecs(offset_s).toString("HH:mm");
+    const int m = std::abs(offset_s) / 60;
+    QString z = QString("UTC%1%2").arg(offset_s < 0 ? "-" : "+").arg(m / 60);
+    if (m % 60) z += QString(":%1").arg(m % 60, 2, 10, QChar('0'));
+    return t + " (" + z + ")";
 }
 
 QString wmo_description(int code) {
@@ -87,7 +96,7 @@ double celsius_to_fahrenheit(double c) { return c * 9.0 / 5.0 + 32.0; }
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
-                   "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&past_hours=3&forecast_hours=1&timezone=UTC")
+                   "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&past_hours=3&forecast_hours=1&timezone=auto")
         .arg(latitude, 0, 'f', 2).arg(longitude, 0, 'f', 2);
 }
 

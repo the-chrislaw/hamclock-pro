@@ -48,6 +48,14 @@ int main(int argc, char** argv) {
     check(nulls && !nulls->pressure_change_hpa, "null hourly value gives no trend");
     check(weather::pressure_trend_word(2.6) == "Rising" && weather::pressure_trend_word(-2.6) == "Falling" &&
           weather::pressure_trend_word(1.0) == "Steady" && weather::pressure_trend_word(-0.4) == "Steady", "trend words");
+    check(c && c->utc_offset_s == 0, "fixture (timezone=UTC) reports offset 0");
+    const auto zoned = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"utc_offset_seconds":-25200,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3}})");
+    check(zoned && zoned->utc_offset_s == -25200, "utc offset parsed");
+    const auto noon = QDateTime(QDate(2026, 10, 13), QTime(12, 0), QTimeZone::utc());
+    check(weather::local_time_text(noon, -25200) == "05:00 (UTC-7)" && weather::local_time_text(noon, 19800) == "17:30 (UTC+5:30)" &&
+          weather::local_time_text(noon, 0) == "12:00 (UTC+0)", "local time text");
+    check(weather::request_url(1, 2).contains("timezone=auto"), "url asks for local zone");
     check(weather::request_url(1, 2).contains("past_hours=3"), "url asks for hourly pressure");
     check(weather::compass_point(344) == "NNW" && weather::compass_point(0) == "N" &&
           weather::compass_point(360) == "N" && weather::compass_point(348) == "NNW" &&
