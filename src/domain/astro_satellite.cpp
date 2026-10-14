@@ -110,9 +110,9 @@ bool SatellitePropagator::sub_point(double t, SubSatellitePoint& out) const {
     return true;
 }
 
-bool SatellitePropagator::look(double t, const Observer& obs, LookAngle& out) const {
+static bool look_basic(const SatellitePropagator& sp, double t, const Observer& obs, LookAngle& out) {
     double r[3], e[3], o[3];
-    if (!teme(t, r)) return false;
+    if (!sp.teme(t, r)) return false;
     ecef_of_teme(r, t, e);
     const double lat = obs.lat_deg * kDeg, lon = obs.lon_deg * kDeg;
     ecef_of_geodetic(lat, lon, obs.alt_km, o);
@@ -125,6 +125,18 @@ bool SatellitePropagator::look(double t, const Observer& obs, LookAngle& out) co
     out.az_deg = std::fmod(std::atan2(east, north) / kDeg + 360.0, 360.0);
     return true;
 }
+
+bool SatellitePropagator::look(double t, const Observer& obs, LookAngle& out) const {
+    if (!look_basic(*this, t, obs, out)) return false;
+    // Range rate by central difference over +-0.5 s.
+    LookAngle a, b;
+    out.range_rate_km_s = (look_basic(*this, t - 0.5, obs, a) && look_basic(*this, t + 0.5, obs, b))
+                              ? b.range_km - a.range_km : 0.0;
+    return true;
+}
+
+double doppler_downlink_hz(double f_hz, double rate) { return f_hz * (1.0 - rate / 299792.458); }
+double doppler_uplink_hz(double f_hz, double rate) { return f_hz * (1.0 + rate / 299792.458); }
 
 std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double from, double horizon_s,
                                                  double min_el, int max_passes) const {

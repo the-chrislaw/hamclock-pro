@@ -18,8 +18,14 @@ struct Tle {
 std::vector<Tle> parse_tle_set(const std::string& text);
 
 struct SubSatellitePoint { double lat_deg = 0, lon_deg = 0, alt_km = 0; };
-struct LookAngle { double az_deg = 0, el_deg = 0, range_km = 0; };
+struct LookAngle { double az_deg = 0, el_deg = 0, range_km = 0, range_rate_km_s = 0; }; // rate > 0: receding
 struct Observer { double lat_deg = 0, lon_deg = 0, alt_km = 0; };
+
+// Doppler-corrected frequency (Hz) seen at the observer for a transmission of
+// `f_hz` from the satellite: f * (1 - rate/c). Positive range rate lowers it.
+double doppler_downlink_hz(double f_hz, double range_rate_km_s);
+// Frequency to transmit (Hz) so the satellite receives `f_hz`: f * (1 + rate/c).
+double doppler_uplink_hz(double f_hz, double range_rate_km_s);
 
 struct SatPass {
     std::int64_t aos = 0, tca = 0, los = 0; // unix seconds
