@@ -63,4 +63,31 @@ std::optional<double> read_disk_used_fraction(const QString& path) {
     return 1.0 - double(info.bytesAvailable()) / double(info.bytesTotal());
 }
 
+EnvReading read_env_sensor(const QString& iio_root) {
+    const QDir root(iio_root);
+    QStringList devs = root.entryList({"iio:device*"}, QDir::Dirs | QDir::NoDotAndDotDot);
+    std::sort(devs.begin(), devs.end());
+    for (const QString& d : devs) {
+        const QByteArray name = slurp(root.filePath(d + "/name")).trimmed().toLower();
+        if (!name.contains("bme280") && !name.contains("bmp280")) continue;
+        auto num = [&](const char* file, double scale, double lo, double hi) -> std::optional<double> {
+            bool ok = false;
+            const double v = slurp(root.filePath(d + "/" + file)).trimmed().toDouble(&ok) * scale;
+            return ok && v >= lo && v <= hi ? std::optional<double>(v) : std::nullopt;
+        };
+        EnvReading r;
+        r.temp_c = num("in_temp_input", 0.001, -40, 85);
+        r.pressure_hpa = num("in_pressure_input", 10.0, 300, 1100); // kPa -> hPa
+        r.humidity_pct = num("in_humidityrelative_input", 0.001, 0, 100);
+        if (r.any()) return r;
+    }
+    return {};
+}
+
+std::optional<double> dew_point_c(double t, double rh) {
+    if (rh < 1 || rh > 100) return std::nullopt;
+    const double a = 17.62, b = 243.12, g = std::log(rh / 100.0) + a * t / (b + t);
+    return b * g / (a - g);
+}
+
 } // namespace hamclock::sensors

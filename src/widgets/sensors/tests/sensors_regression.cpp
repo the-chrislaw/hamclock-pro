@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
+#include <cmath>
 #include <iostream>
 
 namespace {
@@ -54,8 +55,28 @@ int main(int argc, char** argv) {
     check(du >= 0 && du <= 1, "disk fraction sane");
     check(!sensors::read_disk_used_fraction("/nonexistent/dir"), "bad disk path -> absent");
 
+    check(!sensors::read_env_sensor("/nonexistent/iio").any(), "missing iio tree -> absent");
+    QTemporaryDir iio;
+    put(iio.path() + "/iio:device0/name", "ads1015\n");
+    put(iio.path() + "/iio:device0/in_temp_input", "99000\n");
+    put(iio.path() + "/iio:device1/name", "bme280\n");
+    put(iio.path() + "/iio:device1/in_temp_input", "21500\n");
+    put(iio.path() + "/iio:device1/in_pressure_input", "101.325\n");
+    put(iio.path() + "/iio:device1/in_humidityrelative_input", "50000\n");
+    const auto env = sensors::read_env_sensor(iio.path());
+    check(env.temp_c && *env.temp_c == 21.5 && env.pressure_hpa && std::abs(*env.pressure_hpa - 1013.25) < 1e-6
+              && env.humidity_pct && *env.humidity_pct == 50.0, "reads bme280 fields in hPa/C/%");
+    const double dp = sensors::dew_point_c(21.5, 50).value_or(-99);
+    check(dp > 10.0 && dp < 11.0, "dew point ~10.5 C at 21.5 C / 50 %");
+    check(!sensors::dew_point_c(20, 0), "zero humidity -> no dew point");
+    QTemporaryDir bad;
+    put(bad.path() + "/iio:device0/name", "bmp280\n");
+    put(bad.path() + "/iio:device0/in_temp_input", "x\n");
+    put(bad.path() + "/iio:device0/in_pressure_input", "5.0\n");
+    check(!sensors::read_env_sensor(bad.path()).any(), "implausible/garbage values rejected");
+
     WidgetContext ctx;
-    SensorsModel absent(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir");
+    SensorsModel absent(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio");
     absent.refresh();
     check(absent.state() == "unconfigured" && !absent.hasCpuTemp() && absent.cpuTemp().isEmpty(), "absent hardware degrades cleanly");
     put(r + "/wireless", wl);
@@ -63,5 +84,9 @@ int main(int argc, char** argv) {
     present.refresh();
     check(present.state() == "live" && present.cpuTemp() == "61 °C" && present.cpuNote() == "Normal", "present hardware live");
     check(present.wifi() == "-52 dBm" && present.hasDisk() && present.disk().endsWith("% used"), "wifi and disk shown");
+    SensorsModel envOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", iio.path());
+    envOnly.refresh();
+    check(envOnly.state() == "live" && envOnly.envTemp() == "21.5 °C" && envOnly.envPressure() == "1013 hPa"
+              && envOnly.envHumidity() == "50%" && !envOnly.envDewPoint().isEmpty(), "env sensor shown");
     return failures ? 1 : 0;
 }
