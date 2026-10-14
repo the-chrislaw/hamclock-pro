@@ -110,6 +110,13 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawImage(QRectF(0, 0, 1, 1), scene.style->image);
             painter.setOpacity(1.0);
         }
+        if (scene.grid != MapGrid::None) {
+            QPen gp(dark ? QColor(230, 238, 240, 90) : QColor(27, 42, 48, 80)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp); painter.setBrush(Qt::NoBrush);
+            for (const auto& l : grid_lines(scene.grid))
+                painter.drawLine(QPointF((l.lon1 + 180.0) / 360.0, (90.0 - l.lat1) / 180.0),
+                                 QPointF((l.lon2 + 180.0) / 360.0, (90.0 - l.lat2) / 180.0));
+        }
         if (scene.sun && scene.night_shade) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, dark ? 90 : 55));

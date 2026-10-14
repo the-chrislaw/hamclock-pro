@@ -26,6 +26,8 @@ class MapItem : public QQuickPaintedItem {
     Q_PROPERTY(int rotation READ rotation WRITE setRotation NOTIFY styleChanged)
     Q_PROPERTY(QStringList styleIds READ styleIds NOTIFY styleChanged)
     Q_PROPERTY(QVariantList rotationChoices READ rotationChoices CONSTANT)
+    // 0 None, 1 Tropics, 2 Lat/Lng, 3 Maidenhead.
+    Q_PROPERTY(int grid READ grid WRITE setGrid NOTIFY gridChanged)
     Q_PROPERTY(double zoom READ zoom WRITE setZoom NOTIFY zoomChanged)
 public:
     explicit MapItem(QQuickItem* parent = nullptr);
@@ -44,6 +46,8 @@ public:
     void setZoom(double z);
     bool nightShade() const { return options_.night_shade; }
     void setNightShade(bool on);
+    int grid() const { return options_.grid; }
+    void setGrid(int g);
     int labelMode() const { return options_.label_mode; }
     void setLabelMode(int mode);
     QStringList layerIds() const;
@@ -69,6 +73,7 @@ signals:
     void zoomChanged();
     void nightShadeChanged();
     void labelModeChanged();
+    void gridChanged();
     void layersChanged();
     void styleChanged();
     // A tap (no drag) on the map: the location under the finger, for Set DE / Set DX.

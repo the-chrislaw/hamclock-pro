@@ -4,6 +4,7 @@
 // usable on iPad/macOS without the widgets module.
 #include "../domain/geometry.hpp"
 #include "../domain/solar_position.hpp"
+#include "grid.hpp"
 #include "overlay.hpp"
 #include "styles.hpp"
 #include "viewport.hpp"
@@ -23,6 +24,7 @@ struct MapScene {
     double ui_scale = 1; // Theme.scale: grows labels and markers on TVs
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
+    MapGrid grid = MapGrid::None;
     double zoom = 1;                    // 1..4; >1 centres on DE unless panned
     std::optional<double> pan_lon, pan_lat; // user pan; unset = follow DE/DX
 };

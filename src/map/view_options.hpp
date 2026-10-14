@@ -3,6 +3,7 @@
 // mode override, night shading and the DE/DX path. Layers are named by the
 // owning areas; the user choice is stored by layer id so it survives restarts
 // even while a layer is not yet published. Saved in options.ini ([map]).
+#include "grid.hpp"
 #include "overlay.hpp"
 #include <QSet>
 #include <QString>
@@ -15,6 +16,7 @@ struct MapViewOptions {
     bool night_shade = true;
     bool path = true;
     QString style;        // base style id; "" = plain base map
+    int grid = 0;         // MapGrid
     int rotation_s = 0;   // style rotation interval in seconds, 0 = off
 
     bool layer_visible(const QString& id) const { return !hidden_layers.contains(id); }
