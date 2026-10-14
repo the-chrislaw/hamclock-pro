@@ -38,6 +38,17 @@ int main(int argc, char** argv) {
     const auto full = weather::parse_current(
         R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3,"pressure_msl":1015.4,"cloud_cover":87}})");
     check(full && full->pressure_hpa && std::lround(*full->pressure_hpa) == 1015 && full->cloud_pct == 87, "pressure and cloud parsed");
+    check(c && !c->pressure_change_hpa, "no trend without hourly series");
+    // Synthetic: hourly series oldest first (past_hours=3, forecast_hours=1).
+    const auto trend = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3,"pressure_msl":1015.4},"hourly":{"time":["a","b","c","d"],"pressure_msl":[1018.0,1017.0,1016.0,1015.4]}})");
+    check(trend && trend->pressure_change_hpa && std::abs(*trend->pressure_change_hpa + 2.6) < 1e-9, "3 h pressure change");
+    const auto nulls = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"hourly":{"pressure_msl":[null,1017.0,1016.0,1015.4]}})");
+    check(nulls && !nulls->pressure_change_hpa, "null hourly value gives no trend");
+    check(weather::pressure_trend_word(2.6) == "Rising" && weather::pressure_trend_word(-2.6) == "Falling" &&
+          weather::pressure_trend_word(1.0) == "Steady" && weather::pressure_trend_word(-0.4) == "Steady", "trend words");
+    check(weather::request_url(1, 2).contains("past_hours=3"), "url asks for hourly pressure");
     check(weather::compass_point(344) == "NNW" && weather::compass_point(0) == "N" &&
           weather::compass_point(360) == "N" && weather::compass_point(348) == "NNW" &&
           weather::compass_point(349) == "N" && weather::compass_point(90) == "E", "compass rose edges");
