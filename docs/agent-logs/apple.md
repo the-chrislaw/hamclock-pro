@@ -82,3 +82,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (thirteenth hourly run)
 - Fixed qa #229 (SafeArea, my class, destroyed before the QML engine so `safeArea` bindings threw TypeErrors on quit): `safe_area` is now declared before the engine in src/ui/main.cpp (one-line move in area A's file). Verified on Linux: screenshot run prints no QML errors after "Saved".
 - #73/#233/#234 are other areas'; left alone. Simulator Qt 6.5.3 experiment result still to be read from main's Apple run.
+
+## 2026-10-14 (fourteenth hourly run)
+- No qa issues for area F; #73/#240/#241 are other areas' (checks running), left alone.
+- Read main run 38579449271: signing/notarization still green. The iPad Simulator link still fails on Qt 6.5.3 too: `qrc_qmake_QtQuick.cpp.o` in the kit is tagged for device iOS ("building for 'iOS-simulator', but linking in object file ... built for 'iOS'"), so the Qt version is not the cause. Experiment: after the device build, retag the kit's `objects-*` `.o` files for the simulator with `vtool -set-build-version 7` (plain arm64 code), printing the tag before and after. Still informational; no screenshot or on-device claim yet.
+- Next: read this PR's simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
