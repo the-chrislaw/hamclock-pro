@@ -149,3 +149,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 15 (slice): ADIF map overlay. Layer `adif` (square markers, one per distinct base call, newest QSO wins, capped at 200) placed at the centre of the logged Maidenhead grid (2/4/6 chars); QSOs without a valid grid are not drawn. Published only while a log is loaded, removed on clear/error/destruction; `setMapVisible` is the per-source hook. No AppSettings change. Offline test added.
 - Not done: Meshtastic (needs MQTT/protobuf or a node link; source decision pending), ONTA overlay, NADXCC/NAPref/NAGrid watch keywords. No screenshot (needs a user log); not validated on device.
 - Next: Meshtastic, ONTA overlay, NAGrid.
+
+## 2026-10-14 (run 26)
+- Step 1: nothing of mine open; #294/#295/#296 (other areas) had checks still running and #73 is stale docs, all left alone. Open `[A]`/`[D]`/`[F]`/`[G]` qa issues only, no `[C]`.
+- Backlog item 15 (slice): `NADXCC` / `NABAND` watch-list keywords. They highlight (★, watched count) DX cluster spots the ADIF log still needs (NADXCC: new entity; NABAND: new entity or band slot); re-evaluated when the resolver or list changes. No AppSettings change (same `watch/list` key; the Settings hint mentions the keywords). Test added; 142/142 pass; ASan/UBSan left to CI (small model change). No screenshot (cluster Not configured without a callsign). Not validated on device.
+- Not done: NAPref/NAGrid, ONTA overlay, Meshtastic (source decision pending).
+- Next: Meshtastic, ONTA overlay, NAGrid.
