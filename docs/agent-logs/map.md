@@ -106,3 +106,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues; no open PRs of mine. #234/#235 (not mine) macOS CI still running, #73 (docs) left alone.
 - G5 slice (PR agent/map-gray): Map menu toggle "Gray map" (options.ini `[map] gray`, default off) renders sea, land and coast in grayscale (`qGray`), overlays keep their colours. `MapScene::gray`, `MapViewOptions::gray`, `MapItem.gray`. Test: extended `qt-map-view-options-regression` (default, round trip, render differs). Full ctest 132/132 locally; ASan/UBSan left to CI. Not validated on device.
 - Next: azimuthal and Robinson projections (needs a projection abstraction); CQ/ITU zones (need dataset licence record).
+
+## 2026-10-14 (UTC, run 15)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #73 (docs), #241 (macOS universal build still running) and #242 (no checks yet), none mine, left alone.
+- G4 slice (PR agent/map-projection-math): pure `map_project_azimuthal`/`map_unproject_azimuthal` (DE-centred equidistant, unit disc, antipode on the rim) and `map_project_robinson`/`map_unproject_robinson` (published 5-degree table, linear between rows) in `src/map/projection.*`. No renderer or menu change yet (renderer is equirectangular-only; needs a projection abstraction in the next slice). Tests (in `run_map_tests`): centre, cardinal points, Denver-London distance, round trips, rejection outside disc/outline, Robinson knots and symmetry; the antipode test caught an antipode-returns-centre bug, fixed. Not validated on device; no screenshots (no visual change). ASan/UBSan left to CI.
+- Next: renderer projection abstraction + Map menu "Projection" row (Equirectangular / Azimuthal / Robinson); CQ/ITU zones (need dataset licence record).
