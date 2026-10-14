@@ -25,6 +25,7 @@ class StationModel : public QObject {
     Q_PROPERTY(QString dxCoordinates READ dxCoordinates NOTIFY stationChanged)
     Q_PROPERTY(QString distanceText READ distanceText NOTIFY stationChanged)
     Q_PROPERTY(QString pathText READ pathText NOTIFY stationChanged)
+    Q_PROPERTY(QString bannerText READ bannerText NOTIFY stationChanged)
     Q_PROPERTY(bool longPath READ longPath NOTIFY stationChanged)
     Q_PROPERTY(QString bearingText READ bearingText NOTIFY stationChanged)
     Q_PROPERTY(QString deSun READ deSun NOTIFY tick)
@@ -49,6 +50,8 @@ public:
     QString pathText() const;
     bool longPath() const { return long_path_; }
     Q_INVOKABLE void toggleLongPath();
+    Q_INVOKABLE void cycleBanner();   // call -> ON AIR -> 73 DE call (per session)
+    QString bannerText() const;
     QString deSun() const;       // next sunrise/sunset at DE, empty when unconfigured
     QString dxSun() const;
     bool configured() const;
@@ -65,6 +68,7 @@ private:
     bool has_geometry_ = false;
     GeometryResult geometry_{};
     double de_lat_ = 0, de_lon_ = 0, dx_lat_ = 0, dx_lon_ = 0;
+    int banner_mode_ = 0;
     QString callsign_, de_grid_, dx_grid_, de_coordinates_, dx_coordinates_, distance_, bearing_;
 };
 
