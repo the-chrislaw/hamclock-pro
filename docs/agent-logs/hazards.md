@@ -32,3 +32,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H1 slice 2: quakes map overlay via area G's API (`quakes_overlay.*`): one dot per quake, strongest first, size and colour by magnitude (yellow < M4.5, orange < M6, red), "M6.8" labels, capped at 60; layer removed when data is not live or map visibility is off (`setMapVisible`). Tests cover order, size, cap, off/on, stale removal. Pane unchanged, so no new screenshots needed; overlay rendering itself is area G's.
 - Next: storms track overlay, then lightning (needs a terms-checked source), fires (FIRMS key via settings), nets.
 - Blocked: nothing.
+
+## 2026-10-14 02:00 UTC
+- Step 1: #131 (area G) and #73 (other area) not green yet / conflicting; left alone. No PRs of mine open; no `qa` issues for [H].
+- H2 slice 2: storms map overlay (`storms_overlay.*`): one diamond per storm at its NHC position, strongest first, name label, colour by category (yellow < cat 1, orange cat 1-2, red cat 3+), `setMapVisible`, layer removed when data is not live. Tests cover order, colour, position, size, off/on, stale removal; debug and ASan/UBSan suites pass. Pane unchanged so no new screenshots. Forecast tracks need cone/track data (NHC GIS/KMZ) and are not done.
+- Next: marine region filter, nets (NetLogger), lightning (needs a terms-checked source), fires (FIRMS key via settings).
+- Blocked: nothing.
