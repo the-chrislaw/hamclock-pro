@@ -208,7 +208,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | **HamAlert.org** telnet login + password | Personal spot alerts | C | Missing |
 | **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Missing |
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
-| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd planned) |
+| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
 | rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio planned) |
 | PiAware ADS-B receiver host | Aircraft on the map | E | Missing |
@@ -251,4 +251,5 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | PSKReporter: who heard my callsign in the last 15 min (count, best SNR, newest receivers with grid, band, mode, SNR, age); queried every 5 min only when a callsign is set, shows Not configured otherwise; receivers drawn on the map (grid-square centre, path from DE, only while live; `PskModel::setMapVisible` is the per-source hook, Settings toggle not wired); not on the default dashboard; fixture is a real capture | C | Partial |
 | ADIF log: QSO count and newest QSOs from a local .adi file (path in Settings, read-only, reloaded when the file changes; unconfigured when empty); `worked(call)` ignores /P and EA8/ parts; not on the default dashboard; no not-in-log watch keywords, DXCC/band slots or map overlay yet; parser tested on synthetic ADIF (no real log available) | C | Partial |
 | Host sensors: CPU temperature (sysfs thermal zones), Wi-Fi signal dBm (/proc/net/wireless) and root-disk use; each metric hides when its source is absent, card shows unconfigured when none exist; BME280/BMP280 via kernel IIO sysfs (air temperature, pressure, humidity, dew point; not tested on a Pi; no corrections or history yet); not on the default dashboard | E | Partial |
+| GPS (gpsd JSON on localhost:2947, read-only): fix quality, position, Maidenhead grid, satellites in use; unconfigured when gpsd is absent; does not change DE yet, no NMEA serial or time use; tested against a loopback fake gpsd, not a real receiver; not on the default dashboard | E | Partial |
 | Everything else in the backlog | A–E | Not started |
