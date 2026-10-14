@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
@@ -76,7 +77,22 @@ int main(int argc, char** argv) {
             if (!m.call.isEmpty()) ++labelled;
             ok = ok && m.where.latitude >= -90 && m.where.latitude <= 90 && m.where.longitude >= -180 && m.where.longitude <= 180;
         }
-        check(labelled >= 3 && ok, "one labelled sub-point per bird, coordinates in range");
+        check(labelled == 2 && ok, "default: two labelled sub-points (soonest passes), coordinates in range");
+    }
+    {
+        // User choice from options.ini wins, capped at two; unknown names are ignored.
+        QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        ini.setValue("satellites/tracked", QStringList{"nonesuch", "ao-7", "ISS", "FO-29"});
+        ini.sync();
+        model.recompute();
+        QStringList names;
+        for (const auto& l : MapOverlays::instance().layers())
+            if (l.id == "satellites") for (const auto& m : l.markers) if (!m.call.isEmpty()) names << m.call;
+        names.sort();
+        check(names == QStringList({"AO-7", "ISS"}), "chosen satellites only, at most two");
+        ini.remove("satellites/tracked");
+        ini.sync();
+        model.recompute();
     }
 
     // Elements older than 30 days are dropped, not propagated as if live.

@@ -50,6 +50,11 @@ constexpr int kMaxTleAgeDays = 30;
 // Sets whose epoch is within kMaxTleAgeDays of unix_time (or in the near future).
 std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
 
+// At most this many satellites get a ground track on the map.
+constexpr int kMaxTracked = 2;
+// The sets whose short name matches `wanted` (case-insensitive, in order), at most kMaxTracked.
+std::vector<Tle> choose_tracked(const std::vector<Tle>& tles, const QStringList& wanted);
+
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);
 
