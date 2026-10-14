@@ -23,7 +23,7 @@ MapViewport MapViewport::fill(double width, double height, double preferred_cent
     v.scale = std::min(v.scale, v.height / (2.0 * min_visible_latitude));
     zoom = std::clamp(zoom, 1.0, max_zoom);
     v.scale *= zoom;
-    const bool longitude_cropped = (v.scale * 360.0 > v.width + 1e-9 && by_width < by_height) || zoom > 1.0;
+    const bool longitude_cropped = (v.scale * 360.0 > v.width + 1e-9 && by_width < by_height) || zoom > 1.0 || pan_lon.has_value();
     v.center_lon = longitude_cropped ? wrap180(pan_lon ? *pan_lon : preferred_center_lon) : 0.0;
     const double half = std::min(90.0, v.visible_half_latitude());
     if (pan_lat) {

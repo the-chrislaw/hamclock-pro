@@ -82,3 +82,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues; no open PRs of mine. #201 (apple, not mine) CI still running, #73 (docs) left alone.
 - G5 slice (PR agent/map-azimuth-rings): Map menu Grid gains "Rings": great-circle distance rings every 30 degrees of arc (3336 km) around DE (`ring_points`, pure; seam-split by the renderer; only drawn when DE is set). `MapGrid::AzimuthRings = 4`, persisted in options.ini `[map] grid`. Test: extended `qt-map-view-options-regression` (every ring point at the exact arc distance, render differs with DE). Screenshot fixtures have no DE so rings are not visible there; covered by the render test. ASan/UBSan left to CI. Not validated on device.
 - Next: projection entry (Mercator centre longitude, azimuthal, Robinson); CQ/ITU zones (need dataset licence record).
+
+## 2026-10-14 (UTC, run 11)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #207/#210 (not mine) CI still running, #73 (docs) left alone.
+- G4 slice (PR agent/map-projection): Map menu "Centre": DE / Greenwich / Americas / Asia / Pacific (options.ini `[map] center`, out-of-range rejected). `MapScene::center_lon` feeds the viewport as the preferred pan; `MapViewport::fill` now honours a pan/centre longitude even when the world already fits the card width (neighbouring world copies are drawn), so a drag at 1x also rotates the world. Setting a centre resets zoom/pan. Test: extended `qt-map-view-options-regression` (round trip, bad value, DE default, fixed centre on 1024x600 and an 800x310 card). Offscreen 1024x600 dark with `center=-90` checked: overlays line up with land. ASan/UBSan left to CI. Not validated on device.
+- Next: azimuthal and Robinson projections; CQ/ITU zones (need dataset licence record).
