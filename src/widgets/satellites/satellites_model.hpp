@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "../../domain/astro_satellite.hpp"
+#include "../../map/overlay.hpp"
 #include <QStringList>
 #include <QTimer>
 #include <QVariantList>
@@ -42,6 +43,10 @@ private:
 
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);
+
+// Map layer "satellites": each tracked satellite's current sub-point (labelled
+// triangle) plus its ground track from -10 to +50 min as unlabelled dots.
+OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time);
 
 void register_widget_satellites(WidgetRegistry& registry, const WidgetContext& context);
 
