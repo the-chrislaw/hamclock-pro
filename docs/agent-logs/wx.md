@@ -86,3 +86,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, eighteenth run)
 - No open PRs of mine; #289/#290 (areas B/D) had green Linux checks but Apple jobs still running, #73 (area A) open: not mine, left alone. No open `qa` issues for E.
 - E12 slice: GPS card compares the gpsd TPV `time` with the system clock and shows "Clock agrees with GPS (within 2 s)" or "Clock is N s ahead of/behind GPS" (full-size layout only; differences under 2 s are never shown as a precise offset because gpsd reports late). Display only: it never sets the clock or DE. Offline parser/text tests; full release suite passes, ASan/UBSan left to CI; no screenshot (card needs a fix). Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, nineteenth run)
+- #297/#298/#299 (areas tvOS/C/D) have Apple jobs still queued/running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: rigctld and rotctld host/port are read from options.ini (`[radio]`/`[rotator]` `host`, `port`); invalid hosts (anything but letters, digits, `.`, `-`, `:`) and ports outside 1..65535 fall back to the defaults field by field. Remote LAN hosts now possible; still strictly read-only. flrig stays on localhost. Offline parser tests; no Settings control yet (area A page). Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend, header radio display.

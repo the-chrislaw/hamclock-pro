@@ -214,7 +214,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
 | gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
 | NTP server | Time source | E | Missing |
-| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; defaults only, no settings yet) |
+| rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; rigctld/rotctld host and port via options.ini `[radio]`/`[rotator]` `host`/`port`, flrig stays on localhost:12345; no Settings control yet) |
 | PiAware ADS-B receiver host | Aircraft on the map | E | Partial (count card from localhost:8080 only; no settings, no map overlay) |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
