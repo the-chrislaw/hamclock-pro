@@ -12,6 +12,8 @@ using namespace std::chrono_literals;
 // CelesTrak asks for at most one download per group per 2 h; we fetch daily.
 constexpr PollPolicy kPolicy{24h, 72h, 6h};
 constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle";
+// SatNOGS DB: open data, no key; amateur-service transmitters that are alive, polled daily.
+constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json&service=Amateur&alive=true";
 constexpr double kMinElevation = 10.0;
 constexpr double kHorizonSeconds = 24 * 3600;
 constexpr int kMaxRows = 5;
@@ -85,15 +87,26 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
 
 SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("satellites", "Satellites", parent), settings_(context.settings),
-      source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)) {
+      source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)),
+      tx_source_(new PolledSource("satnogs-transmitters", QUrl(kTxUrl), kPolicy, context.transport, this)) {
     trackSource(*source_, "CelesTrak");
     connect(source_, &PolledSource::updated, this, &SatellitesModel::load);
+    connect(tx_source_, &PolledSource::updated, this, &SatellitesModel::loadTransmitters);
     timer_.setInterval(30 * 1000);
     connect(&timer_, &QTimer::timeout, this, &SatellitesModel::recompute);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &SatellitesModel::recompute);
 }
 
-void SatellitesModel::start() { source_->start(); timer_.start(); }
+void SatellitesModel::start() { source_->start(); tx_source_->start(); timer_.start(); }
+
+void SatellitesModel::loadTransmitters() {
+    transmitters_ = group_by_norad(parse_satnogs_transmitters(tx_source_->body().toStdString()));
+}
+
+std::vector<Transmitter> SatellitesModel::transmittersFor(int norad_id) const {
+    const auto it = transmitters_.find(norad_id);
+    return it == transmitters_.end() ? std::vector<Transmitter>{} : it->second;
+}
 
 void SatellitesModel::load() {
     tles_.clear();

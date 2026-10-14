@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "../../domain/astro_satellite.hpp"
+#include "../../domain/astro_transmitters.hpp"
 #include "../../map/overlay.hpp"
 #include <QStringList>
 #include <QTimer>
@@ -33,15 +34,22 @@ public:
     // Az/el samples ({az, el} degrees) of the first listed pass, AOS to LOS, for the sky plot; empty if none.
     QVariantList skyTrack() const { return sky_track_; }
     PolledSource& source() { return *source_; }
+    // SatNOGS DB transmitters (cached, refreshed daily; frequency data from SatNOGS DB, CC BY-SA 4.0)
+    // for a NORAD id; empty when none are known or the data has not loaded.
+    std::vector<Transmitter> transmittersFor(int norad_id) const;
+    PolledSource& transmitterSource() { return *tx_source_; }
 
 signals:
     void changed();
 
 private:
     void load();
+    void loadTransmitters();
 
     AppSettings* settings_;
     PolledSource* source_;
+    PolledSource* tx_source_;
+    std::map<int, std::vector<Transmitter>> transmitters_;
     std::vector<Tle> tles_;
     QTimer timer_;
     QVariantList rows_;

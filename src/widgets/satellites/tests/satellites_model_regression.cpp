@@ -30,6 +30,9 @@ int main(int argc, char** argv) {
     QFile file(QDir(argv[1]).filePath("gp.php"));
     check(file.open(QIODevice::ReadOnly), "fixture present");
     const QByteArray body = file.readAll();
+    QFile txfile(QDir(argv[1]).filePath("satnogs-transmitters.json"));
+    check(txfile.open(QIODevice::ReadOnly), "transmitter fixture present");
+    const QByteArray txbody = txfile.readAll();
 
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
@@ -40,9 +43,9 @@ int main(int argc, char** argv) {
     WidgetContext context;
     context.settings = &settings;
     bool down = false;
-    context.transport = [&](const QUrl&, FetchDone done) {
+    context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult r;
-        if (down) r.error = "network down"; else { r.http_status = 200; r.body = body; }
+        if (down) r.error = "network down"; else { r.http_status = 200; r.body = url.host() == "db.satnogs.org" ? txbody : body; }
         QTimer::singleShot(0, [done, r] { done(r); });
     };
     auto settle = [&] { for (int i = 0; i < 20; ++i) app.processEvents(); };
@@ -52,11 +55,16 @@ int main(int argc, char** argv) {
     model.setClock([&] { return t0; });
     model.source().setClock([&] { return t0; });
     QFile::remove(model.source().cachePath());
+    QFile::remove(model.transmitterSource().cachePath());
     // Station not configured yet: data loads but no passes are invented.
     model.start();
     settle();
     check(model.hasData() && model.rows().isEmpty(), "no station -> no rows");
 
+    {
+        const auto ao7 = model.transmittersFor(7530);
+        check(!ao7.empty() && model.transmittersFor(99999999).empty(), "transmitters loaded from SatNOGS and joined by NORAD id");
+    }
     check(settings.saveStation("W1AW", 45.52, -122.68, 51.5, -0.12, "").isEmpty(), "station saved");
     settle();
     const auto rows = model.rows();

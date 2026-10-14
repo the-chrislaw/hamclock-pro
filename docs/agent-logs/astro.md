@@ -85,3 +85,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Yearly sunrise/sunset chart (backlog D11, UI slice): new `src/widgets/daylight/` (hamclock_add_widget takes one widget per folder, so the pane could not live in `sunmoon/`; same area D) draws weekly sunrise (amber) and sunset (blue) curves from `sun_year_series` for DE, minutes after 00:00 UTC, with today marked; gaps at polar day/night. Test checks London solstice rows against almanac times (within 4 min) and Tromso gaps. Rendered offscreen at 800x480, 1024x600, 1920x1080 (not on-device); no axis labels or local-time scale yet. ASan/UBSan left to CI.
 - Not mine: #73 conflicting; #238/#239 CI still running; left alone. No `[D]` QA issues.
 - Next: settings control for tracked satellites, fetch/cache transmitters + detail box, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 16
+- SatNOGS transmitters fetched and cached (issue #246 step 1): the Satellites model now polls `db.satnogs.org/api/transmitters/?format=json&service=Amateur&alive=true` daily (about 330 kB, honest User-Agent via PolledSource, disk cache), parses and groups by NORAD id; `transmittersFor(norad)` is the hook for the detail box. Model test routes by host and checks the AO-7 join; roadmap source note updated. No UI yet (detail box is next, opened from a pane row / map tap). ASan/UBSan left to CI; build warnings seen are in unrelated Qt dialog files.
+- Not mine: #73 conflicting, #242/#245 CI still running; left alone.
+- Next: detail box (now/next pass/transmitters with Doppler/status, Show track, Set as DX), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
