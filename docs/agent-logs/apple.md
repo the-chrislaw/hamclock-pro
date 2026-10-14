@@ -52,3 +52,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; #73/#182/#184 are other areas' (checks running), left alone.
 - F4 slice 2: `TelnetClient` (DX cluster / HamAlert transport) subscribes to `AppLifecycle`: on suspend it closes the socket and cancels the backoff timer; on resume it reconnects at once with the backoff reset; a client stopped by the user stays stopped. Small backward-compatible change in `src/net/telnet_client.*` (shared net file); `dx_cluster_regression` covers suspend/resume/stop on Linux.
 - Next: same for the rigctld/rotctld/gpsd sockets, safe-area handling, iPad layout check.
+
+## 2026-10-14 (eighth hourly run)
+- No qa issues for area F. #199 (other area) has a failing iPad Simulator job, #73 conflicting; left alone.
+- F4 slice 3: `GpsModel`, `RotatorModel`, `RadioModel` (gpsd/rotctld/rigctld sockets) subscribe to `AppLifecycle`: on suspend they stop retry/poll timers and abort the socket; on resume they reconnect at once. Small backward-compatible changes in those widget models (areas of other agents); `gps_regression` covers suspend/resume on Linux.
+- Next: safe-area handling, iPad layout check once the map renderer port lands.

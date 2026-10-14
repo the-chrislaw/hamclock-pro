@@ -32,11 +32,14 @@ private slots:
     void onConnected();
     void onReadyRead();
     void onDisconnected();
+    void onSuspended();
+    void onResumed();
 private:
     void apply(const QByteArray& line);
     QString host_;
     quint16 port_;
     QTcpSocket socket_;
+    bool started_ = false;
     QTimer retry_;
     QByteArray buffer_;
     gps::Fix fix_;

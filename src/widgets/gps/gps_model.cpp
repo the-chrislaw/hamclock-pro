@@ -1,4 +1,5 @@
 #include "gps_model.hpp"
+#include "../../platform/apple_lifecycle.hpp"
 #include "../../domain/geometry.hpp"
 #include <cmath>
 
@@ -9,6 +10,9 @@ GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* pa
     setState("unconfigured", "gpsd not running on this device");
     retry_.setInterval(15000);
     connect(&retry_, &QTimer::timeout, this, &GpsModel::connectNow);
+    auto& lifecycle = AppLifecycle::instance();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &GpsModel::onSuspended);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &GpsModel::onResumed);
     connect(&socket_, &QTcpSocket::connected, this, &GpsModel::onConnected);
     connect(&socket_, &QTcpSocket::readyRead, this, &GpsModel::onReadyRead);
     connect(&socket_, &QTcpSocket::disconnected, this, &GpsModel::onDisconnected);
@@ -17,7 +21,20 @@ GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* pa
     });
 }
 
-void GpsModel::start() { connectNow(); retry_.start(); }
+void GpsModel::start() { started_ = true; connectNow(); retry_.start(); }
+
+// iPad: iOS kills sockets of suspended apps, so close cleanly and reconnect on resume.
+void GpsModel::onSuspended() {
+    retry_.stop();
+    socket_.abort();
+    if (started_) onDisconnected();
+}
+
+void GpsModel::onResumed() {
+    if (!started_) return;
+    connectNow();
+    retry_.start();
+}
 
 void GpsModel::connectNow() {
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;

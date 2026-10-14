@@ -1,4 +1,5 @@
 #include "rotator_model.hpp"
+#include "../../platform/apple_lifecycle.hpp"
 #include "rotator_parse.hpp"
 
 namespace hamclock {
@@ -9,6 +10,9 @@ RotatorModel::RotatorModel(const WidgetContext&, QString host, quint16 port, QOb
     retry_.setInterval(15000);
     poll_.setInterval(1000);
     connect(&retry_, &QTimer::timeout, this, &RotatorModel::connectNow);
+    auto& lifecycle = AppLifecycle::instance();
+    connect(&lifecycle, &AppLifecycle::suspended, this, &RotatorModel::onSuspended);
+    connect(&lifecycle, &AppLifecycle::resumed, this, &RotatorModel::onResumed);
     connect(&poll_, &QTimer::timeout, this, &RotatorModel::poll);
     connect(&socket_, &QTcpSocket::connected, this, &RotatorModel::onConnected);
     connect(&socket_, &QTcpSocket::readyRead, this, &RotatorModel::onReadyRead);
@@ -18,7 +22,21 @@ RotatorModel::RotatorModel(const WidgetContext&, QString host, quint16 port, QOb
     });
 }
 
-void RotatorModel::start() { connectNow(); retry_.start(); }
+void RotatorModel::start() { started_ = true; connectNow(); retry_.start(); }
+
+// iPad: iOS kills sockets of suspended apps, so close cleanly and reconnect on resume.
+void RotatorModel::onSuspended() {
+    retry_.stop();
+    poll_.stop();
+    socket_.abort();
+    if (started_) onDisconnected();
+}
+
+void RotatorModel::onResumed() {
+    if (!started_) return;
+    connectNow();
+    retry_.start();
+}
 
 void RotatorModel::connectNow() {
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;
