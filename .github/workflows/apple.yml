@@ -90,7 +90,12 @@ jobs:
       - name: Deploy Qt into the bundle (universal)
         run: |
           export PATH="$HOME/Qt/$IOS_QT_VERSION/macos/bin:$PATH"
-          macdeployqt build-universal/hamclock-pro.app -dmg
+          # hdiutil occasionally fails with "Resource busy" on hosted runners; retry.
+          for attempt in 1 2 3; do
+            macdeployqt build-universal/hamclock-pro.app -dmg && break
+            [ "$attempt" = 3 ] && exit 1
+            sleep 15
+          done
           mv build-universal/hamclock-pro.dmg hamclock-pro-macos-universal-unsigned.dmg
       - uses: actions/upload-artifact@v4
         with:
