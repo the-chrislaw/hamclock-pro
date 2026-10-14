@@ -40,3 +40,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no `[G]` qa issues (#120 is B). #139 (not mine) still had a macOS job running; #73 (docs, not mine) stale; left alone.
 - G4 slice a (PR agent/map-zoom-tap): `MapViewport::fill` takes zoom (1-4x), pan lon/lat; `location_at` inverts a pixel to lat/lon. `MapItem`: `zoom`, `resetView()`, `panBy()`, drag-to-pan, and `tapped(lat, lon)` for a tap without drag. Main.qml: small +/-/reset buttons on the map card (shared, minimal). Test: extended `qt-map-viewport-regression`. 1024x600 dark screenshot checked offscreen. Not validated on device.
 - Next: G4 slice b: Set DE / Set DX popup on `tapped` (needs AppSettings station write, area A coordination), then Mercator centre longitude, azimuthal, Robinson.
+
+## 2026-10-14 (UTC, run 4)
+
+- Orient: #141 ([G] qa) first. #143 (docs, not mine) and #73 (docs, conflicts) left alone.
+- Fix for #141 (PR agent/map-shared-projection): `MapRenderer` set the land/coast/night transform with `setTransform(t, false)`, which replaced the painter's base transform. Under `QQuickPaintedItem` with a contents/device scale (Retina) the land lost that scale while markers, DE/DX and the sun (plain coordinates) kept it, so overlays and land used different rectangles. Now combined (`true`); one viewport and one base transform for everything. Test: `qt-map-overlay-regression` paints at 1024x600 and 1024x630 under `scale(2)` and compares with a direct 2x render (fails without the fix, passes with it). Not reproduced on macOS hardware; not validated on device.
+- Next: G4 slice b: Set DE / Set DX popup on `tapped`, owner's map controls priority (#143), then Mercator centre longitude, azimuthal, Robinson.
