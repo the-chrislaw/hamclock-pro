@@ -22,8 +22,7 @@ public:
     int count() const { return int(stations_.size()); }
     QVariantList nearest() const; // closest to DE first, at most kShown rows
     static QString login_line(const QString& call, double lat, double lon, int radius_km);
-    static constexpr const char* kHost = "rotate.aprs2.net";
-    static constexpr int kPort = 14580, kRadiusKm = 100, kCapacity = 200, kShown = 6, kMaxAgeSec = 1800;
+    static constexpr int kCapacity = 200, kShown = 6, kMaxAgeSec = 1800;
 signals:
     void changed();
 private:

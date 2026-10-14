@@ -12,6 +12,7 @@ AprsModel::AprsModel(const WidgetContext& context, TelnetSocketFactory factory, 
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &AprsModel::connect_now);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &AprsModel::start);
+    if (settings_) connect(settings_, &AppSettings::aprsChanged, this, &AprsModel::start);
 }
 
 AprsModel::~AprsModel() { MapOverlays::instance().remove_layer(aprs::kOverlayLayerId); }
@@ -52,7 +53,7 @@ void AprsModel::start() {
             setState("error", "Callsign cannot be used for APRS-IS login (portable suffixes unsupported)");
             return;
         }
-    login_ = login_line(call, settings_->deLatitude(), settings_->deLongitude(), kRadiusKm);
+    login_ = login_line(call, settings_->deLatitude(), settings_->deLongitude(), settings_->aprsRadiusKm());
     wanted_ = true;
     failures_ = 0;
     connect_now();
@@ -67,7 +68,7 @@ void AprsModel::connect_now() {
     connect(socket_, &TelnetSocket::connected, this, [this] { socket_->write(login_.toLatin1()); });
     connect(socket_, &TelnetSocket::dataReceived, this, &AprsModel::on_data);
     connect(socket_, &TelnetSocket::closed, this, [this](const QString&) { on_closed(); });
-    socket_->connectToHost(kHost, kPort);
+    socket_->connectToHost(settings_->aprsHost(), settings_->aprsPort());
 }
 
 void AprsModel::on_closed() {
