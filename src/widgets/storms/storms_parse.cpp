@@ -2,6 +2,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QTimeZone>
 #include <algorithm>
 #include <cmath>
@@ -42,11 +43,46 @@ Feed parse(const QByteArray& body) {
         s.issued = QDateTime::fromString(adv.value("issuance").toString(), Qt::ISODate).toUTC();
         if (!s.issued.isValid()) s.issued = QDateTime::fromString(o.value("lastUpdate").toString(), Qt::ISODate).toUTC();
         s.url = adv.value("url").toString();
+        const auto fc = o.value("forecastAdvisory").toObject();
+        s.forecast_url = fc.value("url").toString();
+        s.forecast_adv = fc.value("advNum").toString();
         feed.storms.push_back(s);
     }
     std::stable_sort(feed.storms.begin(), feed.storms.end(),
                      [](const Storm& a, const Storm& b) { return a.wind_kt > b.wind_kt; });
     return feed;
+}
+
+Forecast parse_forecast(const QByteArray& body, const QDateTime& issued) {
+    Forecast fc;
+    const QString text = QString::fromLatin1(body);
+    static const QRegularExpression adv_number(R"(FORECAST/ADVISORY NUMBER\s+(\d+))");
+    static const QRegularExpression id(R"(\b([A-Z]{2}\d{6})\b)");
+    static const QRegularExpression point(
+        R"((FORECAST|OUTLOOK) VALID (\d{2})/(\d{2})(\d{2})Z\s+(\d+(?:\.\d+)?)([NS])\s+(\d+(?:\.\d+)?)([EW])\s*\n\s*MAX WIND\s+(\d+) KT)");
+    const auto n = adv_number.match(text);
+    if (!n.hasMatch() || !issued.isValid()) return fc;
+    fc.advisory = n.captured(1).toInt();
+    fc.storm_id = id.match(text).captured(1);
+    const QDate base = issued.toUTC().date();
+    for (auto it = point.globalMatch(text); it.hasNext();) {
+        const auto m = it.next();
+        const int day = m.captured(2).toInt(), hour = m.captured(3).toInt(), min = m.captured(4).toInt();
+        // The stamp has no month: take the issuance month, or the next when the day has wrapped.
+        QDate date(base.year(), base.month(), 1);
+        if (day < base.day() - 15) date = date.addMonths(1);
+        date = QDate(date.year(), date.month(), day);
+        ForecastPoint p;
+        p.latitude = m.captured(5).toDouble() * (m.captured(6) == "S" ? -1 : 1);
+        p.longitude = m.captured(7).toDouble() * (m.captured(8) == "W" ? -1 : 1);
+        if (!date.isValid() || hour > 23 || min > 59 || std::abs(p.latitude) > 90 || std::abs(p.longitude) > 180) continue;
+        p.valid = QDateTime(date, QTime(hour, min), QTimeZone::utc());
+        p.wind_kt = m.captured(9).toInt();
+        p.outlook = m.captured(1) == "OUTLOOK";
+        fc.points.push_back(p);
+    }
+    fc.ok = !fc.points.empty();
+    return fc;
 }
 
 QString classification_text(const QString& code) {
