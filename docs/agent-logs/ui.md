@@ -21,3 +21,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #108 (area H, CI green). #107 (area G) still had Pi package builds running; #73 is stale with conflicts and not an agent/ui branch.
 - Per-slot pane rotation: `AppSettings.paneRotations` / `setPaneRotation` (off, 5, 10, 30, 60 s; saved in options.ini, cleared by reset), a `PaneSlot` timer cycles through all widgets without writing settings, pauses while a menu is open; long-press menu has a "Rotate" button. ctest 80/80; screenshot 1024x600 unchanged. ASan/UBSan left to CI. Not validated on a device.
 - Next: custom rotation sets per slot (category picker, A8), per-widget `compact` audit.
+
+## 2026-10-14 (hourly run, 2)
+- Issue #119: `Card` footer is now a status Text (elides, two lines in non-compact slots) plus a separate age Text that never elides, so the data age is always visible. ctest 82/82; screenshots 800x480 and 1024x600 checked (no fixtures for age, so only the status line shows). ASan/UBSan left to CI. Not validated on a device.
+- #124 (QA docs) had CI still running at start; #73 stale. Next: custom rotation sets per slot (A8), per-widget `compact` audit.

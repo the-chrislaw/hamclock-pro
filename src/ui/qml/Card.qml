@@ -68,13 +68,30 @@ Rectangle {
             Layout.fillHeight: true
             implicitHeight: card.fillBody ? 0 : childrenRect.height
         }
-        Text {
-            visible: card.showStatus && text.length > 0
-            text: widget ? widget.statusText + (widget.ageText ? " · " + widget.ageText : "") : ""
-            color: Theme.secondary
-            font.pixelSize: Theme.fontCaption
-            elide: Text.ElideRight
+        RowLayout {
+            visible: card.showStatus && (statusLine.text.length > 0 || ageLine.text.length > 0)
             Layout.fillWidth: true
+            spacing: Theme.gap * 0.6
+            // The status reason may be shortened; the data age never is.
+            Text {
+                id: statusLine
+                text: widget ? widget.statusText : ""
+                color: Theme.secondary
+                font.pixelSize: Theme.fontCaption
+                elide: Text.ElideRight
+                wrapMode: Text.WordWrap
+                maximumLineCount: card.compact ? 1 : 2
+                Layout.fillWidth: true
+            }
+            Text {
+                id: ageLine
+                text: widget ? widget.ageText : ""
+                visible: text.length > 0
+                color: Theme.secondary
+                font.pixelSize: Theme.fontCaption
+                Layout.alignment: Qt.AlignTop
+                Layout.minimumWidth: implicitWidth
+            }
         }
     }
 }
