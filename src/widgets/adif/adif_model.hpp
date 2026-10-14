@@ -34,12 +34,17 @@ public:
     // Call -> DXCC primary prefix; default is the bundled table (tests inject one).
     void setEntityResolver(std::function<QString(const QString&)> resolver);
     void load(const QString& path);
+    void setMapVisible(bool visible);  // per-source map on/off (default on)
+    bool mapVisible() const { return map_visible_; }
+    ~AdifModel() override;
 
 signals:
     void logChanged();
 
 private:
     void reload();
+    void publishOverlay();
+    bool map_visible_ = true;
     AppSettings* settings_;
     QFileSystemWatcher watcher_;
     QString path_;

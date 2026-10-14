@@ -94,7 +94,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 12. UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
 13. Cluster login with SSID and native commands after login.
 14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
-15. ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
+15. 🟡 (ADIF map overlay of logged stations at their grid centre done) ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
 16. 🟡 (xOTA reference parsed from comments and shown as a badge on DX cluster rows; IOTA reference names not done) IOTA reference names and xOTA markers parsed from comments.
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
