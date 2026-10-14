@@ -53,3 +53,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, tenth run)
 - Merged #214 (dxcluster, green). #207 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - E4 slice: read-only flrig fallback for the radio card. XML-RPC to localhost:12345 asking only `rig.get_vfo` and `rig.get_mode`; used only while rigctld is not connected (rigctld wins), retries every 15 s, faults/garbage are never shown as live. Parser tests plus a loopback fake flrig HTTP server; release + ASan/UBSan radio tests. Not run with real flrig. Next: header display, DX city/popup, gpiod backend, E3 feeds (owner input #200).
+
+## 2026-10-14 (UTC, eleventh run)
+- #218/#219 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E2 slice: lookup card shows "5210 km · 52° SP" (distance and short-path bearing from DE to the centre of the returned grid; hidden without a DE or a valid grid). Uses the existing geometry/locator helpers. Offline tests for malformed grids and a known cell; full suite passes (release). ASan/UBSan and screenshots were not run locally (card needs an account, not in the screenshot harness). Spotted-call wiring still pending (needs area C selection). Next: header radio display, DX city/popup, gpiod backend.
