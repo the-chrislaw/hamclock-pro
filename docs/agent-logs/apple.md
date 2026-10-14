@@ -87,3 +87,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; #73/#240/#241 are other areas' (checks running), left alone.
 - Read main run 38579449271: signing/notarization still green. The iPad Simulator link still fails on Qt 6.5.3 too: `qrc_qmake_QtQuick.cpp.o` in the kit is tagged for device iOS ("building for 'iOS-simulator', but linking in object file ... built for 'iOS'"), so the Qt version is not the cause. Experiment: after the device build, retag the kit's `objects-*` `.o` files for the simulator with `vtool -set-build-version 7` (plain arm64 code), printing the tag before and after. Still informational; no screenshot or on-device claim yet.
 - Next: read this PR's simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
+
+## 2026-10-14 (fifteenth hourly run)
+- No qa issues for area F; #257/#258/#73 are other areas' (checks running), left alone.
+- Read main run 38594851712 (retag experiment): the retag loop itself reached the objects but died with "xargs: command line cannot be assembled, too long" (BSD `xargs -I` caps the substituted command at 255 bytes; the kit paths are long), so the Simulator link was never tried. Replaced the xargs with a `while read` loop. Still informational; no screenshot or on-device claim yet.
+- Next: read this PR's Simulator result; if it links, take the iPad layout screenshot at 1180x820/1366x1024.
