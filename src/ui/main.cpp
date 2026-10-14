@@ -16,6 +16,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickItem>
 #include <QQuickWindow>
 #include <QScreen>
 #include <QTimer>
@@ -23,6 +24,21 @@
 #include <cstdio>
 
 namespace {
+    // Counts visible, non-empty Text-like items whose text is cut off (issue
+    // #152). Items that elide on purpose set objectName "elideOk".
+    int count_truncated(QQuickItem* item) {
+        if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
+        int found = 0;
+        const QVariant truncated = item->property("truncated");
+        if (truncated.isValid() && truncated.toBool() && item->objectName() != "elideOk" &&
+            !item->property("text").toString().isEmpty() && item->width() > 0 && item->height() > 0) {
+            std::fprintf(stderr, "TRUNCATED: \"%s\"\n", qPrintable(item->property("text").toString()));
+            ++found;
+        }
+        for (auto* child : item->childItems()) found += count_truncated(child);
+        return found;
+    }
+
 constexpr int kScreenshotDelayMs = 1500;
 constexpr int kSmallScreenWidth = 1280;
 constexpr int kSmallScreenHeight = 800;
@@ -139,10 +155,11 @@ int main(int argc, char** argv) {
         window->resize(parts[0].toInt(), parts[1].toInt());
         const auto out = parser.value(screenshot);
         QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings] {
+            const int truncated = count_truncated(window->contentItem());
             const bool saved = window->grabWindow().save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
                          qPrintable(out));
-            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : 0);
+            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated ? 4 : 0);
         });
     }
     return app.exec();
