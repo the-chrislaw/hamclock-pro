@@ -1,4 +1,5 @@
 #include "ota_model.hpp"
+#include "ota_overlay.hpp"
 #include "../../net/polled_source.hpp"
 #include <QTimer>
 
@@ -55,7 +56,25 @@ QVariantList OtaModel::recent() const {
     return out;
 }
 
+OtaModel::~OtaModel() { MapOverlays::instance().remove_layer(ota::kOverlayLayerId); }
+
+void OtaModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Never keep markers for data that is not live.
+void OtaModel::publishOverlay() {
+    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(ota::overlay_layer(spots_));
+    else MapOverlays::instance().remove_layer(ota::kOverlayLayerId);
+}
+
 void OtaModel::refreshState() {
+    refreshStateImpl();
+    publishOverlay();
+}
+
+void OtaModel::refreshStateImpl() {
     if (!hasData()) {
         const auto err = !pota_->lastError().isEmpty() ? pota_->lastError() : sota_->lastError();
         if (!err.isEmpty()) setState("offline", "POTA/SOTA unreachable: " + err);
