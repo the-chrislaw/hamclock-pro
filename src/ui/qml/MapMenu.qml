@@ -85,6 +85,15 @@ Popup {
                          onClicked: menu.map.grid = modelData.g }
             }
         }
+        Text { text: "Centre"; color: Theme.ink; font.pixelSize: Theme.fontBody }
+        RowLayout {
+            spacing: Theme.gap / 2
+            Repeater {
+                model: [{ t: "DE", c: 999 }, { t: "Greenwich", c: 0 }, { t: "Americas", c: -90 }, { t: "Asia", c: 90 }, { t: "Pacific", c: 180 }]
+                Toggle { label: modelData.t; on: menu.map && menu.map.centerLon === modelData.c
+                         onClicked: menu.map.centerLon = modelData.c }
+            }
+        }
         Text { text: "Labels"; color: Theme.ink; font.pixelSize: Theme.fontBody }
         RowLayout {
             spacing: Theme.gap / 2

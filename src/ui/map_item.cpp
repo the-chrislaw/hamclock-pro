@@ -33,6 +33,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.route_visible = options_.path;
     scene_.night_shade = options_.night_shade;
     scene_.grid = static_cast<MapGrid>(options_.grid);
+    if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
     auto sync_style = [this] {
@@ -148,6 +149,17 @@ void MapItem::setNightShade(bool on) {
     options_.night_shade = scene_.night_shade = on;
     saveOptions();
     emit nightShadeChanged();
+    update();
+}
+
+void MapItem::setCenterLon(int lon) {
+    if (lon != MapViewOptions::center_auto) lon = std::clamp(lon, -180, 180);
+    if (lon == options_.center_lon) return;
+    options_.center_lon = lon;
+    if (lon == MapViewOptions::center_auto) scene_.center_lon.reset(); else scene_.center_lon = lon;
+    resetView();
+    saveOptions();
+    emit centerLonChanged();
     update();
 }
 

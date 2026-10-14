@@ -63,6 +63,19 @@ int main(int argc, char** argv) {
     MapViewOptions rg; rg.load(ini); check(rg.grid == 3, "grid round trip");
     { QFile g(ini); g.open(QIODevice::WriteOnly | QIODevice::Append); g.write("\n[map]\ngrid=9\n"); }
     MapViewOptions rg2; rg2.load(ini); check(rg2.grid == 0, "bad grid rejected");
+    o.center_lon = -90; check(o.save(ini), "save centre");
+    MapViewOptions rc; rc.load(ini); check(rc.center_lon == -90, "centre round trip");
+    { QFile g(ini); g.open(QIODevice::WriteOnly | QIODevice::Append); g.write("\n[map]\ncenter=500\n"); }
+    MapViewOptions rc2; rc2.load(ini); check(rc2.center_lon == MapViewOptions::center_auto, "bad centre rejected");
+    { MapScene cs; cs.de = Location{40, -75};
+      const auto vde = MapRenderer::viewportFor(QSizeF(1024, 600), cs);
+      check(std::abs(vde.center_lon + 75) < 1e-9, "centre follows DE by default");
+      const auto vw = [&] { auto w = cs; w.center_lon = 90; return MapRenderer::viewportFor(QSizeF(800, 310), w); }();
+      check(std::abs(vw.center_lon - 90) < 1e-9 && std::abs(vw.x_of(90) - 400) < 1e-6, "fixed centre applies to a card that shows the whole world");
+      cs.center_lon = 90;
+      const auto vc = MapRenderer::viewportFor(QSizeF(1024, 600), cs);
+      check(std::abs(vc.center_lon - 90) < 1e-9, "fixed centre overrides DE");
+      check(std::abs(vc.x_of(90) - 512) < 1e-6, "fixed centre places meridian mid-card"); }
     check(grid_lines(MapGrid::None).empty(), "no grid lines");
     check(grid_lines(MapGrid::Tropics).size() == 5 && grid_lines(MapGrid::Tropics)[3].lat1 > 23.43 && grid_lines(MapGrid::Tropics)[3].lat1 < 23.44, "tropic of Cancer");
     check(grid_lines(MapGrid::LatLng).size() == 5 + 13, "lat/lng line count");

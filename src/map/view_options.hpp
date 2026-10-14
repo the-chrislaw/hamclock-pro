@@ -17,6 +17,8 @@ struct MapViewOptions {
     bool path = true;
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
+    static constexpr int center_auto = 999; // centre on DE
+    int center_lon = center_auto; // map centre longitude (-180..180) or center_auto
     int rotation_s = 0;   // style rotation interval in seconds, 0 = off
 
     bool layer_visible(const QString& id) const { return !hidden_layers.contains(id); }
