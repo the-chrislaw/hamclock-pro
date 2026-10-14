@@ -57,6 +57,10 @@ Card {
                 Text { text: model.band; color: Theme.secondary; font.pixelSize: Theme.fontBody; Layout.preferredWidth: Theme.fontBody * 3 }
                 Text { text: (model.watched ? "★ " : "") + model.dx; color: model.watched ? Theme.accent : Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody }
                 Text {
+                    visible: model.needed !== ""
+                    text: model.needed; color: Theme.accent; font.pixelSize: Theme.fontBody; font.bold: true
+                }
+                Text {
                     visible: model.ota !== ""
                     text: model.ota; color: Theme.accent; font.pixelSize: Theme.fontBody; font.bold: true
                 }

@@ -16,7 +16,7 @@ namespace hamclock {
 class DxSpotList : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole, OtaRole };
+    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole, OtaRole, NeededRole };
     using QAbstractListModel::QAbstractListModel;
     int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(shown_.size()); }
     int totalCount() const { return int(spots_.size()); }
@@ -28,6 +28,8 @@ public:
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
     // Call -> DXCC primary prefix for "@PREFIX" watch entries; default is the bundled table (a qrc resource, so tests inject one).
     void set_entity_resolver(std::function<QString(const QString&)> r) { entity_of_ = std::move(r); }
+    // (call, band) -> "NEW DXCC" / "NEW BAND" / "" from the ADIF log; unset = no badge. Evaluated when rows are read.
+    void set_needed_resolver(std::function<QString(const QString&, const QString&)> r);
     int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
     // Per-band spot counts by continent over every stored spot (any filter): [{band, total, NA, SA, EU, AF, AS, OC}].
     // Default resolver is the bundled DXCC table.
@@ -42,6 +44,7 @@ private:
     void rebuild();
     QString band_, mode_;
     std::function<QString(const QString&)> entity_of_;
+    std::function<QString(const QString&, const QString&)> needed_;
     QStringList watch_;
     std::vector<char> is_watched_; // parallel to spots_
     int watched_ = 0;
@@ -64,6 +67,7 @@ public:
     int totalCount() const { return list_.totalCount(); }
     int watchedCount() const { return list_.watchedCount(); }
     QVariantList activity() const { return list_.activity(); }
+    void setNeededResolver(std::function<QString(const QString&, const QString&)> r) { list_.set_needed_resolver(std::move(r)); }
     void refreshWatchList(); // re-reads the watch list from settings
     void setMapVisible(bool visible); // per-source map on/off (default on)
     void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
