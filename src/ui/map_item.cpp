@@ -43,6 +43,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.sky_points = options_.sky_points;
     scene_.gray = options_.gray;
     scene_.borders = options_.borders;
+    scene_.states = options_.states;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -225,6 +226,14 @@ void MapItem::setBorders(bool on) {
     options_.borders = scene_.borders = on;
     saveOptions();
     emit bordersChanged();
+    update();
+}
+
+void MapItem::setStates(bool on) {
+    if (on == options_.states) return;
+    options_.states = scene_.states = on;
+    saveOptions();
+    emit statesChanged();
     update();
 }
 

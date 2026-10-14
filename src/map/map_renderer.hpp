@@ -30,6 +30,7 @@ struct MapScene {
     std::optional<MapStyle> style;      // active base-map style image + legend
     MapGrid grid = MapGrid::None;
     bool borders = false;               // country borders on the base map
+    bool states = false;                // US state lines on the base map (Natural Earth 110m admin-1)
     bool gray = false;                  // grayscale base map
     bool sky_points = false;            // draw sublunar point and DE antipode
     std::optional<Location> moon;       // sublunar point
@@ -54,6 +55,7 @@ private:
     mutable QString base_key_, proj_key_;
     QPainterPath coast_;
     QPainterPath borders_;
+    QPainterPath states_;
     std::vector<QPainterPath> land_;
 };
 }
