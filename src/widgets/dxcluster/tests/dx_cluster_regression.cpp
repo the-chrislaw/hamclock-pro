@@ -144,6 +144,9 @@ int main(int argc, char** argv) {
     }
     auto* list = qobject_cast<QAbstractListModel*>(model.spots());
     check(list && list->data(list->index(0), DxSpotList::DxRole) == "K1ABC", "newest spot first");
+    check(list->data(list->index(0), DxSpotList::OtaRole).toString().isEmpty(), "no reference, no ota text");
+    emit model.client().lineReceived("DX de W3LPL:     14074.0  K1POT       FT8 POTA K-1234                 1235Z FN20");
+    check(list->data(list->index(0), DxSpotList::OtaRole) == "POTA K-1234", "ota role names program and reference");
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 
