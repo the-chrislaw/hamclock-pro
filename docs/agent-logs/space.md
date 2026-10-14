@@ -91,3 +91,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Shared file touched: one id added to the category map in `PaneChooser.qml`.
 - #73 (docs, not mine) has unknown mergeability and a stale base; left alone. No open [B] issues.
 - Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions.
+
+## 2026-10-14 (UTC): Solar trend compact fit (backlog: compact layouts)
+
+- Re-checked all space widgets in a pane at 800x480 and 1024x600 (dark): Space weather X-ray and Solar wind Bz now fit (earlier compact work). `solartrend` still lost its Kp bars: the fixed-height bar canvas was clipped at the pane bottom at 800x480, and also at 1280x800 and 1920x1080.
+- `SolarTrendCard.qml`: compact slots drop the 30-day flux line (the metrics row already shows it) and keep the Kp bars; the bars now fill the height left in the pane (16 to 90 scaled px) instead of a fixed height. Checked by offscreen screenshots at 800x480, 1024x600 (light), 1280x800 and 1920x1080 (dark). QML only; full ctest passes (132/132). Not validated on device.
+- Other auto-merge PRs: #73 has a merge conflict (not mine), #236 and #237 (other areas) had checks still running; left alone. No open [B] issues.
+- Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
