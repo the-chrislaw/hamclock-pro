@@ -168,6 +168,16 @@ ApplicationWindow {
                     width: Math.min(implicitWidth, mapCard.width - 8 * Theme.scale)
                     height: Math.min(implicitHeight, mapCard.height - y - 4 * Theme.scale)
                 }
+                // Pinch / trackpad pinch zoom about the gesture point (flat map; wheel and double tap are in WorldMap).
+                PinchHandler {
+                    target: null
+                    property real lastScale: 1
+                    onActiveChanged: lastScale = 1
+                    onScaleChanged: if (active) {
+                        worldMap.zoomAt(centroid.position.x, centroid.position.y, scale / lastScale)
+                        lastScale = scale
+                    }
+                }
                 // Zoom 1-4x and reset (drag pans when zoomed; a tap opens Set DE / Set DX).
                 Row {
                     anchors.top: parent.top

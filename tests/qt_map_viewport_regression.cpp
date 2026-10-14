@@ -57,6 +57,17 @@ int main(int argc, char** argv) {
     check(near(z.scale, base_scale), "zoom below 1 clamps to 1");
     z = MapViewport::fill(1024, 600, 55.0, std::nullopt, std::nullopt, 3.0);
     check(near(z.center_lon, 55.0), "zoomed view centres on the preferred longitude");
+    // Zoom about a gesture point keeps the location under the finger (card sizes 800x310..1920x1080).
+    for (const auto& sz : {std::pair{800.0, 310.0}, {1024.0, 600.0}, {1920.0, 1080.0}}) {
+        const auto b = MapViewport::fill(sz.first, sz.second, 0);
+        const double px = sz.first * 0.7, py = sz.second * 0.6;
+        const auto loc = b.location_at(px, py);
+        const auto z1 = MapViewport::fill(sz.first, sz.second, 0, std::nullopt, std::nullopt, 2.5);
+        const auto c = z1.center_for_anchor(loc, px, py);
+        const auto z2 = MapViewport::fill(sz.first, sz.second, 0, std::nullopt, std::nullopt, 2.5, c.lon, c.lat);
+        const auto got = z2.location_at(px, py);
+        check(near(got.lat, loc.lat) && near(got.lon, loc.lon), "zoom about a point keeps the anchored location");
+    }
     v = MapViewport::fill(0, 0, 0);
     check(v.scale == 0, "empty size is harmless");
 
