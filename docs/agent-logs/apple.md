@@ -22,3 +22,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues; no PRs of mine open (#73 is another area's, left alone).
 - F3 slice 3: signing/notarization steps in apple.yml (Developer ID import into a temporary keychain, codesign with hardened runtime, signed dmg, notarytool + stapler with the ASC API key). Runs only on main pushes/tags; each part skips cleanly when its secrets are absent; keychain and key files removed at job end. Unverifiable until the owner adds secrets (#58); the skip path is exercised by the PR run.
 - Next: universal (arm64+x86_64) build, then F4 iPad work once area G/A's QPainter map renderer lands.
+
+## 2026-10-14 (second hourly run)
+- Open PRs #129/#73 are other areas'; none of mine open. Took qa issue #123 ([F] plaintext credential file on Linux/Pi).
+- Documented the clear-text limitation (WIDGETS.md, header), file store now also sets its directory to 0700, and the regression test asserts a loose pre-existing file is tightened to 0600 and the directory is owner-only. libsecret store not done; the Settings page help text belongs to area A (to request).
+- Next: universal build, F4 iPad once the map renderer port lands.

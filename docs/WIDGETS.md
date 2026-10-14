@@ -190,7 +190,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | Local passwords guarding restart/exit/unlock/new DE-DX/configurations | Kiosk protection | A | Missing |
 | QRZ/HamQTH lookup | *Not in original*: our addition | E | Planned |
 
-Credentials (HamAlert password, hams.at key, lookup password) are C++-only and stored by the credential store (owner-only file, Keychain on Apple), never shown back or logged.
+Credentials (HamAlert password, hams.at key, lookup password) are C++-only and stored by the credential store (Keychain on Apple; on Linux/Pi an owner-only 0600 JSON file in a 0700 directory, stored in clear text, so it is readable by any process of the same user and ends up in backups or SD-card images of the data directory; a libsecret/Secret Service store is a possible later addition), never shown back or logged.
 
 ## Status
 

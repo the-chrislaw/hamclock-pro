@@ -43,6 +43,15 @@ int main(int argc, char** argv) {
     CHECK(perms & QFileDevice::WriteOwner);
     CHECK(!(perms & (QFileDevice::ReadGroup | QFileDevice::WriteGroup | QFileDevice::ReadOther |
                      QFileDevice::WriteOther)));
+    // A pre-existing group/world-readable file is tightened on the next write.
+    CHECK(QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner |
+                                          QFileDevice::ReadGroup | QFileDevice::ReadOther));
+    CHECK(file.set("k", "v"));
+    CHECK(!(QFileInfo(path).permissions() & (QFileDevice::ReadGroup | QFileDevice::ReadOther)));
+    // The containing directory is owner-only.
+    CHECK(!(QFileInfo(QFileInfo(path).absolutePath()).permissions() &
+            (QFileDevice::ReadGroup | QFileDevice::ExeGroup | QFileDevice::ReadOther |
+             QFileDevice::ExeOther)));
 #endif
     FileCredentialStore again(path);
     CHECK(again.get("k") == "v");
