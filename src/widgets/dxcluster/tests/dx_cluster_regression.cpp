@@ -1,5 +1,6 @@
 // DX cluster: telnet client (fake socket), spot parser and model, offline.
 #include "../dx_cluster_model.hpp"
+#include "../../../map/overlay.hpp"
 #include "../dx_spot_parse.hpp"
 #include "../../../net/telnet_client.hpp"
 #include "../../../platform/apple_lifecycle.hpp"
@@ -132,6 +133,15 @@ int main(int argc, char** argv) {
     emit model.client().lineReceived(lines[0]);
     emit model.client().lineReceived("not a spot");
     check(model.spotCount() == 1, "only valid spots listed");
+    {
+        // Live link => layer published (the bundled DXCC table is a qrc resource, absent in unit tests, so no markers here).
+        const auto& layers = MapOverlays::instance().layers();
+        check(model.state() == "live" && layers.size() == 1 && layers[0].id == "dx-cluster", "live -> map layer published");
+        model.setMapVisible(false);
+        check(MapOverlays::instance().layers().empty(), "map off removes the layer");
+        model.setMapVisible(true);
+        check(MapOverlays::instance().layers().size() == 1, "map on restores it");
+    }
     auto* list = qobject_cast<QAbstractListModel*>(model.spots());
     check(list && list->data(list->index(0), DxSpotList::DxRole) == "K1ABC", "newest spot first");
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);

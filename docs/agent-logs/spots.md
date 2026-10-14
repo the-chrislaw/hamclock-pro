@@ -89,3 +89,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #207 (no checks reported), #213 (macOS universal running), #73 are other areas', left alone. No open `[C]` qa issues.
 - Slice of backlog item 5: the DX cluster card now shows the DXCC country on each row (`country · comment`; country only in compact mode). QML-only change, existing tests pass (127/127). No screenshots: the cluster stays Not configured without a host/callsign, so rows cannot be rendered offline. Not validated on device; ASan/UBSan left to CI for this QML-only change.
 - Next: country in map labels, APRS/HamAlert map overlays, OTA filter controls in Settings, Meshtastic.
+
+## 2026-10-14 (run 16)
+- Step 1: nothing of mine open; #73 (docs, other area) left alone. No open `[C]` qa issues.
+- Backlog item 1 (slice): DX cluster spots on the map via the overlay API. New `dxcluster/dx_overlay`: `overlay_layer` draws one marker per DXCC entity at the cty.dat entity centre (spots carry no position), newest first, capped at 40, prefix labels, dashed path from DE. `DxClusterModel` publishes the layer only while the link is live and removes it otherwise; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Tests (synthetic resolver; model publish/remove) pass normally and under ASan/UBSan for the two touched test binaries.
+- Not done: Settings toggle, band colouring, HamAlert/APRS overlays. Entity centres are approximate (not the DX station's location). The cluster stays Not configured without a callsign, so no screenshot of the layer; not validated on device.
+- Next: APRS/HamAlert overlays, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
