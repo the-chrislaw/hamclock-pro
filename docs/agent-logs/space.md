@@ -76,3 +76,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Shared file touched: one id added to the category map in `PaneChooser.qml`.
 - Merged #179 (hazards, green). #180 still had checks running; #73 mergeability unknown, left alone.
 - Next: wire auto Aurora/DRAP switch to live Kp/X-ray; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): Auto Aurora/DRAP switch wired (backlog 8)
+
+- `spaceweather` now publishes its Kp and X-ray flux to the map styles framework (`set_auto_space_weather`) on every update. A value whose source is out of date is passed as unknown, so an old storm never keeps Aurora/DRAP on the map; the model clears auto mode when destroyed. Aurora shows for Kp >= 5, DRAP for M-class or stronger flares, when those styles are registered.
+- Test: quiet fixture leaves the plain map, a Kp 6 body picks `aurora`, stale data picks nothing. No UI change, so no screenshots. Not validated on device.
+- No mergeable PRs of mine; #73, #186 (macOS universal build failing) and #189 belong to others and were left alone. No open [B] issues.
+- Next: 13-15 need source/terms decisions (VOACAP, HamQSL, tropo); MUF style needs a terms-checked source.
