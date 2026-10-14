@@ -46,3 +46,18 @@ void MapOverlays::notify() const {
     for (const auto& l : copy) l.second();
 }
 }
+
+namespace hamclock {
+std::optional<QRectF> place_label(QRectF view, QPointF anchor, double marker_r, QSizeF text, const std::vector<QRectF>& used) {
+    const double gap = 3;
+    const double top = std::clamp(anchor.y() - text.height() / 2, view.top(), std::max(view.top(), view.bottom() - text.height()));
+    for (const double left : {anchor.x() + marker_r + gap, anchor.x() - marker_r - gap - text.width()}) {
+        const QRectF r(left, top, text.width(), text.height());
+        if (r.left() < view.left() || r.right() > view.right() || r.top() < view.top() || r.bottom() > view.bottom()) continue;
+        bool clash = false;
+        for (const auto& u : used) clash = clash || u.intersects(r);
+        if (!clash) return r;
+    }
+    return std::nullopt;
+}
+}

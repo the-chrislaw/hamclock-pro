@@ -51,6 +51,13 @@ void MapItem::setDark(bool dark) {
     update();
 }
 
+void MapItem::setUiScale(double s) {
+    if (s == scene_.ui_scale || s <= 0) return;
+    scene_.ui_scale = s;
+    emit uiScaleChanged();
+    update();
+}
+
 void MapItem::setShowPath(bool show) {
     if (show == scene_.route_visible) return;
     scene_.route_visible = show;

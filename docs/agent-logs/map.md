@@ -28,3 +28,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no `qa` issues open. #114 (not mine) still had the iPad job running; #73 (docs, not mine) stale, left alone.
 - G3 map styles framework (PR agent/map-styles): `src/map/styles.*` (`MapStyle`, `ColorScale`/`color_at`, process-wide `MapStyles` registry, rotation 20/60/90/120 s, automatic space-weather pick aurora/drap), drawn by `MapRenderer` between coast and night shade plus a gradient legend; `MapItem` follows the registry (shared: `CMakeLists.txt` lists, refresh timer 30 s -> 10 s so rotation steps). Test: `qt-map-styles-regression`; ASan/UBSan run of the map tests clean. Screenshot at 1024x600 unchanged with no style registered. Not validated on device.
 - Next: G4 projections (Mercator centre longitude, azimuthal, Robinson), zoom, tap Set DE/DX.
+
+## 2026-10-14 (UTC, run 2)
+
+- Orient: #122 ([G] qa) first. #130 (not mine) had macOS still running; #73 (docs, not mine) conflicts; left alone.
+- Label declutter (PR agent/map-label-declutter, fixes #122): DE/DX labels and markers are laid out first and act as obstacles; overlay labels go through new `place_label` (right of the marker, flipped left at the map edge, clamped vertically, skipped when overlapping any used rect). `MapScene::ui_scale` / `MapItem.uiScale` (bound to `Theme.scale` in Main.qml, shared file, one line) scales label font and marker radii. Test: extended `qt-map-overlay-regression`. Offscreen 1024x600 and 1920x1080 checked: labels readable, KH6RS flips at the edge. Not validated on device.
+- Next: G4 projections (Mercator centre longitude, azimuthal, Robinson), zoom, tap Set DE/DX.

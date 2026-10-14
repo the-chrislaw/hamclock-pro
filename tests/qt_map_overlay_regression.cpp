@@ -21,6 +21,18 @@ int main(int argc, char** argv) {
     check(keep == std::vector<bool>({true, false, true, false}), "minimum label distance, greedy in order");
     check(select_labels({{0, 0}, {1, 0}}, 0) == std::vector<bool>({true, true}), "zero distance keeps all");
 
+    {
+        const QRectF view(0, 0, 200, 100);
+        const QSizeF t(30, 12);
+        const auto right = place_label(view, {50, 50}, 4, t, {});
+        check(right && right->left() == 57, "label goes right of the marker");
+        const auto flip = place_label(view, {190, 50}, 4, t, {});
+        check(flip && flip->right() <= 200 && flip->right() < 190, "label flips left at the right edge");
+        const auto low = place_label(view, {50, 99}, 4, t, {});
+        check(low && low->bottom() <= 100, "label clamped inside the bottom edge");
+        check(!place_label(view, {50, 50}, 4, t, {QRectF(40, 40, 100, 20)}), "label skipped when both sides are taken");
+        check(place_label(view, {50, 50}, 4, t, {QRectF(55, 40, 40, 20)}).has_value(), "falls back to the left side when the right is taken");
+    }
     int calls = 0;
     auto& reg = MapOverlays::instance();
     const int token = reg.on_change([&] { ++calls; });
