@@ -29,6 +29,11 @@ QString requested_events();
 // 1 (advisory) .. 5 (hurricane force); 0 for events we do not track.
 int event_rank(const QString& event);
 
+// NWS marine region code ("GM", "AT", "PA", "AL", "PI", "GL") nearest a station,
+// from coarse coastline boxes; empty inland or outside US waters.
+QString region_for(double lat, double lon);
+QString region_name(const QString& code);
+
 // A body that is not an alert collection yields ok == false; an empty list is
 // valid (nothing active). Rows without id, tracked event or expiry are skipped.
 Feed parse(const QByteArray& body);

@@ -53,6 +53,34 @@ int main(int argc, char** argv) {
     for (size_t i = 1; i < merged.size(); ++i) newest_first = newest_first && merged[i - 1].time >= merged[i].time;
     check(newest_first, "merged newest first");
 
+    {
+        const QDateTime at = merged.front().time.addSecs(600);
+        ota::Filter f;
+        check(ota::filter(merged, f, at).size() == merged.size(), "empty filter keeps everything");
+        f.program = "SOTA";
+        const auto sota_only = ota::filter(merged, f, at);
+        bool all_sota = !sota_only.empty();
+        for (const auto& s : sota_only) all_sota = all_sota && s.program == "SOTA";
+        check(all_sota, "program filter");
+        f = {};
+        f.mode = "cw";
+        bool all_cw = true;
+        for (const auto& s : ota::filter(merged, f, at)) all_cw = all_cw && s.mode.toUpper() == "CW";
+        check(all_cw, "mode filter is case-insensitive");
+        f = {};
+        f.band = "20m";
+        const auto b20 = ota::filter(merged, f, at);
+        bool all20 = true;
+        for (const auto& s : b20) all20 = all20 && s.freq_khz >= 14000 && s.freq_khz <= 14350;
+        check(all20 && b20.size() < merged.size(), "band filter");
+        f = {};
+        f.max_age_min = 15;
+        const auto young = ota::filter(merged, f, at);
+        check(!young.empty() && young.size() < merged.size() && young.front().time == merged.front().time,
+              "age filter keeps only recent spots");
+        for (const auto& s : young) check(s.time.secsTo(at) <= 15 * 60, "age bound");
+    }
+
     check(!ota::parse_pota("").ok && !ota::parse_pota("{}").ok && !ota::parse_sota("nope").ok, "non-arrays rejected");
     const auto skipped = ota::parse_pota(
         R"([{"activator":"","reference":"US-1","frequency":"7000","spotTime":"2026-10-13T17:00:00"},

@@ -17,6 +17,14 @@ Card {
             Layout.fillWidth: true
         }
         Text {
+            visible: widget && widget.nearDe !== ""
+            text: widget ? widget.nearDe : ""
+            color: widget && widget.nearDe.indexOf("none") < 0 ? Theme.bad : Theme.secondary
+            font.pixelSize: Theme.fontBody; font.bold: true
+            elide: Text.ElideRight; maximumLineCount: 2
+            wrapMode: Text.WordWrap; Layout.fillWidth: true
+        }
+        Text {
             visible: widget && widget.count > 0
             text: widget ? widget.headlineArea : ""
             color: Theme.ink; font.pixelSize: Theme.fontBody

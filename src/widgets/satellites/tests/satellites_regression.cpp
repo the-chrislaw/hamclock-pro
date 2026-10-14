@@ -32,6 +32,20 @@ int main(int argc, char** argv) {
     check(std::fabs(r[0] - 2456.10705566) < 1e-2 && std::fabs(r[1] + 6071.93853760) < 1e-2
               && std::fabs(r[2] - 1222.89727783) < 1e-2, "88888 t=360 matches published vector");
 
+    // Range rate: matches a 10 s finite difference, and Doppler signs/size.
+    {
+        const Observer obs{51.5, -0.1, 0.0};
+        const double t = p.epoch_unix() + 600;
+        LookAngle a, b, c;
+        check(p.look(t, obs, a) && p.look(t - 5, obs, b) && p.look(t + 5, obs, c), "88888 look");
+        check(std::fabs(a.range_rate_km_s - (c.range_km - b.range_km) / 10.0) < 0.05, "range rate ~ finite difference");
+        check(std::fabs(a.range_rate_km_s) < 8.0, "range rate below orbital speed");
+    }
+    check(std::fabs(doppler_downlink_hz(145.8e6, 7.0) - 145.8e6 * (1 - 7.0 / 299792.458)) < 1e-3, "downlink formula");
+    check(doppler_downlink_hz(145.8e6, 7.0) < 145.8e6 && doppler_downlink_hz(145.8e6, -7.0) > 145.8e6, "receding lowers downlink");
+    check(std::fabs(doppler_downlink_hz(145.8e6, 7.0) - 145.8e6 + 3404.0) < 5.0, "7 km/s at 145.8 MHz is ~3.4 kHz");
+    check(doppler_uplink_hz(435.0e6, 7.0) > 435.0e6, "uplink pre-compensates upward when receding");
+
     SatellitePropagator bad(Tle{"x", "1 garbage", "2 garbage"});
     check(!bad.valid(), "garbage TLE rejected");
 

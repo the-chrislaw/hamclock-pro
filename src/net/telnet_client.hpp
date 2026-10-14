@@ -3,7 +3,8 @@
 // CC-Cluster). The TCP socket is injected (TelnetSocket) so tests run offline.
 // It strips telnet option negotiation (refusing every option), splits lines,
 // sends the callsign once when a login prompt appears, and reconnects with
-// exponential backoff.
+// exponential backoff. While the app is suspended (AppLifecycle) it closes the
+// socket and stays quiet, then reconnects at once on resume.
 #include <QByteArray>
 #include <QObject>
 #include <QString>
@@ -39,7 +40,10 @@ public:
     TelnetClient(TelnetSocketFactory factory, QObject* parent = nullptr);
 
     // `commands` are sent one per line, once, right after the cluster's first post-login output.
-    void start(const QString& host, int port, const QString& login, const QStringList& commands = {});
+    // A non-empty `password` (printable ASCII, no spaces) is sent once, when a "password:" prompt follows the
+    // login; the client counts as online only after that. It is never logged or exposed.
+    void start(const QString& host, int port, const QString& login, const QStringList& commands = {},
+               const QString& password = {});
     void stop();
     State state() const { return state_; }
     int consecutiveFailures() const { return failures_; }
@@ -48,6 +52,7 @@ public:
     // Stateless helpers, public for tests.
     static QByteArray strip_negotiation(QByteArray& pending, QByteArray& replies);
     static bool looks_like_login_prompt(const QString& partial_line);
+    static bool looks_like_password_prompt(const QString& partial_line);
     // Keeps the commands that are safe to send unattended: printable ASCII, <= 80 chars, at most 8, and
     // none that publish to the cluster (dx, announce, talk, say, ...); this client is receive-only.
     static QStringList sanitize_commands(const QStringList& commands);
@@ -58,6 +63,9 @@ signals:
 
 private:
     void connect_now();
+    void on_suspended();
+    void on_resumed();
+    void drop_socket();
     void on_data(const QByteArray& data);
     void on_closed(const QString& error);
     void set_state(State state);
@@ -65,14 +73,17 @@ private:
     TelnetSocketFactory factory_;
     TelnetSocket* socket_ = nullptr;
     QTimer retry_;
-    QString host_, login_;
+    QString host_, login_, password_;
     QStringList commands_;
     int port_ = 0;
     State state_ = State::Idle;
     QByteArray raw_;       // bytes possibly ending in a partial IAC sequence
     QByteArray text_;      // decoded bytes of the current partial line
     bool login_sent_ = false;
+    bool password_sent_ = false;
     int failures_ = 0;
+    bool wanted_ = false;    // start() accepted the settings and stop() has not been called
+    bool suspended_ = false; // app suspended (iPadOS drops sockets); reconnect on resume
 };
 
 // Header-only so settings code can filter without linking the client.

@@ -36,3 +36,32 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Yearly sunrise/sunset series (backlog D11, domain slice): `sun_year_series(year, lat, lon)` in `astro_sun.*` returns per-day rise/set minutes (UTC) and polar state; test checks London June/December solstice rows against almanac times and Tromso midnight sun/polar night. No UI yet (chart pane is the next slice). Full ctest green locally; ASan/UBSan left to CI.
 - Not mine: #73 conflicting, left alone. No `[D]` QA issues.
 - Next: grayline chart pane, SatNOGS transmitters, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+## 2026-10-14 (UTC), run 5
+- EME planning slice 1 (backlog D5): `src/domain/astro_eme.*` (mutual Moon-above-both-horizons window bisected to ~1 s, path loss vs perigee = 40 log10(d/356400 km)) and `src/widgets/eme/` compact pane (Moon az/el at DE and DX, mutual window, distance, path loss, declination; lower rows dropped, not clipped, when short). Test checks window edges against the ephemeris, antipodes (no window), in-progress windows and the 2.3 dB apogee figure. Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device); ASan/UBSan run of the EME test clean.
+- Merged #149 (green, other area). #154-#156 CI pending, left alone.
+- Next: user-chosen satellites (max two), TLE age (D7), moon image in the Moon pane linking EME (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 6
+- Next solar eclipse pane (backlog D9, slice 1): `src/domain/astro_eclipse.*` implements Meeus ch. 54 (greatest-eclipse time, gamma, type, partial magnitude) offline; `src/widgets/eclipse/` compact pane (next eclipse, greatest time, countdown, central/gamma or magnitude; lower rows dropped, not clipped). Test checks eight eclipses 2023-2027 against NASA catalogue times (within 5 min) and gamma (within 0.01) plus type; ASan/UBSan clean. NASA's eclipse site is not reachable from the sandbox, so reference values are from memory of the published catalogue and were not re-fetched this run. Rendered offscreen at 800x480, 1024x600, 1920x1080 (not on-device). Shows worldwide only, never claims visibility at DE.
+- Not mine: #161, #164, #73 left alone (CI pending / other areas).
+- Next: eclipse visibility at DE, user-chosen satellites (max two), TLE age (D7), moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 7
+- Maximum TLE age (backlog D7, slice 1): element sets with an epoch more than 30 days old are dropped from passes and the map layer; if all are stale the pane says "Element sets over 30 days old" instead of showing drifted orbits as live. Test advances the clock 60 days and back. Pane text only (no layout change). ASan/UBSan left to CI.
+- Not mine: #173, #174 (CI pending), #73 left alone.
+- Next: user-chosen satellites (max two), pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 8
+- User-chosen satellites (backlog D3): the map layer now tracks at most two satellites (was all eight): `[satellites] tracked=AO-7,ISS` in options.ini (read-only, no AppSettings change), else the two with the soonest passes (first two without a station). Test covers default, choice, unknown names, cap. No settings control yet (shared settings UI, left for a later slice).
+- Open PRs: #181, #182 (not mine, CI still running / failing tvOS check), #73 left alone. No `[D]` QA issues.
+- Next: settings control for the choice, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).
+
+## 2026-10-14 (UTC), run 9
+- Planets (backlog D10): `src/domain/astro_planets.*` (JPL approximate Keplerian elements, precessed to date) and `src/widgets/planets/` (compact pane of the planets above the horizon at DE, highest first; map layer "planets" with the five sub-planet points). Test checks Mars 2025 and 2027, Jupiter 2026 and Saturn 2025 oppositions and Venus inferior conjunction (2025-03-23) to within 2 days, Venus elongations (47.2 deg 2025-01-10, 45.9 deg 2025-06-01) and Mars distance 0.642 AU; ephemeris dates are from memory of almanac listings (my first recollections of two dates were wrong and the test dates were corrected to the published ones, the code was not adjusted to fit). Rendered offscreen at 800x480, 1024x600, 1920x1080 light/dark (not on-device).
+- Not mine: #73 conflicting; #186, #189 have a failing macOS universal build, #190 pending; left alone.
+- Next: settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key), yearly grayline chart (D11).
+
+## 2026-10-14 (UTC), run 10
+- Satellite detail box groundwork (owner request, D3): `LookAngle` gains `range_rate_km_s` (central difference over ±0.5 s; backward compatible) and `doppler_downlink_hz` / `doppler_uplink_hz` in `astro_satellite.*`. Test checks the rate against a 10 s finite difference and the formulas (7 km/s at 145.8 MHz ≈ 3.4 kHz, opposite senses for up/down). No UI change; transmitter data (SatNOGS) and the box itself are next slices.
+- Not mine: #196/#197 have a failing iPad Simulator check, #73 conflicting; left alone. No `[D]` QA issues.
+- Next: SatNOGS transmitter parse + NORAD join, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8, needs key).

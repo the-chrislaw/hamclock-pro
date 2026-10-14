@@ -3,6 +3,8 @@
 #include "../firewx_model.hpp"
 #include "../firewx_parse.hpp"
 #include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
+#include <QTemporaryDir>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -54,12 +56,20 @@ int main(int argc, char** argv) {
         {"properties":{"id":"r","event":"Red Flag Warning","expires":"2026-10-15T00:00:00Z"}}]})");
     check(order.alerts.size() == 2 && order.alerts[0].event == "Red Flag Warning", "warnings sort before watches");
 
+    QTemporaryDir tmp;
+    AppSettings settings(tmp.filePath("station.conf"), tmp.path());
     WidgetContext context;
+    context.settings = &settings;
     bool fail_all = false;
-    context.transport = [&](const QUrl&, FetchDone done) {
+    QString last_point_url;
+    QByteArray point_body = fixture(dir, "point-empty.json"); // real capture 2026-10-14 05:45Z, Denver
+    check(!point_body.isEmpty(), "point fixture present");
+    context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
+        const bool is_point = url.query().contains("point=");
+        if (is_point) last_point_url = url.toString();
         if (fail_all) result.error = "Host unreachable";
-        else { result.http_status = 200; result.body = body; }
+        else { result.http_status = 200; result.body = is_point ? point_body : body; }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     FirewxModel model(context);
@@ -80,6 +90,19 @@ int main(int argc, char** argv) {
     check(model.headlineTimes().startsWith("issued 13 16:50Z · until 17 05:00Z"), "times shown");
     check(model.headlineStart() == "starts 15 13:00Z", "start shown while ahead");
 
+    check(model.atDe().isEmpty() && !model.pointSource(), "no station -> no point query");
+    check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "station saved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.pointSource() != nullptr, "station -> point source");
+    check(last_point_url.contains("point=41.7000,-72.7000"), "point query uses DE");
+    model.pointSource()->setClock([&] { return now; });
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.atDe() == "At DE: none active", "empty point response -> none active");
+    point_body = body; // a real alert body as the point answer
+    model.pointSource()->refreshNow();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.atDe() == "At DE: Fire Watch · until 17 05:00Z", "alert at DE shown with expiry");
+
     now = utc(15, 14, 0);
     set_clock();
     emit model.ageChanged();
@@ -91,6 +114,8 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData() && model.count() == 1, "outage -> stale, last data kept");
+
+    check(model.atDe().isEmpty(), "stale point data is not shown as 'none active'");
 
     now = utc(17, 6, 0);
     set_clock();

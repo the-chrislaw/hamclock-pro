@@ -1,0 +1,62 @@
+name: tvOS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "apple/tvos/**"
+      - "cmake/TvOS*.cmake"
+      - "cmake/TvOSCore/**"
+      - "src/domain/**"
+      - "src/providers/**"
+      - "tests/**"
+      - ".github/workflows/tvos.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tvos-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  core:
+    name: Qt-free core (host tests + tvOS Simulator build)
+    runs-on: macos-14
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ninja
+        run: brew install ninja
+      - name: Host build and tests
+        run: |
+          cmake -S cmake/TvOSCore -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build-host
+          ctest --test-dir build-host --output-on-failure
+      - name: Build for tvOS Simulator
+        run: |
+          cmake -S cmake/TvOSCore -B build-tvos -G Ninja -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/TvOSToolchain.cmake"
+          cmake --build build-tvos
+      - name: Run tests in tvOS Simulator
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)["devices"]
+          for rt,devs in sorted(d.items()):
+              if "tvOS" in rt and devs:
+                  print(devs[0]["udid"]); break')
+          test -n "$udid"
+          xcrun simctl boot "$udid"
+          fail=0
+          ls -R build-tvos | head -40
+          tests=$(find "$PWD/build-tvos" -type f -perm -u+x -name 'core-*-regression')
+          test -n "$tests"
+          for t in $tests; do
+            echo "== $t"
+            xcrun simctl spawn "$udid" "$t" || fail=1
+          done
+          xcrun simctl shutdown "$udid" || true
+          exit $fail

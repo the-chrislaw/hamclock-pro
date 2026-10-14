@@ -70,7 +70,7 @@ MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
             hi = hi ? std::max(*hi, l->latitude) : l->latitude;
         }
     return MapViewport::fill(size.width(), size.height(), scene.de ? scene.de->longitude : 0.0, lo, hi,
-                            scene.zoom, scene.pan_lon, scene.pan_lat);
+                            scene.zoom, scene.pan_lon ? scene.pan_lon : scene.center_lon, scene.pan_lat);
 }
 void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) const {
     const bool dark = scene.dark;
@@ -110,7 +110,14 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
             painter.drawImage(QRectF(0, 0, 1, 1), scene.style->image);
             painter.setOpacity(1.0);
         }
-        if (scene.sun) {
+        if (scene.grid != MapGrid::None) {
+            QPen gp(dark ? QColor(230, 238, 240, 90) : QColor(27, 42, 48, 80)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp); painter.setBrush(Qt::NoBrush);
+            for (const auto& l : grid_lines(scene.grid))
+                painter.drawLine(QPointF((l.lon1 + 180.0) / 360.0, (90.0 - l.lat1) / 180.0),
+                                 QPointF((l.lon2 + 180.0) / 360.0, (90.0 - l.lat2) / 180.0));
+        }
+        if (scene.sun && scene.night_shade) {
             painter.setPen(Qt::NoPen);
             painter.setBrush(QColor(0, 0, 0, dark ? 90 : 55));
             painter.drawPolygon(night);
@@ -135,6 +142,19 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                 for (std::size_t j = 0; j < split.count; ++j)
                     painter.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
                                      px(split.segments[j].second.x, split.segments[j].second.y));
+            }
+        }
+        if (scene.grid == MapGrid::AzimuthRings && scene.de) {
+            QPen gp(dark ? QColor(230, 238, 240, 110) : QColor(27, 42, 48, 100)); gp.setWidthF(1); gp.setCosmetic(true);
+            painter.setPen(gp);
+            for (double d = azimuth_ring_step_deg; d < 180.0; d += azimuth_ring_step_deg) {
+                const auto ring = ring_points(scene.de->latitude, scene.de->longitude, d);
+                for (std::size_t i = 1; i < ring.size(); ++i) {
+                    const auto split = map_split_equirectangular({ring[i - 1].lat, ring[i - 1].lon}, {ring[i].lat, ring[i].lon});
+                    for (std::size_t j = 0; j < split.count; ++j)
+                        painter.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
+                                         px(split.segments[j].second.x, split.segments[j].second.y));
+                }
             }
         }
         if (scene.de && scene.dx) {

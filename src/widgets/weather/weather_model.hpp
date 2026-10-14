@@ -23,6 +23,8 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString dxTemp READ dxTemp NOTIFY changed)
     Q_PROPERTY(QString dxSummary READ dxSummary NOTIFY changed)
     Q_PROPERTY(QString dxWind READ dxWind NOTIFY changed)
+    Q_PROPERTY(QString deLocal READ deLocal NOTIFY changed)
+    Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY changed)
 public:
     explicit WeatherModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -36,6 +38,9 @@ public:
     QString dxTemp() const { return temp(dx_); }
     QString dxSummary() const { return summary(dx_); }
     QString dxWind() const { return wind(dx_); }
+
+    QString deLocal() const { return local(de_); }
+    QString dxLocal() const { return local(dx_); }
 
     PolledSource* deSource() const { return de_.source; }
     PolledSource* dxSource() const { return dx_.source; }
@@ -56,6 +61,7 @@ private:
     static QString temp(const End& e);
     static QString summary(const End& e);
     static QString wind(const End& e);
+    QString local(const End& e) const;  // "14:32 (UTC-7)"
     static QString air(const End& e);  // "61% RH · 1015 hPa · 20% cloud"
 
     WidgetContext context_;

@@ -2,6 +2,9 @@
 #include "../dx_cluster_model.hpp"
 #include "../dx_spot_parse.hpp"
 #include "../../../net/telnet_client.hpp"
+#include "../../../platform/apple_lifecycle.hpp"
+#include <QEventLoop>
+#include <QTimer>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -23,6 +26,12 @@ public:
     QString host; int port = 0; QByteArray written;
 };
 } // namespace
+
+static void QTest_wait_ms(int ms) {
+    QEventLoop loop;
+    QTimer::singleShot(ms, &loop, &QEventLoop::quit);
+    loop.exec();
+}
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
@@ -46,6 +55,16 @@ int main(int argc, char** argv) {
     check(b && b->spotter == "DL1XYZ-#" && b->band == "40m" && b->mode == "FT8", "skimmer spotter and FT8");
     const auto c = parse_spot_line(lines[2], now);
     check(c && c->band == "2m" && c->grid.isEmpty(), "no grid is fine");
+    {
+        const auto ref = [](const char* c) { const auto r = parse_ota_ref(c); return r.program + ":" + r.ref; };
+        check(ref("CW POTA K-1234 up 1") == "POTA:K-1234", "POTA ref");
+        check(ref("SOTA w7w/kg-001") == "SOTA:W7W/KG-001", "SOTA ref, lowercase");
+        check(ref("IOTA EU-005 QRP") == "IOTA:EU-005", "IOTA ref");
+        check(ref("KFF-1234 FT8") == "WWFF:KFF-1234", "WWFF ref");
+        check(ref("CQ DX 599") == ":" && ref("TEST-12345X") == ":", "no false refs");
+        const auto o = parse_spot_line("DX de W3LPL: 14025.0 K1ABC POTA K-1234 CW 1234Z", now);
+        check(o && o->ota_program == "POTA" && o->ota_ref == "K-1234", "spot carries the reference");
+    }
     check(parse_spot_line("DX de W3LPL: 14025.0 K1ABC CQ 2359Z", now)->time.date() == QDate(2026, 10, 12),
           "future time rolls back a day");
     for (const char* bad : {"", "Hello", "DX de W3LPL: abc K1ABC CQ 1234Z", "DX de W3LPL: 14025.0 K1ABC CQ 2561Z",
@@ -85,6 +104,24 @@ int main(int argc, char** argv) {
     check(client.state() == TelnetClient::State::Waiting && client.consecutiveFailures() == 1, "drop schedules a retry");
     client.stop();
     check(client.state() == TelnetClient::State::Idle, "stop cancels retry");
+
+    // App suspend: socket dropped, no retries; resume reconnects at once and resets the backoff.
+    {
+        client.start("cluster.example", 7300, "K1ABC");
+        const auto before = sockets.size();
+        auto& lifecycle = hamclock::AppLifecycle::instance();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        check(client.state() == TelnetClient::State::Idle, "suspend closes the connection");
+        QTest_wait_ms(50);
+        check(sockets.size() == before, "no reconnect while suspended");
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Connecting && client.consecutiveFailures() == 0,
+              "resume reconnects immediately");
+        client.stop();
+        lifecycle.setState(Qt::ApplicationSuspended);
+        lifecycle.setState(Qt::ApplicationActive);
+        check(sockets.size() == before + 1 && client.state() == TelnetClient::State::Idle, "stopped client stays stopped across suspend");
+    }
 
     // Model: unconfigured without settings; spots flow when lines arrive.
     WidgetContext ctx;

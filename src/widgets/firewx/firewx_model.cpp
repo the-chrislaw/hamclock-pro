@@ -1,5 +1,7 @@
 #include "firewx_model.hpp"
+#include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
+#include "../../ui/app_settings.hpp"
 #include <QTimer>
 #include <QUrlQuery>
 #include <algorithm>
@@ -19,11 +21,25 @@ QUrl feed_url() {
     url.setQuery(q);
     return url;
 }
+// Alerts covering the saved DE point. NWS accepts at most 4 decimals.
+QUrl point_url(double lat, double lon) {
+    QUrl url("https://api.weather.gov/alerts/active");
+    QUrlQuery q;
+    q.addQueryItem("point", QString::number(lat, 'f', 4) + "," + QString::number(lon, 'f', 4));
+    q.addQueryItem("message_type", "alert");
+    q.addQueryItem("event", firewx::requested_events());
+    url.setQuery(q);
+    return url;
+}
+QString short_event(QString s) {
+    return s.replace("Extreme Fire Danger", "Extreme Fire").replace(" Warning", "").replace("Fire Weather Watch", "Fire Watch");
+}
 QString stamp(const QDateTime& t) { return t.toString("dd HH:mm") + "Z"; }
 } // namespace
 
 FirewxModel::FirewxModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("firewx", "Fire weather", parent),
+      context_(context),
       source_(new PolledSource("nws-firewx-alerts", feed_url(), kPolicy, context.transport, this)) {
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = firewx::parse(source_->body());
@@ -31,10 +47,41 @@ FirewxModel::FirewxModel(const WidgetContext& context, QObject* parent)
         refreshState();
     });
     connect(source_, &PolledSource::failed, this, &FirewxModel::refreshState);
+    if (context_.settings) connect(context_.settings, &AppSettings::stationChanged, this, &FirewxModel::resetPointSource);
     connect(this, &WidgetModel::ageChanged, this, [this] { emit alertsChanged(); refreshState(); });
 }
 
-void FirewxModel::start() { source_->start(); }
+void FirewxModel::start() {
+    source_->start();
+    resetPointSource();
+}
+
+void FirewxModel::resetPointSource() {
+    if (point_) { point_->deleteLater(); point_ = nullptr; }
+    point_feed_ = {};
+    const auto* s = context_.settings;
+    if (s && s->configured() && valid_location({s->deLatitude(), s->deLongitude()})) {
+        point_ = new PolledSource("nws-firewx-point", point_url(s->deLatitude(), s->deLongitude()), kPolicy,
+                                  context_.transport, this);
+        connect(point_, &PolledSource::updated, this, [this] {
+            point_feed_ = firewx::parse(point_->body());
+            emit alertsChanged();
+        });
+        point_->start();
+    }
+    emit alertsChanged();
+}
+
+QString FirewxModel::atDe() const {
+    if (!point_ || !point_feed_.ok) return {};
+    // A point body older than the shared staleness limit must not read as "none active".
+    if (point_->isStale(now())) return {};
+    const firewx::Alert* top = nullptr;
+    for (const auto& a : point_feed_.alerts)
+        if (a.expires > now() && (!top || a.rank > top->rank)) top = &a;
+    if (!top) return "At DE: none active";
+    return "At DE: " + short_event(top->event) + " · until " + stamp(top->expires);
+}
 
 std::vector<firewx::Alert> FirewxModel::active() const {
     std::vector<firewx::Alert> out;
@@ -44,11 +91,7 @@ std::vector<firewx::Alert> FirewxModel::active() const {
 
 int FirewxModel::topRank() const { const auto a = active(); return a.empty() ? 0 : a.front().rank; }
 QString FirewxModel::headline() const { const auto a = active(); return a.empty() ? QString() : a.front().event; }
-QString FirewxModel::shortHeadline() const {
-    QString s = headline();
-    s.replace("Extreme Fire Danger", "Extreme Fire").replace(" Warning", "").replace("Fire Weather Watch", "Fire Watch");
-    return s;
-}
+QString FirewxModel::shortHeadline() const { return short_event(headline()); }
 QString FirewxModel::headlineArea() const { const auto a = active(); return a.empty() ? QString() : a.front().area; }
 
 QString FirewxModel::headlineTimes() const {

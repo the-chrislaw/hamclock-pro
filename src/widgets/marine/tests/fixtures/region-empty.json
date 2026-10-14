@@ -1,0 +1,9 @@
+{
+    "@context": {
+        "@version": "1.1"
+    },
+    "type": "FeatureCollection",
+    "features": [],
+    "title": "Current watches, warnings, and advisories for Gulf of Mexico marine zones",
+    "updated": "2026-10-14T06:52:42+00:00"
+}

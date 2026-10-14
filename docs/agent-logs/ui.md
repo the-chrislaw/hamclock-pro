@@ -34,3 +34,31 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #143 (docs, CI green). #145/#146 still had macOS/iPad checks running; #73 stale.
 - Category picker (A8): the pane chooser has tabs (All, Space Wx, DX & Contest, Weather, Sky & Space, Station, Other) that filter the widget list; opens on the current widget's category. Mapping lives in `PaneChooser.qml` (unknown ids fall under Other). ctest 88/88. The popup is not reachable from `--screenshot`, so its layout was not visually checked at 1024x600; only QML load/warnings are covered. Not validated on a device.
 - Next: side panes / PANE_0 overlay, compact-mode adoption by widget owners.
+
+## 2026-10-14 (hourly run, 5)
+- Issue #150 (data never refreshes): added a timer-driven multi-cycle test for `PolledSource` (1 s interval, no `refreshNow`, >= 3 fetches). It passes on current code, so the shared timer/re-arm logic is not the cause; the earlier tests only used `refreshNow`. Remaining suspects are per-widget parsing (X-ray "missing" despite fresh data, area B) and the card age showing the slowest feed (per-value freshness, `Card` footer). ctest 94/94. Not validated on a device.
+- #161/#162 (areas G/H) had checks still running; #73 stale. Next: per-value freshness in `Card`, #151 time zone picker, side panes.
+
+## 2026-10-14 (hourly run, 6)
+- Issue #151 (time zone picker): Settings > Station now uses `TimeZonePicker` (button + searchable popup: city/region filter, "City (UTC-7)" labels with the current offset, Up/Down/Enter/Escape, "Use this device's zone"); the system zone is preselected when none is saved. C++ side is `TimeZoneSearch` (`timeZones` context property) with `time-zone-search-regression`. ctest 105/105. Not done: suggesting the zone from DE/DX coordinates (needs a coordinate-to-zone table; with 0b location lookup). The popup is not reachable from `--screenshot`, so its layout is unchecked visually. ASan/UBSan left to CI. Not validated on a device.
+- #170 (area H) had macOS/iPad checks running; #73 stale. Next: coordinate-based zone suggestion, per-value freshness in `Card`, side panes.
+
+## 2026-10-14 (hourly run, 7)
+- Issue #152 item 6: when DE == DX the station card shows "Set a DX target in Settings" instead of "0 KM · BEARING UNDEFINED" (`path_summary` in `src/ui/path_text.hpp`, `StationModel.pathText`, `path-text-regression`). The "NONAME" callsign was not found in src, so it is not addressed. ctest 111/111. ASan/UBSan left to CI. Not validated on a device.
+- #179 (area H) had checks running; #73 stale. Remaining in #152: truncated-Text guard in the smoke test, wheel scrolling in Settings, centred Settings, satellite time format (G/other).
+
+## 2026-10-14 (hourly run, 8)
+- Issue #152: Settings page column is now centred on wide windows and scrolls with mouse wheel / trackpad (`WheelHandler` on the Flickable). ctest 115/115; QML loads without warnings. Settings is not reachable from `--screenshot`, so layout was not visually checked. ASan/UBSan left to CI. Not validated on a device.
+- #186 had a failing macOS universal check (area F, not mine); #187 checks running; #73 stale.
+
+## 2026-10-14 (hourly run, 9)
+- Issue #152 automated guard: `--screenshot` now walks the item tree and exits 4 when a visible, non-empty `Text` reports `truncated` (items marked objectName `elideOk` are exempt; the `Card` status footer is, since long error reasons are shortened on purpose). New ctest `qml-app-truncation-800x480` / `-1920x1080` beside the existing 1024x600 smoke test, and the `qml-pane-*` tests only report it (`--allow-truncation`; CI fonts clip "Annular solar eclipse" in the eclipse widget, area owner to fix). It found a real clip: `Card` titles with the chooser arrow ("Space weather impact ▾") are now allowed to wrap to two lines. Settings is not reachable from `--screenshot`, so it is not covered. ctest 120/120. ASan/UBSan left to CI. Not validated on a device.
+- #195 (area H) had the iPad check failing and macOS running; #73 stale. Not mine. Next: side panes / PANE_0, coordinate-based zone suggestion, per-value freshness in `Card`.
+
+## 2026-10-14 (hourly run, 10)
+- Backlog 0b slice 1 (offline): new `LocationTools` (`src/ui/location_tools.*`, QML `locationTools`): `parseCoordinate` (decimal, `40:44:55N`, `40°44'55" S`, hemisphere must match the axis), `fromGrid` (2/4/6 character square centre), `gridFor`, and `parseSearchReply` for Nominatim jsonv2 (tested on `tests/fixtures/sources/nominatim-search.json`). Settings > Station accepts DMS in the DE/DX fields and has a grid square field that fills the home coordinates. Test `location-tools-regression`; ctest 125/125. Not done: the "Find" button with the 1 request/s Nominatim call, zone suggestion, "Use my location". Settings is not reachable from `--screenshot`, so layout was not visually checked. ASan/UBSan left to CI. Not validated on a device.
+- Only #73 was open (stale, not mine). Next: "Find" request slice, side panes / PANE_0, per-value freshness in `Card`.
+
+## 2026-10-14 (hourly run, 11)
+- Backlog 0c slice: tapping the station clock swaps the big clock between UTC and DE local time (`StationModel.deClock/deDate`, `clock_text.hpp`, `clock-text-regression`); the other zone shows as a small line under it. Screenshots at 800x480, 1024x600, 1920x1080 render with no truncation (the station is unconfigured in the fixtures, so the DE clock was not visible; layout of the configured card unchecked visually). ctest 128/128; ASan/UBSan left to CI. Not validated on a device.
+- #212/#207 (other areas) had checks running or none; #73 stale. Next: "Find" request slice, DX local time/sun times, side panes.

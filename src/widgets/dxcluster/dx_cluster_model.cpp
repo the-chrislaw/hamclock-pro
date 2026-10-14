@@ -1,6 +1,8 @@
 #include "dx_cluster_model.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../bandactivity/band_activity.hpp"
 #include "../watchlist/watch_match.hpp"
+#include "dxcc_table.hpp"
 #include <algorithm>
 
 namespace hamclock {
@@ -17,13 +19,17 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     case TimeRole: return s.time.toString("HH:mm") + "Z";
     case CommentRole: return s.comment;
     case WatchedRole: return is_watched_[size_t(shown_[size_t(index.row())])] != 0;
+    case CountryRole: {
+        const auto* e = dxcluster::DxccTable::bundled().lookup(s.dx);
+        return e ? e->name : QString();
+    }
     }
     return {};
 }
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}};
 }
 
 void DxSpotList::rebuild() {
@@ -51,6 +57,24 @@ void DxSpotList::add(const dxcluster::DxSpot& spot) {
     watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     rebuild();
     endResetModel();
+}
+
+QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& continent_of) const {
+    auto resolver = continent_of;
+    if (!resolver)
+        resolver = [](const QString& call) {
+            const auto* e = dxcluster::DxccTable::bundled().lookup(call);
+            return e ? e->continent : QString();
+        };
+    QStringList order = DxClusterModel::bandChoices();
+    order.removeAll(QString());
+    QVariantList out;
+    for (const auto& r : bandactivity::summarize(spots_, order, resolver)) {
+        QVariantMap m{{"band", r.band}, {"total", r.total}};
+        for (const auto& c : bandactivity::continents()) m.insert(c, r.by_continent.count(c) ? r.by_continent.at(c) : 0);
+        out << m;
+    }
+    return out;
 }
 
 void DxSpotList::set_watch(const QStringList& entries) {
@@ -101,13 +125,25 @@ void DxClusterModel::cycleModeFilter() {
 
 DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("dxcluster", "DX cluster", parent), settings_(context.settings),
-      client_(std::move(factory), this), list_(this) {
+      client_(std::move(factory), this), list_(this), udp_(this) {
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
     if (settings_) {
         list_.set_watch(settings_->watchList());
         connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::refreshWatchList);
+        connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::refreshUdp);
     }
+    connect(&udp_, &dxcluster::UdpSpotListener::spotReceived, this, [this](const dxcluster::DxSpot& spot) {
+        list_.add(spot);
+        emit countChanged();
+    });
+}
+
+void DxClusterModel::refreshUdp() {
+    const int port = settings_ ? settings_->udpSpotPort() : 0;
+    const bool lan = settings_ && settings_->udpSpotLan();
+    if (port == udp_.port() && udp_.listening() == (port != 0)) return;
+    if (!udp_.listen(port, lan)) qWarning("UDP spot input: could not bind port %d", port);
 }
 
 QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
@@ -117,6 +153,7 @@ QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
 }
 
 void DxClusterModel::start() {
+    refreshUdp();
     const QString host = settings_ ? settings_->clusterHost() : QString();
     const QString call = cluster_login(settings_ ? settings_->callsign() : QString(), settings_ ? settings_->clusterSsid() : 0);
     client_.start(host, settings_ ? settings_->clusterPort() : 0, call,

@@ -25,3 +25,27 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, third run)
 - #137 (area D) CI still running, #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
 - E11 slice: BME280/BMP280 on the sensors card via the kernel IIO driver (sysfs; temp, pressure, humidity, dew point by Magnus formula). Absent hardware hides the metrics. Tested against a fake IIO tree, release build; not run on a Pi. No calibration offsets or history yet. Next: DX time zone/city, new-DE/DX popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fourth run)
+- Merged #154 (docs, green). #156/#158 CI was still running, #73 conflicting: not mine. No open `qa` issues for E.
+- E5/E12 slice: new read-only `gps` widget, gpsd JSON client on localhost:2947 (fix quality, position, grid, satellites used). No gpsd -> "unconfigured"; retries every 15 s; no fix is never shown as live. Does not set DE and does not use GPS time yet. Tested against a loopback fake gpsd (release + ASan/UBSan); not run with a real receiver. Not on the default dashboard so no screenshot. Next: use fix for DE (needs area A setting), NTP choice, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, fifth run)
+- #161 and #165 (areas G/D) still had CI running; #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: new read-only `radio` widget, rigctld client on localhost:4532 polling only `f` and `m` (test asserts nothing else is sent). Shows frequency, band, mode; unconfigured without rigctld; RPRT errors are not live. Tested against a loopback fake rigctld (release + ASan/UBSan); not run with a real rig. Not on the default dashboard so no screenshot. Next: flrig, header display, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, sixth run)
+- #175 (area D) had both Linux checks green but Apple jobs still running; #73 (area A) conflicting: neither mine, left alone. No open `qa` issues for E.
+- E10 slice: new read-only `rotator` widget, rotctld client on localhost:4533 sending only `p` (test asserts nothing else is sent). Azimuth/elevation; unconfigured without rotctld; RPRT errors and out-of-range values are not live. Loopback fake rotctld test; not run with a real rotator. No move/track commands (safety review pending). Not on the default dashboard so no screenshot. Next: flrig, DX time zone/city, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, seventh run)
+- #73 (area A, conflicting), #182/#183/#184 (areas tvOS/D/C) had CI still running: not mine, left alone. No open `qa` issues for E.
+- E6 slice: DX/DE local time. Weather request now uses `timezone=auto`; the parsed `utc_offset_seconds` gives "14:32 (UTC-7)" on each end of the weather card (hidden if the service omits it). City name and a new-DE/DX popup are still pending. Offline tests incl. offset formatting; release + ASan/UBSan weather tests. Card not visually checked (no station in the screenshot harness); not validated on-device. Next: flrig, DX city/popup, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, eighth run)
+- #186 (area F, a Linux-green but macOS universal job failed), #191 (area D, Apple jobs running), #73 (area A, conflicting): not mine, left alone. No open `qa` issues for E.
+- E12 slice: clock sync status. New `src/platform/ntp_status` (read-only `chronyc tracking`, falling back to `timedatectl show -p NTPSynchronized`; no network, no clock changes) shown as a "Clock" metric on the sensors card ("Synced, 12 ms" / "Not synchronised"; hidden where neither tool exists). Parsers tested on sample text; release + ASan/UBSan sensors tests. Not run on a Pi. NTP server choice and GPS time are still pending. Next: DX city/popup, flrig, E3 feeds (terms check).
+
+## 2026-10-14 (UTC, ninth run)
+- #208 (area C, macOS/iPad jobs failing or running), #207 (area D, no checks yet), #73 (area A): not mine, left alone. No open `qa` issues for E.
+- E14 slice: `src/platform/gpio` output interface (`GpioOutputs`, BCM line parsing 2..27, Null default backend that drives nothing, in-memory Fake for tests). No hardware backend yet (needs on-device testing); nothing consumes it yet. Offline test; release + ASan/UBSan. Next: gpiod backend, ON AIR/alarm wiring, DX city/popup, flrig.

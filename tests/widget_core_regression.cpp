@@ -6,6 +6,8 @@
 #include "../src/widgets/widget_model.hpp"
 #include "../src/widgets/widget_registry.hpp"
 #include <QCoreApplication>
+#include <QElapsedTimer>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QStandardPaths>
@@ -92,6 +94,21 @@ int main(int argc, char** argv) {
         QObject::connect(&source, &PolledSource::updated, [&](bool from_cache) { cached = from_cache; });
         source.start(); spin(app);
         check(cached && source.body() == "first" && source.fetchedAt() == t0, "restart shows cached data with original time");
+    }
+
+    // Timer-driven refresh (issue #150): without refreshNow, the source must
+    // keep re-fetching on its interval, and after failures too.
+    net.next = {200, "tick", {}};
+    {
+        QFile::remove(PolledSource("core-t", QUrl("https://x.test/t"), {}, net.transport()).cachePath());
+        PolledSource source("core-t", QUrl("https://x.test/t"), {1s, 1800s, 3600s}, net.transport());
+        const int before = net.calls;
+        int updates = 0;
+        QObject::connect(&source, &PolledSource::updated, [&](bool) { ++updates; });
+        source.start();
+        QElapsedTimer wait; wait.start();
+        while (wait.elapsed() < 3500) app.processEvents(QEventLoop::AllEvents, 50);
+        check(net.calls - before >= 3 && updates >= 3, "timer re-fetches on its interval for several cycles");
     }
 
     // WidgetModel state mapping.

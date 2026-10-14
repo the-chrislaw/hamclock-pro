@@ -32,3 +32,33 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Open PRs #138/#73 are other areas' (#138 Apple jobs still running, #73 conflicting); left alone. qa #120 is area B.
 - F3 slice 4: `macOS universal build` job in apple.yml (aqt universal Qt 6.8.3, `arm64;x86_64`, `lipo -archs` check, cached Qt). Informational (continue-on-error) until the first green run; then the signed dmg can switch to it.
 - Next: make the dmg/signing use the universal build once green; F4 iPad when the map renderer port lands.
+
+## 2026-10-14 (fourth hourly run)
+- Merged #158 (green, other area); #73 still conflicting (other area, left alone); #159 checks running. No qa issues for area F.
+- F3 slice 5: universal job is now the distributable: no longer continue-on-error, runs macdeployqt, uploads an unsigned universal dmg, and the signing/notarization steps moved onto it (same secrets-skip behaviour). The plain macos job keeps build/tests/unsigned dmg.
+- Next: F4 iPad once the map renderer port lands; AppSettings credential wiring with area A.
+
+## 2026-10-14 (fifth hourly run)
+- No qa issues for area F. #73 (other area, stale/conflicting), #166/#167 (other areas) still running checks; left alone.
+- Found that nearly every Apple run on main was `cancelled` by `cancel-in-progress` when merges landed minutes apart, so the main-only signing/notarization and universal-dmg path never finished. Concurrency now cancels only superseded PR runs; each main push runs to completion.
+- Next: confirm a main run completes green; F4 iPad when the map renderer port lands; AppSettings credential wiring with area A.
+
+## 2026-10-14 (sixth hourly run)
+- No qa issues for area F; no PRs of mine open. Main Apple runs now complete green (universal + signing path ran to the end; signing skipped, no secrets yet).
+- F4 slice 1: `AppLifecycle` (src/platform/apple_lifecycle.*) turns iOS `Qt::ApplicationSuspended` into suspended/resumed signals (desktop never suspends); `PolledSource` gained `pause()`/`resume()` (small change in area A/B's file, backward compatible) and subscribes to it: no polling while suspended, on resume it fetches at once if data is overdue or failing, otherwise waits out the remaining interval. One line in main.cpp attaches it. `app-lifecycle-regression` covers it on Linux.
+- Next: pause/reconnect for the DX cluster and rigctld/rotctld sockets (they should subscribe to AppLifecycle), safe-area handling, iPad layout check.
+
+## 2026-10-14 (seventh hourly run)
+- No qa issues for area F; #73/#182/#184 are other areas' (checks running), left alone.
+- F4 slice 2: `TelnetClient` (DX cluster / HamAlert transport) subscribes to `AppLifecycle`: on suspend it closes the socket and cancels the backoff timer; on resume it reconnects at once with the backoff reset; a client stopped by the user stays stopped. Small backward-compatible change in `src/net/telnet_client.*` (shared net file); `dx_cluster_regression` covers suspend/resume/stop on Linux.
+- Next: same for the rigctld/rotctld/gpsd sockets, safe-area handling, iPad layout check.
+
+## 2026-10-14 (eighth hourly run)
+- No qa issues for area F. #199 (other area) has a failing iPad Simulator job, #73 conflicting; left alone.
+- F4 slice 3: `GpsModel`, `RotatorModel`, `RadioModel` (gpsd/rotctld/rigctld sockets) subscribe to `AppLifecycle`: on suspend they stop retry/poll timers and abort the socket; on resume they reconnect at once. Small backward-compatible changes in those widget models (areas of other agents); `gps_regression` covers suspend/resume on Linux.
+- Next: safe-area handling, iPad layout check once the map renderer port lands.
+
+## 2026-10-14 (ninth hourly run)
+- No qa issues for area F; #73/#207/#209 are other areas' (checks running), left alone.
+- Found the iPad Simulator job failing on every build since E12 (`ntp_status.cpp` uses QProcess, which Qt for iOS lacks). Guarded the include and the helper with `Q_OS_LINUX` (the only caller is already Linux-only). One-file, behaviour-neutral change in area E's file.
+- Next: safe-area handling, iPad layout check once the map renderer port lands.

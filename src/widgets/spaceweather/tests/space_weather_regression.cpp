@@ -2,6 +2,7 @@
 // Fixtures are trimmed real NOAA SWPC responses captured 2026-10-13.
 #include "../space_weather_model.hpp"
 #include "../swpc_parse.hpp"
+#include "../../../map/styles.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
 #include <QDir>
@@ -79,11 +80,15 @@ int main(int argc, char** argv) {
     // Model end to end with a fixture transport.
     WidgetContext context;
     int requests = 0;
-    bool fail_all = false;
+    bool fail_all = false, storm = false;
     context.transport = [&](const QUrl& url, FetchDone done) {
         ++requests;
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
+        else if (storm && url.path().endsWith("noaa-planetary-k-index.json")) {
+            result.http_status = 200;
+            result.body = "[{\"time_tag\":\"2026-10-13T15:00:00\",\"Kp\":6}]";
+        }
         else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
@@ -105,6 +110,17 @@ int main(int argc, char** argv) {
     check(model.xrayClass() == "B7.2", "model X-ray class");
     check(model.hasXrayHistory() && model.xrayHistory().size() == int(day.size()), "model exposes 24 h history");
 
+    // The map's automatic style gets the live values: quiet Kp 3 / B7.2 picks nothing.
+    {
+        MapStyles::instance().set_style({"aurora", "Aurora", QImage(2, 2, QImage::Format_ARGB32), 0.6, {}, ""});
+        check(MapStyles::instance().active(0) == nullptr, "quiet space weather leaves the plain map");
+        storm = true;
+        model.kpSource().refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        const auto* picked = MapStyles::instance().active(0);
+        check(picked && picked->id == "aurora", "fresh Kp 6 picks the aurora style");
+    }
+
     // Network loss keeps the last good values but reports them as stale.
     fail_all = true;
     model.setClock([&] { return now.addSecs(5 * 3600); });
@@ -114,8 +130,9 @@ int main(int argc, char** argv) {
     }
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale", "old data after failures -> stale, not live");
-    check(model.hasKp() && model.kp() == 3.0, "last good value kept while stale");
+    check(model.hasKp() && model.kp() == 6.0, "last good value kept while stale");
     check(!model.hasXrayHistory(), "stale history is not plotted");
+    check(MapStyles::instance().active(0) == nullptr, "stale values never pick a style");
     check(model.statusText().contains("Kp"), "status names the stale source");
 
     std::cout << "Space weather: " << checks << " checks, " << failures << " failures\n";

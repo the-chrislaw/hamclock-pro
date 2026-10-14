@@ -3,7 +3,10 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "dx_spot_parse.hpp"
+#include "udp_spot.hpp"
 #include <QAbstractListModel>
+#include <QVariantList>
+#include <functional>
 #include <deque>
 #include <vector>
 
@@ -13,7 +16,7 @@ namespace hamclock {
 class DxSpotList : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole };
+    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole };
     using QAbstractListModel::QAbstractListModel;
     int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(shown_.size()); }
     int totalCount() const { return int(spots_.size()); }
@@ -23,6 +26,9 @@ public:
     void add(const dxcluster::DxSpot& spot);
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
     int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
+    // Per-band spot counts by continent over every stored spot (any filter): [{band, total, NA, SA, EU, AF, AS, OC}].
+    // Default resolver is the bundled DXCC table.
+    QVariantList activity(const std::function<QString(const QString&)>& continent_of = {}) const;
     static constexpr int kCapacity = 50;
 private:
     bool matches(const dxcluster::DxSpot& s) const {
@@ -43,6 +49,7 @@ class DxClusterModel : public WidgetModel {
     Q_PROPERTY(int spotCount READ spotCount NOTIFY countChanged)
     Q_PROPERTY(int totalCount READ totalCount NOTIFY countChanged)
     Q_PROPERTY(int watchedCount READ watchedCount NOTIFY countChanged)
+    Q_PROPERTY(QVariantList activity READ activity NOTIFY countChanged)
     Q_PROPERTY(QString bandFilter READ bandFilter WRITE setBandFilter NOTIFY filterChanged)
     Q_PROPERTY(QString modeFilter READ modeFilter WRITE setModeFilter NOTIFY filterChanged)
 public:
@@ -52,7 +59,10 @@ public:
     int spotCount() const { return list_.rowCount(); }
     int totalCount() const { return list_.totalCount(); }
     int watchedCount() const { return list_.watchedCount(); }
+    QVariantList activity() const { return list_.activity(); }
     void refreshWatchList(); // re-reads the watch list from settings
+    void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
+    dxcluster::UdpSpotListener& udp() { return udp_; }
     QString bandFilter() const { return band_filter_; }
     QString modeFilter() const { return mode_filter_; }
     // Unknown values are ignored; "" shows everything.
@@ -74,6 +84,7 @@ private:
     AppSettings* settings_;
     TelnetClient client_;
     DxSpotList list_;
+    dxcluster::UdpSpotListener udp_;
     QString band_filter_, mode_filter_;
 };
 

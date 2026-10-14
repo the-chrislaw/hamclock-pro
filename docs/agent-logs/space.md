@@ -43,3 +43,51 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Checked by offscreen screenshots at 800x480, 1024x600 (compact) and 1920x1080 (dark); the full non-compact layout was not rendered because all default panes are compact. Not validated on device. Fixture is a real capture (the feed is ~1 kB). ASan/UBSan run on the widget tests.
 - #120 was fixed by #126 earlier today; the issue is still open for QA to close. Left #133 (not mine, iPad check still running) and #73 (docs, unknown mergeability) alone.
 - Next: 9 (DST), then 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Dst index (backlog 9)
+
+- New `solardst` widget ("Dst index"): SWPC `products/kyoto-dst.json` (hourly Kyoto Dst, ~7 days) polled every 30 min. Shows latest nT with a Quiet/Weak/Moderate/Intense/Super word, a 48 h plot with 0 and -50 nT guide lines, and in the full card the 24 h low and observed time. If the latest record is more than 6 h old the widget shows no data rather than an old value as current. Source terms recorded in the roadmap (same SWPC policy).
+- Checked by offscreen screenshots at 800x480 and 1920x1080 (dark; fixture time-shifted to look current); 1024x600 rendered too. Full non-compact layout not rendered (all default panes are compact). Not validated on device. Fixture is a real capture.
+- Merged #146 (docs, green). #147/#148 still had macOS/iPad checks running; #73 (docs) has a stale base and was left alone.
+- Next: 12 (stats ranked by impact), then 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Impact ranking (backlog 12)
+
+- New `solarimpact` widget ("Space weather impact"): the SWPC R/S/G levels (same `noaa-scales.json` feed, own 10-min poll) ranked worst first, ties broken by 24 h maximum, with a headline ("All quiet" or "G4 Severe: ...") and a one-line effect per level taken from the NOAA scale definitions. No data reads loading/offline, never "quiet".
+- Scope is the R/S/G scales only; folding Kp, Dst and X-ray class into the ranking is left for later.
+- Checked by offscreen screenshots at 800x480, 1024x600 and 1920x1080 (storm state from a synthetic fixture, screenshot only; the test fixture is the real quiet capture). Compact card shows level and word; the full layout was not rendered. Not validated on device.
+- No open green PRs were mergeable this run (#161 and #163 had checks still running, #73 mergeability unknown); left alone.
+- Next: 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Aurora pane and map style (backlog 8, part)
+
+- New `solaraurora` widget ("Aurora"): SWPC OVATION nowcast `json/ovation_aurora_latest.json` (~900 kB, 1 degree grid, public, same SWPC terms) polled every 10 min. Card shows peak aurora probability north and south and the observation time. It publishes the `aurora` map style (360x180 image, green to red, legend "Aurora %", credit NOAA SWPC OVATION) and removes it when the grid is over 3 h old or the model goes away, so an old nowcast is never drawn as live.
+- Fixture is a real capture trimmed to |lat| >= 55, even longitudes, non-zero cells (parser treats missing cells as 0). Tests cover parsing, hemisphere peaks, image orientation, staleness removal of the style; ASan/UBSan run on the widget test.
+- Checked by offscreen screenshots at 800x480, 1024x600, 1920x1080 (dark; fixture time shifted to look current); the map style itself was not viewed on the map because style selection UI does not exist yet. Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- No green PRs to merge this run (#171, #172 had checks running; #73 is not mine).
+- Next: 7 (DRAP, `text/drap_global_frequencies.txt` reachable), wire auto Aurora/DRAP switch to live Kp/X-ray.
+
+## 2026-10-14 (UTC): D-RAP pane and map style (backlog 7)
+
+- New `solardrap` widget ("D-RAP"): SWPC `text/drap_global_frequencies.txt` (4 x 2 degree grid, ~42 kB, same SWPC terms recorded in the roadmap) polled every 10 min. Card shows the highest affected frequency with the X-ray/proton status and valid time. It publishes the `drap` map style (360x180, blue to red, legend "D-RAP MHz") and removes it when the table is over 2 h old; a truncated or malformed table is rejected, never shown as zeros.
+- Fixture is the real capture (quiet, peak 4.0 MHz). Tests cover parsing, orientation/alpha of the image, staleness removal of the style; ASan/UBSan run on the widget test.
+- Checked by offscreen screenshots at 800x480, 1024x600, 1920x1080 (dark, fixture time shifted); map style not viewed on the map (no selection UI yet). Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- Merged #179 (hazards, green). #180 still had checks running; #73 mergeability unknown, left alone.
+- Next: wire auto Aurora/DRAP switch to live Kp/X-ray; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): Auto Aurora/DRAP switch wired (backlog 8)
+
+- `spaceweather` now publishes its Kp and X-ray flux to the map styles framework (`set_auto_space_weather`) on every update. A value whose source is out of date is passed as unknown, so an old storm never keeps Aurora/DRAP on the map; the model clears auto mode when destroyed. Aurora shows for Kp >= 5, DRAP for M-class or stronger flares, when those styles are registered.
+- Test: quiet fixture leaves the plain map, a Kp 6 body picks `aurora`, stale data picks nothing. No UI change, so no screenshots. Not validated on device.
+- No mergeable PRs of mine; #73, #186 (macOS universal build failing) and #189 belong to others and were left alone. No open [B] issues.
+- Next: 13-15 need source/terms decisions (VOACAP, HamQSL, tropo); MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): HamQSL conditions pane (backlog 14)
+
+- New `solarhamqsl` widget ("HamQSL conditions"): N0NBH `solarxml.php` polled hourly (the author's request). Card shows the calculated HF day/night words for 80-40m, 30-20m, 17-15m and 12-10m, coloured Poor/Fair/Good, with the HamQSL.com (N0NBH) credit; the full layout adds the VHF openings. Hidden (never shown as current) when the report is over 6 h old; a truncated or malformed document is rejected. Terms recorded in the roadmap. The words are N0NBH's calculation, not ours (our own outlook stays in `bands`).
+- Fixture is a real capture. Tests cover parsing, bad/truncated input, model live/stale/expired/offline. Checked by offscreen screenshots at 800x480, 1024x600 (compact; 1920x1080 rendered too); the full layout with VHF lines was not viewed. Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- #73 (docs, not mine) has unknown mergeability and a stale base; left alone. No open [B] issues.
+- Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions.

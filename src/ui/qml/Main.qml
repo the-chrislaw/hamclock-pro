@@ -47,9 +47,9 @@ ApplicationWindow {
             }
             Item { Layout.fillWidth: true }
             AppButton {
-                text: mapCard.showPath ? "Hide path" : "Show path"
+                text: worldMap.showPath ? "Hide path" : "Show path"
                 visible: station.configured
-                onClicked: mapCard.showPath = !mapCard.showPath
+                onClicked: worldMap.showPath = !worldMap.showPath
             }
             AppButton { id: settingsButton; text: "Settings"; onClicked: settingsLayer.visible = true }
         }
@@ -110,7 +110,6 @@ ApplicationWindow {
                 id: mapCard
                 title: "World map"
                 fillBody: true
-                property bool showPath: true
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 WorldMap {
@@ -120,10 +119,53 @@ ApplicationWindow {
                     anchors.fill: parent
                     dark: Theme.dark
                     uiScale: Theme.scale
-                    showPath: mapCard.showPath
+                    onTapped: function (lat, lon) { mapTapMenu.openAt(lat, lon) }
+                    onMarkerTapped: function (layer, call, detail, lat, lon) { mapTapMenu.openMarker(layer, call, detail, lat, lon) }
                 }
-                // Zoom 1-4x and reset (drag pans when zoomed; the item's tapped(lat, lon)
-                // signal feeds Set DE / Set DX in a later change).
+                MapTapMenu {
+                    id: mapTapMenu
+                    parent: mapCard
+                    x: Math.max(4 * Theme.scale, (mapCard.width - width) / 2)
+                    y: Math.max(4 * Theme.scale, mapCard.height - height - 8 * Theme.scale)
+                }
+                Rectangle {
+                    id: mapMenuButton
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+                    anchors.margins: 4 * Theme.scale
+                    width: Math.max(52 * Theme.scale, mapLabel.implicitWidth + 2 * Theme.pad)
+                    height: 34 * Theme.scale
+                    radius: 4 * Theme.scale
+                    color: mapMenu.opened ? Theme.accent : (Theme.dark ? "#cc10181b" : "#ccffffff")
+                    activeFocusOnTab: true
+                    Keys.onReturnPressed: mapMenuArea.clicked(null)
+                    Keys.onSpacePressed: mapMenuArea.clicked(null)
+                    border.color: activeFocus ? Theme.focus : "transparent"
+                    border.width: 2
+                    Text {
+                        id: mapLabel
+                        anchors.centerIn: parent
+                        text: "Map \u25be"
+                        color: mapMenu.opened ? Theme.accentInk : (Theme.dark ? "#e6eef0" : "#1b2a30")
+                        font.pixelSize: Theme.fontBody
+                        font.weight: Font.DemiBold
+                    }
+                    MouseArea {
+                        id: mapMenuArea
+                        anchors.fill: parent
+                        onClicked: mapMenu.opened ? mapMenu.close() : mapMenu.open()
+                    }
+                }
+                MapMenu {
+                    id: mapMenu
+                    map: worldMap
+                    parent: mapCard
+                    x: 4 * Theme.scale
+                    y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
+                    width: Math.min(implicitWidth, mapCard.width - 8 * Theme.scale)
+                    height: Math.min(implicitHeight, mapCard.height - y - 4 * Theme.scale)
+                }
+                // Zoom 1-4x and reset (drag pans when zoomed; a tap opens Set DE / Set DX).
                 Row {
                     anchors.top: parent.top
                     anchors.right: parent.right

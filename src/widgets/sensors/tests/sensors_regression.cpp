@@ -1,6 +1,7 @@
 // Host sensor parsing and sysfs scanning against a fake thermal tree. Offline.
 #include "../sensors_model.hpp"
 #include "../sensors_read.hpp"
+#include "../../../platform/ntp_status.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -75,18 +76,37 @@ int main(int argc, char** argv) {
     put(bad.path() + "/iio:device0/in_pressure_input", "5.0\n");
     check(!sensors::read_env_sensor(bad.path()).any(), "implausible/garbage values rejected");
 
+    {
+        const auto good = platform::parse_chrony_tracking(
+            "Reference ID    : A9FEA97B (time.example)\nStratum         : 3\nLeap status     : Normal\n"
+            "Last offset     : -0.000412345 seconds\n");
+        check(good && good->synchronized && good->stratum == 3 && good->offset_ms && std::abs(*good->offset_ms - 0.412345) < 1e-6,
+              "chrony tracking parsed");
+        check(good && platform::describe(*good) == "Synced, <1 ms", "sub-ms offset described");
+        const auto bad = platform::parse_chrony_tracking("Reference ID    : 00000000 ()\nStratum         : 0\nLeap status     : Not synchronised\n");
+        check(bad && !bad->synchronized && !bad->offset_ms && platform::describe(*bad) == "Not synchronised", "unsynchronised chrony not live");
+        check(!platform::parse_chrony_tracking("garbage"), "non-chrony text rejected");
+        check(platform::parse_timedatectl("NTPSynchronized=yes\n")->synchronized, "timedatectl yes");
+        check(!platform::parse_timedatectl("NTPSynchronized=no\n")->synchronized, "timedatectl no");
+        check(!platform::parse_timedatectl("oops"), "timedatectl garbage rejected");
+    }
+
     WidgetContext ctx;
-    SensorsModel absent(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio");
+    SensorsModel absent(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio", nullptr);
     absent.refresh();
     check(absent.state() == "unconfigured" && !absent.hasCpuTemp() && absent.cpuTemp().isEmpty(), "absent hardware degrades cleanly");
     put(r + "/wireless", wl);
-    SensorsModel present(ctx, r, r + "/wireless", "/");
+    SensorsModel present(ctx, r, r + "/wireless", "/", "/nonexistent/iio", nullptr);
     present.refresh();
     check(present.state() == "live" && present.cpuTemp() == "61 °C" && present.cpuNote() == "Normal", "present hardware live");
     check(present.wifi() == "-52 dBm" && present.hasDisk() && present.disk().endsWith("% used"), "wifi and disk shown");
-    SensorsModel envOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", iio.path());
+    SensorsModel envOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", iio.path(), nullptr);
     envOnly.refresh();
     check(envOnly.state() == "live" && envOnly.envTemp() == "21.5 °C" && envOnly.envPressure() == "1013 hPa"
               && envOnly.envHumidity() == "50%" && !envOnly.envDewPoint().isEmpty(), "env sensor shown");
+    SensorsModel clockOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio",
+                           [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2}); });
+    clockOnly.refresh();
+    check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms", "clock shown");
     return failures ? 1 : 0;
 }
