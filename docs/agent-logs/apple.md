@@ -67,3 +67,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; #215 (other area) checks queued, #73 stale; left alone.
 - F4 slice 4: `SafeArea` (src/platform/apple_safearea.*) exposes safe-area insets to QML as the `safeArea` context property; on iOS `apple_safearea_ios.mm` reads `UIView.safeAreaInsets` (refreshed on size/screen/visibility change), elsewhere always zero so Pi/macOS layout is unchanged. Main.qml page margins add the insets (small edit to area A's file). `safe-area-regression` covers sanitizing and change signals on Linux; the iOS path is only compile-checked by the iPad Simulator job, no on-device validation.
 - Next: iPad layout check at 1180x820/1366x1024 with a simulator screenshot artifact once the map renderer port lands.
+
+## 2026-10-14 (eleventh hourly run)
+- No qa issues for area F. Merged #219 (green, other area); #220 had no checks yet and #73 is stale; left alone.
+- F4: the iPad device build is green on main, but the Simulator step (needed for the layout screenshot) still fails with xcodebuild exit 65 and its error was hidden. Switched to Qt's documented Xcode flow (no SYSROOT override, `-sdk iphonesimulator -arch arm64` at build time) and the step now prints the first error/linker lines on failure. Still experimental (continue-on-error); no screenshot claim yet.
+- Next: read the Simulator error from this PR's run and fix; then the 1180x820/1366x1024 layout screenshot.
