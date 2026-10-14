@@ -74,3 +74,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, fifteenth run)
 - #256/#257 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E6 slice: weather card shows today's "H 18 / L 9 °C" (Open-Meteo `daily` max/min, forecast_days=1, same request; hidden if absent, null or low > high). Offline parser tests; full suite passes (release). ASan/UBSan left to CI; no screenshot (no station in harness); not validated on-device. Next: DX city/popup (reverse-geocode terms), gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, sixteenth run)
+- #265/#266 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E12 slice: `gps_nmea` parser for serial GPS receivers (GGA position/fix/satellites, RMC validity and UTC time; checksum required, void fixes, bad hemispheres and out-of-range values rejected). Offline tests on reference sentences; debug suite for gps passes, ASan/UBSan left to CI. Parser only: no serial reader (QtSerialPort availability to check), no DE or time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
