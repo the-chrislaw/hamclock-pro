@@ -50,3 +50,11 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Checked by offscreen screenshots at 800x480 and 1920x1080 (dark; fixture time-shifted to look current); 1024x600 rendered too. Full non-compact layout not rendered (all default panes are compact). Not validated on device. Fixture is a real capture.
 - Merged #146 (docs, green). #147/#148 still had macOS/iPad checks running; #73 (docs) has a stale base and was left alone.
 - Next: 12 (stats ranked by impact), then 7 (DRAP) / 8 (Aurora) with area G's map styles.
+
+## 2026-10-14 (UTC): Impact ranking (backlog 12)
+
+- New `solarimpact` widget ("Space weather impact"): the SWPC R/S/G levels (same `noaa-scales.json` feed, own 10-min poll) ranked worst first, ties broken by 24 h maximum, with a headline ("All quiet" or "G4 Severe: ...") and a one-line effect per level taken from the NOAA scale definitions. No data reads loading/offline, never "quiet".
+- Scope is the R/S/G scales only; folding Kp, Dst and X-ray class into the ranking is left for later.
+- Checked by offscreen screenshots at 800x480, 1024x600 and 1920x1080 (storm state from a synthetic fixture, screenshot only; the test fixture is the real quiet capture). Compact card shows level and word; the full layout was not rendered. Not validated on device.
+- No open green PRs were mergeable this run (#161 and #163 had checks still running, #73 mergeability unknown); left alone.
+- Next: 7 (DRAP) / 8 (Aurora) with area G's map styles.

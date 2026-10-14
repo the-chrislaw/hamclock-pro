@@ -75,7 +75,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 9. ✅ DST (Disturbance) pane (`solardst`: SWPC `products/kyoto-dst.json`, latest hourly Dst with Quiet/Weak/Moderate/Intense/Super word, 24 h low and 48 h plot; polled every 30 min; hidden when the latest record is over 6 h old; not on the default dashboard).
 10. ✅ NOAA R/S/G scales pane (`solarscales`: SWPC `products/noaa-scales.json`, current R/S/G, 24 h max and tomorrow's outlook; polled every 10 min; not on the default dashboard).
 11. ✅ X-ray 24 h history plot (`spaceweather`: SWPC `xrays-1-day.json`, 10-minute peaks on a log A1–X10 axis with class lines; polled every 15 min, hidden when out of date; compact card shows a thin version).
-12. Space-weather stats ranked by impact.
+12. ✅ Space-weather stats ranked by impact (`solarimpact`: the SWPC R/S/G levels from `noaa-scales.json`, worst first with a one-line HF/aurora/GPS effect from the NOAA scale definitions; polled every 10 min; not on the default dashboard). Kp, Dst and X-ray are not yet folded into the ranking.
 13. VOACAP-style DE→DX reliability matrix (power, mode, takeoff angle, SP/LP, UTC/DE timeline, antenna models) plus per-band TOA/REL and MUF maps; needs a source agreement or an offline open-source model.
 14. HamQSL (N0NBH) HF and VHF condition panes (check terms first).
 15. Tropo map style (check source terms first).
@@ -236,6 +236,7 @@ Credentials (HamAlert password, hams.at key, lookup password) are C++-only and s
 | NOAA scales: R/S/G radio blackout, radiation and geomagnetic storm levels with tomorrow's outlook (SWPC; not on the default dashboard) | B | **Live** |
 | Space alerts: NOAA SWPC alerts, watches and warnings currently in force (scale, headline, issued/until; not on the default dashboard) | B | **Live** |
 | Dst index: latest hourly Dst (Kyoto WDC via SWPC) with storm word, 24 h low and 48 h plot (not on the default dashboard) | B | **Live** |
+| Space weather impact: R/S/G levels ranked worst first with HF/aurora/GPS effect (SWPC; not on the default dashboard) | B | **Live** |
 | DX cluster: telnet client, spot parser, spot list card | C | Partial (band/mode filters and watch-list highlight with ★ count on the card; no map overlay yet; no DXCC-entity watching yet; shows Not configured until a cluster host is set) |
 | Callsign lookup (QRZ XML / HamQTH): typed call -> name, QTH, grid, country; lazy login, session re-login, in-memory cache | E | Partial (needs a Settings account; not yet wired to DX cluster spots; fixtures follow the documented XML, not live captures) |
 | Sun & Moon: sun rise/set, day length (DE, DX), moon phase, rise/set, az/el at DE (offline) | D | Working |
