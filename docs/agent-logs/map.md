@@ -100,3 +100,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues; no open PRs of mine. #73 (docs) and #227 (apple, CI running) not mine, left alone.
 - G5 slice (PR agent/map-long-path): Map menu toggle "Long path" (options.ini `[map] long_path`, default off) draws the DE/DX route the long way round the same great circle. New pure `map_long_path` (shares the short-path implementation, arc 2*pi - short arc, exact endpoints, antipodal rejected). Tests: extended `path_tests` (endpoints, summed length equals `long_distance_km`, equator heads west) and `qt-map-view-options-regression` (round trip, render differs). Full ctest 132/132 locally; no screenshot (fixtures have no DE/DX path); ASan/UBSan left to CI. Not validated on device.
 - Next: azimuthal and Robinson projections (needs a projection abstraction); CQ/ITU zones (need dataset licence record); gray mode.
+
+## 2026-10-14 (UTC, run 14)
+
+- Orient: no open `[G]` qa issues; no open PRs of mine. #234/#235 (not mine) macOS CI still running, #73 (docs) left alone.
+- G5 slice (PR agent/map-gray): Map menu toggle "Gray map" (options.ini `[map] gray`, default off) renders sea, land and coast in grayscale (`qGray`), overlays keep their colours. `MapScene::gray`, `MapViewOptions::gray`, `MapItem.gray`. Test: extended `qt-map-view-options-regression` (default, round trip, render differs). Full ctest 132/132 locally; ASan/UBSan left to CI. Not validated on device.
+- Next: azimuthal and Robinson projections (needs a projection abstraction); CQ/ITU zones (need dataset licence record).

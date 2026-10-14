@@ -18,6 +18,7 @@ struct MapViewOptions {
     bool long_path = false; // draw the DE/DX path the long way round
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
+    bool gray = false;       // grayscale base map (land, sea, coast)
     bool sky_points = false; // sublunar point and DE antipode markers
     static constexpr int center_auto = 999; // centre on DE
     int center_lon = center_auto; // map centre longitude (-180..180) or center_auto

@@ -75,8 +75,11 @@ MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
 }
 void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) const {
     const bool dark = scene.dark;
-    const QColor sea(dark ? "#374a51" : "#dce8eb"), coast(dark ? "#8b9fa3" : "#647c7e"), route(dark ? "#b4d9e8" : "#315e77");
-    const QColor land(dark ? "#29363b" : "#d6ddce");
+    QColor sea(dark ? "#374a51" : "#dce8eb"), coast(dark ? "#8b9fa3" : "#647c7e");
+    QColor land(dark ? "#29363b" : "#d6ddce");
+    if (scene.gray) // base map only; overlays keep their colours
+        for (QColor* c : {&sea, &coast, &land}) { const int g = qGray(c->rgb()); *c = QColor(g, g, g); }
+    const QColor route(dark ? "#b4d9e8" : "#315e77");
     painter.save();
     painter.setRenderHint(QPainter::Antialiasing);
     painter.fillRect(QRectF(QPointF(), size), sea);

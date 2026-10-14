@@ -25,6 +25,7 @@ void MapViewOptions::load(const QString& ini_path) {
     path = ini.value("map/path", true).toBool();
     long_path = ini.value("map/long_path", false).toBool();
     sky_points = ini.value("map/sky_points", false).toBool();
+    gray = ini.value("map/gray", false).toBool();
     const int gr = ini.value("map/grid", 0).toInt();
     grid = (gr >= 0 && gr < map_grid_count) ? gr : 0;
     const int cl = ini.value("map/center", center_auto).toInt();
@@ -45,6 +46,7 @@ bool MapViewOptions::save(const QString& ini_path) const {
     ini.setValue("map/long_path", long_path);
     ini.setValue("map/grid", grid);
     ini.setValue("map/sky_points", sky_points);
+    ini.setValue("map/gray", gray);
     ini.setValue("map/center", center_lon);
     ini.setValue("map/style", style);
     ini.setValue("map/rotation", rotation_s);

@@ -40,6 +40,8 @@ Popup {
                      onClicked: menu.map.nightShade = !menu.map.nightShade }
             Toggle { label: "Moon / antipode"; on: menu.map ? menu.map.skyPoints : false
                      onClicked: menu.map.skyPoints = !menu.map.skyPoints }
+            Toggle { label: "Gray map"; on: menu.map ? menu.map.gray : false
+                     onClicked: menu.map.gray = !menu.map.gray }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false
                      onClicked: menu.map.showPath = !menu.map.showPath }
             Toggle { label: "Long path"; on: menu.map ? menu.map.longPath : false

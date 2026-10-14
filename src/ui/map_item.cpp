@@ -38,6 +38,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.night_shade = options_.night_shade;
     scene_.grid = static_cast<MapGrid>(options_.grid);
     scene_.sky_points = options_.sky_points;
+    scene_.gray = options_.gray;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -162,6 +163,14 @@ void MapItem::setSkyPoints(bool on) {
     options_.sky_points = scene_.sky_points = on;
     saveOptions();
     emit skyPointsChanged();
+    update();
+}
+
+void MapItem::setGray(bool on) {
+    if (on == options_.gray) return;
+    options_.gray = scene_.gray = on;
+    saveOptions();
+    emit grayChanged();
     update();
 }
 

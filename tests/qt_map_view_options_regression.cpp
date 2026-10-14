@@ -112,6 +112,10 @@ int main(int argc, char** argv) {
       const auto base = render(ss); ss.sky_points = true;
       check(render(ss) != base, "sky points drawn"); }
     { MapViewOptions sp; sp.sky_points = true; check(sp.save(ini), "save sky"); MapViewOptions r; r.load(ini); check(r.sky_points, "sky points round trip"); }
+    { MapViewOptions gm; check(!gm.gray, "gray default off"); gm.gray = true;
+      check(gm.save(ini), "save gray"); MapViewOptions r; r.load(ini); check(r.gray, "gray round trip");
+      MapScene gs; gs.sun.reset(); const auto colour = render(gs); gs.gray = true; const auto img = render(gs);
+      check(img != colour, "gray renders differently"); }
     { MapViewOptions lp; check(!lp.long_path, "long path default off"); lp.long_path = true;
       check(lp.save(ini), "save long path"); MapViewOptions r; r.load(ini); check(r.long_path, "long path round trip"); }
     { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};
