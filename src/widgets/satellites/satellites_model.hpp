@@ -19,6 +19,7 @@ class SatellitesModel : public WidgetModel {
     Q_PROPERTY(bool hasData READ hasData NOTIFY changed)
     Q_PROPERTY(QVariantList rows READ rows NOTIFY changed)
     Q_PROPERTY(bool allStale READ allStale NOTIFY changed)
+    Q_PROPERTY(QVariantList skyTrack READ skyTrack NOTIFY changed)
 public:
     explicit SatellitesModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -29,6 +30,8 @@ public:
     QVariantList rows() const { return rows_; }
     // True when elements exist but every set is older than kMaxTleAgeDays (nothing is shown then).
     bool allStale() const { return all_stale_; }
+    // Az/el samples ({az, el} degrees) of the first listed pass, AOS to LOS, for the sky plot; empty if none.
+    QVariantList skyTrack() const { return sky_track_; }
     PolledSource& source() { return *source_; }
 
 signals:
@@ -43,6 +46,7 @@ private:
     QTimer timer_;
     QVariantList rows_;
     bool all_stale_ = false;
+    QVariantList sky_track_;
 };
 
 // Element sets older than this are dropped: SGP4 drifts by km per day for low orbits.

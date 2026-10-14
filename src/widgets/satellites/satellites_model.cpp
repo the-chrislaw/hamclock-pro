@@ -107,6 +107,7 @@ void SatellitesModel::load() {
 
 void SatellitesModel::recompute() {
     rows_.clear();
+    sky_track_.clear();
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
@@ -142,6 +143,11 @@ void SatellitesModel::recompute() {
     if (tracked.empty())
         for (std::size_t i = 0; i < found.size() && i < static_cast<std::size_t>(kMaxTracked); ++i) tracked.push_back(found[i].tle);
     publish_layer(tracked);
+    if (!found.empty()) {
+        constexpr int kSkySamples = 24;
+        for (const PassSample& s : SatellitePropagator(found.front().tle).pass_track(obs, found.front().pass, kSkySamples))
+            sky_track_.append(QVariantMap{{"az", s.az_deg}, {"el", s.el_deg}});
+    }
     if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
     for (const Row& r : found) {
         const qint64 until = r.pass.aos - static_cast<qint64>(t);
