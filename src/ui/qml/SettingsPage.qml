@@ -112,6 +112,16 @@ Rectangle {
                     }
                     TimeZonePicker { id: zone; label: "Time zone"
                                      zoneId: appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone() }
+                    AppButton { text: "Suggest zone from home coordinates"
+                                onClicked: {
+                                    const id = timeZones.suggestZone(locationTools.parseCoordinate(deLat.text, true),
+                                                                     locationTools.parseCoordinate(deLon.text, false))
+                                    zoneHint.text = id.length ? "Suggested: " + timeZones.labelFor(id) + ". Check it before saving."
+                                                              : "No suggestion for these coordinates; pick a zone above."
+                                    if (id.length) zone.zoneId = id
+                                } }
+                    Text { id: zoneHint; visible: text.length > 0; color: Theme.secondary
+                           font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: stationError; color: Theme.bad; font.pixelSize: Theme.fontCaption
                                wrapMode: Text.WordWrap; Layout.fillWidth: true }

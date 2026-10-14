@@ -82,3 +82,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 16)
 - Backlog 0b slice: Settings > Station has a "Find a place" field and Find button. `LocationTools::search` makes one Nominatim request per press through the shared transport (honest User-Agent, max 1 request/s, min 3 characters, errors and "No match" shown) and fills latitude, longitude and grid. Offline test extended (`location-tools-regression`: injected transport, rate limit, failure). ctest 135/135. Not done: time zone suggestion from the result, "Use my location". Settings is not reachable from `--screenshot`, so layout was not checked visually. ASan/UBSan left to CI. Not validated on a device.
 - #73 (conflicting, docs) and #242 (area F, no checks yet) open; neither mine, left alone.
+
+## 2026-10-14 (hourly run, 17)
+- Issue #151 remainder: `TimeZoneSearch::suggestZone(lat, lon)` picks the zone of the nearest city in a small offline table (about 110 cities, hint only, empty beyond 1500 km or for invalid coordinates); Settings > Station has a "Suggest zone from home coordinates" button that fills the picker and says to check it. Test `time-zone-search-regression` extended. ctest 137/137. DX zone from DX coordinates is not done. Settings is not reachable from `--screenshot`, so layout was not checked visually. ASan/UBSan left to CI. Not validated on a device.
+- Only #73 was open (stale docs, not mine).
