@@ -49,3 +49,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, ninth run)
 - #208 (area C, macOS/iPad jobs failing or running), #207 (area D, no checks yet), #73 (area A): not mine, left alone. No open `qa` issues for E.
 - E14 slice: `src/platform/gpio` output interface (`GpioOutputs`, BCM line parsing 2..27, Null default backend that drives nothing, in-memory Fake for tests). No hardware backend yet (needs on-device testing); nothing consumes it yet. Offline test; release + ASan/UBSan. Next: gpiod backend, ON AIR/alarm wiring, DX city/popup, flrig.
+
+## 2026-10-14 (UTC, tenth run)
+- Merged #214 (dxcluster, green). #207 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E4 slice: read-only flrig fallback for the radio card. XML-RPC to localhost:12345 asking only `rig.get_vfo` and `rig.get_mode`; used only while rigctld is not connected (rigctld wins), retries every 15 s, faults/garbage are never shown as live. Parser tests plus a loopback fake flrig HTTP server; release + ASan/UBSan radio tests. Not run with real flrig. Next: header display, DX city/popup, gpiod backend, E3 feeds (owner input #200).

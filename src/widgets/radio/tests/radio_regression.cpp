@@ -1,5 +1,6 @@
 // rigctld read-only client against a loopback fake rigctld. Offline.
 #include "../radio_model.hpp"
+#include "../flrig_parse.hpp"
 #include "../radio_parse.hpp"
 #include <QCoreApplication>
 #include <QElapsedTimer>
@@ -35,7 +36,35 @@ int main(int argc, char** argv) {
     check(radio::band_for(14074000) == "20m" && radio::band_for(145500000) == "2m", "bands");
     check(radio::band_for(15000000).isEmpty(), "outside amateur bands");
 
+    check(radio::flrig_request("rig.get_vfo").contains("<methodName>rig.get_vfo</methodName>"), "flrig request");
+    check(radio::flrig_frequency_hz("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>7030500</string></value></param></params></methodResponse>").value_or(0) == 7030500, "flrig frequency");
+    check(radio::flrig_mode("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>CW</string></value></param></params></methodResponse>").value_or("") == "CW", "flrig mode");
+    check(!radio::flrig_frequency_hz("<methodResponse><fault><value><string>x</string></value></fault></methodResponse>"), "flrig fault is not a frequency");
+    check(!radio::flrig_frequency_hz("not xml"), "flrig garbage rejected");
+    check(!radio::flrig_frequency_hz("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>0</string></value></param></params></methodResponse>"), "flrig zero rejected");
+
     WidgetContext ctx;
+    {
+        // flrig client against a loopback fake HTTP server
+        QTcpServer http; http.listen(QHostAddress::LocalHost, 0);
+        QObject::connect(&http, &QTcpServer::newConnection, &http, [&] {
+            auto* c = http.nextPendingConnection();
+            QObject::connect(c, &QTcpSocket::readyRead, c, [c] {
+                const QByteArray req = c->readAll();
+                const bool freq = req.contains("rig.get_vfo");
+                if (!freq && !req.contains("rig.get_mode")) { ++failures; std::cerr << "FAIL: unexpected flrig method\n"; }
+                const QByteArray body = freq ? QByteArray("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>7030500</string></value></param></params></methodResponse>") : QByteArray("<?xml version=\"1.0\"?><methodResponse><params><param><value><string>CW</string></value></param></params></methodResponse>");
+                c->write("HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n" + body);
+                c->disconnectFromHost();
+            });
+        });
+        
+        FlrigClient direct("127.0.0.1", http.serverPort());
+        double got = 0; QString gotMode;
+        QObject::connect(&direct, &FlrigClient::reading, [&](double hz, const QString& m) { got = hz; gotMode = m; });
+        direct.start();
+        check(waitFor([&] { return got > 0; }) && got == 7030500 && gotMode == "CW", "flrig client reads frequency and mode");
+    }
     {
         QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);
         const quint16 dead = probe.serverPort(); probe.close();

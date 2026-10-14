@@ -1,13 +1,15 @@
 #pragma once
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
+#include "flrig_client.hpp"
 #include <QTcpSocket>
 #include <QTimer>
 #include <optional>
 
 namespace hamclock {
 
-// Read-only rigctld client (Hamlib, localhost by default). Polls the frequency
+// Read-only rigctld client (Hamlib, localhost by default); falls back to a
+// read-only flrig XML-RPC poller when rigctld is not running. Polls the frequency
 // and mode with the read-only "f" and "m" commands only; nothing that could
 // change the rig or key the transmitter is ever sent. Without rigctld it
 // reports "unconfigured".
@@ -44,6 +46,8 @@ private:
     QTcpSocket socket_;
     bool started_ = false;
     QTimer retry_, poll_;
+    FlrigClient flrig_;
+    bool fromFlrig_ = false;
     QByteArray buffer_;
     Wait wait_ = Wait::Idle;
     std::optional<double> hz_;

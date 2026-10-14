@@ -14,6 +14,20 @@ RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject
     connect(&lifecycle, &AppLifecycle::suspended, this, &RadioModel::onSuspended);
     connect(&lifecycle, &AppLifecycle::resumed, this, &RadioModel::onResumed);
     connect(&poll_, &QTimer::timeout, this, &RadioModel::poll);
+    connect(&flrig_, &FlrigClient::reading, this, [this](double hz, const QString& mode) {
+        if (socket_.state() == QAbstractSocket::ConnectedState) return;   // rigctld wins
+        fromFlrig_ = true;
+        hz_ = hz; mode_ = mode;
+        setState("live", mode.isEmpty() ? "Frequency only (flrig)" : "Connected (flrig)", now());
+        emit changed();
+    });
+    connect(&flrig_, &FlrigClient::lost, this, [this] {
+        if (!fromFlrig_) return;
+        fromFlrig_ = false;
+        hz_.reset(); mode_.clear();
+        setState("unconfigured", "flrig connection lost");
+        emit changed();
+    });
     connect(&socket_, &QTcpSocket::connected, this, &RadioModel::onConnected);
     connect(&socket_, &QTcpSocket::readyRead, this, &RadioModel::onReadyRead);
     connect(&socket_, &QTcpSocket::disconnected, this, &RadioModel::onDisconnected);
@@ -22,12 +36,14 @@ RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject
     });
 }
 
-void RadioModel::start() { started_ = true; connectNow(); retry_.start(); }
+void RadioModel::start() { started_ = true; connectNow(); retry_.start(); flrig_.start(); }
 
 // iPad: iOS kills sockets of suspended apps, so close cleanly and reconnect on resume.
 void RadioModel::onSuspended() {
     retry_.stop();
     poll_.stop();
+    flrig_.stop();
+    fromFlrig_ = false;
     socket_.abort();
     if (started_) onDisconnected();
 }
@@ -36,6 +52,7 @@ void RadioModel::onResumed() {
     if (!started_) return;
     connectNow();
     retry_.start();
+    flrig_.start();
 }
 
 void RadioModel::connectNow() {
@@ -46,12 +63,14 @@ void RadioModel::connectNow() {
 void RadioModel::onConnected() {
     buffer_.clear();
     wait_ = Wait::Idle;
+    fromFlrig_ = false;
     setState("loading", "Waiting for the radio");
     poll_.start();
     poll();
 }
 
 void RadioModel::onDisconnected() {
+    if (fromFlrig_) return;                  // flrig is supplying the readings
     const bool had = hz_.has_value() || state() != "unconfigured";
     poll_.stop();
     wait_ = Wait::Idle;
