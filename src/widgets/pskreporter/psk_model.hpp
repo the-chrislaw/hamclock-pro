@@ -17,6 +17,8 @@ class PskModel : public WidgetModel {
     Q_PROPERTY(QVariantList recent READ recent NOTIFY reportsChanged)
 public:
     explicit PskModel(const WidgetContext& context, QObject* parent = nullptr);
+    ~PskModel() override;
+    void setMapVisible(bool visible);  // per-source map on/off (default on)
     void start();  // (re)reads the callsign from settings
 
     bool hasData() const { return feed_.ok; }
@@ -30,12 +32,15 @@ signals:
 
 private:
     void refreshState();
+    void refreshStateImpl();
+    void publishOverlay();
 
     AppSettings* settings_;
     Transport transport_;
     PolledSource* source_ = nullptr;
     QString call_;
     psk::Feed feed_;
+    bool map_visible_ = true;
 };
 
 void register_widget_pskreporter(WidgetRegistry& registry, const WidgetContext& context);

@@ -1,4 +1,5 @@
 #include "psk_model.hpp"
+#include "psk_overlay.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QTimer>
 #include <algorithm>
@@ -15,6 +16,19 @@ PskModel::PskModel(const WidgetContext& context, QObject* parent)
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
 }
 
+PskModel::~PskModel() { MapOverlays::instance().remove_layer(psk::kOverlayLayerId); }
+
+void PskModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Drawn only while the feed is live: never stale reports as current.
+void PskModel::publishOverlay() {
+    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(psk::overlay_layer(feed_.reports));
+    else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
+}
+
 void PskModel::start() {
     const QString call = settings_ ? settings_->callsign().trimmed().toUpper() : QString();
     if (source_ && call == call_) return;
@@ -23,6 +37,7 @@ void PskModel::start() {
     feed_ = {};
     call_ = call;
     emit reportsChanged();
+    publishOverlay();
     const QString url = psk::query_url(call);
     if (url.isEmpty()) {
         setState("unconfigured", call.isEmpty() ? "Not configured: set your callsign in Settings"
@@ -65,6 +80,11 @@ QVariantList PskModel::recent() const {
 }
 
 void PskModel::refreshState() {
+    refreshStateImpl();
+    publishOverlay();
+}
+
+void PskModel::refreshStateImpl() {
     if (!source_) return;
     if (!feed_.ok) {
         if (!source_->lastError().isEmpty()) setState("offline", "PSKReporter unreachable: " + source_->lastError());
