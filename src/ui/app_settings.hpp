@@ -30,6 +30,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
     Q_PROPERTY(QStringList panes READ panes NOTIFY panesChanged)
+    // Seconds between automatic widget changes per slot (0 = off; 5, 10, 30 or 60).
+    Q_PROPERTY(QList<int> paneRotations READ paneRotations NOTIFY panesChanged)
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
@@ -64,6 +66,9 @@ public:
     // Returns an empty string or a user-facing error.
     Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
     Q_INVOKABLE void resetPanes();
+    QList<int> paneRotations() const;
+    static bool validRotation(int seconds) { return seconds == 0 || seconds == 5 || seconds == 10 || seconds == 30 || seconds == 60; }
+    Q_INVOKABLE QString setPaneRotation(int slot, int seconds);
 
     void setAppearance(const QString& appearance);
     // Validate and save; returns an empty string or a user-facing error.
@@ -97,6 +102,7 @@ private:
     int cluster_ssid_ = 0;
     QStringList cluster_commands_;
     QStringList watch_list_;
+    QList<int> rotations_;
     QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
 };

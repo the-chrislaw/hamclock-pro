@@ -81,6 +81,11 @@ void AppSettings::loadOptions() {
         const auto id = ini.value(QString("panes/slot%1").arg(slot)).toString();
         panes_ << (id == "none" || valid_id.match(id).hasMatch() ? id : QString());
     }
+    rotations_.clear();
+    for (int slot = 0; slot < kPaneSlots; ++slot) {
+        const int seconds = ini.value(QString("panes/rotate%1").arg(slot), 0).toInt();
+        rotations_ << (validRotation(seconds) ? seconds : 0);
+    }
 }
 
 QStringList AppSettings::panes() const {
@@ -89,6 +94,25 @@ QStringList AppSettings::panes() const {
     for (int slot = 0; slot < kPaneSlots; ++slot)
         result << (slot < panes_.size() && !panes_[slot].isEmpty() ? panes_[slot] : defaults[slot]);
     return result;
+}
+
+QList<int> AppSettings::paneRotations() const {
+    QList<int> result = rotations_;
+    while (result.size() < kPaneSlots) result << 0;
+    return result;
+}
+
+QString AppSettings::setPaneRotation(int slot, int seconds) {
+    if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
+    if (!validRotation(seconds)) return "Rotation must be off, 5, 10, 30 or 60 seconds.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue(QString("panes/rotate%1").arg(slot), seconds);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the rotation.";
+    rotations_ = paneRotations();
+    rotations_[slot] = seconds;
+    emit panesChanged();
+    return {};
 }
 
 QString AppSettings::setPane(int slot, const QString& widget_id) {
@@ -110,6 +134,7 @@ void AppSettings::resetPanes() {
     ini.remove("panes");
     ini.sync();
     panes_.clear();
+    rotations_.clear();
     emit panesChanged();
 }
 

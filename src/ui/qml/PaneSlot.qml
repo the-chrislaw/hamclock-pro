@@ -6,17 +6,42 @@ import HamClock
 Item {
     id: slot
     property int index: 0
-    readonly property string choice: appSettings.panes[index]
+    readonly property string saved: appSettings.panes[index]
+    readonly property int rotateSeconds: appSettings.paneRotations[index]
+    // What is on screen: the saved choice, or the current stop of an automatic
+    // rotation (never written to settings, so a rotation does not wear the SD card).
+    property string rotated: ""
+    readonly property string choice: rotateSeconds > 0 && rotated !== "" ? rotated : saved
+    // Pause rotation while the user is interacting or a menu is open.
+    property bool paused: false
+    onSavedChanged: rotated = ""
+    onRotateSecondsChanged: rotated = ""
     signal chooseRequested(int slot)
     signal optionsRequested(int slot)
 
     // Step to the next (+1) or previous (-1) widget in registry order; "none" sits
     // between the last and first widget so a swipe can also empty the pane.
+    function ids() {
+        const list = ["none"]
+        for (let i = 0; i < loaders.count; ++i) list.push(loaders.itemAt(i).wid)
+        return list
+    }
     function step(direction) {
-        const ids = ["none"]
-        for (let i = 0; i < loaders.count; ++i) ids.push(loaders.itemAt(i).wid)
-        const at = Math.max(0, ids.indexOf(choice))
-        appSettings.setPane(index, ids[(at + direction + ids.length) % ids.length])
+        const list = ids()
+        const at = Math.max(0, list.indexOf(choice))
+        appSettings.setPane(index, list[(at + direction + list.length) % list.length])
+    }
+
+    // Automatic rotation: cycle through every widget (skipping "none").
+    Timer {
+        interval: slot.rotateSeconds * 1000
+        repeat: true
+        running: slot.rotateSeconds > 0 && !slot.paused && slot.visible
+        onTriggered: {
+            const list = slot.ids().filter(function (id) { return id !== "none" })
+            if (list.length === 0) return
+            slot.rotated = list[(Math.max(0, list.indexOf(slot.choice)) + 1) % list.length]
+        }
     }
 
     Repeater {
