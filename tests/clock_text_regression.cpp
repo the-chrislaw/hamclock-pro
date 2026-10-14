@@ -14,5 +14,10 @@ int main() {
     CHECK(clock_date(t, 3600) == "Thu 15 Oct 2026");
     CHECK(clock_date(t, -7 * 3600) == "Wed 14 Oct 2026");
     CHECK(clock_time(t, -7 * 3600 - 1800) == "16:00:05");
+    CHECK(clock_time(t, 0, true) == "11:30:05 PM");
+    CHECK(clock_time(t, 3600, true) == "12:30:05 AM");
+    CHECK(clock_date(t, 3600, 1) == "Thu Oct 15 2026");
+    CHECK(clock_date(t, 3600, 2) == "2026-10-15 Thu");
+    CHECK(clock_date(t, 3600, 9) == "Thu 15 Oct 2026");
     return failures ? 1 : 0;
 }

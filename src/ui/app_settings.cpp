@@ -98,6 +98,9 @@ void AppSettings::loadOptions() {
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
     imperial_ = ini.value("units/imperial", false).toBool();
+    date_order_ = ini.value("clock/date_order", 0).toInt();
+    if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
+    clock_12h_ = ini.value("clock/h12", false).toBool();
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -379,6 +382,19 @@ QString AppSettings::saveImperialUnits(bool imperial) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the units.";
     imperial_ = imperial;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveClockFormat(int date_order, bool h12) {
+    if (date_order < 0 || date_order > 2) return "Unknown date order.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("clock/date_order", date_order);
+    ini.setValue("clock/h12", h12);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the clock format.";
+    date_order_ = date_order;
+    clock_12h_ = h12;
     emit optionsChanged();
     return {};
 }
