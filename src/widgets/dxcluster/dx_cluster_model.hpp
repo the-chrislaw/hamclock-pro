@@ -26,6 +26,8 @@ public:
     void add(const dxcluster::DxSpot& spot);
     const std::deque<dxcluster::DxSpot>& spots() const { return spots_; }
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
+    // Call -> DXCC primary prefix for "@PREFIX" watch entries; default is the bundled table (a qrc resource, so tests inject one).
+    void set_entity_resolver(std::function<QString(const QString&)> r) { entity_of_ = std::move(r); }
     int watchedCount() const { return watched_; }  // spots in the list (any filter) on the watch list
     // Per-band spot counts by continent over every stored spot (any filter): [{band, total, NA, SA, EU, AF, AS, OC}].
     // Default resolver is the bundled DXCC table.
@@ -39,6 +41,7 @@ private:
     std::vector<int> shown_;              // indexes into spots_ passing the filter
     void rebuild();
     QString band_, mode_;
+    std::function<QString(const QString&)> entity_of_;
     QStringList watch_;
     std::vector<char> is_watched_; // parallel to spots_
     int watched_ = 0;

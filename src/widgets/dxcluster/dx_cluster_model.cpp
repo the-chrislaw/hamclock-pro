@@ -9,6 +9,13 @@
 
 namespace hamclock {
 
+namespace {
+QString entity_of(const QString& call) {
+    const auto* e = dxcluster::DxccTable::bundled().lookup(call);
+    return e ? e->primary_prefix : QString();
+}
+} // namespace
+
 QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     if (!index.isValid() || index.row() < 0 || index.row() >= rowCount()) return {};
     const auto& s = spots_[size_t(shown_[size_t(index.row())])];
@@ -52,7 +59,7 @@ void DxSpotList::set_filter(const QString& band, const QString& mode) {
 void DxSpotList::add(const dxcluster::DxSpot& spot) {
     beginResetModel(); // at most kCapacity rows, so a reset is cheap and keeps indexes simple
     spots_.push_front(spot);
-    is_watched_.insert(is_watched_.begin(), watchlist::matches(watch_, spot.dx));
+    is_watched_.insert(is_watched_.begin(), watchlist::matches(watch_, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of)));
     if (int(spots_.size()) > kCapacity) {
         spots_.pop_back();
         is_watched_.pop_back();
@@ -84,7 +91,7 @@ void DxSpotList::set_watch(const QStringList& entries) {
     beginResetModel();
     watch_ = entries;
     is_watched_.assign(spots_.size(), 0);
-    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = watchlist::matches(watch_, spots_[i].dx);
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = watchlist::matches(watch_, spots_[i].dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of));
     watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     endResetModel();
 }

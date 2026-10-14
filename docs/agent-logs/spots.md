@@ -113,3 +113,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 16 (slice): DX cluster rows gain an `ota` role ("POTA K-1234", from the already-parsed comment reference) and the card shows it as an accent badge before the country/comment. No AppSettings change. Test added; 132/132 pass. ASan/UBSan left to CI (small model/QML change); no screenshot since the cluster stays Not configured without a callsign. Not validated on device.
 - Not done: IOTA reference names, ONTA/ADIF overlays, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
 - Next: OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
+
+## 2026-10-14 (run 20)
+- Step 1: nothing of mine open; #242 (no checks reported) and #73 are other areas', left alone. Open `[A]` qa issues only, no `[C]`.
+- Backlog item 4 (slice): DXCC-entity watching. Watch entries of the form `@PREFIX` (cty.dat primary prefix, e.g. `@VP8`) match every call resolving to that entity; `watchlist::matches` takes an optional entity resolver, `DxSpotList::set_entity_resolver` injects one (default: bundled table). Settings hint text updated. No AppSettings field change (same `watch/list` key; older lists unaffected). Tests pass normally and under ASan/UBSan (leak check off).
+- Not done: entity names (instead of prefixes) in entries, watching on HamAlert/OTA cards. No screenshot (cluster Not configured without a callsign). Not validated on device.
+- Next: OTA filter controls in Settings, Meshtastic, ONTA/ADIF overlays.
