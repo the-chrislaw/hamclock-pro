@@ -6,6 +6,8 @@
 
 namespace hamclock {
 
+class AppSettings;
+
 // Parks and Summits On The Air activator spots (public POTA and SOTA APIs).
 // Either feed alone is enough to show data; the other is reported in the status.
 class OtaModel : public WidgetModel {
@@ -36,6 +38,7 @@ signals:
     void spotsChanged();
 
 private:
+    void loadSettingsFilter();
     void reparse();
     void applyFilter();
     void refreshState();
@@ -48,6 +51,7 @@ private:
     std::vector<ota::Spot> all_spots_;
     std::vector<ota::Spot> spots_;  // after the display filter
     ota::Filter filter_;
+    AppSettings* settings_ = nullptr;
     bool map_visible_ = true;
 };
 

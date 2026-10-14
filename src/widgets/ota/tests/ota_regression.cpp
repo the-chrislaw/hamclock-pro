@@ -4,10 +4,12 @@
 #include "../ota_overlay.hpp"
 #include "../ota_parse.hpp"
 #include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
 #include <iostream>
@@ -146,6 +148,27 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
     check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");
+
+    {
+        // Settings-driven display filter.
+        QTemporaryDir cfg;
+        AppSettings settings(cfg.filePath("station.conf"), cfg.path());
+        check(!settings.saveOtaFilter("XOTA", "", "", 0).isEmpty() && !settings.saveOtaFilter("", "20 m", "", 0).isEmpty() &&
+              !settings.saveOtaFilter("", "", "C W!", 0).isEmpty() && !settings.saveOtaFilter("", "", "", 5000).isEmpty(),
+              "bad OTA filter values rejected");
+        WidgetContext with_settings;
+        with_settings.settings = &settings;
+        with_settings.transport = context.transport;
+        OtaModel filtered(with_settings);
+        check(filtered.filter().program.isEmpty() && filtered.filter().max_age_min == 0, "no filter by default");
+        check(settings.saveOtaFilter("pota", "20M", "cw", 90).isEmpty(), "valid OTA filter saved");
+        check(filtered.filter().program == "POTA" && filtered.filter().band == "20m" && filtered.filter().mode == "CW" &&
+              filtered.filter().max_age_min == 90, "model follows settings");
+        AppSettings reloaded(cfg.filePath("station.conf"), cfg.path());
+        check(reloaded.otaProgram() == "POTA" && reloaded.otaBand() == "20m" && reloaded.otaMode() == "CW" &&
+              reloaded.otaMaxAgeMin() == 90, "OTA filter survives restart");
+        check(settings.saveOtaFilter("", "", "", 0).isEmpty() && filtered.filter().program.isEmpty(), "filter cleared");
+    }
 
     std::cout << "OTA: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
