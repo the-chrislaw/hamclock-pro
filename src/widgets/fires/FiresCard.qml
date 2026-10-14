@@ -25,7 +25,7 @@ Card {
             visible: widget && widget.nearestText !== ""
             text: widget ? widget.nearestText : ""
             color: Theme.secondary; font.pixelSize: Theme.fontBody
-            elide: Text.ElideRight; Layout.fillWidth: true
+            wrapMode: Text.WordWrap; maximumLineCount: 2; Layout.fillWidth: true
         }
     }
 }
