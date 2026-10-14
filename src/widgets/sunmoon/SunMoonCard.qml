@@ -36,13 +36,55 @@ Card {
 
         Text {
             text: "Moon (DE)"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
-            Layout.columnSpan: 3; Layout.topMargin: Theme.gap
+            Layout.columnSpan: root.showPhase ? 2 : 3; Layout.topMargin: Theme.gap
         }
-        Text { visible: root.showPhase; text: "Phase"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+        // Moon disc drawn from the elongation: lit limb on the right when
+        // waxing (northern observer), mirrored in the south. Orientation
+        // ignores the parallactic angle.
+        Canvas {
+            id: disc
+            visible: root.showPhase && !!root.widget && !!root.widget.moonPhase
+            Layout.rowSpan: 2; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+            Layout.preferredWidth: Math.min(rowH * 2, 96); Layout.preferredHeight: Layout.preferredWidth
+            readonly property real elong: root.widget ? root.widget.moonElongation : 0
+            readonly property bool south: root.widget ? root.widget.moonSouthern : false
+            readonly property color ink: Theme.ink
+            onElongChanged: requestPaint()
+            onSouthChanged: requestPaint()
+            onInkChanged: requestPaint()
+            onWidthChanged: requestPaint()
+            onPaint: {
+                const ctx = getContext("2d");
+                ctx.reset();
+                const r = Math.min(width, height) / 2 - 1, cx = width / 2, cy = height / 2;
+                const k = Math.cos(elong * Math.PI / 180);   // 1 new .. -1 full
+                const waxing = elong < 180;
+                const litRight = waxing !== south;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+                ctx.fillStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.15); ctx.fill();
+                // lit region: half disc on the lit side, bounded by the terminator ellipse
+                ctx.beginPath();
+                const dir = litRight ? 1 : -1;
+                ctx.moveTo(cx, cy - r);
+                ctx.arc(cx, cy, r, -Math.PI / 2, Math.PI / 2, !litRight);
+                const steps = 40;
+                for (let i = 0; i <= steps; ++i) {
+                    const a = Math.PI / 2 - Math.PI * i / steps;      // bottom to top
+                    // terminator bulges toward the lit side for a crescent (k > 0)
+                    ctx.lineTo(cx + dir * k * r * Math.cos(a), cy + r * Math.sin(a));
+                }
+                ctx.closePath();
+                ctx.fillStyle = "#e8d9a0"; ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+                ctx.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.5); ctx.lineWidth = 1; ctx.stroke();
+            }
+        }
         Text {
             visible: root.showPhase
             text: root.widget && root.widget.moonPhase ? root.widget.moonPhase + " " + root.widget.moonIllumination : "—"
             color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.columnSpan: 2
+            fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.85
+            elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text { visible: root.showRiseSet; text: "Moon rise/set"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text {
