@@ -32,3 +32,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Open PRs #138/#73 are other areas' (#138 Apple jobs still running, #73 conflicting); left alone. qa #120 is area B.
 - F3 slice 4: `macOS universal build` job in apple.yml (aqt universal Qt 6.8.3, `arm64;x86_64`, `lipo -archs` check, cached Qt). Informational (continue-on-error) until the first green run; then the signed dmg can switch to it.
 - Next: make the dmg/signing use the universal build once green; F4 iPad when the map renderer port lands.
+
+## 2026-10-14 (fourth hourly run)
+- Merged #158 (green, other area); #73 still conflicting (other area, left alone); #159 checks running. No qa issues for area F.
+- F3 slice 5: universal job is now the distributable: no longer continue-on-error, runs macdeployqt, uploads an unsigned universal dmg, and the signing/notarization steps moved onto it (same secrets-skip behaviour). The plain macos job keeps build/tests/unsigned dmg.
+- Next: F4 iPad once the map renderer port lands; AppSettings credential wiring with area A.
