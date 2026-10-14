@@ -42,3 +42,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 6)
 - Issue #151 (time zone picker): Settings > Station now uses `TimeZonePicker` (button + searchable popup: city/region filter, "City (UTC-7)" labels with the current offset, Up/Down/Enter/Escape, "Use this device's zone"); the system zone is preselected when none is saved. C++ side is `TimeZoneSearch` (`timeZones` context property) with `time-zone-search-regression`. ctest 105/105. Not done: suggesting the zone from DE/DX coordinates (needs a coordinate-to-zone table; with 0b location lookup). The popup is not reachable from `--screenshot`, so its layout is unchecked visually. ASan/UBSan left to CI. Not validated on a device.
 - #170 (area H) had macOS/iPad checks running; #73 stale. Next: coordinate-based zone suggestion, per-value freshness in `Card`, side panes.
+
+## 2026-10-14 (hourly run, 7)
+- Issue #152 item 6: when DE == DX the station card shows "Set a DX target in Settings" instead of "0 KM · BEARING UNDEFINED" (`path_summary` in `src/ui/path_text.hpp`, `StationModel.pathText`, `path-text-regression`). The "NONAME" callsign was not found in src, so it is not addressed. ctest 111/111. ASan/UBSan left to CI. Not validated on a device.
+- #179 (area H) had checks running; #73 stale. Remaining in #152: truncated-Text guard in the smoke test, wheel scrolling in Settings, centred Settings, satellite time format (G/other).

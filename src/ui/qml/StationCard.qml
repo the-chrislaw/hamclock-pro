@@ -71,7 +71,7 @@ Card {
         }
         Text {
             visible: station.configured
-            text: station.distanceText + "  ·  " + station.bearingText
+            text: station.pathText
             color: Theme.ink
             font.pixelSize: Theme.fontBody
             wrapMode: Text.WordWrap
