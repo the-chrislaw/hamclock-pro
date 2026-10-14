@@ -149,14 +149,17 @@ void SatellitesModel::recompute() {
         return;
     }
     const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
-    struct Row { Tle tle; SatPass pass; };
+    struct Row { Tle tle; SatPass pass; std::vector<SatPass> later; };
     std::vector<Row> found;
     for (const Tle& tle : tles) {
         SatellitePropagator p(tle);
         // Start a few minutes back so a pass in progress is still listed.
-        const auto passes = p.passes(obs, t - 900, kHorizonSeconds + 900, kMinElevation, 3);
-        for (const SatPass& pass : passes)
-            if (static_cast<double>(pass.los) > t) { found.push_back({tle, pass}); break; }
+        const auto passes = p.passes(obs, t - 900, kHorizonSeconds + 900, kMinElevation, 5);
+        for (std::size_t i = 0; i < passes.size(); ++i)
+            if (static_cast<double>(passes[i].los) > t) {
+                found.push_back({tle, passes[i], std::vector<SatPass>(passes.begin() + i + 1, passes.end())});
+                break;
+            }
     }
     std::sort(found.begin(), found.end(), [](const Row& a, const Row& b) { return a.pass.aos < b.pass.aos; });
     if (tracked.empty())
@@ -168,7 +171,7 @@ void SatellitesModel::recompute() {
             sky_track_.append(QVariantMap{{"az", s.az_deg}, {"el", s.el_deg}});
     }
     if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
-    for (const Row& r : found) listed_.push_back({r.tle, r.pass});
+    for (const Row& r : found) listed_.push_back({r.tle, r.pass, r.later});
     for (const Row& r : found) {
         const qint64 until = r.pass.aos - static_cast<qint64>(t);
         QString when;
@@ -223,6 +226,11 @@ void SatellitesModel::refresh_detail() {
             }
             const qint64 until = l.pass.aos - static_cast<qint64>(t);
             d["countdown"] = until <= 0 ? QString("now") : until < 5400 ? QString("in %1 min").arg((until + 30) / 60) : utc(l.pass.aos);
+            QVariantList more;
+            for (const SatPass& m : l.later)
+                more.append(QVariantMap{{"aos", QDateTime::fromSecsSinceEpoch(m.aos, QTimeZone::utc()).toString("dd HH:mm") + "Z"},
+                                        {"maxEl", qRound(m.max_el_deg)}});
+            d["more"] = more;
             QVariantList tx;
             const auto it = transmitters_.find(tle_norad_id(l.tle));
             if (it != transmitters_.end()) {

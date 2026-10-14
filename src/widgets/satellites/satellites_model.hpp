@@ -58,7 +58,7 @@ private:
     QVariantList rows_;
     bool all_stale_ = false;
     QVariantList sky_track_;
-    struct Listed { Tle tle; SatPass pass; };
+    struct Listed { Tle tle; SatPass pass; std::vector<SatPass> later; };
     std::vector<Listed> listed_;
     std::map<int, std::vector<Transmitter>> transmitters_;
     int selected_ = -1;

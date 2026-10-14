@@ -98,6 +98,10 @@ int main(int argc, char** argv) {
         check(d["name"].toString() == name && d["maxEl"].toInt() == rows.first().toMap()["maxEl"].toInt(), "detail matches the tapped row");
         check(d["az"].toInt() >= 0 && d["az"].toInt() <= 360 && !d["compass"].toString().isEmpty() &&
               d["rangeKm"].toInt() > 300 && d["rangeKm"].toInt() < 20000 && !d["aosAz"].toString().isEmpty(), "detail look angle and pass azimuths sane");
+        const QVariantList more = d["more"].toList();
+        check(more.size() <= 4, "at most four later passes");
+        for (const auto& v : more)
+            check(v.toMap()["aos"].toString().endsWith("Z") && v.toMap()["maxEl"].toInt() >= 10, "later passes carry a time and a peak above the threshold");
         const QVariantList tx = d["transmitters"].toList();
         bool known = name == "AO-7" || name == "ISS" || name == "SO-50" || name == "FO-29" || name == "AO-91";
         check(!known || !tx.isEmpty(), "transmitters joined by NORAD id for a satellite in the fixture");

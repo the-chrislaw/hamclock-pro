@@ -83,6 +83,12 @@ Card {
             color: Theme.secondary; font.pixelSize: Theme.fontCaption
             elide: Text.ElideRight; Layout.fillWidth: true
         }
+        Text {
+            visible: root.showDetail && root.d.more !== undefined && root.d.more.length > 0
+            text: root.showDetail && root.d.more ? "Then " + root.d.more.map(m => m.aos + " " + m.maxEl + "°").join("  ") : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            wrapMode: Text.WordWrap; Layout.fillWidth: true
+        }
         Repeater {
             model: root.showDetail && !root.compact ? root.d.transmitters : []
             Text {

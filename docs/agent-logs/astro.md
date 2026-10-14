@@ -100,3 +100,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Sunlit/eclipsed (owner request #246, D3 detail box): `sun_teme_km` (Astronomical Almanac low-precision Sun vector), `in_earth_shadow` (cylindrical shadow) and `SatellitePropagator::sunlit`; the detail box line shows "sunlit" / "eclipsed". Test checks the Sun direction at the 2000 equinox and declination at the 2024 June solstice, shadow geometry cases and a plausible LEO eclipse fraction over a day (88888). Penumbra ignored. Screenshots left to CI.
 - Not mine: #256 CI still running, #73 conflicting; left alone.
 - Next: Show track / Set as DX / more passes in the detail box, settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 18
+- "More passes" (owner request #246, D3 detail box): the detail box lists the next four passes of the tapped satellite (day, HH:mmZ, peak elevation) on a wrapped "Then ..." line. The model keeps up to five passes per satellite from the existing search; the list rows are unchanged. Test checks at most four later passes with a time and a peak at or above the 10 degree threshold. Full ctest passes (138/138); screenshots and ASan/UBSan left to CI.
+- Not mine: #73 conflicting; left alone. No other `[D]` QA issues.
+- Next: Show track / Set as DX (needs G's tap mechanism), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
