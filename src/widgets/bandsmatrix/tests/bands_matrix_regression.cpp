@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSettings>
 #include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
@@ -81,6 +82,32 @@ int main(int argc, char** argv) {
     model.setClock([&] { return later; });
     for (int i = 0; i < 40; ++i) app.processEvents();
     check(model.startText() == "16Z" || model.startText() == "19Z", "recompute follows the clock when it ticks");
+
+    // Options file: mode and power change the label; out-of-range power is ignored.
+    {
+        QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        ini.setValue("bandsmatrix/mode", "CW");
+        ini.setValue("bandsmatrix/power_w", "5");
+        ini.sync();
+    }
+    BandsMatrixModel cw(context);
+    for (auto* source : {&cw.kpSource(), &cw.fluxSource()}) { source->setClock([&] { return now; }); QFile::remove(source->cachePath()); }
+    cw.setClock([&] { return now; });
+    cw.start();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(cw.pathText().endsWith("CW 5 W"), "options set mode and power");
+    {
+        QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        ini.setValue("bandsmatrix/mode", "bogus");
+        ini.setValue("bandsmatrix/power_w", "99999");
+        ini.sync();
+    }
+    BandsMatrixModel odd(context);
+    for (auto* source : {&odd.kpSource(), &odd.fluxSource()}) { source->setClock([&] { return now; }); QFile::remove(source->cachePath()); }
+    odd.setClock([&] { return now; });
+    odd.start();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(odd.pathText().endsWith("SSB 100 W"), "bad options fall back to SSB 100 W");
 
     // Outage: data kept but flagged stale.
     fail_all = true;

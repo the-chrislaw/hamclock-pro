@@ -3,6 +3,7 @@
 #include "../../ui/app_settings.hpp"
 #include "../bands/path_model.hpp"
 #include "../spaceweather/swpc_parse.hpp"
+#include <QSettings>
 #include <QTimer>
 
 namespace hamclock {
@@ -70,6 +71,17 @@ void BandsMatrixModel::recompute() {
         bands::PathInput path;
         path.de_lat = settings_->deLatitude(); path.de_lon = settings_->deLongitude();
         path.dx_lat = settings_->dxLatitude(); path.dx_lon = settings_->dxLongitude();
+        // Optional [bandsmatrix] mode = ssb|cw|digital and power_w = 1..1500 in the options file.
+        QString mode_name = "SSB";
+        {
+            QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+            const QString mode = ini.value("bandsmatrix/mode").toString().trimmed().toLower();
+            if (mode == "cw") { path.mode = bands::PathMode::Cw; mode_name = "CW"; }
+            else if (mode == "digital") { path.mode = bands::PathMode::Digital; mode_name = "Digital"; }
+            bool ok = false;
+            const double power = ini.value("bandsmatrix/power_w").toString().toDouble(&ok);
+            if (ok && power >= 1 && power <= 1500) path.power_w = power;
+        }
         const double km = bands::path_distance_km(path);
         has_path_ = settings_->configured() && km >= 50;  // DX not set (or on top of DE): no path to rate
         if (has_path_) {
@@ -84,7 +96,7 @@ void BandsMatrixModel::recompute() {
             }
             has_matrix_ = true;
             start_hour_ = hour;
-            path_text_ = QString("%1 km · SSB %2 W").arg(qRound(km)).arg(qRound(path.power_w));
+            path_text_ = QString("%1 km · %2 %3 W").arg(qRound(km)).arg(mode_name).arg(qRound(path.power_w));
             best_text_ = first[best].reliability < 0.05 ? QString("HF closed now")
                 : QString("Best now: %1 %2%").arg(first[best].band).arg(qRound(first[best].reliability * 100));
             start_text_ = QString("%1Z").arg(int(hour % 24), 2, 10, QChar('0'));
