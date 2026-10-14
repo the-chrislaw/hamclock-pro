@@ -1,3 +1,5 @@
+#include <cctype>
+#include <string>
 #include "astro_beacons.hpp"
 #include <stdexcept>
 namespace hamclock {
@@ -39,5 +41,19 @@ BeaconSlot ncdxf_current(UtcSeconds utc, int band) {
     const int slot = static_cast<int>(in_cycle / 10);
     return {((slot - band) % kNcdxfBeaconCount + kNcdxfBeaconCount) % kNcdxfBeaconCount,
             static_cast<int>(10 - in_cycle % 10)};
+}
+Location ncdxf_beacon_location(int index) {
+    const std::string loc = ncdxf_beacon(index).locator;
+    if (loc.size() != 4 && loc.size() != 6) throw std::invalid_argument("beacon locator length");
+    double lon = (std::toupper(loc[0]) - 'A') * 20.0 - 180.0 + (loc[2] - '0') * 2.0;
+    double lat = (std::toupper(loc[1]) - 'A') * 10.0 - 90.0 + (loc[3] - '0') * 1.0;
+    if (loc.size() == 6) {
+        lon += (std::toupper(loc[4]) - 'A') * (2.0 / 24.0) + 1.0 / 24.0;
+        lat += (std::toupper(loc[5]) - 'A') * (1.0 / 24.0) + 1.0 / 48.0;
+    } else {
+        lon += 1.0;
+        lat += 0.5;
+    }
+    return {lat, lon};
 }
 }

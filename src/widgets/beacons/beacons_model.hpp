@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "../../domain/astro_beacons.hpp"
+#include "../../map/overlay.hpp"
 #include <QTimer>
 #include <QVariantList>
 
@@ -11,6 +12,9 @@ namespace hamclock {
 // from the fixed public schedule and the system clock (no network).
 // One row per band: {band, call, location, remaining}.
 QVariantList beacon_rows(UtcSeconds now);
+
+// Map layer "beacons": the five beacons on air now, at their (approximate) sites.
+OverlayLayer beacon_overlay_layer(UtcSeconds now);
 
 class BeaconsModel : public WidgetModel {
     Q_OBJECT

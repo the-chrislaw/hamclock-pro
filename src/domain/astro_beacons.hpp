@@ -1,5 +1,6 @@
 #pragma once
 #include "clock_state.hpp"
+#include "geometry.hpp"
 #include <array>
 #include <cstdint>
 namespace hamclock {
@@ -16,6 +17,9 @@ constexpr int kNcdxfBeaconCount = 18;
 constexpr int kNcdxfBandCount = 5;
 const NcdxfBeacon& ncdxf_beacon(int index);
 double ncdxf_band_khz(int band);
+// Centre of the beacon's 4- or 6-character locator (degrees north/east); the
+// table's locators are approximate, so this is a map position, not a survey.
+Location ncdxf_beacon_location(int index);
 
 struct BeaconSlot {
     int beacon_index;      // into the table
