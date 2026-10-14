@@ -55,6 +55,18 @@ int main(int argc, char** argv) {
     const auto noon = QDateTime(QDate(2026, 10, 13), QTime(12, 0), QTimeZone::utc());
     check(weather::local_time_text(noon, -25200) == "05:00 (UTC-7)" && weather::local_time_text(noon, 19800) == "17:30 (UTC+5:30)" &&
           weather::local_time_text(noon, 0) == "12:00 (UTC+0)", "local time text");
+    check(c && !c->high_c && !c->low_c, "no high/low without daily block");
+    // Synthetic: daily block (forecast_days=1).
+    const auto day = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[18.4],"temperature_2m_min":[8.6]}})");
+    check(day && day->high_c && day->low_c && *day->high_c == 18.4 && *day->low_c == 8.6, "daily high/low parsed");
+    const auto badday = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[5.0],"temperature_2m_min":[8.6]}})");
+    check(badday && !badday->high_c && !badday->low_c, "low above high is ignored");
+    const auto nulday = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[null],"temperature_2m_min":[8.6]}})");
+    check(nulday && !nulday->high_c, "null daily value ignored");
+    check(weather::request_url(1, 2).contains("temperature_2m_max"), "url asks for daily extremes");
     check(weather::request_url(1, 2).contains("timezone=auto"), "url asks for local zone");
     check(weather::request_url(1, 2).contains("past_hours=3"), "url asks for hourly pressure");
     check(weather::compass_point(344) == "NNW" && weather::compass_point(0) == "N" &&

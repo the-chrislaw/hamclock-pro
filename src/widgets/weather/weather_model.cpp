@@ -82,6 +82,8 @@ QString WeatherModel::air(const End& e) {
         parts << p;
     }
     if (e.now->cloud_pct) parts << QString("%1% cloud").arg(*e.now->cloud_pct);
+    if (e.now->high_c && e.now->low_c)
+        parts << QString("H %1 / L %2 °C").arg(std::lround(*e.now->high_c)).arg(std::lround(*e.now->low_c));
     return parts.join(" · ");
 }
 

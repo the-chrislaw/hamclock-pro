@@ -70,3 +70,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, fourteenth run)
 - Merged #245 (docs, green). #242 (no checks yet), #248/#250 (areas tvOS/D), #73 (area A, conflicting): not mine. No open `qa` issues for E.
 - E15 slice: new read-only `adsb` card polling the local PiAware/dump1090 `aircraft.json` (localhost:8080, GET only, 5 s): aircraft heard in the last 60 s and how many carry a position. No receiver -> "unconfigured"; receiver clock >60 s from ours -> stale; garbage -> error. Loopback fake HTTP server test; not run against a real receiver. No settings (host/port) or map overlay yet (needs area B/A). Not on the default dashboard so no screenshot. Next: DX city/popup (reverse-geocode terms), gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, fifteenth run)
+- #256/#257 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E6 slice: weather card shows today's "H 18 / L 9 °C" (Open-Meteo `daily` max/min, forecast_days=1, same request; hidden if absent, null or low > high). Offline parser tests; full suite passes (release). ASan/UBSan left to CI; no screenshot (no station in harness); not validated on-device. Next: DX city/popup (reverse-geocode terms), gpiod backend, header radio display.
