@@ -1,6 +1,7 @@
 #include <cmath>
 #include "../src/map/view_options.hpp"
 #include "../src/map/map_renderer.hpp"
+#include "../src/map/sky_points.hpp"
 #include <QGuiApplication>
 #include <QFile>
 #include <QImage>
@@ -97,6 +98,19 @@ int main(int argc, char** argv) {
     const auto norings = render(gs);
     gs.de = Location{40.0, -75.0};
     check(render(gs) != norings, "azimuth rings drawn around DE");
+    // Sky points: sublunar point and antipode.
+    check(antipode({40, -75}).latitude == -40 && std::fabs(antipode({40, -75}).longitude - 105) < 1e-9, "antipode");
+    check(std::fabs(antipode({0, 0}).longitude + 180) < 1e-9, "antipode of 0,0 wraps to -180");
+    check(std::fabs(greenwich_sidereal_deg({946728000}) - 280.46061837) < 1e-6, "GMST at J2000.0");
+    { const auto sl = sublunar_point({1760400000});
+      check(std::fabs(sl.latitude_deg) < 29.0 && sl.longitude_deg >= -180 && sl.longitude_deg < 180, "sublunar point in range");
+      // Moon overhead at its own sublunar point: topocentric elevation near 90 degrees.
+      const auto h = moon_horizontal({1760400000}, sl.latitude_deg, sl.longitude_deg);
+      check(h.elevation_deg > 87.0, "Moon near zenith at sublunar point"); }
+    { MapScene ss; ss.sun.reset(); ss.de = Location{40, -75}; ss.moon = Location{10, 20};
+      const auto base = render(ss); ss.sky_points = true;
+      check(render(ss) != base, "sky points drawn"); }
+    { MapViewOptions sp; sp.sky_points = true; check(sp.save(ini), "save sky"); MapViewOptions r; r.load(ini); check(r.sky_points, "sky points round trip"); }
     // Night shade off removes the shading from the render.
     MapScene sc; sc.sun = SubsolarPoint{20.0, 0.0}; sc.night_shade = true;
     const auto on = render(sc);

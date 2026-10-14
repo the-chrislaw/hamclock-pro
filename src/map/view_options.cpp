@@ -23,6 +23,7 @@ void MapViewOptions::load(const QString& ini_path) {
     label_mode = (mode >= 0 && mode <= static_cast<int>(OverlayLabelMode::Dot)) ? mode : -1;
     night_shade = ini.value("map/night", true).toBool();
     path = ini.value("map/path", true).toBool();
+    sky_points = ini.value("map/sky_points", false).toBool();
     const int gr = ini.value("map/grid", 0).toInt();
     grid = (gr >= 0 && gr < map_grid_count) ? gr : 0;
     const int cl = ini.value("map/center", center_auto).toInt();
@@ -41,6 +42,7 @@ bool MapViewOptions::save(const QString& ini_path) const {
     ini.setValue("map/night", night_shade);
     ini.setValue("map/path", path);
     ini.setValue("map/grid", grid);
+    ini.setValue("map/sky_points", sky_points);
     ini.setValue("map/center", center_lon);
     ini.setValue("map/style", style);
     ini.setValue("map/rotation", rotation_s);

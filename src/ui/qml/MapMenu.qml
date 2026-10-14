@@ -38,6 +38,8 @@ Popup {
             rowSpacing: Theme.gap / 2
             Toggle { label: "Night shade"; on: menu.map ? menu.map.nightShade : false
                      onClicked: menu.map.nightShade = !menu.map.nightShade }
+            Toggle { label: "Moon / antipode"; on: menu.map ? menu.map.skyPoints : false
+                     onClicked: menu.map.skyPoints = !menu.map.skyPoints }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false
                      onClicked: menu.map.showPath = !menu.map.showPath }
             Repeater {
