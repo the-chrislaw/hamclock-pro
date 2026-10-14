@@ -62,3 +62,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F; #73/#207/#209 are other areas' (checks running), left alone.
 - Found the iPad Simulator job failing on every build since E12 (`ntp_status.cpp` uses QProcess, which Qt for iOS lacks). Guarded the include and the helper with `Q_OS_LINUX` (the only caller is already Linux-only). One-file, behaviour-neutral change in area E's file.
 - Next: safe-area handling, iPad layout check once the map renderer port lands.
+
+## 2026-10-14 (tenth hourly run)
+- No qa issues for area F; #215 (other area) checks queued, #73 stale; left alone.
+- F4 slice 4: `SafeArea` (src/platform/apple_safearea.*) exposes safe-area insets to QML as the `safeArea` context property; on iOS `apple_safearea_ios.mm` reads `UIView.safeAreaInsets` (refreshed on size/screen/visibility change), elsewhere always zero so Pi/macOS layout is unchanged. Main.qml page margins add the insets (small edit to area A's file). `safe-area-regression` covers sanitizing and change signals on Linux; the iOS path is only compile-checked by the iPad Simulator job, no on-device validation.
+- Next: iPad layout check at 1180x820/1366x1024 with a simulator screenshot artifact once the map renderer port lands.

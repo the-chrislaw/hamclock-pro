@@ -8,6 +8,7 @@
 #include "../net/polled_source.hpp"
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
+#include "../platform/apple_safearea.hpp"
 #include <QGuiApplication>
 #include <QCommandLineParser>
 #include <QDir>
@@ -19,6 +20,7 @@
 #include <QQuickStyle>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QWindow>
 #include <QScreen>
 #include <QTimer>
 #include <QtQml>
@@ -147,10 +149,13 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
+    hamclock::SafeArea safe_area;
+    engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
+    safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
 
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
