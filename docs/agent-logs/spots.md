@@ -101,3 +101,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 14 (slice): APRS stations on the map via the overlay API. New `aprs/aprs_overlay` (`overlay_layer`: diamond markers, call labels, comment as tap detail, capped at 60, non-finite positions skipped); `AprsModel` publishes the layer only while the link is live (most recently heard first) and removes it on loss/stop/destruction; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Tests pass normally (132/132) and the aprs test under ASan/UBSan (leak check off).
 - Not done: Settings toggle, HamAlert overlay, radius setting. APRS needs a callsign so no screenshot of the layer; not validated on device.
 - Next: HamAlert overlay, OTA filter controls in Settings, DXCC-entity watching, Meshtastic.
+
+## 2026-10-14 (run 18)
+- Step 1: merged #230 (qa log) and #231 (ui units), both green; #73 is stale docs, left alone. Nothing of mine open. No open `[C]` qa issues.
+- Backlog item 14 (slice): HamAlert alerts on the map. `HamAlertModel` publishes layer `hamalert` (reuses the DX overlay builder: one marker per DXCC entity centre, newest first, own colour) only while the feed is live, removed on loss/stop/destruction; `setMapVisible` is the per-source hook (Settings toggle not wired). No AppSettings change. Test uses a synthetic resolver.
+- Not done: Settings toggle, trigger names, ONTA/ADIF overlays. Needs HamAlert login so no screenshot; not validated on device.
+- Next: OTA filter controls in Settings, DXCC-entity watching, Meshtastic, ONTA/ADIF overlays.
