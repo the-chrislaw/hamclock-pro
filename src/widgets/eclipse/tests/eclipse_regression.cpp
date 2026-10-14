@@ -62,7 +62,9 @@ int main(int argc, char** argv) {
     check(eclipse_visibility(e2024, 39.74, -104.99).visibility == EclipseVisibility::Visible, "Denver sees partial");
     check(eclipse_visibility(e2024, 51.5, -0.13).visibility == EclipseVisibility::None, "London: Sun well after");
     check(eclipse_visibility(e2024, -33.9, 151.2).visibility == EclipseVisibility::None, "Sydney: night");
-    check(eclipse_visibility(e2024, 21.3, -157.9).visibility != EclipseVisibility::Visible, "Honolulu: not visible");
+    check(eclipse_visibility(e2024, 55.75, 37.6).visibility == EclipseVisibility::None, "Moscow: not visible");
+    check(eclipse_visibility(e2024, 30.0, 31.2).visibility == EclipseVisibility::None, "Cairo: not visible");
+    check(eclipse_visibility(e2024, 35.7, 139.7).visibility == EclipseVisibility::None, "Tokyo: night");
     bool threw = false;
     try { eclipse_visibility(e2024, 91, 0); } catch (const std::invalid_argument&) { threw = true; }
     check(threw, "invalid latitude throws");
