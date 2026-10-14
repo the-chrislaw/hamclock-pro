@@ -37,9 +37,19 @@ void OtaModel::start() {
 }
 
 void OtaModel::reparse() {
-    spots_ = ota::merge(pota_feed_, sota_feed_);
+    all_spots_ = ota::merge(pota_feed_, sota_feed_);
+    applyFilter();
+}
+
+void OtaModel::applyFilter() {
+    spots_ = ota::filter(all_spots_, filter_, now());
     emit spotsChanged();
     refreshState();
+}
+
+void OtaModel::setFilter(const ota::Filter& filter) {
+    filter_ = filter;
+    applyFilter();
 }
 
 QVariantList OtaModel::recent() const {

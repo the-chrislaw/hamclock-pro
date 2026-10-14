@@ -37,6 +37,15 @@ Feed parse_sota(const QByteArray& body);  // SOTA frequencies are MHz on the wir
 // reduced to the newest spot.
 std::vector<Spot> merge(const Feed& pota, const Feed& sota);
 
+// Display filter. Empty band/mode and max_age_min <= 0 mean "no restriction".
+struct Filter {
+    QString band;          // "20m"; compared with the DX cluster band names
+    QString mode;          // "CW", "SSB", ... case-insensitive
+    int max_age_min = 0;
+    QString program;       // "POTA" or "SOTA", empty for both
+};
+std::vector<Spot> filter(const std::vector<Spot>& spots, const Filter& f, const QDateTime& now);
+
 QString format_frequency(double khz);  // "14.064" MHz, "144.200"
 
 } // namespace hamclock::ota

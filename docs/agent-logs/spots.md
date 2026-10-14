@@ -41,3 +41,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 15 (slice): new `src/widgets/adif/`: ADIF parser (length-based, case-insensitive tags, type indicators, bad tags/records skipped, record cap), `AdifModel` reading a local file with QFileSystemWatcher reload (64 MB cap, read-only, unconfigured while the path is empty), `worked(call)` that ignores /P and EA8/ parts, compact card. AppSettings gets `adif/path` + `saveAdifPath` (minimal, backward compatible); Settings DX cluster card gets a path field. Tests pass normally and under ASan/UBSan. Tests use synthetic ADIF, not a real log.
 - Not done: not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid; need item 5 prefix table), marking worked calls in cluster rows, map overlay. Card is not on the default dashboard, so no screenshot; not validated on device.
 - Next: HamAlert, UDP spot input; DXCC table still needs cty.dat allowlisted.
+
+## 2026-10-14 (run 8)
+- Step 1: merged #148 (docs, all checks green); #149 and #153 CI still running, #73 conflicting, all other areas', left alone. No open `[C]` qa issues.
+- Backlog item 7 (slice): OTA display filter (`ota::filter` by program, band, mode, max age; band names shared with the DX cluster via `band_for_khz`). `OtaModel::setFilter` applies it to the list, the count and the map layer. Tests cover each criterion; normal and ASan/UBSan runs pass. No QML or AppSettings change, so no screenshots; Settings controls not wired yet.
+- Next: wire OTA filters in Settings, WWFF/IOTA programmes, HamAlert, UDP spot input; DXCC table still needs cty.dat allowlisted (#136).
