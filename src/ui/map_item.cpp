@@ -29,7 +29,10 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
         update();
     };
     refresh_sun();
-    scene_.overlays = MapOverlays::instance().layers();
+    if (g_settings) options_.load(g_settings->optionsPath());
+    scene_.route_visible = options_.path;
+    scene_.night_shade = options_.night_shade;
+    syncOverlays();
     auto sync_style = [this] {
         const auto* st = MapStyles::instance().active(QDateTime::currentMSecsSinceEpoch());
         scene_.style = st ? std::optional<MapStyle>(*st) : std::nullopt;
@@ -37,7 +40,7 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     sync_style();
     style_token_ = MapStyles::instance().on_change([this, sync_style] { sync_style(); update(); });
     // The registry is process-wide; the callback only ever runs on the GUI thread.
-    overlay_token_ = MapOverlays::instance().on_change([this] { scene_.overlays = MapOverlays::instance().layers(); update(); });
+    overlay_token_ = MapOverlays::instance().on_change([this] { syncOverlays(); emit layersChanged(); });
     minute_timer_.setInterval(kSolarRefreshMs);
     connect(&minute_timer_, &QTimer::timeout, this, [this, refresh_sun, sync_style] { sync_style(); refresh_sun(); });
     minute_timer_.start();
@@ -108,9 +111,49 @@ void MapItem::mouseReleaseEvent(QMouseEvent* e) {
     emit tapped(loc.lat, loc.lon);
 }
 
+void MapItem::syncOverlays() {
+    scene_.overlays = options_.apply(MapOverlays::instance().layers());
+    update();
+}
+
+void MapItem::saveOptions() {
+    if (g_settings && !options_.save(g_settings->optionsPath())) qWarning("Could not save the map view options.");
+}
+
+QStringList MapItem::layerIds() const {
+    QStringList ids;
+    for (const auto& l : MapOverlays::instance().layers()) ids << l.id;
+    return ids;
+}
+
+void MapItem::setLayerVisible(const QString& id, bool on) {
+    if (options_.layer_visible(id) == on) return;
+    options_.set_layer_visible(id, on);
+    saveOptions();
+    syncOverlays();
+}
+
+void MapItem::setNightShade(bool on) {
+    if (on == options_.night_shade) return;
+    options_.night_shade = scene_.night_shade = on;
+    saveOptions();
+    emit nightShadeChanged();
+    update();
+}
+
+void MapItem::setLabelMode(int mode) {
+    mode = std::clamp(mode, -1, static_cast<int>(OverlayLabelMode::Dot));
+    if (mode == options_.label_mode) return;
+    options_.label_mode = mode;
+    saveOptions();
+    syncOverlays();
+    emit labelModeChanged();
+}
+
 void MapItem::setShowPath(bool show) {
     if (show == scene_.route_visible) return;
-    scene_.route_visible = show;
+    scene_.route_visible = options_.path = show;
+    saveOptions();
     emit showPathChanged();
     update();
 }

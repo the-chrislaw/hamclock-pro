@@ -17,6 +17,7 @@ struct MapScene {
     std::optional<Location> de, dx;
     std::vector<Location> route; // short path, empty when none
     bool route_visible = true;
+    bool night_shade = true;
     std::optional<SubsolarPoint> sun;
     bool dark = false;
     double ui_scale = 1; // Theme.scale: grows labels and markers on TVs

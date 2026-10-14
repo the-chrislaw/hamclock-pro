@@ -63,6 +63,7 @@ public:
     // C++ only (never a QML property): for widgets that log in.
     QString lookupPassword() const { return lookup_password_; }
     QString stationPath() const { return station_path_; }
+    QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
 
     static constexpr int kPaneSlots = 3;
