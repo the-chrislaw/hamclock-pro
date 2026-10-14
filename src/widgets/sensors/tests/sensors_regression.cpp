@@ -83,7 +83,9 @@ int main(int argc, char** argv) {
             "Last offset     : -0.000412345 seconds\n");
         check(good && good->synchronized && good->stratum == 3 && good->offset_ms && std::abs(*good->offset_ms - 0.412345) < 1e-6,
               "chrony tracking parsed");
-        check(good && platform::describe(*good) == "Synced, <1 ms", "sub-ms offset described");
+        check(good && platform::describe(*good) == "Synced, <1 ms, stratum 3 via time.example", "sub-ms offset, stratum and source described");
+        const auto odd = platform::parse_chrony_tracking("Reference ID    : A9FEA97B (bad name!<b>)\nStratum         : 2\nLeap status     : Normal\n");
+        check(odd && odd->source.isEmpty() && platform::describe(*odd) == "Synced, stratum 2", "unsafe source name dropped");
         const auto bad = platform::parse_chrony_tracking("Reference ID    : 00000000 ()\nStratum         : 0\nLeap status     : Not synchronised\n");
         check(bad && !bad->synchronized && !bad->offset_ms && platform::describe(*bad) == "Not synchronised", "unsynchronised chrony not live");
         check(!platform::parse_chrony_tracking("garbage"), "non-chrony text rejected");
@@ -127,9 +129,9 @@ int main(int argc, char** argv) {
         check(cal.envTemp() == "20.0 °C" && cal.envPressure() == "1016 hPa", "model applies options.ini offsets");
     }
     SensorsModel clockOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio",
-                           [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2}); });
+                           [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2, {}}); });
     clockOnly.refresh();
-    check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms", "clock shown");
+    check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms, stratum 2", "clock shown");
     {
         sensors::PressureHistory h;
         check(h.trend_word().isEmpty(), "no history -> no trend");

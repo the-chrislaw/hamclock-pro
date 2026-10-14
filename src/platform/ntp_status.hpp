@@ -12,6 +12,7 @@ struct ClockSync {
     bool synchronized = false;
     std::optional<double> offset_ms;  // absolute offset from the time source, when known
     std::optional<int> stratum;
+    QString source;                   // chrony reference name or address, sanitised; empty when unknown
 };
 
 // `chronyc tracking` -> synchronised if a reference ID is set and the leap status
