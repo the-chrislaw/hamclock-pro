@@ -37,6 +37,8 @@ MoonSummary summarize_moon(UtcSeconds now, double lat, double lon) {
     MoonSummary out;
     const MoonPhase phase = moon_phase(now);
     out.phase = phase.name;
+    out.elongation_deg = phase.elongation_deg;
+    out.southern = lat < 0;
     out.illumination = QString("%1%").arg(qRound(phase.illuminated * 100));
     if (const auto rise = next_moon_event(now, MoonEventKind::Rise, lat, lon)) out.next_rise = hhmm(*rise);
     if (const auto set = next_moon_event(now, MoonEventKind::Set, lat, lon)) out.next_set = hhmm(*set);
