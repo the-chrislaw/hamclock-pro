@@ -156,6 +156,30 @@ Rectangle {
             }
 
             Card {
+                title: "HamAlert"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.8
+                    Text {
+                        text: "Optional. Personal spot alerts from hamalert.org (telnet). Stored only on this device, readable by you alone. Leave the user name empty to turn it off."
+                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    FormField { id: hamAlertUser; label: "HamAlert user name"; text: appSettings.hamAlertUser; Layout.fillWidth: true }
+                    FormField { id: hamAlertPassword; label: "Password"; echoMode: TextInput.Password; Layout.fillWidth: true
+                                placeholder: appSettings.hasHamAlertPassword ? "Saved — leave empty to keep" : "" }
+                    RowLayout {
+                        Text { id: hamAlertError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                        AppButton { text: "Save HamAlert"; primary: true
+                                    onClicked: {
+                                        hamAlertError.text = appSettings.saveHamAlert(hamAlertUser.text, hamAlertPassword.text)
+                                        hamAlertPassword.text = ""
+                                    } }
+                    }
+                }
+            }
+
+            Card {
                 title: "Callsign lookup account"
                 Layout.fillWidth: true
                 ColumnLayout {
