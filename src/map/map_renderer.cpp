@@ -69,7 +69,8 @@ MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
             lo = lo ? std::min(*lo, l->latitude) : l->latitude;
             hi = hi ? std::max(*hi, l->latitude) : l->latitude;
         }
-    return MapViewport::fill(size.width(), size.height(), scene.de ? scene.de->longitude : 0.0, lo, hi);
+    return MapViewport::fill(size.width(), size.height(), scene.de ? scene.de->longitude : 0.0, lo, hi,
+                            scene.zoom, scene.pan_lon, scene.pan_lat);
 }
 void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) const {
     const bool dark = scene.dark;

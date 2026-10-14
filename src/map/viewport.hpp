@@ -14,9 +14,18 @@ struct MapViewport {
     double center_lat = 0;          // degrees at the vertical centre
 
     // focus_min/max_lat: latitudes (for example DE and DX) to keep visible.
+    // zoom (clamped to 1..4) multiplies the covering scale; pan_lon/pan_lat
+    // (user pan, degrees) replace the preferred centre and the focus centring
+    // and are clamped so the world still covers the item vertically.
+    static constexpr double max_zoom = 4.0;
     static MapViewport fill(double width, double height, double preferred_center_lon,
                             std::optional<double> focus_min_lat = std::nullopt,
-                            std::optional<double> focus_max_lat = std::nullopt);
+                            std::optional<double> focus_max_lat = std::nullopt,
+                            double zoom = 1.0, std::optional<double> pan_lon = std::nullopt,
+                            std::optional<double> pan_lat = std::nullopt);
+    // Inverse of x_of/y_of for a pixel inside the item; latitude is clamped to +/-90.
+    struct LatLon { double lat, lon; };
+    LatLon location_at(double px, double py) const;
     double world_width() const { return 360.0 * scale; }
     double world_height() const { return 180.0 * scale; }
     // Pixel x of normalized map x=0 (the -180 meridian) in the central copy.

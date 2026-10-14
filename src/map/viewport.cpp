@@ -10,7 +10,8 @@ double wrap180(double lon) {
 }
 }
 MapViewport MapViewport::fill(double width, double height, double preferred_center_lon,
-                              std::optional<double> focus_min_lat, std::optional<double> focus_max_lat) {
+                              std::optional<double> focus_min_lat, std::optional<double> focus_max_lat,
+                              double zoom, std::optional<double> pan_lon, std::optional<double> pan_lat) {
     MapViewport v;
     v.width = std::max(0.0, width);
     v.height = std::max(0.0, height);
@@ -20,10 +21,14 @@ MapViewport MapViewport::fill(double width, double height, double preferred_cent
     // Very wide items would crop below the latitude floor: keep it and let
     // the longitude wrap (the renderer draws neighbouring world copies).
     v.scale = std::min(v.scale, v.height / (2.0 * min_visible_latitude));
-    const bool longitude_cropped = v.scale * 360.0 > v.width + 1e-9 && by_width < by_height;
-    v.center_lon = longitude_cropped ? wrap180(preferred_center_lon) : 0.0;
+    zoom = std::clamp(zoom, 1.0, max_zoom);
+    v.scale *= zoom;
+    const bool longitude_cropped = (v.scale * 360.0 > v.width + 1e-9 && by_width < by_height) || zoom > 1.0;
+    v.center_lon = longitude_cropped ? wrap180(pan_lon ? *pan_lon : preferred_center_lon) : 0.0;
     const double half = std::min(90.0, v.visible_half_latitude());
-    if (focus_min_lat && focus_max_lat) {
+    if (pan_lat) {
+        v.center_lat = std::clamp(*pan_lat, -(90.0 - half), 90.0 - half);
+    } else if (focus_min_lat && focus_max_lat) {
         const double mid = (*focus_min_lat + *focus_max_lat) / 2.0;
         v.center_lat = std::clamp(mid, -(90.0 - half), 90.0 - half);
     }
@@ -31,6 +36,10 @@ MapViewport MapViewport::fill(double width, double height, double preferred_cent
 }
 double MapViewport::origin_x() const { return width / 2.0 - (center_lon + 180.0) * scale; }
 double MapViewport::x_of(double lon) const { return width / 2.0 + wrap180(lon - center_lon) * scale; }
+MapViewport::LatLon MapViewport::location_at(double px, double py) const {
+    if (scale <= 0) return {0, 0};
+    return {std::clamp(center_lat - (py - height / 2.0) / scale, -90.0, 90.0), wrap180(center_lon + (px - width / 2.0) / scale)};
+}
 void MapViewport::copy_range(int& first, int& last) const {
     const double w = world_width();
     if (w <= 0) { first = 0; last = -1; return; }
