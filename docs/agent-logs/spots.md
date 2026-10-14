@@ -155,3 +155,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 15 (slice): `NADXCC` / `NABAND` watch-list keywords. They highlight (★, watched count) DX cluster spots the ADIF log still needs (NADXCC: new entity; NABAND: new entity or band slot); re-evaluated when the resolver or list changes. No AppSettings change (same `watch/list` key; the Settings hint mentions the keywords). Test added; 142/142 pass; ASan/UBSan left to CI (small model change). No screenshot (cluster Not configured without a callsign). Not validated on device.
 - Not done: NAPref/NAGrid, ONTA overlay, Meshtastic (source decision pending).
 - Next: Meshtastic, ONTA overlay, NAGrid.
+
+## 2026-10-14 (run 27)
+- Step 1: nothing of mine open; #304 (other area, checks not yet reported) and #73 (stale docs) left alone. No open `[C]` qa issues.
+- Backlog item 7 (slice): OTA sort option. `ota::Filter` gains `sort` (time default / freq ascending / dist nearest to DE first, spots without a position last) and DE position; `AppSettings` gains `otaSort` (options.ini `[ota] sort`, validated, default newest first, backward compatible) and `saveOtaSort`; the model follows settings and station changes. Settings Spots card has a Sort field. Test covers ordering, validation, persistence. 142/142 pass; ASan/UBSan left to CI. No Settings screenshot; not validated on device.
+- WWFF (spots.wwff.co) and GMA (cqgma.org) are not reachable from the sandbox; added to the allowlist issue.
+- Next: WWFF/GMA once allowlisted, Meshtastic, ONTA overlay, NAGrid.

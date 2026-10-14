@@ -87,6 +87,8 @@ void AppSettings::loadOptions() {
     if (!mode_re.match(ota_mode_).hasMatch()) ota_mode_.clear();
     const int age = ini.value("ota/max_age_min", 0).toInt();
     ota_max_age_min_ = age > 0 && age <= 1440 ? age : 0;
+    ota_sort_ = ini.value("ota/sort").toString();
+    if (ota_sort_ != "freq" && ota_sort_ != "dist") ota_sort_.clear();
     static const QRegularExpression aprs_host_re("^[A-Za-z0-9.-]{1,253}$");
     const QString ah = ini.value("aprs/host").toString();
     if (aprs_host_re.match(ah).hasMatch()) aprs_host_ = ah;
@@ -326,6 +328,19 @@ QString AppSettings::saveAdifPath(const QString& path) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOtaSort(const QString& sort) {
+    const auto s = sort.trimmed().toLower();
+    if (!s.isEmpty() && s != "time" && s != "freq" && s != "dist") return "Sort must be time, freq or dist.";
+    const QString kept = s == "time" ? QString() : s;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("ota/sort", kept);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the sort order.";
+    ota_sort_ = kept;
     emit optionsChanged();
     return {};
 }

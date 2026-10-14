@@ -31,6 +31,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString otaBand READ otaBand NOTIFY optionsChanged)
     Q_PROPERTY(QString otaMode READ otaMode NOTIFY optionsChanged)
     Q_PROPERTY(int otaMaxAgeMin READ otaMaxAgeMin NOTIFY optionsChanged)
+    Q_PROPERTY(QString otaSort READ otaSort NOTIFY optionsChanged)
     Q_PROPERTY(QString aprsHost READ aprsHost NOTIFY optionsChanged)
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
     Q_PROPERTY(int aprsRadiusKm READ aprsRadiusKm NOTIFY optionsChanged)
@@ -82,6 +83,7 @@ public:
     QString otaBand() const { return ota_band_; }        // e.g. "20m"
     QString otaMode() const { return ota_mode_; }        // e.g. "CW"
     int otaMaxAgeMin() const { return ota_max_age_min_; }
+    QString otaSort() const { return ota_sort_; }
     // APRS-IS server (receive-only) and search radius around DE.
     QString aprsHost() const { return aprs_host_; }
     int aprsPort() const { return aprs_port_; }
@@ -123,6 +125,7 @@ public:
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
     // program: POTA, SOTA or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
+    Q_INVOKABLE QString saveOtaSort(const QString& sort);
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
     // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
@@ -160,6 +163,7 @@ private:
     QString adif_path_;
     QString ota_program_, ota_band_, ota_mode_;
     int ota_max_age_min_ = 0;
+    QString ota_sort_;  // "", "freq" or "dist" (empty = newest first)
     QString aprs_host_ = "rotate.aprs2.net";
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
