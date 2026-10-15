@@ -91,16 +91,18 @@ QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& 
 bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
     // NADXCC / NABAND are keywords (not callsigns): they match spots the ADIF log still needs.
     QStringList plain;
-    bool want_dxcc = false, want_band = false;
+    bool want_dxcc = false, want_band = false, want_pref = false;
     for (const auto& e : watch_) {
         if (e == "NADXCC") want_dxcc = true;
         else if (e == "NABAND") want_band = true;
+        else if (e == "NAPREF") want_pref = true;
         else plain << e;
     }
     if (watchlist::matches(plain, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of))) return true;
-    if ((want_dxcc || want_band) && needed_) {
+    if ((want_dxcc || want_band || want_pref) && needed_) {
         const QString n = needed_(spot.dx, spot.band);
         if (want_dxcc && n == "NEW DXCC") return true;
+        if (want_pref && n == "NEW PREFIX") return true;
         if (want_band && !n.isEmpty()) return true;
     }
     return false;
@@ -248,6 +250,8 @@ void register_widget_dxcluster(WidgetRegistry& registry, const WidgetContext& co
             bool needed = false;
             if (QMetaObject::invokeMethod(adif, "entityNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call)) && needed)
                 return QStringLiteral("NEW DXCC");
+            if (QMetaObject::invokeMethod(adif, "prefixNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call)) && needed)
+                return QStringLiteral("NEW PREFIX");
             if (!band.isEmpty() && QMetaObject::invokeMethod(adif, "bandSlotNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call), Q_ARG(QString, band)) && needed)
                 return QStringLiteral("NEW BAND");
             return QString();

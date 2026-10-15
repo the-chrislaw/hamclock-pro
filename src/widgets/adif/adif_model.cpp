@@ -64,6 +64,7 @@ void AdifModel::load(const QString& path) {
     std::stable_sort(qsos_.begin(), qsos_.end(), [](const adif::Qso& a, const adif::Qso& b) { return a.time > b.time; });
     for (const auto& q : qsos_) {
         calls_.insert(adif::base_call(q.call));
+        if (const QString p = adif::prefix_of(q.call); !p.isEmpty()) prefixes_.insert(p);
         const QString e = entityFor(q.call);
         if (e.isEmpty()) continue;
         entities_.insert(e);
@@ -92,6 +93,12 @@ bool AdifModel::entityNeeded(const QString& call) const {
     if (!loaded_) return false;
     const QString e = entityFor(call);
     return !e.isEmpty() && !entities_.contains(e);
+}
+
+bool AdifModel::prefixNeeded(const QString& call) const {
+    if (!loaded_) return false;
+    const QString p = adif::prefix_of(call);
+    return !p.isEmpty() && !prefixes_.contains(p);
 }
 
 bool AdifModel::bandSlotNeeded(const QString& call, const QString& band) const {

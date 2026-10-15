@@ -195,3 +195,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #348 (ui) had checks still running and #73 (stale docs) is another area's, both left alone. No open `[C]` qa issues.
 - Backlog item 6 (slice): PSKReporter mode statistics. `psk::mode_stats` counts reports per mode (case folded, busiest first, empty skipped); `PskModel::modes` and a "FT8 6 · CW 2" line on the card (hidden in compact layout). No AppSettings change, no new source. Test added. Not validated on device; no screenshot (card needs a callsign).
 - Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 34)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 15 (slice): `NAPREF` watch keyword and NEW PREFIX badge. `adif::prefix_of` (letters+first digit run, `EA8/` operating prefix wins), `AdifModel::prefixNeeded` (false without a loaded log). Badge priority NEW DXCC > NEW PREFIX > NEW BAND; NAPREF matches NEW PREFIX only, NABAND any needed. No AppSettings change (Settings hint text mentions NAPREF). Tests added; 151/151 pass locally, no warnings in touched files; ASan/UBSan left to CI. Not validated on device.
+- Not done: NAGrid (cluster spots carry no grid).
