@@ -77,6 +77,12 @@ int main(int argc, char** argv) {
     p2.end();
     check(img2.pixelColor(360, 180) != QColor(255, 0, 0), "hidden layer not drawn");
     {
+        check(overlay_path_text(std::nullopt, {0, 0}).isEmpty(), "no DE, no path text");
+        check(overlay_path_text(Location{0, 0}, {0, 90}) == "10008 km, 90°", "quarter circle east of DE");
+        check(overlay_path_text(Location{0, 0}, {0, 0}) == "0 km", "same place has distance only");
+        check(overlay_path_text(Location{0, 0}, {0, 180}) == "20015 km", "antipode has distance only");
+    }
+    {
         // Marker hit test: nearest visible marker within the radius, across world copies.
         const auto vp = MapViewport::fill(720, 360, 0.0);
         OverlayMarker a; a.where = {0, 0}; a.call = "A"; a.detail = "first";

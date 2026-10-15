@@ -1,7 +1,16 @@
 #include "overlay.hpp"
+#include "../domain/geometry.hpp"
 #include <algorithm>
 #include <cmath>
 namespace hamclock {
+QString overlay_path_text(std::optional<Location> de, Location where) {
+    if (!de || !valid_location(*de) || !valid_location(where)) return {};
+    const auto g = geometry(*de, where);
+    const QString km = QString::number(qRound(g.distance_km)) + " km";
+    if (g.status != BearingStatus::Defined) return km;
+    return km + QString(", %1°").arg(qRound(g.short_bearing_deg) % 360);
+}
+
 QString overlay_label_text(const OverlayMarker& m, OverlayLabelMode mode) {
     switch (mode) {
     case OverlayLabelMode::Prefix: return m.prefix.isEmpty() ? m.call : m.prefix;

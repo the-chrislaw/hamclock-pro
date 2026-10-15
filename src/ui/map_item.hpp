@@ -85,6 +85,8 @@ public:
     // Map View menu: per-layer visibility, independent of which panes are shown.
     Q_INVOKABLE bool layerVisible(const QString& id) const { return options_.layer_visible(id); }
     Q_INVOKABLE void setLayerVisible(const QString& id, bool on);
+    // Distance and bearing from DE to a point, for the tap popup (empty without DE).
+    Q_INVOKABLE QString pathText(double latitude, double longitude) const;
     // Back to zoom 1 centred on DE/DX.
     Q_INVOKABLE void resetView();
     // Drag pan by pixels (only effective when zoomed in).
