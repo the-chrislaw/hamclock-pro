@@ -78,3 +78,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (UTC, sixteenth run)
 - #265/#266 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E12 slice: `gps_nmea` parser for serial GPS receivers (GGA position/fix/satellites, RMC validity and UTC time; checksum required, void fixes, bad hemispheres and out-of-range values rejected). Offline tests on reference sentences; debug suite for gps passes, ASan/UBSan left to CI. Parser only: no serial reader (QtSerialPort availability to check), no DE or time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-third run)
+- #73 (area A) open and conflicting: not mine, left alone. Took open QA issue #326.
+- Fix: `Metric.qml` label now fills its column and elides on the right, so long "DE · City, CC" headings no longer run under the neighbouring weather label. One shared-file change (area A), two lines, backward compatible (short labels render the same). Full release suite passes; ASan/UBSan left to CI. No screenshot with a long city (harness has no station), not validated on-device.
