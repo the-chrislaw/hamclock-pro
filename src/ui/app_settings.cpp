@@ -2,6 +2,7 @@
 #include "app_settings.hpp"
 #include "banner_text.hpp"
 #include "blanking.hpp"
+#include "config_store.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
@@ -577,6 +578,34 @@ QString AppSettings::saveWeekStart(bool sunday) {
     week_sunday_ = sunday;
     emit optionsChanged();
     return {};
+}
+
+QStringList AppSettings::configNames() const { return config_list(config_dir_); }
+
+QString AppSettings::saveConfig(const QString& name) {
+    const QString err = config_save(config_dir_, name);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
+}
+
+QString AppSettings::restoreConfig(const QString& name) {
+    const QString err = config_restore(config_dir_, name);
+    if (!err.isEmpty()) return err;
+    loadOptions();
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::deleteConfig(const QString& name) {
+    const QString err = config_delete(config_dir_, name);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
+}
+
+QString AppSettings::renameConfig(const QString& from, const QString& to) {
+    const QString err = config_rename(config_dir_, from, to);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
 }
 
 QString AppSettings::saveBannerStyle(int style) {

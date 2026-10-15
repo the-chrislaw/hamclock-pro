@@ -167,6 +167,15 @@ public:
     Q_INVOKABLE QString saveBannerStyle(int style);
     Q_INVOKABLE QString saveBannerBackground(int style);
     Q_INVOKABLE QString saveBannerTitle(const QString& title);
+    /// Saved configurations: named copies of options.ini (never station or credentials). Restoring
+    /// reloads AppSettings at once; pane slots, alarms and blanking read options.ini at start,
+    /// so those need a restart.
+    Q_PROPERTY(QStringList configNames READ configNames NOTIFY configsChanged)
+    QStringList configNames() const;
+    Q_INVOKABLE QString saveConfig(const QString& name);
+    Q_INVOKABLE QString restoreConfig(const QString& name);
+    Q_INVOKABLE QString deleteConfig(const QString& name);
+    Q_INVOKABLE QString renameConfig(const QString& from, const QString& to);
     /// Manual DX time zone (IANA id); empty = automatic from the DX coordinates.
     Q_INVOKABLE QString saveDxZone(const QString& zone_id);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
@@ -197,6 +206,7 @@ signals:
     void aprsChanged(); // only when the APRS-IS server, port or radius actually changed
     void appearanceChanged();
     void optionsChanged();
+    void configsChanged();
     void accountsChanged();
     void panesChanged();
 
