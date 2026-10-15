@@ -259,6 +259,45 @@ Rectangle {
             }
 
             Card {
+                title: "Saved configurations"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.secondary; font.pixelSize: Theme.fontCaption
+                           text: "Snapshots of these options (not the station or passwords). Pane choices, alarms and blanking apply after a restart." }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: cfgName; label: "Name"; Layout.fillWidth: true; field.maximumLength: 24 }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { cfgMsg.text = appSettings.saveConfig(cfgName.text) } }
+                        AppButton { text: "Rename to"; Layout.alignment: Qt.AlignBottom; visible: cfgPick.current.length > 0
+                                    onClicked: { cfgMsg.text = appSettings.renameConfig(cfgPick.current, cfgName.text); if (!cfgMsg.text.length) cfgPick.current = "" } }
+                    }
+                    Flow {
+                        id: cfgPick
+                        property string current: ""
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: appSettings.configNames
+                            AppButton { text: modelData; primary: cfgPick.current === modelData
+                                        onClicked: { cfgPick.current = modelData; cfgName.text = modelData } }
+                        }
+                    }
+                    RowLayout {
+                        visible: cfgPick.current.length > 0
+                        spacing: Theme.gap * 0.6
+                        AppButton { text: "Restore " + cfgPick.current
+                                    onClicked: { cfgMsg.text = appSettings.restoreConfig(cfgPick.current); if (!cfgMsg.text.length) cfgMsg.text = "Restored. Restart to apply pane and alarm choices." } }
+                        AppButton { text: "Delete"; onClicked: { cfgMsg.text = appSettings.deleteConfig(cfgPick.current); if (!cfgMsg.text.length) cfgPick.current = "" } }
+                    }
+                    Text { id: cfgMsg; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true; visible: text.length > 0 }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {

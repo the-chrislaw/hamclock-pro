@@ -186,3 +186,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 42)
 - Backlog A14 slice: alarms persist. `alarms_serialize/alarms_parse` (pure, "HHMM,d|o,1|0", bad entries dropped, max 8) and `AlarmsModel(optionsPath)` saves `alarms/list` in `options.ini` on add, remove, enable and a one-time alarm disabling itself. `alarms-regression` extended (round trip, rejection, model reload with a temp dir). No layout change, no new screenshots. Full ctest passed; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 43)
+- Backlog A16 slice: saved configurations. `config_store.hpp` (pure: names 1-24 chars, max 12, copies `options.ini` to `configs/<name>.ini`, atomic restore, rename, delete; station and credentials never included), `AppSettings` invokables and a Settings > "Saved configurations" card. Restore reloads AppSettings at once; pane slots, alarms and blanking need a restart (said in the UI). Test `config-store-regression` (new). A13 note corrected (banner background was already done). Settings is not reachable from `--screenshot`, so the card was not checked visually; ctest 157/157, no new warnings; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
