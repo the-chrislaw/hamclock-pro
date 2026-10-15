@@ -107,3 +107,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-third run)
 - #73 (area A) open and conflicting: not mine, left alone. Took open QA issue #326.
 - Fix: `Metric.qml` label now fills its column and elides on the right, so long "DE · City, CC" headings no longer run under the neighbouring weather label. One shared-file change (area A), two lines, backward compatible (short labels render the same). Full release suite passes; ASan/UBSan left to CI. No screenshot with a long city (harness has no station), not validated on-device.
+
+## 2026-10-15 (UTC, twenty-fourth run)
+- #334 (area D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card Wi-Fi caption adds "Weakest N dBm (3 h)" (in-memory, one sample/min, full layout only), via `PeakHistory::trough()`. Unit test added; full release suite passes, ASan/UBSan left to CI; no screenshot (card shows only on hardware with Wi-Fi). Not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.

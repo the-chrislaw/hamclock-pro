@@ -60,6 +60,7 @@ class PeakHistory {
 public:
     void add(qint64 epoch_s, double value);
     std::optional<double> peak() const;
+    std::optional<double> trough() const;  // lowest value in the window
 private:
     std::vector<std::pair<qint64, double>> samples_;
 };

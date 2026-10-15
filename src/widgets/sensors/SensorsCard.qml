@@ -34,6 +34,7 @@ Card {
             label: "Wi-Fi"
             visible: root.widget && root.widget.hasWifi
             value: visible ? root.widget.wifi : ""
+            caption: visible && !root.compact ? root.widget.wifiLow : ""
         }
         Metric {
             label: "Clock"

@@ -22,6 +22,7 @@ void SensorsModel::refresh() {
     temp_ = sensors::read_cpu_temp(root_);
     if (temp_) cpuPeak_.add(now().toSecsSinceEpoch(), *temp_);
     wifi_ = sensors::read_wifi_dbm(wireless_);
+    if (wifi_) wifiHistory_.add(now().toSecsSinceEpoch(), *wifi_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
     env_ = sensors::read_env_sensor(iio_);
     if (settings_ && env_.any()) {
@@ -43,6 +44,11 @@ QString SensorsModel::cpuTemp() const {
 
 QString SensorsModel::wifi() const {
     return wifi_ ? QString("%1 dBm").arg(*wifi_) : QString();
+}
+
+QString SensorsModel::wifiLow() const {
+    const auto p = wifiHistory_.trough();
+    return p ? QString("Weakest %1 dBm (3 h)").arg(std::lround(*p)) : QString();
 }
 
 QString SensorsModel::disk() const {
