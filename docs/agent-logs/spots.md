@@ -190,3 +190,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: merged #343 (ui alarms, all checks green). #73 is stale docs, left alone. Nothing of mine open; no open `[C]` qa issues.
 - Backlog item 6 (slice): PSKReporter "Farthest: CALL km band" line (mi when imperial units are set), from the receiver grid centre to DE. `psk::farthest_report` is pure; the card line hides when no report has a usable grid. No AppSettings change, no new source. Test added; 148/148 pass locally; ASan/UBSan left to CI. No screenshot (card needs a callsign); not validated on device.
 - Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 33)
+- Step 1: nothing of mine open; #348 (ui) had checks still running and #73 (stale docs) is another area's, both left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter mode statistics. `psk::mode_stats` counts reports per mode (case folded, busiest first, empty skipped); `PskModel::modes` and a "FT8 6 · CW 2" line on the card (hidden in compact layout). No AppSettings change, no new source. Test added. Not validated on device; no screenshot (card needs a callsign).
+- Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.

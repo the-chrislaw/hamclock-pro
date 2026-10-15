@@ -68,6 +68,8 @@ QString PskModel::bestSnr() const {
 
 QString PskModel::bands() const { return psk::band_summary(psk::band_stats(feed_.reports), 4); }
 
+QString PskModel::modes() const { return psk::band_summary(psk::mode_stats(feed_.reports), 4); }
+
 QString PskModel::farthest() const {
     if (!settings_) return {};
     const auto f = psk::farthest_report(feed_.reports, settings_->deLatitude(), settings_->deLongitude());
