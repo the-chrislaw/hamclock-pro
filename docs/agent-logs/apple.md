@@ -152,3 +152,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F beyond #269; no open PR of mine; #73/#357 are other areas' (left alone). Main Apple runs are green.
 - Item 5: added `packaging/apple/PrivacyInfo.xcprivacy` (no tracking, no collected data; UserDefaults CA92.1, file timestamp C617.1, disk space E174.1 declared) and bundle it into Resources for macOS and iOS via `cmake/AppleBundle.cmake`. The macOS job lints it with `plutil` and checks it is in the bundle. Linux unaffected (APPLE-guarded). Not yet checked by App Store validation; no on-device claims.
 - Next: in-app data-source attribution screen (needs area A UI), phone Simulator screenshot (blocked on arm64 Simulator Qt, optional per #269).
+
+## 2026-10-15 (twenty-eighth hourly run)
+- Merged #418 (green, other area's). #417's `macOS universal build` failed on `hdiutil: create failed - Resource busy`: macdeployqt printed the error but exited 0, so the existing retry loop never retried and the later `mv` failed. Both dmg steps (macOS tests job and universal job) now retry on a missing dmg instead of the exit status. CI logs only; no on-device claims.
