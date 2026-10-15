@@ -3,11 +3,14 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var weather: SpaceWeatherStore
     @EnvironmentObject var quakes: QuakeStore
+    @EnvironmentObject var panes: PaneStore
+    @State private var showSettings = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             VStack(alignment: .leading, spacing: 40) {
                 ClockBar(now: ctx.date)
+                if panes.isOn(.spaceWeather) {
                 HStack(alignment: .top, spacing: 40) {
                     Card(title: "Kp index", sample: weather.kp, now: ctx.date,
                          big: { String(format: "%.1f", $0) },
@@ -25,13 +28,15 @@ struct DashboardView: View {
                          big: { String(format: "%+.1f nT", $0) },
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
-                HStack(alignment: .top, spacing: 40) {
-                    SunCard(now: ctx.date)
-                    StationSunCard(now: ctx.date)
                 }
-                SatelliteCard(now: ctx.date)
-                QuakeCard(now: ctx.date)
+                HStack(alignment: .top, spacing: 40) {
+                    if panes.isOn(.sun) { SunCard(now: ctx.date) }
+                    if panes.isOn(.station) { StationSunCard(now: ctx.date) }
+                }
+                if panes.isOn(.satellites) { SatelliteCard(now: ctx.date) }
+                if panes.isOn(.quakes) { QuakeCard(now: ctx.date) }
                 Spacer()
+                Button("Panes…") { showSettings = true }
                 Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; CelesTrak")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
@@ -39,6 +44,22 @@ struct DashboardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.black)
         }
+        .sheet(isPresented: $showSettings) { PaneSettingsView() }
+    }
+}
+
+private struct PaneSettingsView: View {
+    @EnvironmentObject var panes: PaneStore
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            Text("Panes").font(.system(size: 48, weight: .bold))
+            ForEach(Pane.allCases) { pane in
+                Toggle(pane.title, isOn: Binding(get: { panes.isOn(pane) },
+                                                 set: { panes.set(pane, on: $0) }))
+            }
+            Text("Saved to iCloud when available.").font(.system(size: 29)).foregroundStyle(.secondary)
+        }
+        .padding(90)
     }
 }
 

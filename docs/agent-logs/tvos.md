@@ -53,3 +53,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Swift satellites card. `SatelliteStore` fetches CelesTrak amateur TLEs (<= every 12 h, cached in Caches, honest User-Agent), the shared SGP4 core propagates on device; the card lists the 5 highest satellites above the horizon at the station with az/el/range/eclipse. Labels: STALE ELEMENTS when TLE epoch > 14 days, OFFLINE when the fetch is > 2 days old or absent. CelesTrak attribution added.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: settings (pane selection), map with shared overlay data.
+
+## 2026-10-15 (seventh run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: pane settings. `PaneStore` (iCloud key-value store + UserDefaults mirror) hides/shows the five panes; a "Panes..." button opens a toggle sheet. Swift only, no core change; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: map with shared overlay data (needs the shared land/overlay data Qt-free).
