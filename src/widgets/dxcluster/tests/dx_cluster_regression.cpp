@@ -158,7 +158,14 @@ int main(int argc, char** argv) {
         check(dl->watchedCount() == 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "NADXCC keyword watches the needed-entity spot");
         dl->set_watch({"NABAND"});
         check(dl->watchedCount() == 1, "NABAND keyword also matches any needed slot");
+        model.setNeededResolver([](const QString&, const QString&) { return QStringLiteral("NEW PREFIX"); });
+        dl->set_watch({"NAPREF"});
+        check(dl->watchedCount() == dl->totalCount(), "NAPREF matches new-prefix spots");
+        dl->set_watch({"NADXCC"});
+        check(dl->watchedCount() == 0, "NADXCC ignores new-prefix-only spots");
         model.setNeededResolver([](const QString&, const QString&) { return QStringLiteral("NEW BAND"); });
+        dl->set_watch({"NAPREF"});
+        check(dl->watchedCount() == 0, "NAPREF ignores new-band-only spots");
         dl->set_watch({"NADXCC"});
         check(dl->watchedCount() == 0, "NADXCC ignores a new-band-only spot");
         dl->set_watch({"NABAND"});

@@ -1,5 +1,6 @@
 #include "adif_parse.hpp"
 #include <QDate>
+#include <QRegularExpression>
 #include <QTime>
 
 namespace hamclock::adif {
@@ -26,6 +27,19 @@ QString base_call(const QString& call) {
         if (digit && p.size() >= best.size() && p.size() >= 3) best = p;
     }
     return best.isEmpty() ? parts.first() : best;
+}
+
+QString prefix_of(const QString& call) {
+    const QStringList parts = call.toUpper().split('/', Qt::SkipEmptyParts);
+    const QString base = base_call(call);
+    if (parts.size() > 1 && parts.first() != base && parts.first().size() < base.size()) {
+        bool digit = false;
+        for (QChar c : parts.first()) digit = digit || c.isDigit();
+        if (digit) return parts.first();
+    }
+    static const QRegularExpression re("^([0-9]?[A-Z]+[0-9]+)");
+    const auto m = re.match(base);
+    return m.hasMatch() ? m.captured(1) : QString();
 }
 
 std::vector<Qso> parse(const QString& text, int max_records) {
