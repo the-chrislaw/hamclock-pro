@@ -118,3 +118,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 25)
 - Backlog 0c/A5 slice: stopwatch and countdown as a QML page (`TimersPage.qml`), opened by long-pressing the station clock. Logic is `timers.hpp` (injected time, `timers-regression`: start/stop/reset, countdown pause/expire, formatting); `TimersModel` drives it at 100 ms while running. Session only; no alarm sound, Big Clock and the Qt Widgets dialogs are not retired yet. The page is not reachable from `--screenshot`, so its layout was not checked visually (QML loads without warnings). ctest 146/146; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 26)
+- Backlog A7 slice: `src/ui/kiosk/hamclock-pro-kiosk.service` (eglfs, `--fullscreen`, non-root user, NoNewPrivileges, ProtectSystem=strict) and `KIOSK.md` (user, groups, eglfs/linuxfb fallback, touch calibration, overscan, logs). New `kiosk-unit-regression` (python, offline) checks the unit's key lines. Not installed by CMake yet and not run on a Pi or under systemd; on-screen keyboard decision still open. No UI change, so no screenshots. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

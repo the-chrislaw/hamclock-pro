@@ -46,7 +46,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 4. Map: full-card map, pan-free zoom presets, grayline band styling, DE/DX labels; then port the map drawing from QWidget to a pure QPainter renderer.
 5. Port Big Clock, Stopwatch, Countdown, DE time settings dialogs into QML pages; then retire the Qt Widgets programs (`hamclock-pro-dashboard`, `-editor`, `-map-preview`).
 6. Pane rotation (F26): user chooses which widgets show in which slot; layout saved.
-7. Kiosk: systemd unit + `--fullscreen`, eglfs instructions; on-screen keyboard decision.
+7. 🟡 (done: `--fullscreen`, systemd unit and eglfs guide in `src/ui/kiosk/`, syntax-checked only; pending: on-screen keyboard decision, device validation) Kiosk: systemd unit + `--fullscreen`, eglfs instructions; on-screen keyboard decision.
 
 ### A. (audit additions, Oct 13; see docs/FEATURE-AUDIT.md)
 8. Pane system parity (refines A0): 4 panes plus optional PANE_0 overlay on the DE/DX area; each pane has its own set of widgets, rotation 5/10/30/60 s, forward/back stepping, category picker (Space Wx, DX & Contest, Weather, Sky & Space, Station & Sensors, Other); saved layout.
