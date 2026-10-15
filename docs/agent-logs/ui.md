@@ -155,3 +155,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 34)
 - Backlog A15 slice: software screen blanking. `blanking.hpp` (pure: idle timeout 0..240 min, daily local night window that may cross midnight, a touch wakes the screen for 60 s inside the window), `BlankingModel`, Settings > "Screen blanking" (`kiosk/blank_*` in `options.ini`, `AppSettings.saveBlanking`), black overlay in `Main.qml` that any tap dismisses; a passive `TapHandler` counts touches as activity. Overlay only: backlight/DPMS are not touched. Tests: `blanking-regression` (new), `widget-core-regression` extended (validation, persistence). Dashboard renders at 800x480, 1024x600, 1920x1080 with no QML warnings; Settings is not reachable from `--screenshot`, so its layout and the overlay were not checked visually. Keyboard activity does not wake yet. ctest 152/152; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 35)
+- Backlog A15 slice: keyboard activity now wakes the blanked screen and counts as activity (`PaneSlot.qml` passive `Keys.onPressed`; the blank overlay takes focus and any key wakes it). `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

@@ -8,6 +8,7 @@ want = {
     "Keys.onRightPressed": r"step\(1\)",
     "Keys.onUpPressed": r"moveFocus\(false\)",
     "Keys.onDownPressed": r"moveFocus\(true\)",
+    "Keys.onPressed": r"blanking\.touch\(\)",
     "Keys.onMenuPressed": r"optionsRequested",
 }
 for key, call in want.items():

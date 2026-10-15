@@ -239,6 +239,9 @@ ApplicationWindow {
         anchors.fill: parent
         color: "black"
         z: 100
+        focus: visible
+        onVisibleChanged: if (visible) forceActiveFocus()
+        Keys.onPressed: function (event) { blanking.touch(); event.accepted = true }
         MouseArea { anchors.fill: parent; onPressed: blanking.touch() }
     }
 
