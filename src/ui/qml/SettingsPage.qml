@@ -223,6 +223,18 @@ Rectangle {
                             }
                         }
                     }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: ["No fill", "Black", "Navy", "Maroon", "White"]
+                            AppButton {
+                                text: "Back: " + modelData
+                                primary: appSettings.bannerBackground === index
+                                onClicked: appSettings.saveBannerBackground(index)
+                            }
+                        }
+                    }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap

@@ -185,6 +185,8 @@ int main(int argc, char** argv) {
         check(bt.saveBannerTitle("  Club Station ").isEmpty() && bt.bannerTitle() == "Club Station", "banner title saved trimmed");
         AppSettings bt2({}, bt_dir.path());
         check(bt2.bannerTitle() == "Club Station", "banner title survives restart");
+        check(bt.bannerBackground() == 0 && !bt.saveBannerBackground(9).isEmpty() && bt.bannerBackground() == 0, "bad banner background rejected");
+        check(bt.saveBannerBackground(2).isEmpty() && AppSettings({}, bt_dir.path()).bannerBackground() == 2, "banner background persists");
         check(bt2.saveBannerTitle("").isEmpty() && bt2.bannerTitle().isEmpty(), "banner title cleared");
     }
     {

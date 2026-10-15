@@ -26,5 +26,7 @@ int main() {
     CHECK(banner_color(1, 0) == "#ffb000" && banner_color(4, 5) == "#ffffff");
     CHECK(banner_color(5, 0) != banner_color(5, 6) && banner_color(5, 0) == banner_color(5, 12));
     CHECK(banner_color(5, -1).startsWith('#'));
+    CHECK(banner_background(0).isEmpty() && banner_background(-1).isEmpty() && banner_background(kBannerBackgrounds).isEmpty());
+    CHECK(banner_background(1) == "#000000" && banner_background(4) == "#ffffff");
     return failures ? 1 : 0;
 }
