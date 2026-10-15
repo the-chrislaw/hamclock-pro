@@ -260,3 +260,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: #73 (stale docs) is another area's, left alone. Nothing of mine open; no open `[C]` qa issues.
 - Backlog item 12 (slice): UDP multicast. `UdpSpotListener::listen(port, lan, group)` binds shared on all IPv4 interfaces and joins an IPv4 multicast group (e.g. WSJT-X's 224.0.0.1); invalid or non-multicast groups are refused. `AppSettings::udpSpotGroup/saveUdpGroup` (`[udp] group`, empty = unicast, backward compatible) and a Settings field. `DxClusterModel::refreshUdp` now also rebinds when the LAN flag or group changes. Tests extended (join only asserted where the sandbox allows it); UDP/DX tests pass locally, full ctest run exceeded the tool timeout here, ASan/UBSan left to CI. No screenshot (Settings not reachable via `--screenshot`); not validated on device.
 - Not done: "UDP sets DX" (#333), Log4OM, RBN (#399).
+
+## 2026-10-15 (run 47)
+- Step 1: #411 (ui) and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
+- Docs-only slice: the DX cluster, PSKReporter and HamAlert rows still said the map Settings toggle was not wired, but `SettingsPage.qml` ("Show on map": DX, PSK, POTA, HamAlert, APRS, Log) and the models' `mapSourceVisible` hooks already exist. Rows corrected; no code change, no tests affected.
+- Not done: RBN (#399), WSPR by-call, IOTA names, other ONTA programmes (#305). Meshtastic (#311), UDP sets DX (#333) wait on owner input.
