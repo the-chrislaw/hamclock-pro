@@ -69,7 +69,7 @@ private:
     static QString summary(const End& e);
     static QString wind(const End& e);
     QString local(const End& e) const;  // "14:32 (UTC-7)"
-    static QString air(const End& e);  // "61% RH · 1015 hPa · 20% cloud"
+    static QString air(const End& e);  // "61% RH · dew 8 °C · 1015 hPa · 20% cloud"
 
     WidgetContext context_;
     AppSettings* settings_;

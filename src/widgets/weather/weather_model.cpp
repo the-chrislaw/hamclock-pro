@@ -95,6 +95,8 @@ QString WeatherModel::local(const End& e) const {
 QString WeatherModel::air(const End& e) {
     if (!e.now) return {};
     QStringList parts{QString("%1% RH").arg(e.now->humidity_pct)};
+    if (const auto dew = weather::dew_point_c(e.now->temperature_c, e.now->humidity_pct))
+        parts << QString("dew %1 °C").arg(std::lround(*dew));
     if (e.now->pressure_hpa) {
         QString p = QString("%1 hPa").arg(std::lround(*e.now->pressure_hpa));
         if (e.now->pressure_change_hpa) p += " " + weather::pressure_trend_word(*e.now->pressure_change_hpa).toLower();
