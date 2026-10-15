@@ -1,6 +1,7 @@
 // C ABI smoke test: same NOAA fixtures as swpc_regression, through hcpcore.h.
 #include "../hcpcore.h"
 #include <fstream>
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -27,5 +28,12 @@ int main() {
     check(hcp_swpc_xray_class(3.2e-6, buf, 3) && std::string(buf) == "C3", "truncates safely");
     check(!hcp_swpc_xray_class(-1, buf, sizeof buf), "invalid flux -> empty");
     check(hcp_swpc_kp_description(3, buf, sizeof buf) >= 0, "description callable");
+    // March equinox 2026 (2026-03-20 14:46 UTC): Sun overhead near the equator.
+    double la = 99, lo = 999, el = 99;
+    check(hcp_subsolar_point(1774017960LL, &la, &lo) && std::abs(la) < 0.5, "equinox declination");
+    check(hcp_sun_elevation(1774017960LL, la, lo, &el) && el > 89.0, "sun overhead at subsolar point");
+    check(hcp_sun_elevation(1774017960LL, la, lo + 180.0, &el) && el < -89.0, "antipode is night");
+    check(!hcp_sun_elevation(0, 95.0, 0, &el), "invalid latitude rejected");
+    check(!hcp_subsolar_point(0, nullptr, &lo), "null out rejected");
     return failures ? 1 : 0;
 }
