@@ -138,3 +138,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Tests: long London-New York path is ~34400 km, 11+ hops, finite and worse than short; option shown in the label. No layout change beyond label text, no screenshots. Not validated on device.
 - Other PRs (#309, #310, #73) belong to others; #309/#310 had checks running, left alone. Only [B] issue is #281, already answered.
 - Next: in-app settings UI, MUF map style; tropo needs a terms-checked source.
+
+## 2026-10-15 (UTC): MUF map style (backlog 13, sixth slice)
+
+- `bands/path_model` gets `muf_3000_mhz(sfi, lat, lon, utc)` (same foF2 model, one 3000 km hop). New `bands/muf_map` renders it as a 360x180 equirectangular image with a 5-36 MHz legend; `BandsModel` publishes it as map style `muf` ("MUF (approx.)") from fresh SFI/Kp, redraws every 15 min, and removes it when inputs are stale or missing. Fully offline, labelled approximate; no new data source.
+- Tests: `muf_map_regression` (day > night, rises with SFI, polar lower, bad coordinates finite, image size/legend) and bands model checks that the style appears when fresh and disappears when stale; full ctest (145) green, bands tests clean under ASan/UBSan. No QML change, no screenshots. Not validated on device.
+- Only open PR is #73 (not mine, conflicting); left alone. No [B] qa issues; #281 already answered.
+- Next: tropo map style (needs terms-checked source), in-app settings UI for bandsmatrix options, compact-layout recheck once area A's mechanism lands.

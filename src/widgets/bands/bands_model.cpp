@@ -1,7 +1,9 @@
 #include "bands_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../map/styles.hpp"
 #include "../spaceweather/swpc_parse.hpp"
+#include "muf_map.hpp"
 #include <QTimer>
 
 namespace hamclock {
@@ -25,6 +27,8 @@ BandsModel::BandsModel(const WidgetContext& context, QObject* parent)
     connect(this, &WidgetModel::ageChanged, this, [this] { updatePeriod(); refreshState(); });
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &BandsModel::updatePeriod);
 }
+
+BandsModel::~BandsModel() { MapStyles::instance().remove_style("muf"); }
 
 void BandsModel::start() {
     kp_source_->start();
@@ -81,6 +85,29 @@ void BandsModel::refreshState() {
     if (kp_source_->isStale(now_utc) || flux_source_->isStale(now_utc))
         setState("stale", "Estimated from out-of-date NOAA SWPC indices", oldest);
     else setState("live", "Estimated from NOAA SWPC SFI/Kp/A", oldest);
+    updateMufStyle(kp_source_->isStale(now_utc) || flux_source_->isStale(now_utc));
+}
+
+// Published only from fresh indices; redrawn every 15 minutes as the sun moves.
+void BandsModel::updateMufStyle(bool stale) {
+    if (!has_outlook_ || stale) {
+        MapStyles::instance().remove_style("muf");
+        muf_bucket_ = -1;
+        return;
+    }
+    const auto utc = UtcSeconds{now().toSecsSinceEpoch()};
+    const qint64 bucket = utc.value / 900;
+    if (bucket == muf_bucket_ && sfi_ == muf_sfi_) return;
+    muf_bucket_ = bucket;
+    muf_sfi_ = sfi_;
+    MapStyle style;
+    style.id = "muf";
+    style.name = "MUF (approx.)";
+    style.image = bands::muf_image(sfi_, utc);
+    style.opacity = 0.55;
+    style.legend = bands::muf_scale();
+    style.credit = "Estimated from NOAA SWPC SFI (approximate)";
+    MapStyles::instance().set_style(style);
 }
 
 void register_widget_bands(WidgetRegistry& registry, const WidgetContext& context) {
