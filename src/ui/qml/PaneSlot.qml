@@ -98,6 +98,32 @@ Item {
         }
     }
 
+    // Phone: page dots (a window of up to 7 around the current widget) so a swipe
+    // shows where it is in the list. Passive; taps and swipes go through to the pane.
+    Row {
+        id: pageDots
+        visible: Theme.phone && slot.ids().length > 1
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 2 * Theme.scale
+        spacing: 5 * Theme.scale
+        readonly property var all: slot.ids()
+        readonly property int at: Math.max(0, all.indexOf(slot.choice))
+        readonly property int first: Math.max(0, Math.min(all.length - 7, at - 3))
+        Repeater {
+            model: Math.min(7, pageDots.all.length)
+            Rectangle {
+                readonly property bool current: pageDots.first + index === pageDots.at
+                width: (current ? 8 : 5) * Theme.scale
+                height: width
+                radius: width / 2
+                anchors.verticalCenter: parent.verticalCenter
+                color: current ? Theme.accent : Theme.secondary
+                opacity: current ? 1 : 0.5
+            }
+        }
+    }
+
     // Empty slot, or a saved choice whose widget no longer exists.
     Card {
         anchors.fill: parent

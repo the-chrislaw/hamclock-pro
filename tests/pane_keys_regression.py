@@ -15,4 +15,6 @@ for key, call in want.items():
     m = re.search(re.escape(key) + r".*", qml)
     if not m or not re.search(call, m.group(0)):
         sys.exit("PaneSlot.qml: missing " + key)
+if "pageDots" not in qml or "Theme.phone" not in qml.split("pageDots", 1)[1][:200]:
+    sys.exit("PaneSlot.qml: missing phone page dots")
 print("ok")
