@@ -51,3 +51,11 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none (#261 and #262 are already closed). Still open: #150, #151, #152, #246, #247, #269, #281 (owner-filed or owner-input).
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no removed test assertions. Per-widget code was not read line by line; the footer text still elides at 800x480 (minor, not filed).
 - Health: layout is stable and the new panes behave honestly. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 8
+- Last reviewed commit: eec6c48f59f65b185b7064bf5a5cf145ed214b5d (PRs #293 to #323, 53 commits since 13cfb91).
+- Build and 145/145 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station) and 37 pane widgets at 800x480 and 1024x600 (dark; contact sheets viewed at 1024x600). Nothing scrolls and no warnings were logged. bandactivity and watchlist have no pane id to render.
+- Opened: #325 [D] daylight chart vertical jumps at UTC wrap; #326 [E] weather header labels overlap (Metric label has no elide). Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 (owner-filed or owner-input).
+- Minor, not filed: station card "Short path · 5573 KM · 51 DEG / TRUE" wraps with an orphan "·"; Sun & Moon DX column touches the pane edge at 800x480; map labels still sit on markers.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; changed test assertions all follow intended behaviour additions. Per-widget code was not read line by line.
+- Health: build and tests are green and panes stay honest (Live / Stale / Set up / Offline). Two cosmetic defects found; remaining risk is data freshness on the real Pi (#150).
