@@ -5,6 +5,7 @@
 #include "domain/locator_input.hpp"
 #include "domain/astro_moon.hpp"
 #include "domain/astro_sun.hpp"
+#include "domain/astro_satellite.hpp"
 #include "domain/solar_position.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -121,4 +122,33 @@ int hcp_quakes_strongest_index(const char* b, size_t n) {
     return s ? static_cast<int>(s - list->data()) : -1;
 }
 int hcp_quake_magnitude_class(double m, char* buf, size_t cap) { return copy(hcp::quakes::magnitude_class(m), buf, cap); }
+}
+
+extern "C" {
+int hcp_tle_count(const char* t, size_t n) {
+    if (!t) return 0;
+    return static_cast<int>(hamclock::parse_tle_set(std::string(t, n)).size());
+}
+int hcp_tle_name(const char* t, size_t n, int index, char* buf, size_t cap) {
+    if (!t) return 0;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return 0;
+    return copy(sets[static_cast<size_t>(index)].name, buf, cap);
+}
+int hcp_sat_state(const char* t, size_t n, int index, int64_t unix_s,
+                  double obs_lat, double obs_lon, HcpSatState* out) {
+    if (!t || !out || obs_lat < -90 || obs_lat > 90 || obs_lon < -180 || obs_lon > 360) return 0;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return 0;
+    const hamclock::SatellitePropagator p(sets[static_cast<size_t>(index)]);
+    if (!p.valid()) return 0;
+    const double when = static_cast<double>(unix_s);
+    hamclock::SubSatellitePoint sp;
+    hamclock::LookAngle la;
+    bool lit = false;
+    if (!p.sub_point(when, sp) || !p.look(when, hamclock::Observer{obs_lat, obs_lon, 0.0}, la) || !p.sunlit(when, lit)) return 0;
+    *out = HcpSatState{sp.lat_deg, sp.lon_deg, sp.alt_km, la.az_deg, la.el_deg, la.range_km,
+                       la.range_rate_km_s, lit ? 1 : 0, static_cast<int64_t>(p.epoch_unix())};
+    return 1;
+}
 }

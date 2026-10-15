@@ -44,3 +44,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Qt-free USGS quakes parser (`quakes.cpp`, same fixture/rules as the Qt oracle), C ABI (`hcp_quakes_parse`, strongest index, magnitude class), tested on Linux 9/9, zero warnings. New "Earthquakes M2.5+" card (strongest + 5 most recent) with Stale/Offline labels and USGS attribution.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: satellites pane (needs a Qt-free TLE parser + SGP4 port), settings.
+
+## 2026-10-15 (fifth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: satellites core. The shared `astro_satellite` (TLE parser + vendored SGP4) is already Qt-free, so it joins the standalone TvOSCore build (SGP4 third-party warnings silenced for that file only). C ABI `hcp_tle_count`, `hcp_tle_name`, `hcp_sat_state` (sub-point, az/el/range, range rate, sunlit, TLE epoch so the UI can flag old elements). Tested on Linux 9/9, zero warnings. No Swift changes this run.
+- Next: Swift satellites pane (CelesTrak/AMSAT TLE fetch with Stale label by TLE epoch age; needs allowlist check), settings.

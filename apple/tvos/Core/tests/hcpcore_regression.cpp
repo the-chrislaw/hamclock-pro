@@ -54,5 +54,21 @@ int main() {
     double ill = -1;
     check(hcp_moon_phase(t0, buf, sizeof buf, &ill) && ill >= 0 && ill <= 1, "moon phase");
     check(!hcp_moon_phase(t0, buf, sizeof buf, nullptr), "null illum rejected");
+    // Satellites: ISS element set (epoch 2008-264, Vallado/Celestrak sample).
+    const char tle[] =
+        "ISS (ZARYA)\n"
+        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
+        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n";
+    check(hcp_tle_count(tle, sizeof tle - 1) == 1, "one TLE parsed");
+    check(hcp_tle_count("garbage", 7) == 0 && hcp_tle_count(nullptr, 0) == 0, "bad TLE text rejected");
+    check(hcp_tle_name(tle, sizeof tle - 1, 0, buf, sizeof buf) && std::string(buf) == "ISS (ZARYA)", "TLE name");
+    HcpSatState ss{};
+    const int64_t te = 1221931538LL; // epoch + 5 h
+    check(hcp_sat_state(tle, sizeof tle - 1, 0, te, 48.1, 11.6, &ss), "sat state");
+    check(ss.alt_km > 330 && ss.alt_km < 400, "ISS altitude plausible");
+    check(std::abs(ss.lat_deg) <= 51.7 && ss.el_deg >= -90 && ss.el_deg <= 90 && ss.range_km > 300, "ISS geometry plausible");
+    check(std::abs(ss.epoch_s - 1221913538LL) < 5, "TLE epoch exposed");
+    check(!hcp_sat_state(tle, sizeof tle - 1, 1, te, 48.1, 11.6, &ss), "index out of range");
+    check(!hcp_sat_state(tle, sizeof tle - 1, 0, te, 95.0, 11.6, &ss), "bad latitude rejected");
     return failures ? 1 : 0;
 }
