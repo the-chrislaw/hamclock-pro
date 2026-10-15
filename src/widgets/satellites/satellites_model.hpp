@@ -103,8 +103,12 @@ QStringList toggle_tracked_names(const QStringList& current, const QString& name
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);
 
+// Points of the visibility footprint (horizon circle) of a satellite at the given sub-point and
+// altitude, evenly spaced by bearing; empty for fewer than 3 points or a non-positive altitude.
+std::vector<Location> footprint_ring(double lat_deg, double lon_deg, double alt_km, int points);
+
 // Map layer "satellites": each tracked satellite's current sub-point (labelled
-// triangle) plus its ground track from -10 to +50 min as unlabelled dots.
+// triangle) plus its ground track from -10 to +50 min as unlabelled dots and a dotted footprint ring.
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time);
 
 void register_widget_satellites(WidgetRegistry& registry, const WidgetContext& context);

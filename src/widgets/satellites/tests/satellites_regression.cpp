@@ -31,6 +31,19 @@ int main(int argc, char** argv) {
         check(!now_marker.call.isEmpty() && now_marker.detail.contains("altitude")
                   && now_marker.detail.contains("km"), "satellite marker carries a tap detail");
     }
+    {
+        // ISS-like 420 km: angular radius acos(R/(R+h)) is about 20.3 deg.
+        const auto ring = footprint_ring(0, 0, 420, 36);
+        check(ring.size() == 36, "footprint ring has the requested points");
+        bool ok = true;
+        for (const Location& w : ring) ok = ok && std::fabs(std::acos(std::cos(w.latitude * M_PI / 180) * std::cos(w.longitude * M_PI / 180)) * 180 / M_PI - 20.3) < 0.1;
+        check(ok, "footprint at the equator is a circle of ~20.3 deg");
+        const auto polar = footprint_ring(89, 10, 420, 12);
+        bool wrapped = true;
+        for (const Location& w : polar) wrapped = wrapped && w.longitude >= -180 && w.longitude <= 180 && w.latitude <= 90;
+        check(wrapped, "footprint near the pole stays in range");
+        check(footprint_ring(0, 0, 0, 36).empty() && footprint_ring(0, 0, 420, 2).empty(), "footprint rejects bad input");
+    }
     double r[3];
     check(p.teme(p.epoch_unix(), r), "88888 propagates at epoch");
     // Published t=0 state vector, km.
