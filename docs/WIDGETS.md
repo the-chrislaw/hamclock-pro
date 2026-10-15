@@ -127,7 +127,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 
 **Audit additions (E):**
 6. 🟡 (humidity, dew point, pressure and trend, clouds, local time with UTC offset, today's high/low and city names via OSM Nominatim reverse lookup done; popup on new DE/DX pending area G) Weather parity: humidity, pressure and trend, clouds, city, DX time zone; brief weather popup on new DE/DX.
-7. 🟡 (a "Windy map ↗" link on the weather card, opened in the system browser, done; map styles and WEFAX pending) Weather and clouds map styles; Windy and WEFAX links.
+7. 🟡 ("Windy map ↗" and "WEFAX charts ↗" links on the weather card, opened in the system browser, done; map styles pending) Weather and clouds map styles; Windy and WEFAX links.
 8. Hazard panes and map overlays: quakes (USGS), tropical storms (NHC/JTWC), NWS marine and fire-weather warnings, lightning with range rings, active fires (NASA FIRMS); check each feed's terms first.
 9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
 10. 🟡 (read-only rotctld position card done; tracking the selected satellite or DX pending the radio/rotator safety review) Rotator pane (rotctld) that can track the selected satellite or DX.
