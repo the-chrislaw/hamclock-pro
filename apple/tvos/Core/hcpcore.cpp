@@ -2,6 +2,7 @@
 #include "quakes.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "map/coastline.hpp"
 #include "domain/locator_input.hpp"
 #include "domain/astro_moon.hpp"
 #include "domain/astro_sun.hpp"
@@ -150,5 +151,19 @@ int hcp_sat_state(const char* t, size_t n, int index, int64_t unix_s,
     *out = HcpSatState{sp.lat_deg, sp.lon_deg, sp.alt_km, la.az_deg, la.el_deg, la.range_km,
                        la.range_rate_km_s, lit ? 1 : 0, static_cast<int64_t>(p.epoch_unix())};
     return 1;
+}
+int hcp_coast_part_count(void) { return static_cast<int>(hamclock::coastline_part_count); }
+int hcp_coast_part(int index, uint32_t* start, uint32_t* count) {
+    if (!start || !count || index < 0 || static_cast<size_t>(index) >= hamclock::coastline_part_count) return 0;
+    const auto& p = hamclock::coastline_parts[index];
+    if (static_cast<size_t>(p.start) + p.count > hamclock::coastline_point_count) return 0;
+    *start = p.start;
+    *count = p.count;
+    return 1;
+}
+const float* hcp_coast_points(size_t* point_count) {
+    static_assert(sizeof(hamclock::CoastPoint) == 2 * sizeof(float), "CoastPoint must be two packed floats");
+    if (point_count) *point_count = hamclock::coastline_point_count;
+    return &hamclock::coastline_points[0].longitude;
 }
 }

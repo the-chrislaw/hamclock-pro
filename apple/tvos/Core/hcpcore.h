@@ -80,6 +80,12 @@ int hcp_sat_state(const char* text, size_t len, int index, int64_t unix_s,
 /* Name of the index-th TLE. */
 int hcp_tle_name(const char* text, size_t len, int index, char* buf, size_t cap);
 
+/* World coastline from the shared Natural Earth table (map/coastline.hpp), as polylines.
+ * Points are interleaved (lon, lat) floats in degrees; part i is points [start, start+count). */
+int hcp_coast_part_count(void);
+int hcp_coast_part(int index, uint32_t* start, uint32_t* count);
+const float* hcp_coast_points(size_t* point_count);
+
 #ifdef __cplusplus
 }
 #endif
