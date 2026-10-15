@@ -73,3 +73,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, scrolling views or password handling in added code; no removed test assertions. New network code: hams.at (HTTPS, fixture present) and the ADS-B endpoint now configurable via options.ini (host and port validated, falls back to 127.0.0.1:8080, http only to the user's own receiver). GPS serial device path is regex-restricted to /dev/tty* and /dev/serial/*. Per-widget code was not read line by line.
 - Health: build and tests are green, layouts fit and panes stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 11
+- Last reviewed commit: ecf3fa7a273326dced802870d213b7c03e14a15b (PRs #368 to #382, 30 commits since bc889c6).
+- Build and 152/152 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, no station file took effect so the station card shows Set up); header, Space weather, Solar wind, DX cluster and map fit with honest Live / Stale / Set up states and nothing scrolls. The new Settings page (blanking, time zone search), Weather card changes and WSPR overlay were not rendered this run.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no removed test assertions. Screen blanking is software-only (black overlay) with unit tests; any options change calls touch() and so wakes a blanked screen (minor, not filed). WSPR parser ships with a fixture. Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
