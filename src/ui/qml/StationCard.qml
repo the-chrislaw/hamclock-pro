@@ -16,9 +16,17 @@ Card {
         spacing: Theme.gap * 0.8
 
         // Callsign banner: tap to cycle call / ON AIR / 73 DE call.
-        Text {
+        Rectangle {
             visible: station.configured
             Layout.fillWidth: true
+            implicitHeight: bannerLabel.implicitHeight
+            readonly property string fill: station.bannerBackground(appSettings.bannerBackground)
+            color: fill.length ? fill : "transparent"
+            radius: Theme.gap * 0.5
+        Text {
+            id: bannerLabel
+            anchors.fill: parent
+            horizontalAlignment: Text.AlignLeft
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: Theme.fontValue
             text: station.bannerText
@@ -30,6 +38,7 @@ Card {
             Accessible.name: "Callsign banner " + text
             Accessible.onPressAction: station.cycleBanner()
             TapHandler { onTapped: station.cycleBanner() }
+        }
         }
 
         // Tap the clock to swap the big clock between UTC and DE local time.

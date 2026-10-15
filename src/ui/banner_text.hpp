@@ -63,4 +63,17 @@ inline QString banner_color(int style, qint64 secs) {
     }
 }
 
+// Banner background styles: 0 none (card colour), 1 black, 2 navy, 3 maroon, 4 white.
+constexpr int kBannerBackgrounds = 5;
+
+inline QString banner_background(int style) {
+    switch (style) {
+    case 1: return QStringLiteral("#000000");
+    case 2: return QStringLiteral("#12306b");
+    case 3: return QStringLiteral("#6b1a1a");
+    case 4: return QStringLiteral("#ffffff");
+    default: return {};
+    }
+}
+
 }  // namespace hamclock

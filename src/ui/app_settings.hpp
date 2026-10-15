@@ -41,6 +41,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int dateOrder READ dateOrder NOTIFY optionsChanged)
     Q_PROPERTY(bool clock12h READ clock12h NOTIFY optionsChanged)
     Q_PROPERTY(int bannerStyle READ bannerStyle NOTIFY optionsChanged)
+    Q_PROPERTY(int bannerBackground READ bannerBackground NOTIFY optionsChanged)
     Q_PROPERTY(QString bannerTitle READ bannerTitle NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
@@ -81,6 +82,7 @@ public:
     int dateOrder() const { return date_order_; }                      // 0 D M Y, 1 M D Y, 2 ISO
     bool clock12h() const { return clock_12h_; }
     int bannerStyle() const { return banner_style_; }
+    int bannerBackground() const { return banner_bg_; }
     QString bannerTitle() const { return banner_title_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
@@ -145,6 +147,7 @@ public:
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
     Q_INVOKABLE QString saveWeekStart(bool sunday);
     Q_INVOKABLE QString saveBannerStyle(int style);
+    Q_INVOKABLE QString saveBannerBackground(int style);
     Q_INVOKABLE QString saveBannerTitle(const QString& title);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
@@ -196,6 +199,7 @@ private:
     bool clock_12h_ = false;
     bool week_sunday_ = false;
     int banner_style_ = 0;
+    int banner_bg_ = 0;
     QString banner_title_;
     int overscan_ = 0;
     QList<int> rotations_;

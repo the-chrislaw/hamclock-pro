@@ -111,6 +111,8 @@ void AppSettings::loadOptions() {
     week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
     banner_style_ = ini.value("banner/style", 0).toInt();
     if (banner_style_ < 0 || banner_style_ >= kBannerStyles) banner_style_ = 0;
+    banner_bg_ = ini.value("banner/background", 0).toInt();
+    if (banner_bg_ < 0 || banner_bg_ >= kBannerBackgrounds) banner_bg_ = 0;
     banner_title_ = ini.value("banner/title").toString().trimmed().left(kBannerTitleMax);
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
@@ -495,6 +497,17 @@ QString AppSettings::saveBannerStyle(int style) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the banner colour.";
     banner_style_ = style;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBannerBackground(int style) {
+    if (style < 0 || style >= kBannerBackgrounds) return "Unknown banner background.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("banner/background", style);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner background.";
+    banner_bg_ = style;
     emit optionsChanged();
     return {};
 }
