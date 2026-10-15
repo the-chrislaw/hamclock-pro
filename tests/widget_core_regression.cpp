@@ -177,6 +177,11 @@ int main(int argc, char** argv) {
         check(ov.saveOverscan(6).isEmpty() && ov.overscanPercent() == 6, "overscan applied");
         AppSettings ov2({}, ov_dir.path());
         check(ov2.overscanPercent() == 6, "overscan survives restart");
+        check(ov2.blankIdleMinutes() == 0 && ov2.blankOffHour() == -1, "blanking off by default");
+        check(!ov2.saveBlanking(5, 23, -1).isEmpty() && !ov2.saveBlanking(241, -1, -1).isEmpty() && ov2.blankIdleMinutes() == 0, "bad blanking rejected");
+        check(ov2.saveBlanking(15, 23, 7).isEmpty() && ov2.blankIdleMinutes() == 15 && ov2.blankOnHour() == 7, "blanking applied");
+        AppSettings ov3({}, ov_dir.path());
+        check(ov3.blankIdleMinutes() == 15 && ov3.blankOffHour() == 23, "blanking survives restart");
     }
     {
         QTemporaryDir bt_dir;

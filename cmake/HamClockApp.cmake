@@ -31,6 +31,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/location_tools.cpp
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
+    src/ui/blanking_model.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
@@ -163,6 +164,12 @@ if(BUILD_TESTING)
     target_link_libraries(alarms-regression PRIVATE Qt6::Core)
     add_test(NAME alarms-regression COMMAND alarms-regression)
     set_tests_properties(alarms-regression PROPERTIES TIMEOUT 30)
+    add_executable(blanking-regression tests/blanking_regression.cpp src/ui/blanking_model.cpp)
+    target_include_directories(blanking-regression PRIVATE src)
+    target_link_libraries(blanking-regression PRIVATE Qt6::Core)
+    set_target_properties(blanking-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME blanking-regression COMMAND blanking-regression)
+    set_tests_properties(blanking-regression PROPERTIES TIMEOUT 30)
     add_executable(banner-text-regression tests/banner_text_regression.cpp)
     target_include_directories(banner-text-regression PRIVATE src)
     target_link_libraries(banner-text-regression PRIVATE Qt6::Core)

@@ -229,6 +229,19 @@ ApplicationWindow {
         TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false }
     }
 
+    // Any touch counts as activity (passive: children still get their taps).
+    TapHandler { gesturePolicy: TapHandler.DragThreshold; onPressedChanged: blanking.touch() }
+
+    // Software screen blanking (kiosk): black overlay, any tap wakes it.
+    Rectangle {
+        id: blankLayer
+        visible: blanking.blanked
+        anchors.fill: parent
+        color: "black"
+        z: 100
+        MouseArea { anchors.fill: parent; onPressed: blanking.touch() }
+    }
+
     Rectangle {
         id: alarmBanner
         visible: alarms.ringing

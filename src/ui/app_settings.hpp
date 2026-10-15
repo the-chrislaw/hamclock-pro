@@ -48,6 +48,9 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString dxZoneOverride READ dxZoneOverride NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
+    Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
+    Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
+    Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
@@ -90,6 +93,9 @@ public:
     QString dxZoneOverride() const { return dx_zone_override_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
+    int blankIdleMinutes() const { return blank_idle_; }
+    int blankOffHour() const { return blank_off_; }
+    int blankOnHour() const { return blank_on_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
@@ -160,6 +166,9 @@ public:
     Q_INVOKABLE QString saveDxZone(const QString& zone_id);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
+    // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
+    // (local, 0..23; -1 and -1 = none). Software overlay only.
+    Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
     // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
@@ -221,6 +230,9 @@ private:
     QString banner_title_;
     QString dx_zone_override_;
     int overscan_ = 0;
+    int blank_idle_ = 0;
+    int blank_off_ = -1;
+    int blank_on_ = -1;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
