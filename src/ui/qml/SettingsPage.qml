@@ -208,16 +208,27 @@ Rectangle {
             Card {
                 title: "Callsign banner"
                 Layout.fillWidth: true
-                Flow {
+                ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: ["Theme", "Amber", "Green", "Red", "White", "Rainbow"]
-                        AppButton {
-                            text: modelData
-                            primary: appSettings.bannerStyle === index
-                            onClicked: appSettings.saveBannerStyle(index)
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: ["Theme", "Amber", "Green", "Red", "White", "Rainbow"]
+                            AppButton {
+                                text: modelData
+                                primary: appSettings.bannerStyle === index
+                                onClicked: appSettings.saveBannerStyle(index)
+                            }
                         }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: bannerTitle; label: "Custom title (tap the banner to show it; empty = off)"; text: appSettings.bannerTitle
+                            field.maximumLength: 24 }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveBannerTitle(bannerTitle.text) }
                     }
                 }
             }

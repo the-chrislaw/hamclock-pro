@@ -68,7 +68,9 @@ QString StationModel::pathText() const {
     return path_detail(geometry_, long_path_, settings_.imperialUnits());
 }
 
-QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
+bool StationModel::bannerIsCallsign() const { return banner_is_callsign(banner_mode_, settings_.bannerTitle()); }
+
+QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_, settings_.bannerTitle()); }
 
 QString StationModel::auxTime() const {
     return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0,
@@ -83,7 +85,7 @@ void StationModel::cycleAuxTime() {
 QString StationModel::bannerColor(int style) const { return banner_color(style, QDateTime::currentSecsSinceEpoch()); }
 
 void StationModel::cycleBanner() {
-    banner_mode_ = next_banner_mode(banner_mode_);
+    banner_mode_ = next_banner_mode(banner_mode_, settings_.bannerTitle());
     emit stationChanged();
 }
 

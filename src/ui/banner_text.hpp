@@ -6,16 +6,26 @@
 namespace hamclock {
 
 constexpr int kBannerModes = 3;
+constexpr int kBannerTitleMax = 24;
 
-inline int next_banner_mode(int mode) { return ((mode % kBannerModes) + kBannerModes + 1) % kBannerModes; }
+// With a custom title set (Settings > Callsign banner) the cycle gains a fourth step showing it.
+inline int banner_mode_count(const QString& title) { return title.trimmed().isEmpty() ? kBannerModes : kBannerModes + 1; }
 
-inline bool banner_is_callsign(int mode) { return ((mode % kBannerModes) + kBannerModes) % kBannerModes == 0; }
+inline int banner_wrap(int mode, const QString& title) {
+    const int n = banner_mode_count(title);
+    return ((mode % n) + n) % n;
+}
 
-inline QString banner_text(int mode, const QString& call) {
+inline int next_banner_mode(int mode, const QString& title = {}) { return banner_wrap(mode + 1, title); }
+
+inline bool banner_is_callsign(int mode, const QString& title = {}) { return banner_wrap(mode, title) == 0; }
+
+inline QString banner_text(int mode, const QString& call, const QString& title = {}) {
     const QString c = call.trimmed().toUpper();
-    switch (((mode % kBannerModes) + kBannerModes) % kBannerModes) {
+    switch (banner_wrap(mode, title)) {
     case 1: return QStringLiteral("ON AIR");
     case 2: return c.isEmpty() ? QStringLiteral("73") : QStringLiteral("73 DE ") + c;
+    case 3: return title.trimmed().left(kBannerTitleMax);
     default: return c;
     }
 }
