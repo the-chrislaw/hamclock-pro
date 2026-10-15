@@ -1,6 +1,8 @@
 #include "satellites_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 #include <QTimeZone>
 #include <QVariantMap>
@@ -136,6 +138,13 @@ void SatellitesModel::load() {
         const QString name = QString::fromStdString(t.name);
         for (const char* key : kTracked)
             if (name.contains(QLatin1String(key))) { tles_.push_back(t); break; }
+    }
+    // Optional user-supplied elements (`user-tles.txt` beside options.ini); they win over
+    // the download for the same NORAD id and are not limited to the popular-bird list.
+    if (settings_) {
+        QFile f(QFileInfo(settings_->optionsPath()).absolutePath() + "/user-tles.txt");
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text))
+            tles_ = merge_user_tles(tles_, parse_tle_set(f.read(1 << 20).toStdString()));
     }
     recompute();
 }
