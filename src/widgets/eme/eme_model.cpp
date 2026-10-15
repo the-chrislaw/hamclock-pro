@@ -22,6 +22,8 @@ EmeSummary summarize_eme(UtcSeconds now, double de_lat, double de_lon, double dx
     out.distance = QString("%1 km").arg(qRound(p.distance_km / 100.0) * 100);
     out.degradation = QString("+%1 dB vs perigee").arg(eme_degradation_db(p.distance_km), 0, 'f', 1);
     out.declination = QString("Dec %1°").arg(p.dec_deg, 0, 'f', 1);
+    const double sep = moon_sun_separation_deg(now);
+    out.sun = QString("%1° from Moon%2").arg(qRound(sep)).arg(sep < 10.0 ? " (sun noise)" : "");
     if (const auto w = next_mutual_moon_window(now, de_lat, de_lon, dx_lat, dx_lon)) {
         out.mutual_now = w->in_progress;
         const std::int64_t minutes = (w->end.value - now.value + 30) / 60;

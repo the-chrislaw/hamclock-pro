@@ -31,5 +31,7 @@ Card {
         Text { visible: root.rowsFit >= 5; text: root.v(root.widget ? root.widget.degradation : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
         Text { visible: root.rowsFit >= 6; text: "Declination"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text { visible: root.rowsFit >= 6; text: root.v(root.widget ? root.widget.declination : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
+        Text { visible: root.rowsFit >= 7; text: "Sun"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+        Text { visible: root.rowsFit >= 7; text: root.v(root.widget ? root.widget.sun : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
     }
 }
