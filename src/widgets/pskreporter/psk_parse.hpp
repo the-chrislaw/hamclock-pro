@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QString>
+#include <utility>
 #include <vector>
 
 namespace hamclock::psk {
@@ -27,6 +28,12 @@ struct Feed {
 // Rows missing a receiver, a usable frequency or a time are skipped. A body
 // that is not a <receptionReports> document yields ok == false.
 Feed parse_reports(const QByteArray& body);
+
+// Reports per amateur band, most reports first (ties: lower band label order
+// as first seen). Reports outside the amateur bands are skipped.
+std::vector<std::pair<QString, int>> band_stats(const std::vector<Report>& reports);
+// "20m 3 · 40m 1" for the first max_bands entries.
+QString band_summary(const std::vector<std::pair<QString, int>>& stats, int max_bands);
 
 // Query URL for "who heard this callsign", or an empty string when the call
 // has characters outside [A-Z0-9/] (nothing is sent for it).

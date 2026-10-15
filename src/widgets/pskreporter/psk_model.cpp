@@ -65,6 +65,8 @@ QString PskModel::bestSnr() const {
     return best == -999 ? QString() : QString("%1 dB").arg(best);
 }
 
+QString PskModel::bands() const { return psk::band_summary(psk::band_stats(feed_.reports), 4); }
+
 QVariantList PskModel::recent() const {
     QVariantList out;
     for (const auto& r : feed_.reports) {

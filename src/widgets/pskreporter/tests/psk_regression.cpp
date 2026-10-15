@@ -66,6 +66,17 @@ int main(int argc, char** argv) {
         check(std::abs(layer.markers[1].where.latitude - (56.0 + 1 * 2.5 / 60 + 1.25 / 60)) < 1e-6, "overlay: 6-char centre");
         check(psk::overlay_layer(rs, 1).markers.size() == 1, "overlay: capped");
     }
+    {
+        std::vector<psk::Report> rs(5);
+        rs[0].band = "20m"; rs[1].band = "20m"; rs[2].band = "40m"; rs[3].band = "20m"; rs[4].band = "";
+        rs[0].freq_khz = 14074; rs[1].freq_khz = 14080; rs[2].freq_khz = 7040; rs[3].freq_khz = 14090; rs[4].freq_khz = 5000;
+        const auto stats = psk::band_stats(rs);
+        check(stats.size() == 2 && stats[0].first == "20m" && stats[0].second == 3 && stats[1].first == "40m" &&
+                  stats[1].second == 1,
+              "band stats: most reports first, out-of-band skipped");
+        check(psk::band_stats({}).empty(), "band stats: empty");
+        check(psk::band_summary(stats, 1) == "20m 3" && psk::band_summary(stats, 5) == "20m 3 · 40m 1", "band summary");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
