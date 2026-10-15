@@ -20,6 +20,8 @@ add_library(hamclock-core STATIC
     ${D}/solar_position.cpp
     ${D}/astro_sun.cpp
     ${D}/astro_moon.cpp
+    ${D}/astro_satellite.cpp
+    ${D}/astro_sgp4/SGP4.cpp
     ${D}/geometry.cpp
     ${D}/locator_input.cpp
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
@@ -27,6 +29,8 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
     ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
+# Vendored Vallado SGP4: third-party code, not ours to reformat; silence its warnings only.
+set_source_files_properties(${D}/astro_sgp4/SGP4.cpp PROPERTIES COMPILE_OPTIONS "-w")
 target_include_directories(hamclock-core PUBLIC ${HCP_ROOT}/src)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-core PRIVATE -Wall -Wextra -Wpedantic)

@@ -61,6 +61,25 @@ int hcp_moon_phase(int64_t unix_s, char* buf, size_t cap, double* illuminated);
  * Returns 0 for anything but a valid locator. */
 int hcp_locator_center(const char* locator, double* lat_deg, double* lon_deg);
 
+/* Satellites (shared Qt-free TLE parser + vendored SGP4). Computed on device from the
+ * supplied TLE; the caller owns TLE freshness (epoch age) and must label stale elements. */
+typedef struct HcpSatState {
+    double lat_deg, lon_deg, alt_km;       /* sub-satellite point */
+    double az_deg, el_deg, range_km;       /* look angle from the observer */
+    double range_rate_km_s;                /* > 0: receding */
+    int sunlit;                            /* 1 sunlit, 0 eclipsed */
+    int64_t epoch_s;                       /* TLE epoch, unix seconds */
+} HcpSatState;
+/* Number of valid TLE sets in text (3-line or bare 2-line). Names are copied to name_out
+ * (cap each) when non-null, up to max_names entries laid out contiguously. */
+int hcp_tle_count(const char* text, size_t len);
+/* State of the index-th TLE in text at unix_s for the observer. Returns 0 on bad input,
+ * an out-of-range index or an SGP4 failure (e.g. decayed). */
+int hcp_sat_state(const char* text, size_t len, int index, int64_t unix_s,
+                  double obs_lat_deg, double obs_lon_deg, HcpSatState* out);
+/* Name of the index-th TLE. */
+int hcp_tle_name(const char* text, size_t len, int index, char* buf, size_t cap);
+
 #ifdef __cplusplus
 }
 #endif
