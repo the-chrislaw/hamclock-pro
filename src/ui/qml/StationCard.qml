@@ -7,6 +7,7 @@ Card {
     id: root
     // The banner already shows the callsign; do not repeat it in the title.
     title: !station.configured ? "Your station" : station.bannerIsCallsign ? "Station" : station.callsign
+    property bool wide: false   // phone strip: DE and DX side by side
     signal setupRequested()
     signal settingsRequested()
     signal timersRequested()
@@ -97,6 +98,11 @@ Card {
 
         Rectangle { color: Theme.divider; implicitHeight: 1; Layout.fillWidth: true }
 
+        GridLayout {
+            Layout.fillWidth: true
+            columns: root.wide ? 2 : 1
+            columnSpacing: Theme.gap
+            rowSpacing: Theme.gap * 0.8
         Repeater {
             model: station.configured ? [
                 { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" },
@@ -105,6 +111,8 @@ Card {
             delegate: ColumnLayout {
                 spacing: 1
                 Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.alignment: Qt.AlignTop
                 Text { text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: modelData.grid; color: Theme.ink; font.pixelSize: Theme.fontTitle * 1.3; font.weight: Font.DemiBold }
                 Text { text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
@@ -125,6 +133,7 @@ Card {
                     wrapMode: Text.WordWrap
                 }
             }
+        }
         }
         Text {
             visible: station.configured

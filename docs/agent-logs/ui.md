@@ -159,3 +159,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 35)
 - Backlog A15 slice: keyboard activity now wakes the blanked screen and counts as activity (`PaneSlot.qml` passive `Keys.onPressed`; the blank overlay takes focus and any key wakes it). `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 36)
+- Backlog A0d slice: portrait phone layout (width < 600 and taller than wide): `Theme.phone`, page grid becomes one column (station strip 36 % with DE and DX side by side, one pane 22 %, map fills the rest); other sizes unchanged (1024x600 and 800x480 re-rendered, identical). New truncation test `qml-app-truncation-390x844`. Rendered at 390x844 with a configured station: no clipping. Landscape phone (844x390) still uses the desktop grid; page dots pending. ctest 153/153; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs) and #383 (Apple, conflicting) were open; left alone. Issue #151 (time zone picker) is already implemented.
