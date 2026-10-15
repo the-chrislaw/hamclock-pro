@@ -134,3 +134,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 29)
 - Backlog A2 slice: Up/Down on a focused pane move the focus ring to the previous/next focusable item (Tab order) via `PaneSlot.moveFocus`; `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 30)
+- Backlog A13 slice: Settings > "Callsign banner" colour (Theme, Amber, Green, Red, White, Rainbow), saved in `options.ini` (`banner/style`, `AppSettings.saveBannerStyle`); `banner_color` in `banner_text.hpp` (rainbow turns hue once per 12 s from the clock), `banner-text-regression` extended. Text size is unchanged, so layout is the same; 800x480 and 1024x600 render with exit 0 and no truncation. Custom title and background colour still pending. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

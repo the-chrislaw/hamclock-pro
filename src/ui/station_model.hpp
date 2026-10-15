@@ -55,6 +55,7 @@ public:
     QString pathText() const;
     bool longPath() const { return long_path_; }
     Q_INVOKABLE void toggleLongPath();
+    Q_INVOKABLE QString bannerColor(int style) const;  // "" = theme accent; rainbow follows the clock
     Q_INVOKABLE void cycleBanner();   // call -> ON AIR -> 73 DE call (per session)
     QString bannerText() const;
     bool bannerIsCallsign() const { return banner_is_callsign(banner_mode_); }

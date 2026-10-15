@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "app_settings.hpp"
+#include "banner_text.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include <QDir>
@@ -105,6 +106,8 @@ void AppSettings::loadOptions() {
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
     clock_12h_ = ini.value("clock/h12", false).toBool();
     week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
+    banner_style_ = ini.value("banner/style", 0).toInt();
+    if (banner_style_ < 0 || banner_style_ >= kBannerStyles) banner_style_ = 0;
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
@@ -449,6 +452,17 @@ QString AppSettings::saveWeekStart(bool sunday) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the week start.";
     week_sunday_ = sunday;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBannerStyle(int style) {
+    if (style < 0 || style >= kBannerStyles) return "Unknown banner colour.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("banner/style", style);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner colour.";
+    banner_style_ = style;
     emit optionsChanged();
     return {};
 }

@@ -22,7 +22,8 @@ Card {
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: Theme.fontValue
             text: station.bannerText
-            color: Theme.accent
+            // utcTime ticks every second, which animates the rainbow style.
+            color: { station.utcTime; const c = station.bannerColor(appSettings.bannerStyle); return c.length ? c : Theme.accent }
             font.pixelSize: Theme.fontTitle * 1.6
             font.weight: Font.Bold
             Accessible.role: Accessible.Button

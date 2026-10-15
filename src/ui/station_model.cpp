@@ -80,6 +80,8 @@ void StationModel::cycleAuxTime() {
     emit tick();
 }
 
+QString StationModel::bannerColor(int style) const { return banner_color(style, QDateTime::currentSecsSinceEpoch()); }
+
 void StationModel::cycleBanner() {
     banner_mode_ = next_banner_mode(banner_mode_);
     emit stationChanged();
