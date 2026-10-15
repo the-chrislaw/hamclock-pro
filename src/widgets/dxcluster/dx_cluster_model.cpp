@@ -165,6 +165,13 @@ void DxClusterModel::cycleModeFilter() {
 DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("dxcluster", "DX cluster", parent), settings_(context.settings),
       client_(std::move(factory), this), list_(this), udp_(this) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("dx");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("dx");
+            if (v != map_visible_) setMapVisible(v);
+        });
+    }
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
     if (settings_) {

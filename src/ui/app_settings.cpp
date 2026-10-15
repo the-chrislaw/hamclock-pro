@@ -103,6 +103,7 @@ void AppSettings::loadOptions() {
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
+    map_hidden_ = ini.value("map_sources/hidden").toStringList();
     imperial_ = ini.value("units/imperial", false).toBool();
     date_order_ = ini.value("clock/date_order", 0).toInt();
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
@@ -454,6 +455,23 @@ QString AppSettings::saveUdpScope(bool by_me) {
     if (ini.status() != QSettings::NoError) return "Could not save the UDP spot scope.";
     if (udp_by_me_ != by_me) {
         udp_by_me_ = by_me;
+        emit optionsChanged();
+    }
+    return {};
+}
+
+QString AppSettings::saveMapSourceVisible(const QString& key, bool visible) {
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    if (!kKeys.contains(key)) return "Unknown map source.";
+    QStringList hidden = map_hidden_;
+    hidden.removeAll(key);
+    if (!visible) hidden << key;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("map_sources/hidden", hidden);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the map layer setting.";
+    if (hidden != map_hidden_) {
+        map_hidden_ = hidden;
         emit optionsChanged();
     }
     return {};

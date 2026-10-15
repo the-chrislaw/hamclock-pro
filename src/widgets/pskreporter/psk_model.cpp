@@ -15,6 +15,13 @@ constexpr int kRecentRows = 6;
 PskModel::PskModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport) {
     if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("psk");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("psk");
+            if (v != map_visible_) setMapVisible(v);
+        });
+    }
+    if (settings_) {
         connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
             if (!raw_.ok) return;

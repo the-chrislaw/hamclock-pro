@@ -13,6 +13,13 @@ namespace { constexpr qint64 kMaxFileBytes = 64LL * 1024 * 1024; }
 
 AdifModel::AdifModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("adif", "Log", parent), settings_(context.settings) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("adif");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("adif");
+            if (v != map_visible_) setMapVisible(v);
+        });
+    }
     connect(&watcher_, &QFileSystemWatcher::fileChanged, this, [this] { reload(); });
     if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &AdifModel::reload);
 }

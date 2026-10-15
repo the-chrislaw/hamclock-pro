@@ -32,6 +32,13 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
     connect(this, &WidgetModel::ageChanged, this, &OtaModel::refreshState);
     if (context.settings) {
         settings_ = context.settings;
+        if (settings_) {
+            map_visible_ = settings_->mapSourceVisible("ota");
+            connect(settings_, &AppSettings::optionsChanged, this, [this] {
+                const bool v = settings_->mapSourceVisible("ota");
+                if (v != map_visible_) setMapVisible(v);
+            });
+        }
         loadSettingsFilter();
         connect(settings_, &AppSettings::optionsChanged, this, &OtaModel::loadSettingsFilter);
         connect(settings_, &AppSettings::stationChanged, this, &OtaModel::loadSettingsFilter);
