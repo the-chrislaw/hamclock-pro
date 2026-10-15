@@ -11,7 +11,7 @@ class AppSettings;
 
 // Next solar eclipse anywhere on Earth, offline from the system clock.
 struct EclipseSummary {
-    QString kind, when, countdown, detail, visibility; // empty = not available
+    QString kind, when, countdown, detail, visibility, local; // empty = not available
 };
 // With a station, `visibility` says whether the eclipse can be seen there.
 EclipseSummary summarize_eclipse(UtcSeconds now);
@@ -24,6 +24,7 @@ class EclipseModel : public WidgetModel {
     Q_PROPERTY(QString countdown READ countdown NOTIFY changed)
     Q_PROPERTY(QString detail READ detail NOTIFY changed)
     Q_PROPERTY(QString visibility READ visibility NOTIFY changed)
+    Q_PROPERTY(QString local READ local NOTIFY changed)
 public:
     explicit EclipseModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -33,6 +34,7 @@ public:
     QString countdown() const { return s_.countdown; }
     QString detail() const { return s_.detail; }
     QString visibility() const { return s_.visibility; }
+    QString local() const { return s_.local; }
 signals:
     void changed();
 private:

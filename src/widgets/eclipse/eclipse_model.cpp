@@ -29,7 +29,12 @@ EclipseSummary summarize_eclipse(UtcSeconds now, double lat, double lon) {
     const auto e = next_solar_eclipse(now);
     if (!e) return {};
     EclipseSummary out = describe(*e, now);
-    switch (eclipse_visibility(*e, lat, lon).visibility) {
+    const EclipseLocal loc = eclipse_visibility(*e, lat, lon);
+    if (loc.visibility != EclipseVisibility::None)
+        out.local = QString("Max %1Z, %2% of Sun")
+                        .arg(QDateTime::fromSecsSinceEpoch(loc.max_time.value, QTimeZone::utc()).toString("HH:mm"))
+                        .arg(qRound(qMin(loc.magnitude, 1.0) * 100));
+    switch (loc.visibility) {
     case EclipseVisibility::Visible: out.visibility = "Visible at DE"; break;
     case EclipseVisibility::Marginal: out.visibility = "Borderline at DE"; break;
     case EclipseVisibility::None: out.visibility = "Not visible at DE"; break;

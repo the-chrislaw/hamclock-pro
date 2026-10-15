@@ -77,6 +77,24 @@ int main(int argc, char** argv) {
         check(psk::band_stats({}).empty(), "band stats: empty");
         check(psk::band_summary(stats, 1) == "20m 3" && psk::band_summary(stats, 5) == "20m 3 · 40m 1", "band summary");
     }
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].mode = "ft8"; rs[1].mode = "CW"; rs[2].mode = "FT8"; rs[3].mode = "";
+        const auto ms = psk::mode_stats(rs);
+        check(ms.size() == 2 && ms[0].first == "FT8" && ms[0].second == 2 && ms[1].first == "CW",
+              "mode stats: case folded, busiest first, empty skipped");
+        check(psk::band_summary(ms, 4) == "FT8 2 · CW 1" && psk::mode_stats({}).empty(), "mode summary");
+    }
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].receiver = "NEAR"; rs[0].receiver_grid = "IO91";
+        rs[1].receiver = "FAR"; rs[1].receiver_grid = "QM05ab"; rs[1].band = "20m";
+        rs[2].receiver = "BAD"; rs[2].receiver_grid = "ZZ";
+        rs[3].receiver = "COARSE"; rs[3].receiver_grid = "QM";
+        const auto f = psk::farthest_report(rs, 51.5, -0.1);
+        check(f.found && f.call == "FAR" && f.band == "20m" && f.km > 9000 && f.km < 10500, "farthest: Japan from London");
+        check(!psk::farthest_report({}, 0, 0).found && !psk::farthest_report({rs[2], rs[3]}, 0, 0).found, "farthest: none");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
@@ -108,6 +126,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(requested.contains("senderCallsign=W1AW"), "request uses the settings callsign");
     check(model.state() == "live" && model.hasData() && model.count() == 1, "report -> live");
+    check(model.modes() == "CW 1", "model modes line");
     check(model.bestSnr() == "14 dB" && model.recent().size() == 1, "summary");
 
     check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",

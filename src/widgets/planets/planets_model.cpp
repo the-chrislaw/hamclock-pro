@@ -23,7 +23,7 @@ QVariantList planet_rows(UtcSeconds now, double de_lat, double de_lon) {
 }
 
 OverlayLayer planet_overlay_layer(UtcSeconds now) {
-    static const char* colors[kPlanetCount] = {"#b0a79a", "#f5e6a8", "#e0603b", "#d9a066", "#cdb87a"};
+    static const char* colors[kPlanetCount] = {"#b0a79a", "#f5e6a8", "#e0603b", "#d9a066", "#cdb87a", "#8fd3d9", "#5b7fe0"};
     OverlayLayer layer;
     layer.id = "planets";
     layer.labels = OverlayLabelMode::Call;

@@ -105,6 +105,13 @@ QString compass_point(int degrees) {
 
 double celsius_to_fahrenheit(double c) { return c * 9.0 / 5.0 + 32.0; }
 
+std::optional<double> dew_point_c(double t, int rh) {
+    if (rh <= 0 || rh > 100 || !(t >= -45 && t <= 60)) return std::nullopt;
+    constexpr double a = 17.62, b = 243.12;  // Magnus coefficients (Sonntag 1990)
+    const double g = std::log(rh / 100.0) + a * t / (b + t);
+    return b * g / (a - g);
+}
+
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"

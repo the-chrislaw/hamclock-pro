@@ -146,6 +146,16 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Not mine: #73 conflicting; left alone. No `[D]` QA issues besides #246 (needs G's tap mechanism); balloons still blocked on #314.
 - Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
 
+## 2026-10-15 (UTC), run 27
+- Merged #338 (space docs, green). Uranus and Neptune (backlog D10 completion): JPL approximate elements added to `astro_planets`; both appear in the planets pane (when above the horizon) and as map markers (layer now has seven). Tests: Uranus oppositions 2025-11-21 and 2026-11-25, Neptune 2025-09-23 (within 2 days), Neptune distance 28.9 AU, Uranus about 18.6 AU. Full ctest otherwise passes; no layout change (list rows). ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #339/#340 CI running at start. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 28
+- Eclipse local circumstances (backlog D9, partial): `eclipse_visibility` now also returns the time of maximum at DE (minute resolution) and the magnitude there (fraction of the Sun's diameter, from the Sun-Moon separation and the Moon's distance); the card gains a "Local" row ("Max 18:39Z, 100% of Sun") only when visible/borderline at DE and the pane has room. Tests: 2024-04-08 Dallas (magnitude > 0.95, maximum within 5 min of 18:42Z), Denver partial magnitude 0.6-0.9, London zero. Maximum is a few minutes off NASA's value (ephemeris limit). Full ctest passes except nothing new failing; rendered 800x480, 1024x600, 1920x1080 only for the not-visible case (the next eclipse, 2027-02-06, is not visible from the test DE), so the new row itself was not screenshotted. ASan/UBSan left to CI. Not done: contact times.
+- Not mine: #344 (spots) CI still running at start, #73 conflicting; left alone. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
 ## 2026-10-15 (UTC), run 29
 - hams.at activations pane (backlog D8, first slice): new `hamsat` widget parses the public `hams.at/api/alerts/upcoming` endpoint (documented at hams.at/api/docs; reachable from the sandbox; no key needed to read; Data source policy updated). Card shows the next activation with a countdown, mode, frequency, grid and AOS-LOS, plus the next three in non-compact slots; finished passes dropped by the clock. Fixture is a trimmed real response. Shared change: `hamsat` added to the Sky & Space category in PaneChooser.qml. Rendered offscreen at 800x480, 1024x600 and 1920x1080 dark and light (not on-device); 1024x600 viewed, no clipping. hamsat tests pass; ASan/UBSan left to CI. Not done: API key / personalised passes (settings row), map markers.
 - Not mine: #348/#349 CI still running at start, #73 conflicting; left alone. Balloons still blocked on #314.

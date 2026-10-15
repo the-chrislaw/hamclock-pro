@@ -60,6 +60,12 @@ int main(int argc, char** argv) {
     check(dallas.visibility == EclipseVisibility::Visible && dallas.min_separation_deg < 0.25, "Dallas sees it");
     check(dallas.sun_elevation_deg > 50 && dallas.sun_elevation_deg < 75, "Dallas sun high");
     check(eclipse_visibility(e2024, 39.74, -104.99).visibility == EclipseVisibility::Visible, "Denver sees partial");
+    check(dallas.magnitude > 0.95, "Dallas magnitude near total");
+    const auto denver = eclipse_visibility(e2024, 39.74, -104.99);
+    check(denver.magnitude > 0.6 && denver.magnitude < 0.9, "Denver magnitude (NASA ~0.65 obscuration)");
+    // Dallas totality about 18:40-18:44 UTC (NASA: 1:40-1:44 pm CDT), within 5 min.
+    check(std::llabs(dallas.max_time.value - utc(2024, 4, 8, 18, 42, 0)) <= 300, "Dallas max time");
+    check(eclipse_visibility(e2024, 51.5, -0.13).magnitude == 0.0, "London magnitude zero");
     check(eclipse_visibility(e2024, 51.5, -0.13).visibility == EclipseVisibility::None, "London: Sun well after");
     check(eclipse_visibility(e2024, -33.9, 151.2).visibility == EclipseVisibility::None, "Sydney: night");
     check(eclipse_visibility(e2024, 55.75, 37.6).visibility == EclipseVisibility::None, "Moscow: not visible");
@@ -68,6 +74,10 @@ int main(int argc, char** argv) {
     bool threw = false;
     try { eclipse_visibility(e2024, 91, 0); } catch (const std::invalid_argument&) { threw = true; }
     check(threw, "invalid latitude throws");
+    const EclipseSummary sd = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 32.78, -96.80);
+    check(sd.visibility == "Visible at DE" && sd.local.startsWith("Max 18:") && sd.local.contains("Z"), "summary local line");
+    const EclipseSummary sl = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 51.5, -0.13);
+    check(sl.local.isEmpty(), "no local line when not visible");
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

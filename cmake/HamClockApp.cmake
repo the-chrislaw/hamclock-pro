@@ -30,6 +30,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/time_zone_search.cpp
     src/ui/location_tools.cpp
     src/ui/timers_model.cpp
+    src/ui/alarms_model.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
@@ -157,6 +158,11 @@ if(BUILD_TESTING)
     target_link_libraries(timers-regression PRIVATE Qt6::Core)
     add_test(NAME timers-regression COMMAND timers-regression)
     set_tests_properties(timers-regression PROPERTIES TIMEOUT 30)
+    add_executable(alarms-regression tests/alarms_regression.cpp)
+    target_include_directories(alarms-regression PRIVATE src)
+    target_link_libraries(alarms-regression PRIVATE Qt6::Core)
+    add_test(NAME alarms-regression COMMAND alarms-regression)
+    set_tests_properties(alarms-regression PROPERTIES TIMEOUT 30)
     add_executable(banner-text-regression tests/banner_text_regression.cpp)
     target_include_directories(banner-text-regression PRIVATE src)
     target_link_libraries(banner-text-regression PRIVATE Qt6::Core)

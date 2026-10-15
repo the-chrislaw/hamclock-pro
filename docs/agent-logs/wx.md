@@ -111,3 +111,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-fourth run)
 - #334 (area D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E11 slice: sensors card Wi-Fi caption adds "Weakest N dBm (3 h)" (in-memory, one sample/min, full layout only), via `PeakHistory::trough()`. Unit test added; full release suite passes, ASan/UBSan left to CI; no screenshot (card shows only on hardware with Wi-Fi). Not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-fifth run)
+- Merged #344 (area C, green). #345 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E6 slice: weather card air line adds "dew N °C", computed locally from temperature and humidity (Magnus formula, no extra request; hidden for 0 % RH or out-of-range temperatures). Offline tests against reference values; ASan/UBSan left to CI; no screenshot (no station in harness); not validated on-device. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
