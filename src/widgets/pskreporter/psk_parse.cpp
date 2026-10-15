@@ -70,15 +70,29 @@ Feed parse_wspr(const QByteArray& body) {
     return feed;
 }
 
-QString wspr_query_url(const QString& callsign) {
+namespace {
+QString wspr_query(const QString& callsign, const char* column) {
     const QString call = callsign.trimmed().toUpper();
     static const QRegularExpression ok("^[A-Z0-9]+(/[A-Z0-9]+)?$");
     if (!ok.match(call).hasMatch()) return {};
     QString enc = call;
     enc.replace('/', "%2F");
     return "https://db1.wspr.live/?query=SELECT+time,tx_sign,tx_loc,rx_sign,rx_loc,frequency,snr,distance"
-           "+FROM+wspr.rx+WHERE+tx_sign%3D'" + enc + "'+AND+time>now()-INTERVAL+1+HOUR"
+           "+FROM+wspr.rx+WHERE+" + QString(column) + "%3D'" + enc + "'+AND+time>now()-INTERVAL+1+HOUR"
            "+ORDER+BY+time+DESC+LIMIT+100+FORMAT+JSON";
+}
+} // namespace
+
+QString wspr_query_url(const QString& callsign) { return wspr_query(callsign, "tx_sign"); }
+QString wspr_heard_url(const QString& callsign) { return wspr_query(callsign, "rx_sign"); }
+
+std::vector<Report> heard_as_reports(const std::vector<Report>& heard) {
+    std::vector<Report> out = heard;
+    for (auto& r : out) {
+        std::swap(r.sender, r.receiver);
+        std::swap(r.sender_grid, r.receiver_grid);
+    }
+    return out;
 }
 
 QString query_url(const QString& callsign) {
