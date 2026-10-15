@@ -163,3 +163,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 36)
 - Backlog A0d slice: portrait phone layout (width < 600 and taller than wide): `Theme.phone`, page grid becomes one column (station strip 36 % with DE and DX side by side, one pane 22 %, map fills the rest); other sizes unchanged (1024x600 and 800x480 re-rendered, identical). New truncation test `qml-app-truncation-390x844`. Rendered at 390x844 with a configured station: no clipping. Landscape phone (844x390) still uses the desktop grid; page dots pending. ctest 153/153; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs) and #383 (Apple, conflicting) were open; left alone. Issue #151 (time zone picker) is already implemented.
+
+## 2026-10-15 (hourly run, 37)
+- Backlog A0d slice: landscape phone (844x390) rendered with the desktop grid is clean (station column, 3 panes, map, no clipping), so no layout change; added the truncation guard `qml-app-truncation-844x390`. Page dots and a dedicated landscape layout remain pending. ctest truncation set 4/4; full run and ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
