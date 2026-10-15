@@ -48,3 +48,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (fifth run)
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: satellites core. The shared `astro_satellite` (TLE parser + vendored SGP4) is already Qt-free, so it joins the standalone TvOSCore build (SGP4 third-party warnings silenced for that file only). C ABI `hcp_tle_count`, `hcp_tle_name`, `hcp_sat_state` (sub-point, az/el/range, range rate, sunlit, TLE epoch so the UI can flag old elements). Tested on Linux 9/9, zero warnings. No Swift changes this run.
 - Next: Swift satellites pane (CelesTrak/AMSAT TLE fetch with Stale label by TLE epoch age; needs allowlist check), settings.
+
+## 2026-10-15 (sixth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Swift satellites card. `SatelliteStore` fetches CelesTrak amateur TLEs (<= every 12 h, cached in Caches, honest User-Agent), the shared SGP4 core propagates on device; the card lists the 5 highest satellites above the horizon at the station with az/el/range/eclipse. Labels: STALE ELEMENTS when TLE epoch > 14 days, OFFLINE when the fetch is > 2 days old or absent. CelesTrak attribution added.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: settings (pane selection), map with shared overlay data.
