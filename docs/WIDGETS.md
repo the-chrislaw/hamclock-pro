@@ -91,7 +91,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 6. WSPR and RBN in Live Spots: of DE / by DE, by call or grid, max distance or count, band statistics, map paths.
 7. 🟡 (POTA/SOTA with program/band/mode/age filters and sort by time/freq/distance from DE in Settings; other programmes not done, WWFF/GMA hosts not reachable from the sandbox, see the allowlist issue) More On-The-Air programmes (WWFF, IOTA, GMA, LLOTA, WWTOTA, TOWERS, WWBOTA) with age/sort/mode/band filters.
 8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only) — ✅ first slice (card, fixed 100 km; settings and map overlay later). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent) — ✅ first slice (counts over the DX cluster's recent spots, shown as a "Busiest band" line in the DX cluster card; standalone heatmap pane, PSK/WSPR/RBN sources later).
-12. UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
+12. 🟡 (WSJT-X, N1MM/DXLog `<spot>` and plain `DX de` lines, opt-in port, localhost/LAN, and the "by me"/"all" scope in Settings done; multicast, "UDP sets DX" and Log4OM not) UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
 13. Cluster login with SSID and native commands after login.
 14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
 15. 🟡 (ADIF map overlay of logged stations at their grid centre done; NADXCC/NABAND watch keywords done, NAPref/NAGrid not) ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).

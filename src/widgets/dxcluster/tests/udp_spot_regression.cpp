@@ -72,6 +72,17 @@ int main(int argc, char** argv) {
         check(!parse_udp_spot(bad, now), bad);
     check(!parse_udp_spot(QByteArray(5000, 'x'), now), "oversized datagram rejected");
 
+    // "By me" scope.
+    DxSpot s; s.spotter = "W3LPL";
+    check(udp_spot_in_scope(s, "k1xx", false), "all: everything kept");
+    check(!udp_spot_in_scope(s, "K1XX", true), "by me: foreign spotter dropped");
+    s.spotter = "K1XX"; check(udp_spot_in_scope(s, "k1xx-7", true), "by me: own call, SSID ignored");
+    s.spotter = "K1XX/P"; check(udp_spot_in_scope(s, "K1XX", true), "by me: /P ignored");
+    s.spotter = "UDP"; check(udp_spot_in_scope(s, "", true), "by me: local program kept without callsign");
+    s.spotter = "WSJT-X"; check(udp_spot_in_scope(s, "K1XX", true), "by me: WSJT-X kept");
+    s.spotter = "K1XXX"; check(!udp_spot_in_scope(s, "K1XX", true), "by me: different call dropped");
+    s.spotter = "W3LPL"; check(!udp_spot_in_scope(s, "", true), "by me: no callsign drops foreign spotter");
+
     // Loopback: port 0 means off; a bound listener delivers a datagram.
     UdpSpotListener l;
     check(l.listen(0, false) && !l.listening(), "port 0 is off");
