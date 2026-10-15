@@ -22,7 +22,7 @@ Popup {
         spaceweather: 1, solaralerts: 1, solarscales: 1, solaraurora: 1, solarhamqsl: 1, bandsmatrix: 1, solardrap: 1, solartrend: 1, solarwind: 1, solarimage: 1, solardst: 1, solarimpact: 1, bands: 1,
         dxcluster: 2, pskreporter: 2, beacons: 2, ota: 2, watchlist: 2, lookup: 2, adif: 2, hamalert: 2, aprs: 2,
         weather: 3, firewx: 3, fires: 3, storms: 3, quakes: 3, marine: 3,
-        sunmoon: 4, satellites: 4, launches: 4, planets: 4, eclipse: 4, eme: 4, daylight: 4,
+        sunmoon: 4, satellites: 4, launches: 4, hamsat: 4, planets: 4, eclipse: 4, eme: 4, daylight: 4,
         sensors: 5, station: 5, gps: 5, radio: 5, rotator: 5, adsb: 5
     })
     property int category: 0
