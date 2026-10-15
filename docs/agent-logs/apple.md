@@ -139,6 +139,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Read main runs 38667904657 and 38670241305: the `iPad TestFlight upload` job passes every step (cert import, archive, export, upload, keychain cleanup), as do macOS tests, universal build, sign/notarize and the Simulator job. Commented on #269. CI logs only: not checked in App Store Connect, no on-device claims.
 - Next: once #269 is confirmed, phone/universal target (F10), then the Simulator screenshot (still unverified) and the credential-store review.
 
+## 2026-10-15 (twenty-seventh hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73 is another area's (left alone).
+- Item 6 audit: GPIO has only a null backend (`available()` false), kiosk blanking is a software overlay, and the sole socket listener is the opt-in WSJT-X UDP feed (`udp_spot.cpp`, LAN mode binds AnyIPv4). iOS shows a local-network prompt for that, so `Info-ios.plist` now carries `NSLocalNetworkUsageDescription`. Plist is linted by the iOS jobs; no on-device claims.
+
 ## 2026-10-15 (twenty-fifth hourly run)
 - No qa issues for area F beyond #269; no open PR of mine; #73 (conflicting docs PR) and #350/#351 are other areas' (left alone).
 - Main run 38673487511 had one failure: `Build unsigned dmg` on the macOS test job (hdiutil, once); all later main and PR runs are green, so treated as a transient runner failure. TestFlight, universal, sign/notarize and Simulator jobs passed.

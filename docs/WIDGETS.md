@@ -146,7 +146,7 @@ Owner decision (Oct 13): ship a signed macOS app and an iPad app after the Pi 1.
 5. 🟡 (privacy manifest `packaging/apple/PrivacyInfo.xcprivacy` bundled for macOS and iOS: no tracking, no collected data, required-reason APIs declared; attribution screen and App Store metadata pending) App Store readiness: privacy manifest, no private APIs, attribution screen for data sources (NOAA, NASA, Natural Earth, Open-Meteo…), TestFlight upload once the owner's account exists.
 
 **Audit additions (F):**
-6. Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
+6. ✅ (audit: GPIO is a null backend reporting unavailable and blanking is software-only, so nothing Pi-only is exposed; the only listener is the opt-in WSJT-X UDP feed, now covered by `NSLocalNetworkUsageDescription` on iOS) Mark Pi-only hardware items (GPIO, I2C, light sensor, kiosk power menu) as unavailable on macOS/iPad; check any remote-API listener against App Store rules.
 
 **iPhone support (owner request, Oct 14; after the first iPad TestFlight build):**
 F10. Make the iOS target universal (iPhone + iPad, same bundle ID com.chrislaw.hamclockpro), portrait and landscape, safe areas, Dynamic Island/notch insets; TestFlight builds install on iPhone. Area A provides the phone layout (A0d); area F wires the target, orientation, App Store metadata and a phone Simulator screenshot when the Simulator flow works.
