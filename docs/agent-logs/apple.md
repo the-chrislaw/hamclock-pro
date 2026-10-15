@@ -133,3 +133,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (twenty-third hourly run)
 - No qa issues for area F beyond #269; no open PR of mine; #330/#73 are other areas' (left alone).
 - Read main run 38665769281: the archive now has `Products/Applications` and `-exportArchive` reaches App Store validation, which lists three blockers: no app icon (120/152 px, `CFBundleIconName`), and "built with the iOS 17.5 SDK; Xcode 26 required". Changes: an opaque 1024 px `AppIcon` asset catalog (`packaging/apple/ios/Assets.xcassets`) compiled by actool via `ASSETCATALOG_COMPILER_APPICON_NAME`, `CFBundleIconName` in `Info-ios.plist`, and the TestFlight job moved to `macos-15` with Xcode 26 selected. The catalog is also compiled by the Simulator/device jobs on this PR. Untested end to end until a main run; no on-device claims.
+
+## 2026-10-15 (twenty-fourth hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73/#335 are other areas' (#334 already merging), left alone.
+- Read main runs 38667904657 and 38670241305: the `iPad TestFlight upload` job passes every step (cert import, archive, export, upload, keychain cleanup), as do macOS tests, universal build, sign/notarize and the Simulator job. Commented on #269. CI logs only: not checked in App Store Connect, no on-device claims.
+- Next: once #269 is confirmed, phone/universal target (F10), then the Simulator screenshot (still unverified) and the credential-store review.
