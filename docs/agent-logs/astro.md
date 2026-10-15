@@ -145,3 +145,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Daylight year chart axes (backlog D11, partial): hour guides at 6Z/12Z/18Z with labels and month initials along the bottom, only when the pane has room (compact slots stay bare). QML only. Rendered offscreen at 800x480, 1024x600, 1920x1080 dark and light with a New York DE (not on-device): labels legible, no clipping. Not done: DE local time axis.
 - Not mine: #73 conflicting; left alone. No `[D]` QA issues besides #246 (needs G's tap mechanism); balloons still blocked on #314.
 - Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 29
+- hams.at activations pane (backlog D8, first slice): new `hamsat` widget parses the public `hams.at/api/alerts/upcoming` endpoint (documented at hams.at/api/docs; reachable from the sandbox; no key needed to read; Data source policy updated). Card shows the next activation with a countdown, mode, frequency, grid and AOS-LOS, plus the next three in non-compact slots; finished passes dropped by the clock. Fixture is a trimmed real response. Shared change: `hamsat` added to the Sky & Space category in PaneChooser.qml. Rendered offscreen at 800x480, 1024x600 and 1920x1080 dark and light (not on-device); 1024x600 viewed, no clipping. hamsat tests pass; ASan/UBSan left to CI. Not done: API key / personalised passes (settings row), map markers.
+- Not mine: #348/#349 CI still running at start, #73 conflicting; left alone. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX.
