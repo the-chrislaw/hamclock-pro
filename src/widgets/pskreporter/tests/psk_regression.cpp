@@ -99,6 +99,17 @@ int main(int argc, char** argv) {
         check(psk::within_distance(rs, 51.5, -0.1, 12000).size() == 2, "within 12000 km: near and far");
         check(psk::within_distance(rs, 51.5, -0.1, 0).size() == 4, "limit 0 keeps everything");
     }
+    {
+        std::vector<psk::Report> rs(3);
+        rs[0].receiver = "VK2ABC"; rs[0].receiver_grid = "QF56";
+        rs[1].receiver = "JA1XYZ"; rs[1].receiver_grid = "PM95ab";
+        rs[2].receiver = "G4ZZZ"; rs[2].receiver_grid = "io91";
+        const auto t = psk::match_tokens(" vk,JA; pm95 bad! vk ");
+        check(t == QStringList({"VK", "JA", "PM95"}), "match tokens: normalised, deduped, junk dropped");
+        check(psk::matching(rs, t).size() == 2 && psk::matching(rs, {}).size() == 3, "matching by call prefix");
+        check(psk::matching(rs, psk::match_tokens("IO91")).size() == 1, "matching by grid prefix, case folded");
+        check(psk::matching(rs, psk::match_tokens("ZL")).empty(), "matching: none");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
@@ -127,6 +138,8 @@ int main(int argc, char** argv) {
     check(!settings.savePskMaxKm(-1).isEmpty() && !settings.savePskMaxKm(20001).isEmpty() && settings.pskMaxKm() == 0,
           "invalid PSK distance rejected");
     check(settings.savePskMaxKm(5000).isEmpty() && settings.pskMaxKm() == 5000, "PSK distance saved");
+    check(settings.savePskMatch(" vk, ja ").isEmpty() && settings.pskMatch() == "VK, JA", "PSK filter saved normalised");
+    check(settings.savePskMatch("").isEmpty() && settings.pskMatch().isEmpty(), "PSK filter reset");
     check(settings.savePskMaxKm(0).isEmpty() && settings.pskMaxKm() == 0, "PSK distance reset");
     for (int i = 0; i < 20; ++i) app.processEvents();
     if (model.source()) QFile::remove(model.source()->cachePath());

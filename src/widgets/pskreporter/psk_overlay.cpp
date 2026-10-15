@@ -72,4 +72,16 @@ std::vector<Report> within_distance(const std::vector<Report>& reports, double d
     return out;
 }
 
+std::vector<Report> matching(const std::vector<Report>& reports, const QStringList& tokens) {
+    if (tokens.isEmpty()) return reports;
+    std::vector<Report> out;
+    for (const auto& r : reports)
+        for (const QString& t : tokens)
+            if (r.receiver.startsWith(t) || r.receiver_grid.toUpper().startsWith(t)) {
+                out.push_back(r);
+                break;
+            }
+    return out;
+}
+
 } // namespace hamclock::psk
