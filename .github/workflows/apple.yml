@@ -388,6 +388,9 @@ jobs:
             OTHER_CODE_SIGN_FLAGS="--keychain $KC" \
             2>&1 | tee tf-archive.log | tail -5 \
             || { grep -E "error:|BUILD FAILED" tf-archive.log | head -30; exit 1; }
+          # Diagnostics: an app archive has Products/Applications and ApplicationProperties.
+          ls "$RUNNER_TEMP/hc.xcarchive/Products" "$RUNNER_TEMP/hc.xcarchive/Products/Applications" || true
+          /usr/libexec/PlistBuddy -c Print "$RUNNER_TEMP/hc.xcarchive/Info.plist" | grep -v -i "signing" || true
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/hc.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
             -authenticationKeyPath "$KEYFILE" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
