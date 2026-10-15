@@ -220,3 +220,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
 - Backlog item 14 (slice): per-source label style and minimum label distance. `AppSettings::mapSourceLabel/saveMapSourceLabel` (options.ini `[map_sources] label_<src>` = 0 None, 1 Prefix, 2 Call, 3 Dot; absent = layer's own) and `mapMinLabelPx/saveMapMinLabelPx` (`min_label_px`, 0 = layer's own); backward compatible. `apply_spot_label_style` (dxcluster/spot_layer_style.hpp) is applied by the DX, PSK, POTA, HamAlert, APRS and ADIF models, which now republish on any settings change. Settings Spots card gets a "Map labels" button row. Test in the PSK regression; 151/151 pass locally; ASan/UBSan left to CI. Settings page not reachable via `--screenshot`, so no screenshot; not validated on device.
 - Not done: WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 39)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 8 (slice): HamAlert rows now show the xOTA reference parsed from the alert comment (`ota` field, "POTA K-1234") on the card. The alert/trigger name is not parsed: its wire format is not documented or fixtured, so nothing is invented. No AppSettings change. Test extended; 152/152 pass locally, no warnings in touched files; ASan/UBSan left to CI. No screenshot (card needs a login); not validated on device.
+- Not done: HamAlert trigger names/per-alert filters, WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.

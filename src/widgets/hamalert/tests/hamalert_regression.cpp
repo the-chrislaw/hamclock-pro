@@ -52,6 +52,9 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.count() == 1, "online, spot taken");
     const auto first = model.recent().value(0).toMap();
     check(first["dx"] == "JA1XYZ" && first["band"] == "20m", "spot fields");
+    check(first["ota"].toString().isEmpty(), "no OTA reference without one in the comment");
+    emit sock->dataReceived("DX de HAMALERT: 14285.0 W7ABC POTA K-1234 SSB 1235Z\r\n");
+    check(model.recent().value(0).toMap()["ota"].toString() == "POTA K-1234", "OTA reference passed to the row");
     check(sock->written == "K1ABC\r\ns3cret!\r\n", "nothing else is ever sent");
 
     // Map overlay: own layer, entity-centre markers, only while live.
