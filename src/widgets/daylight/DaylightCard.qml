@@ -32,10 +32,13 @@ Card {
             for (const s of series) {
                 ctx.strokeStyle = s[1]; ctx.lineWidth = 2
                 ctx.beginPath()
-                let pen = false
+                let pen = false, prev = 0
                 for (const q of p) {
                     const v = q[s[0]]
                     if (v < 0) { pen = false; continue }
+                    // Break the path where the time wraps past 00:00 UTC instead of drawing a vertical stroke.
+                    if (pen && Math.abs(v - prev) > 720) pen = false
+                    prev = v
                     if (pen) ctx.lineTo(x(q.day - 1), y(v)); else ctx.moveTo(x(q.day - 1), y(v))
                     pen = true
                 }
