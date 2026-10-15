@@ -16,6 +16,13 @@ Card {
                      : (available ? "Not heard in the last 15 min" : "")
             Layout.fillWidth: true
         }
+        Text {
+            visible: widget && widget.hasData && widget.bands !== ""
+            text: widget ? widget.bands : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+        }
         Repeater {
             model: root.compact || !widget ? [] : widget.recent
             delegate: RowLayout {

@@ -14,6 +14,7 @@ class PskModel : public WidgetModel {
     Q_PROPERTY(bool hasData READ hasData NOTIFY reportsChanged)
     Q_PROPERTY(int count READ count NOTIFY reportsChanged)
     Q_PROPERTY(QString bestSnr READ bestSnr NOTIFY reportsChanged)
+    Q_PROPERTY(QString bands READ bands NOTIFY reportsChanged)
     Q_PROPERTY(QVariantList recent READ recent NOTIFY reportsChanged)
 public:
     explicit PskModel(const WidgetContext& context, QObject* parent = nullptr);
@@ -24,6 +25,7 @@ public:
     bool hasData() const { return feed_.ok; }
     int count() const { return static_cast<int>(feed_.reports.size()); }
     QString bestSnr() const;
+    QString bands() const;  // "20m 5 · 40m 2": reports per band, busiest first
     QVariantList recent() const;  // newest first: {call, grid, band, mode, snr, age}
     PolledSource* source() { return source_; }
 

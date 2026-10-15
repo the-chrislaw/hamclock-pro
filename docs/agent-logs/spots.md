@@ -179,3 +179,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 12 (slice): UDP "by me"/"all" scope. `udp_spot_in_scope` keeps spots from local programs (spotter UDP/WSJT-X) or whose spotter has my base call (SSID, /P ignored); "all" keeps everything (default). `AppSettings` gains `udpSpotByMe` (options.ini `[udp] scope=all|me`, backward compatible) and `saveUdpScope`; Settings Spots card has a toggle saved with "Save cluster". Test covers both scopes. 145/145 pass locally; ASan/UBSan left to CI. No Settings screenshot; not validated on device.
 - Not done: multicast, "UDP sets DX", Log4OM format.
 - Next: UDP sets DX, WSPR/RBN once a source is chosen, WWFF/GMA once allowlisted (#305).
+
+## 2026-10-15 (run 31)
+- Step 1: nothing of mine open; #338 (space, checks running) and #73 (stale docs) are other areas', left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter band statistics. `psk::band_stats/band_summary` count reports per amateur band (busiest first, out-of-band skipped); `PskModel::bands` and a "20m 5 · 40m 2" line (max four bands) on the card. No AppSettings change, no new source. Test added; 147/147 pass locally, zero warnings; ASan/UBSan left to CI (small pure functions). No screenshot (card needs a callsign); not validated on device.
+- Not done: WSPR/RBN sources (RBN is telnet, source decision pending), by-call/grid and max-distance filters.
+- Next: UDP sets DX (#333), Meshtastic (#311), WWFF/GMA (#305) all wait on owner input.
