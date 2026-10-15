@@ -103,3 +103,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-second run)
 - Merged #320 (tvOS, green). #321/#322 (areas C/D) CI still running, #73 (area A) conflicting: not mine. Branch deletion of the merged head was denied by the sandbox, left in place. No open `qa` issues for E.
 - E11 slice: sensors card CPU caption adds "Peak N °C (3 h)" (in-memory, one sample/min, 3 h window; full layout only). Unit tests for the window; full release suite passes, ASan/UBSan left to CI; no screenshot (card shows only on hardware with a thermal zone). Not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-third run)
+- #73 (area A) open and conflicting: not mine, left alone. Took open QA issue #326.
+- Fix: `Metric.qml` label now fills its column and elides on the right, so long "DE · City, CC" headings no longer run under the neighbouring weather label. One shared-file change (area A), two lines, backward compatible (short labels render the same). Full release suite passes; ASan/UBSan left to CI. No screenshot with a long city (harness has no station), not validated on-device.

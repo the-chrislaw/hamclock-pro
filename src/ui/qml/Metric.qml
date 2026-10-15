@@ -21,6 +21,8 @@ ColumnLayout {
         font.weight: Font.DemiBold
         font.capitalization: Font.AllUppercase
         font.letterSpacing: 0.6
+        elide: Text.ElideRight
+        Layout.fillWidth: true
     }
     Text {
         text: parent.available ? parent.value : "—"
