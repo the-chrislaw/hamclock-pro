@@ -1,4 +1,5 @@
 #include "psk_overlay.hpp"
+#include "../../domain/geometry.hpp"
 #include "../../domain/locator_input.hpp"
 #include <QSet>
 #include <stdexcept>
@@ -34,6 +35,23 @@ OverlayLayer overlay_layer(const std::vector<Report>& reports, int max_markers) 
         layer.markers.push_back(m);
     }
     return layer;
+}
+
+Farthest farthest_report(const std::vector<Report>& reports, double de_lat, double de_lon) {
+    Farthest best;
+    for (const auto& r : reports) {
+        const int n = r.receiver_grid.size();
+        if (n != 4 && n != 6) continue;
+        try {
+            const Location sw = location_from_maidenhead(r.receiver_grid.toStdString());
+            const double dlat = n == 4 ? 1.0 : 2.5 / 60.0, dlon = n == 4 ? 2.0 : 5.0 / 60.0;
+            const double km =
+                geometry({de_lat, de_lon}, {sw.latitude + dlat / 2, sw.longitude + dlon / 2}).distance_km;
+            if (!best.found || km > best.km) best = {true, r.receiver, r.band, km};
+        } catch (const std::invalid_argument&) {
+        }
+    }
+    return best;
 }
 
 } // namespace hamclock::psk

@@ -3,6 +3,7 @@
 #include "../../ui/app_settings.hpp"
 #include <QTimer>
 #include <algorithm>
+#include <cmath>
 
 namespace hamclock {
 namespace {
@@ -66,6 +67,15 @@ QString PskModel::bestSnr() const {
 }
 
 QString PskModel::bands() const { return psk::band_summary(psk::band_stats(feed_.reports), 4); }
+
+QString PskModel::farthest() const {
+    if (!settings_) return {};
+    const auto f = psk::farthest_report(feed_.reports, settings_->deLatitude(), settings_->deLongitude());
+    if (!f.found) return {};
+    const bool mi = settings_->imperialUnits();
+    const long d = std::lround(mi ? f.km * 0.621371 : f.km);
+    return QString("Farthest: %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km").arg(f.band.isEmpty() ? "" : " " + f.band);
+}
 
 QVariantList PskModel::recent() const {
     QVariantList out;
