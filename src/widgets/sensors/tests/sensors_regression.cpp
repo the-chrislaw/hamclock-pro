@@ -92,6 +92,11 @@ int main(int argc, char** argv) {
         check(platform::parse_timedatectl("NTPSynchronized=yes\n")->synchronized, "timedatectl yes");
         check(!platform::parse_timedatectl("NTPSynchronized=no\n")->synchronized, "timedatectl no");
         check(!platform::parse_timedatectl("oops"), "timedatectl garbage rejected");
+        const auto ts = platform::parse_timesync_status("       Server: 192.0.2.1 (ntp.example.org)\n      Stratum: 2\n       Offset: -1.5ms\n        Delay: 12ms\n");
+        check(ts && ts->synchronized && ts->stratum == 2 && ts->source == "ntp.example.org" && ts->offset_ms && std::abs(*ts->offset_ms - 1.5) < 1e-9, "timesync-status parsed");
+        const auto tu = platform::parse_timesync_status("Offset: +250us\n");
+        check(tu && tu->offset_ms && std::abs(*tu->offset_ms - 0.25) < 1e-9 && tu->source.isEmpty(), "timesync microseconds");
+        check(!platform::parse_timesync_status("Server: n/a\n"), "timesync without offset rejected");
     }
 
     WidgetContext ctx;
