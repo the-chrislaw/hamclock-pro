@@ -6,6 +6,7 @@
 #include "../../ui/app_settings.hpp"
 #include <QFile>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <algorithm>
 
 namespace hamclock {
@@ -56,6 +57,7 @@ void AdifModel::load(const QString& path) {
     calls_.clear();
     entities_.clear();
     slots_.clear();
+    grids_.clear();
     loaded_ = false;
     if (path.isEmpty()) {
         setState("unconfigured", "Set an ADIF log file in Settings");
@@ -76,6 +78,7 @@ void AdifModel::load(const QString& path) {
     for (const auto& q : qsos_) {
         calls_.insert(adif::base_call(q.call));
         if (const QString p = adif::prefix_of(q.call); !p.isEmpty()) prefixes_.insert(p);
+        if (q.grid.size() >= 4) grids_.insert(q.grid.left(4).toUpper());
         const QString e = entityFor(q.call);
         if (e.isEmpty()) continue;
         entities_.insert(e);
@@ -110,6 +113,12 @@ bool AdifModel::prefixNeeded(const QString& call) const {
     if (!loaded_) return false;
     const QString p = adif::prefix_of(call);
     return !p.isEmpty() && !prefixes_.contains(p);
+}
+
+bool AdifModel::gridNeeded(const QString& grid) const {
+    const QString g = grid.left(4).toUpper();
+    static const QRegularExpression ok("^[A-R]{2}[0-9]{2}$");
+    return loaded_ && ok.match(g).hasMatch() && !grids_.contains(g);
 }
 
 bool AdifModel::bandSlotNeeded(const QString& call, const QString& band) const {

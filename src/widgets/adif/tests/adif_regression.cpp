@@ -87,6 +87,9 @@ int main(int argc, char** argv) {
           "prefix_of");
     check(model.prefixNeeded("DL5ABC") && !model.prefixNeeded("EA8/XX1X") && !model.prefixNeeded("W1ZZZ") && model.prefixNeeded("W2ZZZ"),
           "prefix needed only when no logged call shares it");
+    check(!model.gridNeeded("FN31") && !model.gridNeeded("fn31xx") && model.gridNeeded("JO62") && model.gridNeeded("IO91wm") &&
+          !model.gridNeeded("") && !model.gridNeeded("ZZ99") && !model.gridNeeded("FN3"),
+          "grid needed only for valid 4-char locators absent from the log");
     model.setEntityResolver([](const QString& c) { return c == "N0CALL" ? QString("ZZ") : QString("K"); });
     check(model.entityNeeded("N0CALL") && model.bandSlotNeeded("N0CALL", "20m"), "unworked entity needed");
     model.load("");
