@@ -120,6 +120,15 @@ Rectangle {
                                                               : "No suggestion for these coordinates; pick a zone above."
                                     if (id.length) zone.zoneId = id
                                 } }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        TimeZonePicker { id: dxZone; label: "DX time zone (empty = automatic)"; Layout.fillWidth: true
+                                         zoneId: appSettings.dxZoneOverride }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveDxZone(dxZone.zoneId) }
+                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { dxZone.zoneId = ""; appSettings.saveDxZone("") } }
+                    }
                     Text { id: zoneHint; visible: text.length > 0; color: Theme.secondary
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     RowLayout {

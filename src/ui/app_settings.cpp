@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QTimeZone>
 #include <QStandardPaths>
 #include <exception>
 
@@ -116,6 +117,8 @@ void AppSettings::loadOptions() {
     banner_bg_ = ini.value("banner/background", 0).toInt();
     if (banner_bg_ < 0 || banner_bg_ >= kBannerBackgrounds) banner_bg_ = 0;
     banner_title_ = ini.value("banner/title").toString().trimmed().left(kBannerTitleMax);
+    dx_zone_override_ = ini.value("dx/zone").toString().trimmed();
+    if (!dx_zone_override_.isEmpty() && !QTimeZone(dx_zone_override_.toUtf8()).isValid()) dx_zone_override_.clear();
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
@@ -535,6 +538,19 @@ QString AppSettings::saveBannerTitle(const QString& title) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the banner title.";
     banner_title_ = t;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveDxZone(const QString& zone_id) {
+    const QString z = zone_id.trimmed();
+    if (!z.isEmpty() && !QTimeZone(z.toUtf8()).isValid()) return "Unknown time zone.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (z.isEmpty()) ini.remove("dx/zone");
+    else ini.setValue("dx/zone", z);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the DX time zone.";
+    dx_zone_override_ = z;
     emit optionsChanged();
     return {};
 }

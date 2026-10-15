@@ -44,6 +44,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int bannerStyle READ bannerStyle NOTIFY optionsChanged)
     Q_PROPERTY(int bannerBackground READ bannerBackground NOTIFY optionsChanged)
     Q_PROPERTY(QString bannerTitle READ bannerTitle NOTIFY optionsChanged)
+    Q_PROPERTY(QString dxZoneOverride READ dxZoneOverride NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
@@ -85,6 +86,7 @@ public:
     int bannerStyle() const { return banner_style_; }
     int bannerBackground() const { return banner_bg_; }
     QString bannerTitle() const { return banner_title_; }
+    QString dxZoneOverride() const { return dx_zone_override_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
@@ -153,6 +155,8 @@ public:
     Q_INVOKABLE QString saveBannerStyle(int style);
     Q_INVOKABLE QString saveBannerBackground(int style);
     Q_INVOKABLE QString saveBannerTitle(const QString& title);
+    /// Manual DX time zone (IANA id); empty = automatic from the DX coordinates.
+    Q_INVOKABLE QString saveDxZone(const QString& zone_id);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
@@ -206,6 +210,7 @@ private:
     int banner_style_ = 0;
     int banner_bg_ = 0;
     QString banner_title_;
+    QString dx_zone_override_;
     int overscan_ = 0;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;

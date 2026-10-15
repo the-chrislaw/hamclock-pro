@@ -187,6 +187,9 @@ int main(int argc, char** argv) {
         check(bt2.bannerTitle() == "Club Station", "banner title survives restart");
         check(bt.bannerBackground() == 0 && !bt.saveBannerBackground(9).isEmpty() && bt.bannerBackground() == 0, "bad banner background rejected");
         check(bt.saveBannerBackground(2).isEmpty() && AppSettings({}, bt_dir.path()).bannerBackground() == 2, "banner background persists");
+        check(bt.dxZoneOverride().isEmpty() && !bt.saveDxZone("Not/AZone").isEmpty() && bt.dxZoneOverride().isEmpty(), "bad DX zone rejected");
+        check(bt.saveDxZone("Asia/Tokyo").isEmpty() && AppSettings({}, bt_dir.path()).dxZoneOverride() == "Asia/Tokyo", "DX zone override persists");
+        check(bt.saveDxZone("").isEmpty() && AppSettings({}, bt_dir.path()).dxZoneOverride().isEmpty(), "DX zone override cleared");
         check(bt2.saveBannerTitle("").isEmpty() && bt2.bannerTitle().isEmpty(), "banner title cleared");
     }
     {
