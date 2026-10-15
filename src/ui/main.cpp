@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
     hamclock::TimersModel timers;
-    hamclock::AlarmsModel alarms;
+    hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
     const auto apply_blanking = [&] {
         blanking.setConfig({settings.blankIdleMinutes(), settings.blankOffHour(), settings.blankOnHour()});

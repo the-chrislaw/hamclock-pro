@@ -5,6 +5,7 @@
 // every alarm it skips over.
 #include <QDateTime>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 namespace hamclock {
@@ -44,6 +45,33 @@ inline QString alarm_in_text(const Alarm& a, const QDateTime& now) {
     const qint64 mins = (now.secsTo(n) + 59) / 60;
     if (mins < 1) return "now";
     return mins >= 60 ? QString("in %1h %2m").arg(mins / 60).arg(mins % 60) : QString("in %1m").arg(mins);
+}
+
+// Persistence text: "HHMM,d|o,1|0" per alarm (UTC). Invalid entries are dropped, at most 8 kept.
+inline QStringList alarms_serialize(const QVector<Alarm>& alarms) {
+    QStringList out;
+    for (const Alarm& a : alarms)
+        out << QString("%1%2,%3,%4").arg(a.minute_of_day / 60, 2, 10, QChar('0')).arg(a.minute_of_day % 60, 2, 10, QChar('0'))
+                   .arg(a.daily ? "d" : "o").arg(a.enabled ? 1 : 0);
+    return out;
+}
+
+inline QVector<Alarm> alarms_parse(const QStringList& lines) {
+    QVector<Alarm> out;
+    for (const QString& line : lines) {
+        const QStringList f = line.trimmed().split(',');
+        if (f.size() != 3 || f[0].size() != 4 || (f[1] != "d" && f[1] != "o") || (f[2] != "0" && f[2] != "1")) continue;
+        bool ok_h = false, ok_m = false;
+        const int h = f[0].left(2).toInt(&ok_h), m = f[0].mid(2).toInt(&ok_m);
+        if (!ok_h || !ok_m || h < 0 || h > 23 || m < 0 || m > 59) continue;
+        Alarm a;
+        a.minute_of_day = h * 60 + m;
+        a.daily = f[1] == "d";
+        a.enabled = f[2] == "1";
+        out.push_back(a);
+        if (out.size() >= 8) break;
+    }
+    return out;
 }
 
 }  // namespace hamclock

@@ -6,14 +6,14 @@
 
 namespace hamclock {
 
-// QML face of the alarms (session only, UTC). Ringing is visual: no sound is played yet.
+// QML face of the alarms (UTC, saved to the options file when a path is given). Ringing is visual: no sound is played yet.
 class AlarmsModel : public QObject {
     Q_OBJECT
     Q_PROPERTY(QStringList items READ items NOTIFY changed)
     Q_PROPERTY(bool ringing READ ringing NOTIFY ringingChanged)
     Q_PROPERTY(QString ringingText READ ringingText NOTIFY ringingChanged)
 public:
-    explicit AlarmsModel(QObject* parent = nullptr);
+    explicit AlarmsModel(const QString& options_path = {}, QObject* parent = nullptr);
     QStringList items() const;
     bool ringing() const { return !ringing_.isEmpty(); }
     QString ringingText() const { return ringing_; }
@@ -28,6 +28,8 @@ signals:
     void changed();
     void ringingChanged();
 private:
+    void save();
+    QString path_;
     QVector<Alarm> alarms_;
     QDateTime last_;
     QString ringing_;
