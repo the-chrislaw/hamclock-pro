@@ -115,3 +115,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-fifth run)
 - Merged #344 (area C, green). #345 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - E6 slice: weather card air line adds "dew N °C", computed locally from temperature and humidity (Magnus formula, no extra request; hidden for 0 % RH or out-of-range temperatures). Offline tests against reference values; ASan/UBSan left to CI; no screenshot (no station in harness); not validated on-device. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-sixth run)
+- #350 (area D) had no checks yet, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card Disk caption adds free space ("12.4 GB free" / "850 MB free", full layout only), via `format_free_bytes`. Unit tests for the formatting; ASan/UBSan left to CI; no screenshot (card shows only on hardware with sensors); not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.

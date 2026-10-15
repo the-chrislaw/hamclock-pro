@@ -25,6 +25,9 @@ std::optional<int> read_wifi_dbm(const QString& path = "/proc/net/wireless");
 
 // Used fraction (0..1) of the filesystem holding `path`; absent when unreadable.
 std::optional<double> read_disk_used_fraction(const QString& path = "/");
+// Free space of that filesystem as short text ("12.4 GB free", "850 MB free"); formatting is pure.
+QString format_free_bytes(qint64 bytes);
+QString read_disk_free_text(const QString& path = "/");  // empty when unreadable
 
 // BME280/BMP280 environment sensor via the kernel IIO driver
 // (<root>/iio:device*/{name,in_temp_input,in_pressure_input,in_humidityrelative_input}).
