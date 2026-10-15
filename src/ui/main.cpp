@@ -3,6 +3,7 @@
 #include "app_settings.hpp"
 #include "map_item.hpp"
 #include "station_model.hpp"
+#include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
 #include "../net/polled_source.hpp"
@@ -124,6 +125,7 @@ int main(int argc, char** argv) {
     hamclock::StationModel station_model(settings);
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
+    hamclock::TimersModel timers;
     location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 
@@ -154,6 +156,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("appSettings", &settings);
     engine.rootContext()->setContextProperty("widgetRegistry", &registry);
     engine.rootContext()->setContextProperty("station", &station_model);
+    engine.rootContext()->setContextProperty("timers", &timers);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);

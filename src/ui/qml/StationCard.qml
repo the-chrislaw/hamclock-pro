@@ -9,6 +9,7 @@ Card {
     title: !station.configured ? "Your station" : station.bannerIsCallsign ? "Station" : station.callsign
     signal setupRequested()
     signal settingsRequested()
+    signal timersRequested()
 
     ColumnLayout {
         width: parent.width
@@ -59,6 +60,8 @@ Card {
                 font.pixelSize: Theme.fontBody
             }
             TapHandler { onTapped: clockBox.local = !clockBox.local }
+            // Long-press opens the stopwatch and countdown.
+            TapHandler { onLongPressed: root.timersRequested() }
             Accessible.role: Accessible.Button
             Accessible.onPressAction: clockBox.local = !clockBox.local
         }
