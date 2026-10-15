@@ -143,3 +143,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F beyond #269; no open PR of mine; #73 (conflicting docs PR) and #350/#351 are other areas' (left alone).
 - Main run 38673487511 had one failure: `Build unsigned dmg` on the macOS test job (hdiutil, once); all later main and PR runs are green, so treated as a transient runner failure. TestFlight, universal, sign/notarize and Simulator jobs passed.
 - F10 check: the iOS target already sets `TARGETED_DEVICE_FAMILY "1,2"` and `Info-ios.plist` has iPhone and iPad orientations and the launch screen, so the wiring is in place. Remaining F10 work is the phone layout and safe-area insets (area A) and a phone Simulator screenshot, which waits on the Simulator flow. No on-device claims; not checked in App Store Connect.
+
+## 2026-10-15 (twenty-sixth hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73/#357 are other areas' (left alone). Main Apple runs are green.
+- Item 5: added `packaging/apple/PrivacyInfo.xcprivacy` (no tracking, no collected data; UserDefaults CA92.1, file timestamp C617.1, disk space E174.1 declared) and bundle it into Resources for macOS and iOS via `cmake/AppleBundle.cmake`. The macOS job lints it with `plutil` and checks it is in the bundle. Linux unaffected (APPLE-guarded). Not yet checked by App Store validation; no on-device claims.
+- Next: in-app data-source attribution screen (needs area A UI), phone Simulator screenshot (blocked on arm64 Simulator Qt, optional per #269).
