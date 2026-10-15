@@ -92,14 +92,16 @@ QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& 
 bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
     // NADXCC / NABAND are keywords (not callsigns): they match spots the ADIF log still needs.
     QStringList plain;
-    bool want_dxcc = false, want_band = false, want_pref = false;
+    bool want_dxcc = false, want_band = false, want_pref = false, want_grid = false;
     for (const auto& e : watch_) {
         if (e == "NADXCC") want_dxcc = true;
         else if (e == "NABAND") want_band = true;
         else if (e == "NAPREF") want_pref = true;
+        else if (e == "NAGRID") want_grid = true;
         else plain << e;
     }
     if (watchlist::matches(plain, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of))) return true;
+    if (want_grid && grid_needed_ && !spot.grid.isEmpty() && grid_needed_(spot.grid)) return true;
     if ((want_dxcc || want_band || want_pref) && needed_) {
         const QString n = needed_(spot.dx, spot.band);
         if (want_dxcc && n == "NEW DXCC") return true;
@@ -107,6 +109,14 @@ bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
         if (want_band && !n.isEmpty()) return true;
     }
     return false;
+}
+
+void DxSpotList::set_grid_needed_resolver(std::function<bool(const QString&)> r) {
+    beginResetModel();
+    grid_needed_ = std::move(r);
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = isWatched(spots_[i]);
+    watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
+    endResetModel();
 }
 
 void DxSpotList::set_needed_resolver(std::function<QString(const QString&, const QString&)> r) {
@@ -266,6 +276,10 @@ void register_widget_dxcluster(WidgetRegistry& registry, const WidgetContext& co
             if (!band.isEmpty() && QMetaObject::invokeMethod(adif, "bandSlotNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call), Q_ARG(QString, band)) && needed)
                 return QStringLiteral("NEW BAND");
             return QString();
+        });
+        model->setGridNeededResolver([adif](const QString& grid) {
+            bool needed = false;
+            return QMetaObject::invokeMethod(adif, "gridNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, grid)) && needed;
         });
     });
 }

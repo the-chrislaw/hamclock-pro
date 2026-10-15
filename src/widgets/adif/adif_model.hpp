@@ -33,6 +33,9 @@ public:
     // NAPref: true when no logged call has the same prefix (see adif::prefix_of). Same
     // never-claim-without-data rule.
     Q_INVOKABLE bool prefixNeeded(const QString& call) const;
+    // NAGrid: true when no QSO in the log is in the same 4-character locator. Invalid grids and an
+    // unloaded log report false.
+    Q_INVOKABLE bool gridNeeded(const QString& grid) const;
     Q_INVOKABLE bool bandSlotNeeded(const QString& call, const QString& band) const;
     // Call -> DXCC primary prefix; default is the bundled table (tests inject one).
     void setEntityResolver(std::function<QString(const QString&)> resolver);
@@ -54,7 +57,7 @@ private:
     bool loaded_ = false;
     std::vector<adif::Qso> qsos_;  // newest first
     QSet<QString> calls_;
-    QSet<QString> entities_, slots_, prefixes_;  // primary prefix; "prefix|band"
+    QSet<QString> entities_, slots_, prefixes_, grids_;  // primary prefix; "prefix|band"
     std::function<QString(const QString&)> entity_of_;
     QString entityFor(const QString& call) const;
 };

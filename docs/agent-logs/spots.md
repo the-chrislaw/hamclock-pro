@@ -240,3 +240,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: merged #388 (ui, all checks green). #389 (apple) still running and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues. Could not delete #388's head branch (denied by the sandbox classifier); left for the owner.
 - Backlog item 6 (slice): WSPR "of DE" direction. `psk::wspr_heard_url` (rx_sign = DE), `psk::heard_as_reports` (swap so distance helpers apply), second wspr.live source in `PskModel` (same opt-in, same 5 min poll), card line "I heard N · farthest CALL km band". Not mixed into the "hears me" list or map. No AppSettings change. Tests extended; 153/153 pass locally, no warnings; ASan/UBSan left to CI. No screenshot (card needs a callsign); not validated on device.
 - Not done: RBN, WSPR by-call queries, map paths for heard stations.
+
+## 2026-10-15 (run 43)
+- Step 1: #392 (ui) still has macOS/iPad/ASan checks running and #73 is stale docs; both other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
+- Backlog item 15 (slice): NAGRID watch keyword. `AdifModel::gridNeeded` (valid 4-char locator not in the log; false when the log is not loaded), `DxSpotList::set_grid_needed_resolver`, wired by the DX cluster registration like the other needed resolvers. Only spots that carry a locator in the line can match (nothing is invented); no AppSettings change; Settings hint mentions NAGRID. Tests extended; 154/154 pass locally; ASan/UBSan left to CI. No screenshot (text hint only); not validated on device.
+- Not done: WSPR/RBN by-call, IOTA names. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.
