@@ -48,4 +48,7 @@ std::vector<PathBand> path_outlook(const PathInput& path, UtcSeconds utc, double
 std::vector<std::vector<double>> path_matrix(const PathInput& path, UtcSeconds start_utc, int hours,
                                              double sfi, double kp);
 
+// Single-hop (3000 km) MUF at a point from the same foF2 model, in MHz; the basis of the MUF map style.
+double muf_3000_mhz(double sfi, double lat, double lon, UtcSeconds utc);
+
 } // namespace hamclock::bands

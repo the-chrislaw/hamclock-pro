@@ -18,6 +18,7 @@ class BandsModel : public WidgetModel {
     Q_PROPERTY(QString period READ period NOTIFY outlookChanged)
 public:
     explicit BandsModel(const WidgetContext& context, QObject* parent = nullptr);
+    ~BandsModel() override;
     void start();
 
     bool hasOutlook() const { return has_outlook_; }
@@ -36,6 +37,7 @@ private:
     void parse();
     void refreshState();
     void updatePeriod();
+    void updateMufStyle(bool stale);
 
     AppSettings* settings_;
     PolledSource* kp_source_;
@@ -44,6 +46,8 @@ private:
     double sfi_ = 0, kp_ = 0, a_ = 0;
     std::vector<bands::BandOutlook> outlook_;
     QString period_ = "unknown";
+    qint64 muf_bucket_ = -1;
+    double muf_sfi_ = 0;
 };
 
 void register_widget_bands(WidgetRegistry& registry, const WidgetContext& context);

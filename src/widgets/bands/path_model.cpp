@@ -61,6 +61,13 @@ double need_db(PathMode mode) {
 }
 } // namespace
 
+double muf_3000_mhz(double sfi, double lat, double lon, UtcSeconds utc) {
+    lat = std::clamp(lat, -90.0, 90.0);
+    lon = std::fmod(lon + 540.0, 360.0) - 180.0;
+    const double elev = solar_elevation_deg(subsolar_point(utc), lat, lon);
+    return fo_f2(sfi, elev, lat) / std::cos(incidence(1500.0 / kEarthKm, 300.0));
+}
+
 double path_distance_km(const PathInput& p) {
     const double angle = central_angle({p.de_lat, p.de_lon}, {p.dx_lat, p.dx_lon});
     return (p.long_path ? 2 * kPi - angle : angle) * kEarthKm;
