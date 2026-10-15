@@ -1,8 +1,14 @@
 #include "alarms_model.hpp"
 
+#include <QSettings>
+
 namespace hamclock {
 
-AlarmsModel::AlarmsModel(QObject* parent) : QObject(parent) {
+AlarmsModel::AlarmsModel(const QString& options_path, QObject* parent) : QObject(parent), path_(options_path) {
+    if (!path_.isEmpty()) {
+        const QSettings ini(path_, QSettings::IniFormat);
+        alarms_ = alarms_parse(ini.value("alarms/list").toStringList());
+    }
     last_ = QDateTime::currentDateTimeUtc();
     timer_.setInterval(1000);
     connect(&timer_, &QTimer::timeout, this, [this] {
@@ -27,6 +33,7 @@ bool AlarmsModel::add(int hour, int minute, bool daily) {
     a.minute_of_day = hour * 60 + minute;
     a.daily = daily;
     alarms_.push_back(a);
+    save();
     emit changed();
     return true;
 }
@@ -34,13 +41,22 @@ bool AlarmsModel::add(int hour, int minute, bool daily) {
 void AlarmsModel::remove(int index) {
     if (index < 0 || index >= alarms_.size()) return;
     alarms_.remove(index);
+    save();
     emit changed();
 }
 
 void AlarmsModel::setEnabled(int index, bool enabled) {
     if (index < 0 || index >= alarms_.size()) return;
     alarms_[index].enabled = enabled;
+    save();
     emit changed();
+}
+
+void AlarmsModel::save() {
+    if (path_.isEmpty()) return;
+    QSettings ini(path_, QSettings::IniFormat);
+    ini.setValue("alarms/list", alarms_serialize(alarms_));
+    ini.sync();
 }
 
 void AlarmsModel::dismiss() {
@@ -57,7 +73,7 @@ void AlarmsModel::check(const QDateTime& prev, const QDateTime& now) {
         if (!a.daily) a.enabled = false;
         fired = true;
     }
-    if (fired) { emit ringingChanged(); emit changed(); }
+    if (fired) { save(); emit ringingChanged(); emit changed(); }
 }
 
 }  // namespace hamclock

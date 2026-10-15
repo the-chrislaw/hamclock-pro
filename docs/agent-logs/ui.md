@@ -182,3 +182,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 41)
 - Backlog A0c/A12 slice: tapping the sunrise/sunset line in the DE or DX box toggles "Rise in 3h 12m" and UTC clock times ("Rise 06:02z"); per session (`StationModel.toggleSunAt`, `sun_line(..., at)`). `sun-text-regression` extended. Dashboard renders at 1024x600 and 800x480 with no QML warnings; the default station is unconfigured in `--screenshot`, so the sun line itself was not seen visually. ctest 154/154; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 42)
+- Backlog A14 slice: alarms persist. `alarms_serialize/alarms_parse` (pure, "HHMM,d|o,1|0", bad entries dropped, max 8) and `AlarmsModel(optionsPath)` saves `alarms/list` in `options.ini` on add, remove, enable and a one-time alarm disabling itself. `alarms-regression` extended (round trip, rejection, model reload with a temp dir). No layout change, no new screenshots. Full ctest passed; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
