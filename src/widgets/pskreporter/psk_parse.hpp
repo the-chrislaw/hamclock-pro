@@ -39,6 +39,16 @@ QString band_summary(const std::vector<std::pair<QString, int>>& stats, int max_
 // skipped. Summary uses the same "FT8 5 · CW 2" form as band_summary.
 std::vector<std::pair<QString, int>> mode_stats(const std::vector<Report>& reports);
 
+// WSPR spots from wspr.live (ClickHouse, FORMAT JSON; columns time, tx_sign,
+// tx_loc, rx_sign, rx_loc, frequency [Hz], snr, distance). Mode is "WSPR".
+// Rows missing a call, a frequency or a time are skipped; a body that is not
+// the expected JSON yields ok == false.
+Feed parse_wspr(const QByteArray& body);
+// Spots heard from `callsign` in the last hour (by DE), or empty when the call
+// has characters outside [A-Z0-9/]. wspr.live asks for fair use: one query per
+// 5 minutes, LIMIT 100.
+QString wspr_query_url(const QString& callsign);
+
 // Query URL for "who heard this callsign", or an empty string when the call
 // has characters outside [A-Z0-9/] (nothing is sent for it).
 QString query_url(const QString& callsign);

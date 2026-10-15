@@ -1,0 +1,102 @@
+{
+	"meta":
+	[
+		{
+			"name": "time",
+			"type": "DateTime"
+		},
+		{
+			"name": "tx_sign",
+			"type": "LowCardinality(String)"
+		},
+		{
+			"name": "tx_loc",
+			"type": "LowCardinality(String)"
+		},
+		{
+			"name": "rx_sign",
+			"type": "LowCardinality(String)"
+		},
+		{
+			"name": "rx_loc",
+			"type": "LowCardinality(String)"
+		},
+		{
+			"name": "frequency",
+			"type": "UInt64"
+		},
+		{
+			"name": "snr",
+			"type": "Int8"
+		},
+		{
+			"name": "distance",
+			"type": "UInt16"
+		}
+	],
+
+	"data":
+	[
+		{
+			"time": "2026-10-15 12:12:00",
+			"tx_sign": "W3HH",
+			"tx_loc": "EL89vb",
+			"rx_sign": "ON5KQ",
+			"rx_loc": "JO10os",
+			"frequency": 28126089,
+			"snr": -14,
+			"distance": 7243
+		},
+		{
+			"time": "2026-10-15 12:12:00",
+			"tx_sign": "W3HH",
+			"tx_loc": "EL89vb",
+			"rx_sign": "DG1ELE",
+			"rx_loc": "JO30fk",
+			"frequency": 28126094,
+			"snr": -13,
+			"distance": 7473
+		},
+		{
+			"time": "2026-10-15 12:12:00",
+			"tx_sign": "W3HH",
+			"tx_loc": "EL89vb",
+			"rx_sign": "PE0MJX",
+			"rx_loc": "JO31ai",
+			"frequency": 28126089,
+			"snr": -20,
+			"distance": 7413
+		},
+		{
+			"time": "2026-10-15 12:12:00",
+			"tx_sign": "W3HH",
+			"tx_loc": "EL89vb",
+			"rx_sign": "EA8BFK",
+			"rx_loc": "IL38bo",
+			"frequency": 28126089,
+			"snr": -22,
+			"distance": 6554
+		},
+		{
+			"time": "2026-10-15 12:12:00",
+			"tx_sign": "W3HH",
+			"tx_loc": "EL89vb",
+			"rx_sign": "PY2PE",
+			"rx_loc": "GG67tg",
+			"frequency": 28126003,
+			"snr": -20,
+			"distance": 6920
+		}
+	],
+
+	"rows": 5,
+
+	"rows_before_limit_at_least": 6,
+
+	"statistics":
+	{
+		"elapsed": 0.007435977,
+		"rows_read": 1972694,
+		"bytes_read": 15407337
+	}
+}

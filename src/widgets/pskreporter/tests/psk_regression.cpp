@@ -37,6 +37,20 @@ int main(int argc, char** argv) {
     check(r.has_snr && r.snr_db == 14, "SNR");
     check(r.time == QDateTime::fromSecsSinceEpoch(1791913278, QTimeZone::utc()), "time is UTC");
 
+    {
+        QFile wf(QDir(argv[1]).filePath("wspr-rx.json"));
+        check(wf.open(QIODevice::ReadOnly), "wspr fixture present");
+        const auto w = psk::parse_wspr(wf.readAll());
+        check(w.ok && w.reports.size() == 5, "wspr: five spots");
+        const auto& s = w.reports.front();
+        check(s.sender == "W3HH" && s.receiver == "ON5KQ" && s.receiver_grid == "JO10OS", "wspr: calls and grids");
+        check(s.mode == "WSPR" && s.band == "10m" && s.has_snr && s.snr_db == -14, "wspr: mode, band, SNR");
+        check(s.time == QDateTime(QDate(2026, 10, 15), QTime(12, 12), QTimeZone::utc()), "wspr: time is UTC");
+        check(!psk::parse_wspr("not json").ok && !psk::parse_wspr("{}").ok, "wspr: junk rejected");
+        check(psk::parse_wspr("{\"data\":[{\"rx_sign\":\"A1B\"}]}").reports.empty(), "wspr: incomplete row skipped");
+        check(psk::wspr_query_url("w3hh").contains("tx_sign%3D'W3HH'") && psk::wspr_query_url("a b;").isEmpty(),
+              "wspr: query url");
+    }
     check(psk::parse_reports("<receptionReports/>").ok && psk::parse_reports("<receptionReports/>").reports.empty(),
           "empty document is ok");
     check(!psk::parse_reports("").ok && !psk::parse_reports("<html><p>").ok && !psk::parse_reports("nope").ok,
