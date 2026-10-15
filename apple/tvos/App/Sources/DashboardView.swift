@@ -29,9 +29,10 @@ struct DashboardView: View {
                     SunCard(now: ctx.date)
                     StationSunCard(now: ctx.date)
                 }
+                SatelliteCard(now: ctx.date)
                 QuakeCard(now: ctx.date)
                 Spacer()
-                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; CelesTrak")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
@@ -184,6 +185,45 @@ private struct QuakeCard: View {
             if state != .live {
                 Text(state == .stale ? "STALE" : "OFFLINE")
                     .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
+    }
+}
+
+/// Amateur satellites currently above the horizon at the station, from CelesTrak elements
+/// propagated on device. Labelled by element age (stale after 14 days) and by fetch freshness.
+private struct SatelliteCard: View {
+    @EnvironmentObject var sats: SatelliteStore
+    @EnvironmentObject var station: StationStore
+    let now: Date
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Amateur satellites overhead").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if sats.tle != nil, let p = station.position {
+                let up = sats.visibleCached(at: now, lat: p.lat, lon: p.lon)
+                if up.isEmpty {
+                    Text("None above the horizon").font(.system(size: 48)).foregroundStyle(.secondary)
+                }
+                ForEach(up) { s in
+                    Text(String(format: "%@  az %.0f°  el %.0f°  %.0f km", s.name, s.azimuth, s.elevation, s.rangeKm)
+                         + (s.sunlit ? "" : "  eclipsed"))
+                        .font(.system(size: 29)).lineLimit(1)
+                }
+                if let oldest = up.map({ SatelliteStore.tleAgeDays($0, now: now) }).max(), oldest > 14 {
+                    Text("STALE ELEMENTS").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+                }
+                if let f = sats.fetched, now.timeIntervalSince(f) > 86400 * 2 {
+                    Text("OFFLINE, using cached elements").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+                }
+            } else if station.position == nil {
+                Text("Enter your locator").font(.system(size: 48)).foregroundStyle(.secondary)
+            } else {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+                Text("OFFLINE").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
             }
         }
         .padding(32)
