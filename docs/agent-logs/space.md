@@ -145,3 +145,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Tests: `muf_map_regression` (day > night, rises with SFI, polar lower, bad coordinates finite, image size/legend) and bands model checks that the style appears when fresh and disappears when stale; full ctest (145) green, bands tests clean under ASan/UBSan. No QML change, no screenshots. Not validated on device.
 - Only open PR is #73 (not mine, conflicting); left alone. No [B] qa issues; #281 already answered.
 - Next: tropo map style (needs terms-checked source), in-app settings UI for bandsmatrix options, compact-layout recheck once area A's mechanism lands.
+
+## 2026-10-15 (UTC, later): compact layout recheck (no code change)
+
+- Rendered the default dashboard with the spaceweather and solarwind fixtures (dark) at 800x480, 1024x600 and 1920x1080: Space weather shows Kp, SFI, X-ray and the thin X-ray plot; Solar wind shows wind and Bz with sparklines. Nothing clipped, so the two hardware-validation issues (X-ray clipped, Bz cut off) look fixed in the offscreen renders. Not validated on device; a re-check on the Pi is still owed.
+- Merged #337 (area A kiosk unit, checks green). #73 (not mine) still conflicts; left alone. No open [B] qa issues; #281 already answered.
+- Remaining in backlog 13: tropo map style (needs a terms-checked source, none chosen) and the in-app settings UI for bandsmatrix options (shared settings page, area A). Nothing else is unblocked in area B.
