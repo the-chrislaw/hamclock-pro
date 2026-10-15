@@ -131,6 +131,10 @@ Card {
                     font.pixelSize: Theme.fontCaption
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
+                    Accessible.role: Accessible.Button
+                    Accessible.name: text
+                    Accessible.onPressAction: station.toggleSunAt()
+                    TapHandler { onTapped: station.toggleSunAt() }
                 }
             }
         }

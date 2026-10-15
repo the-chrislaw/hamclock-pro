@@ -178,3 +178,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 40)
 - Issue #401 (station path line wrapped with an orphan "·" / "DEG / TRUE"): `path_detail` now gives three deliberate lines ("Short path", "15991 KM", "266° TRUE") with no-break spaces inside value and unit; `path-text-regression` extended (line count, no breakable space). Rendered with a configured station at 800x480, 1024x600, 1920x1080: no clipping or orphans. ctest 154/154; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 41)
+- Backlog A0c/A12 slice: tapping the sunrise/sunset line in the DE or DX box toggles "Rise in 3h 12m" and UTC clock times ("Rise 06:02z"); per session (`StationModel.toggleSunAt`, `sun_line(..., at)`). `sun-text-regression` extended. Dashboard renders at 1024x600 and 800x480 with no QML warnings; the default station is unconfigured in `--screenshot`, so the sun line itself was not seen visually. ctest 154/154; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

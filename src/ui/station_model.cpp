@@ -94,11 +94,16 @@ void StationModel::toggleLongPath() {
     emit stationChanged();
 }
 
+void StationModel::toggleSunAt() {
+    sun_at_ = !sun_at_;
+    emit tick();
+}
+
 QString StationModel::deSun() const {
-    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), de_lat_, de_lon_) : QString();
+    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), de_lat_, de_lon_, sun_at_) : QString();
 }
 QString StationModel::dxSun() const {
-    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_) : QString();
+    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_, sun_at_) : QString();
 }
 
 QString StationModel::dxLocal() const {
