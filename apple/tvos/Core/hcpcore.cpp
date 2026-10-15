@@ -2,6 +2,8 @@
 #include "solarwind.hpp"
 #include "swpc.hpp"
 #include "domain/locator_input.hpp"
+#include "domain/astro_moon.hpp"
+#include "domain/astro_sun.hpp"
 #include "domain/solar_position.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -54,6 +56,32 @@ int hcp_sun_elevation(int64_t t, double lat, double lon, double* out) {
         *out = hamclock::solar_elevation_deg(hamclock::subsolar_point(hamclock::UtcSeconds{t}), lat, lon);
     } catch (const std::invalid_argument&) { return 0; }
     return 1;
+}
+int hcp_next_sun_event(int64_t t, int kind, double lat, double lon, int64_t* out) {
+    if (!out || (kind != 0 && kind != 1)) return 0;
+    try {
+        const auto e = hamclock::next_sun_event(hamclock::UtcSeconds{t},
+            kind == 0 ? hamclock::SunEventKind::Rise : hamclock::SunEventKind::Set, lat, lon);
+        if (!e) return 0;
+        *out = e->value;
+    } catch (const std::invalid_argument&) { return 0; }
+    return 1;
+}
+int hcp_next_moon_event(int64_t t, int kind, double lat, double lon, int64_t* out) {
+    if (!out || (kind != 0 && kind != 1)) return 0;
+    try {
+        const auto e = hamclock::next_moon_event(hamclock::UtcSeconds{t},
+            kind == 0 ? hamclock::MoonEventKind::Rise : hamclock::MoonEventKind::Set, lat, lon);
+        if (!e) return 0;
+        *out = e->value;
+    } catch (const std::invalid_argument&) { return 0; }
+    return 1;
+}
+int hcp_moon_phase(int64_t t, char* buf, size_t cap, double* illuminated) {
+    if (!illuminated) return 0;
+    const auto p = hamclock::moon_phase(hamclock::UtcSeconds{t});
+    *illuminated = p.illuminated;
+    return copy(p.name, buf, cap);
 }
 int hcp_locator_center(const char* loc, double* lat, double* lon) {
     if (!loc || !lat || !lon) return 0;

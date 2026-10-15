@@ -18,6 +18,8 @@ add_library(hamclock-core STATIC
     ${D}/stopwatch_state.cpp
     ${D}/countdown_state.cpp
     ${D}/solar_position.cpp
+    ${D}/astro_sun.cpp
+    ${D}/astro_moon.cpp
     ${D}/geometry.cpp
     ${D}/locator_input.cpp
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
