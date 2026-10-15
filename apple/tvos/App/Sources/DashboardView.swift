@@ -24,7 +24,10 @@ struct DashboardView: View {
                          big: { String(format: "%+.1f nT", $0) },
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
-                SunCard(now: ctx.date)
+                HStack(alignment: .top, spacing: 40) {
+                    SunCard(now: ctx.date)
+                    StationSunCard(now: ctx.date)
+                }
                 Spacer()
                 Text("Data: NOAA Space Weather Prediction Center")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
@@ -105,5 +108,32 @@ private struct SunCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
+    }
+}
+
+/// Sun elevation at the operator's locator, computed on device (no network, never stale).
+private struct StationSunCard: View {
+    @EnvironmentObject var station: StationStore
+    let now: Date
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sun at your station").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if let p = station.position {
+                var el = 0.0
+                if hcp_sun_elevation(Int64(now.timeIntervalSince1970), p.lat, p.lon, &el) != 0 {
+                    Text(String(format: "%+.1f°", el))
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                    Text(el > 0 ? "Daylight" : (el > -6 ? "Civil twilight" : "Night"))
+                        .font(.system(size: 29))
+                }
+            } else {
+                Text("Enter your locator").font(.system(size: 48)).foregroundStyle(.secondary)
+            }
+            TextField("Locator, e.g. JN58td", text: $station.locator)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
     }
 }

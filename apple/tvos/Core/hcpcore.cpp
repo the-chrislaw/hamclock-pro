@@ -1,6 +1,7 @@
 #include "hcpcore.h"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "domain/locator_input.hpp"
 #include "domain/solar_position.hpp"
 #include <cmath>
 #include <stdexcept>
@@ -51,6 +52,17 @@ int hcp_sun_elevation(int64_t t, double lat, double lon, double* out) {
     if (!out) return 0;
     try {
         *out = hamclock::solar_elevation_deg(hamclock::subsolar_point(hamclock::UtcSeconds{t}), lat, lon);
+    } catch (const std::invalid_argument&) { return 0; }
+    return 1;
+}
+int hcp_locator_center(const char* loc, double* lat, double* lon) {
+    if (!loc || !lat || !lon) return 0;
+    try {
+        const std::string text(loc);
+        const auto sw = hamclock::location_from_maidenhead(text);
+        const double dlat = text.size() == 2 ? 10.0 : text.size() == 4 ? 1.0 : 2.5 / 60.0;
+        const double dlon = text.size() == 2 ? 20.0 : text.size() == 4 ? 2.0 : 5.0 / 60.0;
+        *lat = sw.latitude + dlat / 2; *lon = sw.longitude + dlon / 2;
     } catch (const std::invalid_argument&) { return 0; }
     return 1;
 }

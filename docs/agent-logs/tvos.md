@@ -29,3 +29,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: C ABI for the shared offline solar position (`hcp_subsolar_point`, `hcp_sun_elevation`, tested on Linux 8/8, zero warnings) and a Sun card (subsolar point, computed on device, no Stale state because it needs no network).
 - Swift verified only by the tvos.yml run on the PR.
 - Next: moon/sun rise-set for the observer once settings (location via iCloud KVS) exist; satellites and quakes panes.
+
+## 2026-10-15 (second run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: station locator. C ABI `hcp_locator_center` over the shared Maidenhead decoder (tested on Linux 8/8, zero warnings), `StationStore` (iCloud key-value store with UserDefaults mirror, per the approved design) and a "Sun at your station" card (on-device elevation, no Stale state) with a locator text field.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: sun/moon rise-set at the station, satellites and quakes panes.
