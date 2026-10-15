@@ -215,7 +215,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display; serial NMEA receiver via options.ini `[gps]` `device`/`baud`, read-only; DE/time use pending) |
 | NTP server | Time source | E | Missing |
 | rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; rigctld/rotctld host and port via options.ini `[radio]`/`[rotator]` `host`/`port`, flrig stays on localhost:12345; no Settings control yet) |
-| PiAware ADS-B receiver host | Aircraft on the map | E | Partial (count card from localhost:8080 only; no settings, no map overlay) |
+| PiAware ADS-B receiver host | Aircraft on the map | E | Partial (count card; host/port via options.ini `[adsb] host`/`port`, no Settings control yet, no map overlay) |
 | ADIF file path + watch list; On The Air watch list | Log and activity highlighting | C/E | Partial |
 | Meshtastic node IDs (neighbour links) | Mesh map overlay | C | Missing |
 | BME280 sensors (I2C device, temp/pressure corrections) | Local environment | E | Partial (kernel IIO driver; corrections via options.ini `[sensors] temp_offset_c`/`pressure_offset_hpa`, no Settings control yet) |
