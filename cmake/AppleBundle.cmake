@@ -49,5 +49,10 @@ if(IOS AND TARGET hamclock-pro)
         XCODE_ATTRIBUTE_MARKETING_VERSION "${PROJECT_VERSION}"
         XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "${HAMCLOCK_BUILD_NUMBER}"
         # 1 = iPhone, 2 = iPad: one universal app.
-        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2")
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+        # Without an install path CMake's Xcode project archives as a generic
+        # archive with no ApplicationProperties, and -exportArchive then offers
+        # no distribution methods ("expected one {} but found app-store").
+        XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+        XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)")
 endif()
