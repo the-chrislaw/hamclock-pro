@@ -35,5 +35,11 @@ int main() {
     check(hcp_sun_elevation(1774017960LL, la, lo + 180.0, &el) && el < -89.0, "antipode is night");
     check(!hcp_sun_elevation(0, 95.0, 0, &el), "invalid latitude rejected");
     check(!hcp_subsolar_point(0, nullptr, &lo), "null out rejected");
+    // Maidenhead centres: JN58 spans 48-49N, 10-12E; FN31pr is near Newington CT.
+    double cl = 0, co = 0;
+    check(hcp_locator_center("JN58", &cl, &co) && std::abs(cl - 48.5) < 1e-9 && std::abs(co - 11.0) < 1e-9, "JN58 centre");
+    check(hcp_locator_center("jn58td", &cl, &co) && std::abs(cl - 48.1458333) < 1e-4 && std::abs(co - 11.625) < 1e-4, "JN58td centre");
+    check(hcp_locator_center("JN", &cl, &co) && std::abs(cl - 45.0) < 1e-9 && std::abs(co - 10.0) < 1e-9, "JN field centre");
+    check(!hcp_locator_center("ZZ99", &cl, &co) && !hcp_locator_center("JN5", &cl, &co) && !hcp_locator_center(nullptr, &cl, &co), "bad locators rejected");
     return failures ? 1 : 0;
 }

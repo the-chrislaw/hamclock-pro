@@ -35,6 +35,10 @@ int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
 int hcp_subsolar_point(int64_t unix_s, double* lat_deg, double* lon_deg);
 int hcp_sun_elevation(int64_t unix_s, double lat_deg, double lon_deg, double* elevation_deg);
 
+/* Centre of a 2/4/6-character Maidenhead locator (shared locator_input decoder).
+ * Returns 0 for anything but a valid locator. */
+int hcp_locator_center(const char* locator, double* lat_deg, double* lon_deg);
+
 #ifdef __cplusplus
 }
 #endif
