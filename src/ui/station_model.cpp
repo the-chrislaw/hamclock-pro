@@ -102,7 +102,7 @@ QString StationModel::dxSun() const {
 }
 
 QString StationModel::dxLocal() const {
-    return configured() ? zone_local_text(dx_zone_, QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+    return configured() ? zone_local_text(settings_.dxZoneOverride().isEmpty() ? dx_zone_ : settings_.dxZoneOverride(), QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
 }
 
 void StationModel::reload() {

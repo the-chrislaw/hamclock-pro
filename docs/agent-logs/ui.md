@@ -147,3 +147,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 32)
 - Backlog A13 slice: Settings > "Callsign banner" has a background fill (No fill, Black, Navy, Maroon, White; `banner/background` in `options.ini`, `AppSettings.saveBannerBackground`, `banner_background` in `banner_text.hpp`); the banner draws on a rounded rectangle of that colour. Tests: `banner-text-regression`, `widget-core-regression` extended (validation, persistence). Screenshots at 800x480, 1024x600 (navy fill, amber text, no clipping), 1920x1080 exit 0. The Settings page is not reachable from `--screenshot`, so its layout was not checked visually. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 33)
+- Backlog A0c slice: manual DX time zone override. Settings > Station has a "DX time zone" picker with Save and Auto (`dx/zone` in `options.ini`, `AppSettings.saveDxZone`, validated with `QTimeZone`); `StationModel.dxLocal` uses it, else the automatic zone from the DX coordinates. `widget-core-regression` extended (reject, persist, clear). Settings is not reachable from `--screenshot`, so layout was not checked visually. ctest 151/151, no warnings; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
