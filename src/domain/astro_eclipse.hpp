@@ -23,13 +23,17 @@ const char* solar_eclipse_type_name(SolarEclipseType t);
 // +-4 h around the global greatest eclipse; only samples with the Sun above the
 // horizon count. The discs touch at about 0.52 degrees separation, so under
 // 0.40 is Visible, 0.40 to 0.64 Marginal (ephemeris error could decide it) and
-// beyond that None. Also gives the local time of maximum and the magnitude there; contact times are not computed.
+// beyond that None. Also gives the local time of maximum and the magnitude there; first and last contact times (20 s steps) are given when the Sun is partly covered.
 enum class EclipseVisibility { None, Marginal, Visible };
 struct EclipseLocal {
     EclipseVisibility visibility;
     double min_separation_deg;   // smallest Sun-Moon separation while the Sun is up; 180 if never up
     double sun_elevation_deg;    // Sun elevation at that moment
     UtcSeconds max_time{0};      // moment of that smallest separation (local maximum, minute resolution); 0 if the Sun is never up
+    UtcSeconds start_time{0};    // first contact (or the last sample before sunrise when start_at_sunrise); 0 if no overlap
+    UtcSeconds end_time{0};      // last contact (or the last sample before sunset when end_at_sunset)
+    bool start_at_sunrise = false;
+    bool end_at_sunset = false;
     double magnitude = 0;        // fraction of the Sun's diameter covered at that moment (>1 when total); 0 when None
 };
 // Latitude in [-90, 90] and longitude (east positive) in [-180, 180], else std::invalid_argument.

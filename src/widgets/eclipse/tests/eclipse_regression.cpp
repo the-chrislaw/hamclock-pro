@@ -65,6 +65,12 @@ int main(int argc, char** argv) {
     check(denver.magnitude > 0.6 && denver.magnitude < 0.9, "Denver magnitude (NASA ~0.65 obscuration)");
     // Dallas totality about 18:40-18:44 UTC (NASA: 1:40-1:44 pm CDT), within 5 min.
     check(std::llabs(dallas.max_time.value - utc(2024, 4, 8, 18, 42, 0)) <= 300, "Dallas max time");
+    // NASA Dallas: partial begins 17:23 UTC, ends 20:02 UTC (ephemeris-limited, allow 8 min).
+    check(std::llabs(dallas.start_time.value - utc(2024, 4, 8, 17, 23, 0)) <= 480, "Dallas first contact");
+    check(std::llabs(dallas.end_time.value - utc(2024, 4, 8, 20, 2, 0)) <= 480, "Dallas last contact");
+    check(!dallas.start_at_sunrise && !dallas.end_at_sunset, "Dallas contacts not cut off by horizon");
+    check(denver.start_time.value < denver.max_time.value && denver.max_time.value < denver.end_time.value, "Denver contacts bracket maximum");
+    check(eclipse_visibility(e2024, 51.5, -0.13).start_time.value == 0, "London no contacts");
     check(eclipse_visibility(e2024, 51.5, -0.13).magnitude == 0.0, "London magnitude zero");
     check(eclipse_visibility(e2024, 51.5, -0.13).visibility == EclipseVisibility::None, "London: Sun well after");
     check(eclipse_visibility(e2024, -33.9, 151.2).visibility == EclipseVisibility::None, "Sydney: night");
@@ -76,6 +82,7 @@ int main(int argc, char** argv) {
     check(threw, "invalid latitude throws");
     const EclipseSummary sd = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 32.78, -96.80);
     check(sd.visibility == "Visible at DE" && sd.local.startsWith("Max 18:") && sd.local.contains("Z"), "summary local line");
+    check(sd.contacts.contains("17:") && sd.contacts.contains("19:"), "summary contacts line");
     const EclipseSummary sl = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 51.5, -0.13);
     check(sl.local.isEmpty(), "no local line when not visible");
 
