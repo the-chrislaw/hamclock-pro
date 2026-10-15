@@ -1,5 +1,8 @@
 #include "psk_parse.hpp"
 #include "../dxcluster/dx_spot_parse.hpp"
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QStringList>
 #include <QTimeZone>
@@ -36,6 +39,46 @@ Feed parse_reports(const QByteArray& body) {
     std::stable_sort(feed.reports.begin(), feed.reports.end(),
                      [](const Report& x, const Report& y) { return x.time > y.time; });
     return feed;
+}
+
+Feed parse_wspr(const QByteArray& body) {
+    Feed feed;
+    QJsonParseError err;
+    const auto doc = QJsonDocument::fromJson(body, &err);
+    if (err.error != QJsonParseError::NoError || !doc.isObject() || !doc.object().value("data").isArray())
+        return feed;
+    feed.ok = true;
+    for (const auto& v : doc.object().value("data").toArray()) {
+        const auto o = v.toObject();
+        Report r;
+        r.receiver = o.value("rx_sign").toString().trimmed().toUpper();
+        r.receiver_grid = o.value("rx_loc").toString().trimmed().toUpper();
+        r.sender = o.value("tx_sign").toString().trimmed().toUpper();
+        r.sender_grid = o.value("tx_loc").toString().trimmed().toUpper();
+        r.mode = "WSPR";
+        r.freq_khz = o.value("frequency").toDouble() / 1000.0;
+        r.time = QDateTime::fromString(o.value("time").toString(), "yyyy-MM-dd HH:mm:ss");
+        r.time.setTimeZone(QTimeZone::utc());
+        if (r.receiver.isEmpty() || r.sender.isEmpty() || r.freq_khz <= 0 || !r.time.isValid()) continue;
+        r.band = dxcluster::band_for_khz(r.freq_khz);
+        r.has_snr = o.value("snr").isDouble();
+        r.snr_db = o.value("snr").toInt();
+        feed.reports.push_back(r);
+    }
+    std::stable_sort(feed.reports.begin(), feed.reports.end(),
+                     [](const Report& x, const Report& y) { return x.time > y.time; });
+    return feed;
+}
+
+QString wspr_query_url(const QString& callsign) {
+    const QString call = callsign.trimmed().toUpper();
+    static const QRegularExpression ok("^[A-Z0-9]+(/[A-Z0-9]+)?$");
+    if (!ok.match(call).hasMatch()) return {};
+    QString enc = call;
+    enc.replace('/', "%2F");
+    return "https://db1.wspr.live/?query=SELECT+time,tx_sign,tx_loc,rx_sign,rx_loc,frequency,snr,distance"
+           "+FROM+wspr.rx+WHERE+tx_sign%3D'" + enc + "'+AND+time>now()-INTERVAL+1+HOUR"
+           "+ORDER+BY+time+DESC+LIMIT+100+FORMAT+JSON";
 }
 
 QString query_url(const QString& callsign) {

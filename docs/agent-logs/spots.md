@@ -225,3 +225,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
 - Backlog item 8 (slice): HamAlert rows now show the xOTA reference parsed from the alert comment (`ota` field, "POTA K-1234") on the card. The alert/trigger name is not parsed: its wire format is not documented or fixtured, so nothing is invented. No AppSettings change. Test extended; 152/152 pass locally, no warnings in touched files; ASan/UBSan left to CI. No screenshot (card needs a login); not validated on device.
 - Not done: HamAlert trigger names/per-alert filters, WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.
+
+## 2026-10-15 (run 40)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): WSPR parser only. `psk::parse_wspr` (wspr.live JSON, frequency in Hz, mode "WSPR", reuses `psk::Report`) and `psk::wspr_query_url` (by DE, last hour, LIMIT 100). Fixture `wspr-rx.json` is a trimmed real capture (Oct 15). wspr.live is reachable from the sandbox; terms recorded in the roadmap's Data source policy (fair use, owner to confirm). Nothing fetches it yet, so no UI change or screenshot. 152/152 pass locally; ASan/UBSan left to CI. Not validated on device.
+- Next: WSPR fetch in `PskModel` (5 min poll, source toggle), RBN (telnet, source decision pending).
