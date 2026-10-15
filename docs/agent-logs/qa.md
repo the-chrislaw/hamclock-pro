@@ -59,3 +59,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Minor, not filed: station card "Short path · 5573 KM · 51 DEG / TRUE" wraps with an orphan "·"; Sun & Moon DX column touches the pane edge at 800x480; map labels still sit on markers.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; changed test assertions all follow intended behaviour additions. Per-widget code was not read line by line.
 - Health: build and tests are green and panes stay honest (Live / Stale / Set up / Offline). Two cosmetic defects found; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 9
+- Last reviewed commit: 7ea1ba5e5fa810cc653af20e42f547df99969888 (PRs #324 to #346, 40 commits since eec6c48).
+- Build and 148/148 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station) and 39 pane widgets at 800x480 and 1024x600 (dark; Planets, Next eclipse, PSKReporter, Weather viewed closely). Nothing scrolls and no QML warnings were logged. The only truncation report is the Weather header "DE · San Francisco, US" in its Loading state, caused by the fixture set not matching the test station (fixture gap, not a product bug).
+- Opened: none. Closed: none (#325 and #326 are already closed). Still open: #150, #151, #152, #246, #247, #269, #281 (owner-filed or owner-input).
+- Diff scan: no QtWidgets, http://, scrolling views, new Qt-version-gated APIs or password handling in added code; the two removed test assertions (planet marker count, air line) follow the intended behaviour additions. Per-widget code was not read line by line; the new Timers page and alarms were not rendered.
+- Health: build and tests are green, layouts fit and panes stay honest (Live / Stale / Set up / Offline). No new defects found; remaining risk is data freshness on the real Pi (#150).
