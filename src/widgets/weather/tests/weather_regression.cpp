@@ -51,6 +51,10 @@ int main(int argc, char** argv) {
     const auto full = weather::parse_current(
         R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3,"pressure_msl":1015.4,"cloud_cover":87}})");
     check(full && full->pressure_hpa && std::lround(*full->pressure_hpa) == 1015 && full->cloud_pct == 87, "pressure and cloud parsed");
+    const auto dew = weather::dew_point_c(20, 50);  // reference: 9.3 °C
+    check(dew && std::abs(*dew - 9.27) < 0.1, "dew point at 20 C / 50 %");
+    check(weather::dew_point_c(20, 100) && std::abs(*weather::dew_point_c(20, 100) - 20) < 0.01, "dew point equals temperature at 100 % RH");
+    check(!weather::dew_point_c(20, 0) && !weather::dew_point_c(80, 50), "dew point rejects 0 % RH and absurd temperature");
     check(c && !c->pressure_change_hpa, "no trend without hourly series");
     // Synthetic: hourly series oldest first (past_hours=3, forecast_hours=1).
     const auto trend = weather::parse_current(
@@ -127,7 +131,7 @@ int main(int argc, char** argv) {
     model.dxSource()->refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.deTemp() == "15.7 °C" && model.deWind() == "NNW 8 km/h", "DE values");
-    check(model.deAir() == "61% RH", "air line without optional fields");
+    check(model.deAir() == "61% RH · dew 8 °C", "air line without optional fields");
     check(model.deSummary() == "Clear sky", "DE summary");
     check(model.dxTemp().isEmpty(), "response for another place never shown at DX");
     check(model.state() == "stale", "one end missing -> not live");

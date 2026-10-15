@@ -126,7 +126,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 5. GPS (F21) via gpsd for DE location; CPU temperature/sensors (F22).
 
 **Audit additions (E):**
-6. 🟡 (humidity, pressure and trend, clouds, local time with UTC offset, today's high/low and city names via OSM Nominatim reverse lookup done; popup on new DE/DX pending area G) Weather parity: humidity, pressure and trend, clouds, city, DX time zone; brief weather popup on new DE/DX.
+6. 🟡 (humidity, dew point, pressure and trend, clouds, local time with UTC offset, today's high/low and city names via OSM Nominatim reverse lookup done; popup on new DE/DX pending area G) Weather parity: humidity, pressure and trend, clouds, city, DX time zone; brief weather popup on new DE/DX.
 7. Weather and clouds map styles; Windy and WEFAX links.
 8. Hazard panes and map overlays: quakes (USGS), tropical storms (NHC/JTWC), NWS marine and fire-weather warnings, lightning with range rings, active fires (NASA FIRMS); check each feed's terms first.
 9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
