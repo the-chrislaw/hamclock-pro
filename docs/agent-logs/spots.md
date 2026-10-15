@@ -167,3 +167,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Review: backlog item 14 (label modes, minimum label distance) is already provided by area G's map label mode and per-layer settings; NAGrid needs a grid per spot, which cluster spots lack, so it is not pursued. ONTA overlay already exists.
 - Blocked: Meshtastic (C10) needs a source decision; opened "Owner input needed: Meshtastic source" (#311) with options. No code change this run.
 - Next: UDP spot input (item 12), WSPR/RBN once a source is chosen, WWFF/GMA once allowlisted (#305).
+
+## 2026-10-15 (run 29)
+- Step 1: nothing of mine open; #319 (bands) had checks running and #73 is stale docs, both other areas', left alone. No open `[C]` qa issues.
+- Backlog item 12 (slice): WSJT-X binary UDP protocol (schema 2/3) on the existing opt-in UDP port. `WsjtxDecoder` keeps the dial frequency per client id from Status messages and turns Decode messages "CQ [DX] CALL [GRID]" into spots (dial + audio offset, FT8/FT4 mode, spotter "WSJT-X"). Bounds-checked reader; wrong magic, truncated, oversized, non-CQ and decodes before a Status are ignored. No AppSettings change, no new listener. Test builds datagrams by hand; udp/dx tests pass, full suite run locally; ASan/UBSan left to CI. Not validated on device.
+- Not done: multicast, "UDP sets DX", by me/all filter, Log4OM format, WSJT-X Logged/QSO messages.
+- Next: UDP sets DX / by-me filter, WSPR/RBN once a source is chosen, WWFF/GMA once allowlisted (#305).

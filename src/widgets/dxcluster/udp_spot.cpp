@@ -74,6 +74,73 @@ std::optional<DxSpot> parse_udp_spot(const QByteArray& datagram, const QDateTime
     return spot;
 }
 
+namespace {
+// Bounds-checked big-endian reader; every read fails (and stays failed) past the end.
+struct Reader {
+    const QByteArray& d;
+    int pos = 0;
+    bool ok = true;
+    quint64 num(int bytes) {
+        if (!ok || pos + bytes > d.size()) { ok = false; return 0; }
+        quint64 v = 0;
+        for (int i = 0; i < bytes; ++i) v = (v << 8) | quint8(d[pos++]);
+        return v;
+    }
+    QString str() {
+        const quint32 len = quint32(num(4));
+        if (len == 0xffffffffu) return {};
+        if (!ok || len > 512 || pos + int(len) > d.size()) { ok = false; return {}; }
+        const QString s = QString::fromUtf8(d.constData() + pos, int(len));
+        pos += int(len);
+        return s;
+    }
+};
+} // namespace
+
+std::optional<DxSpot> WsjtxDecoder::feed(const QByteArray& datagram, const QDateTime& now_utc) {
+    if (datagram.size() < 12 || datagram.size() > kMaxDatagram) return std::nullopt;
+    Reader r{datagram};
+    if (r.num(4) != 0xadbccbdau) return std::nullopt;
+    const quint32 schema = quint32(r.num(4));
+    if (schema < 2 || schema > 3) return std::nullopt;
+    const quint32 type = quint32(r.num(4));
+    const QString id = r.str();
+    if (!r.ok) return std::nullopt;
+    if (type == 1) { // Status
+        const quint64 dial = r.num(8);
+        if (!r.ok || dial == 0 || dial > 10'000'000'000ull) return std::nullopt;
+        if (dial_hz_.size() >= 16 && !dial_hz_.contains(id)) dial_hz_.clear();
+        dial_hz_.insert(id, dial);
+        return std::nullopt;
+    }
+    if (type != 2 || !dial_hz_.contains(id)) return std::nullopt; // Decode needs a known dial frequency
+    r.num(1);                      // new
+    r.num(4);                      // time of day
+    r.num(4);                      // snr
+    r.num(8);                      // dt
+    const quint32 df = quint32(r.num(4));
+    const QString mode = r.str();
+    const QString message = r.str().trimmed().toUpper();
+    if (!r.ok || df > 5000) return std::nullopt;
+    const QStringList w = message.split(' ', Qt::SkipEmptyParts);
+    if (w.size() < 2 || w[0] != "CQ") return std::nullopt;
+    int i = 1;
+    if (w.size() > i + 1 && w[i].size() <= 4 && !w[i].contains(QRegularExpression("\\d"))) ++i; // CQ DX / CQ POTA
+    const QString call = w[i];
+    if (!plausible_call(call)) return std::nullopt;
+    DxSpot spot;
+    spot.dx = call;
+    spot.spotter = "WSJT-X";
+    spot.frequency_khz = (double(dial_hz_.value(id)) + df) / 1000.0;
+    spot.band = band_for_khz(spot.frequency_khz);
+    spot.mode = mode == "~" ? "FT8" : mode == "+" ? "FT4" : QString();
+    static const QRegularExpression grid_re("^[A-R]{2}\\d{2}$");
+    if (w.size() > i + 1 && grid_re.match(w[i + 1]).hasMatch()) spot.grid = w[i + 1];
+    spot.comment = message.left(40);
+    spot.time = now_utc;
+    return spot;
+}
+
 bool UdpSpotListener::listen(int port, bool lan) {
     socket_.reset();
     if (port < 1 || port > 65535) return port == 0;
@@ -90,7 +157,9 @@ bool UdpSpotListener::listen(int port, bool lan) {
 void UdpSpotListener::on_ready() {
     while (socket_ && socket_->hasPendingDatagrams()) {
         const QByteArray data = socket_->receiveDatagram(kMaxDatagram + 1).data();
-        if (const auto spot = parse_udp_spot(data, QDateTime::currentDateTimeUtc())) emit spotReceived(*spot);
+        const QDateTime now = QDateTime::currentDateTimeUtc();
+        if (const auto spot = parse_udp_spot(data, now)) emit spotReceived(*spot);
+        else if (const auto w = wsjtx_.feed(data, now)) emit spotReceived(*w);
     }
 }
 
