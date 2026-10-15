@@ -39,3 +39,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: sun/moon rise-set at the station. C ABI `hcp_next_sun_event`, `hcp_next_moon_event`, `hcp_moon_phase` over the Qt-free shared `astro_sun`/`astro_moon` (added to the standalone TvOSCore build; tested on Linux 8/8, zero warnings). Station card now shows next sunrise/sunset, moonrise/moonset (UTC) and Moon phase, all on device, never stale.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: satellites and quakes panes (need Qt-free TLE / USGS parsers).
+
+## 2026-10-15 (fourth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Qt-free USGS quakes parser (`quakes.cpp`, same fixture/rules as the Qt oracle), C ABI (`hcp_quakes_parse`, strongest index, magnitude class), tested on Linux 9/9, zero warnings. New "Earthquakes M2.5+" card (strongest + 5 most recent) with Stale/Offline labels and USGS attribution.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: satellites pane (needs a Qt-free TLE parser + SGP4 port), settings.

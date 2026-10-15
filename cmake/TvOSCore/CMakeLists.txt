@@ -25,6 +25,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
     ${HCP_ROOT}/apple/tvos/Core/swpc.cpp
     ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
+    ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
 target_include_directories(hamclock-core PUBLIC ${HCP_ROOT}/src)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -65,3 +66,11 @@ target_compile_definitions(core-solarwind-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/solarwind/tests/fixtures")
 set_target_properties(core-solarwind-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-solarwind-regression COMMAND core-solarwind-regression)
+
+# Qt-free USGS quakes parser; the Qt parser's fixture is the oracle.
+add_executable(core-quakes-regression ${HCP_ROOT}/apple/tvos/Core/tests/quakes_regression.cpp)
+target_link_libraries(core-quakes-regression PRIVATE hamclock-core)
+target_compile_definitions(core-quakes-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/quakes/tests/fixtures")
+set_target_properties(core-quakes-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-quakes-regression COMMAND core-quakes-regression)

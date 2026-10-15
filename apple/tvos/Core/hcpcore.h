@@ -26,6 +26,20 @@ HcpReading hcp_solarwind_latest_bz(const char* body, size_t len);      /* nT, GS
 int hcp_solarwind_speed_description(double km_s, char* buf, size_t cap);
 int hcp_solarwind_bz_description(double nt, char* buf, size_t cap);
 
+/* USGS GeoJSON summary feed (see quakes.hpp). */
+typedef struct {
+    double magnitude;
+    double latitude, longitude, depth_km;
+    int64_t time_ms;    /* origin time, UTC */
+    char place[96];     /* NUL-terminated, truncated */
+} HcpQuake;
+/* Fills out[] with up to cap quakes, newest first. Returns the number written,
+ * or -1 when the body is not a GeoJSON FeatureCollection. */
+int hcp_quakes_parse(const char* body, size_t len, HcpQuake* out, size_t cap);
+/* Index (into the full parsed list) of the strongest quake, or -1. */
+int hcp_quakes_strongest_index(const char* body, size_t len);
+int hcp_quake_magnitude_class(double magnitude, char* buf, size_t cap);
+
 /* Writes a NUL-terminated string into buf (truncated to cap); returns 1 when non-empty. */
 int hcp_swpc_xray_class(double flux_w_m2, char* buf, size_t cap);
 int hcp_swpc_kp_description(double kp, char* buf, size_t cap);

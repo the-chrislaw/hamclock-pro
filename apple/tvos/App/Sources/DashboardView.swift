@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject var weather: SpaceWeatherStore
+    @EnvironmentObject var quakes: QuakeStore
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -28,8 +29,9 @@ struct DashboardView: View {
                     SunCard(now: ctx.date)
                     StationSunCard(now: ctx.date)
                 }
+                QuakeCard(now: ctx.date)
                 Spacer()
-                Text("Data: NOAA Space Weather Prediction Center")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
@@ -157,5 +159,36 @@ private struct StationSunCard: View {
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+    }
+}
+
+/// USGS M2.5+ past day: strongest quake and the five most recent, with the same Stale/Offline rule.
+private struct QuakeCard: View {
+    @EnvironmentObject var quakes: QuakeStore
+    let now: Date
+    var body: some View {
+        let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Earthquakes M2.5+, past day").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if let top = quakes.strongest {
+                Text(String(format: "M%.1f %@", top.magnitude, QuakeStore.magnitudeClass(top.magnitude)))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text(top.place).font(.system(size: 29))
+                ForEach(quakes.recent) { q in
+                    Text(String(format: "M%.1f  ", q.magnitude) + q.place)
+                        .font(.system(size: 29)).foregroundStyle(.secondary).lineLimit(1)
+                }
+            } else {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+            }
+            if state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
     }
 }

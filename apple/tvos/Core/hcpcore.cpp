@@ -1,4 +1,5 @@
 #include "hcpcore.h"
+#include "quakes.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
 #include "domain/locator_input.hpp"
@@ -94,4 +95,30 @@ int hcp_locator_center(const char* loc, double* lat, double* lon) {
     } catch (const std::invalid_argument&) { return 0; }
     return 1;
 }
+}
+
+extern "C" {
+int hcp_quakes_parse(const char* b, size_t n, HcpQuake* out, size_t cap) {
+    const auto list = hcp::quakes::parse(view(b, n));
+    if (!list) return -1;
+    size_t i = 0;
+    for (; i < list->size() && i < cap && out; ++i) {
+        const auto& q = (*list)[i];
+        out[i] = HcpQuake{};
+        out[i].magnitude = q.magnitude;
+        out[i].latitude = q.latitude;
+        out[i].longitude = q.longitude;
+        out[i].depth_km = q.depth_km;
+        out[i].time_ms = q.time_ms;
+        copy(q.place, out[i].place, sizeof out[i].place);
+    }
+    return static_cast<int>(i);
+}
+int hcp_quakes_strongest_index(const char* b, size_t n) {
+    const auto list = hcp::quakes::parse(view(b, n));
+    if (!list) return -1;
+    const auto* s = hcp::quakes::strongest(*list);
+    return s ? static_cast<int>(s - list->data()) : -1;
+}
+int hcp_quake_magnitude_class(double m, char* buf, size_t cap) { return copy(hcp::quakes::magnitude_class(m), buf, cap); }
 }
