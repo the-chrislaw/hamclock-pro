@@ -170,3 +170,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Eclipse contact times (backlog D9, partial): `eclipse_visibility` now walks outward from the local maximum in 20 s steps to give first and last partial contact at DE (marked when the horizon cuts the eclipse off at sunrise/sunset); the card gains a "Partial" row ("17:22 – 19:59Z") when the pane has room. Test: Dallas 2024-04-08 against NASA (17:23 and 20:02 UTC, within 8 min), Denver contacts bracket the maximum, London none. Full ctest passes (151/151). No screenshot of the new row (the next eclipse, 2027-02-06, is not visible from the test DE); QML mirrors the existing rows. ASan/UBSan left to CI. Not done: annular/total contact times (C2/C3).
 - Not mine: #364 (spots) CI running at start, #73 left alone. Balloons still blocked on #314.
 - Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX.
+
+## 2026-10-15 (UTC), run 32
+- Docs only: the Status row for Satellites still said "no sunlit/eclipsed"; the detail box already shows it (`SatellitePropagator::sunlit`, covered in satellites_regression). Row corrected. No code change.
+- Not mine: #371/#372 CI still running at start, #73 conflicting; left alone. Balloons blocked on #314. Remaining D items need shared surfaces (settings editor for TLE, hams.at key via credential store, Set as DX, map-marker tap from G) or hardware-grade ephemeris (annular/total contacts), so no larger slice was safe this run.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX once G's tap mechanism lands.
