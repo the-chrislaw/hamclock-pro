@@ -250,3 +250,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: #403 (ui) still has checks running and #73 is stale docs; both other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
 - Backlog item 6 (slice): map paths for stations DE heard on WSPR. `psk::heard_overlay_layer` (layer `psk-heard`, amber markers, path from DE) published by `PskModel` only while the opt-in WSPR "heard" feed is fresh and the PSK map toggle is on; removed otherwise. Shares the `psk` label style. No AppSettings change. Test extended; 154/154 pass locally; ASan/UBSan left to CI. No screenshot (needs a callsign and live data); not validated on device.
 - Not done: RBN (#399 owner input), WSPR by-call queries.
+
+## 2026-10-15 (run 45)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 11 (slice): standalone band-activity heatmap pane. New `bandactivity` widget (`BandActivityModel`, `BandActivityCard.qml`) shows band × continent counts from the DX cluster model's `activity`, found through the registry at run time (no link dependency). It mirrors the cluster's state: unconfigured/loading/stale/offline are never shown as live, and a live link with no spots is "loading". Compact card shows the busiest band only. Pane chooser category added (2). No AppSettings change. Test with a fake source added; 156/156 pass locally. No screenshot (needs a live cluster link, not available offline); ASan/UBSan left to CI; not validated on device.
+- Not done: PSK/WSPR/RBN as heatmap sources, WSPR by-call queries, IOTA names.
