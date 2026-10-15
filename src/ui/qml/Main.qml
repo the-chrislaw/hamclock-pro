@@ -37,7 +37,8 @@ ApplicationWindow {
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
     Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
-    Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible; onActivated: timersLayer.visible = false }
+    Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
+    Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
     header: Rectangle {
@@ -242,7 +243,16 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 9
-        TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false }
+        TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false; onBigClockRequested: bigClockLayer.visible = true }
+    }
+
+    Rectangle {
+        id: bigClockLayer
+        anchors.fill: parent
+        visible: false
+        color: Theme.canvas
+        z: 10
+        BigClockPage { anchors.fill: parent; onCloseRequested: bigClockLayer.visible = false }
     }
 
     // Any touch counts as activity (passive: children still get their taps).
