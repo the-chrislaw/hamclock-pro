@@ -80,3 +80,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no removed test assertions. Screen blanking is software-only (black overlay) with unit tests; any options change calls touch() and so wakes a blanked screen (minor, not filed). WSPR parser ships with a fixture. Per-widget code was not read line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 12
+- Last reviewed commit: 286a07897de0a623ec659c1c9393524827e3d3e3 (PRs #383 to #398, 34 commits since ecf3fa7).
+- Build and 154/154 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station): nothing scrolls, panes show honest Live / Stale / Set up states, footers elide with an ellipsis at 800x480 (known, minor). The phone and landscape-phone layouts, WSPR-of-DE, satellite transmitter and footprint changes were not rendered this run.
+- Opened: [A] station card path line wraps with an orphan "·" (first noted in run 8). Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, scrolling views, password handling, new http:// or removed test assertions in added code. The tvOS SatelliteStore.swift fetches CelesTrak over HTTPS with no fixture or offline test (Swift side, minor, not filed). Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. One cosmetic defect filed; remaining risk is data freshness on the real Pi (#150).
