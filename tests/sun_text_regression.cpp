@@ -25,6 +25,11 @@ int main() {
     // Svalbard in midsummer / midwinter.
     CHECK(sun_line(1782086400, 78.2, 15.6) == "Sun up all day");    // 2026-06-22
     CHECK(sun_line(1797984000, 78.2, 15.6) == "Sun down all day");  // 2026-12-23
+    CHECK(sun_clock(6 * 3600 + 2 * 60) == "06:02z");
+    CHECK(sun_clock(86400 + 5) == "00:00z");
+    const QString a = sun_line(midnight, 51.48, 0.0, true);
+    CHECK(a.startsWith("Rise 0") && a.contains("z · Set 1") && !a.contains(" in "));
+    CHECK(sun_line(1782086400, 78.2, 15.6, true) == "Sun up all day");
     CHECK(sun_line(midnight, 95.0, 0.0).isEmpty());
     return failures ? 1 : 0;
 }

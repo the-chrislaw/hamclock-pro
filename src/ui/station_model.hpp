@@ -55,6 +55,7 @@ public:
     QString pathText() const;
     bool longPath() const { return long_path_; }
     Q_INVOKABLE void toggleLongPath();
+    Q_INVOKABLE void toggleSunAt();  // sunrise/sunset: "in 3h 12m" <-> "06:02z" (per session)
     Q_INVOKABLE QString bannerColor(int style) const;  // "" = theme accent; rainbow follows the clock
     Q_INVOKABLE QString bannerBackground(int style) const { return banner_background(style); }  // "" = none
     Q_INVOKABLE void cycleBanner();   // call -> ON AIR -> 73 DE call (per session)
@@ -78,6 +79,7 @@ private:
     QString dx_zone_;
     QTimer timer_;
     bool long_path_ = false;
+    bool sun_at_ = false;
     bool has_geometry_ = false;
     GeometryResult geometry_{};
     double de_lat_ = 0, de_lon_ = 0, dx_lat_ = 0, dx_lon_ = 0;
