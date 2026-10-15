@@ -34,6 +34,11 @@ EclipseSummary summarize_eclipse(UtcSeconds now, double lat, double lon) {
         out.local = QString("Max %1Z, %2% of Sun")
                         .arg(QDateTime::fromSecsSinceEpoch(loc.max_time.value, QTimeZone::utc()).toString("HH:mm"))
                         .arg(qRound(qMin(loc.magnitude, 1.0) * 100));
+    if (loc.start_time.value != 0 && loc.end_time.value != 0) {
+        const auto hm = [](UtcSeconds t) { return QDateTime::fromSecsSinceEpoch(t.value, QTimeZone::utc()).toString("HH:mm"); };
+        out.contacts = QString("%1%2 – %3%4Z").arg(loc.start_at_sunrise ? QStringLiteral("sunrise ") : QString()).arg(hm(loc.start_time))
+                           .arg(loc.end_at_sunset ? QStringLiteral("sunset ") : QString()).arg(hm(loc.end_time));
+    }
     switch (loc.visibility) {
     case EclipseVisibility::Visible: out.visibility = "Visible at DE"; break;
     case EclipseVisibility::Marginal: out.visibility = "Borderline at DE"; break;
