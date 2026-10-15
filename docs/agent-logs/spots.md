@@ -200,3 +200,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
 - Backlog item 15 (slice): `NAPREF` watch keyword and NEW PREFIX badge. `adif::prefix_of` (letters+first digit run, `EA8/` operating prefix wins), `AdifModel::prefixNeeded` (false without a loaded log). Badge priority NEW DXCC > NEW PREFIX > NEW BAND; NAPREF matches NEW PREFIX only, NABAND any needed. No AppSettings change (Settings hint text mentions NAPREF). Tests added; 151/151 pass locally, no warnings in touched files; ASan/UBSan left to CI. Not validated on device.
 - Not done: NAGrid (cluster spots carry no grid).
+
+## 2026-10-15 (run 35)
+- Step 1: nothing of mine open; #360 (ui, macOS/iPad/tvOS checks running) and #73 (stale docs) are other areas', left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter max-distance filter. `psk::within_distance` (grid centre vs DE; with a limit, reports lacking a usable grid are dropped), `PskModel` keeps the raw feed and re-filters on settings change; list, stats, farthest and map all use the filtered set. `AppSettings` gains `pskMaxKm` (options.ini `[psk] max_km`, 0 = any, backward compatible) and `savePskMaxKm`; Settings Spots card field saved with "Save cluster". Tests added; 151/151 pass locally. No new warnings in touched files; ASan/UBSan left to CI. No screenshot (card needs a callsign; one extra Settings field); not validated on device.
+- Not done: PSK by-call/grid filter, WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.

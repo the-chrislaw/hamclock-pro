@@ -94,6 +94,10 @@ int main(int argc, char** argv) {
         const auto f = psk::farthest_report(rs, 51.5, -0.1);
         check(f.found && f.call == "FAR" && f.band == "20m" && f.km > 9000 && f.km < 10500, "farthest: Japan from London");
         check(!psk::farthest_report({}, 0, 0).found && !psk::farthest_report({rs[2], rs[3]}, 0, 0).found, "farthest: none");
+        const auto near = psk::within_distance(rs, 51.5, -0.1, 2000);
+        check(near.size() == 1 && near[0].receiver == "NEAR", "within 2000 km: only the near grid; bad/coarse grids dropped");
+        check(psk::within_distance(rs, 51.5, -0.1, 12000).size() == 2, "within 12000 km: near and far");
+        check(psk::within_distance(rs, 51.5, -0.1, 0).size() == 4, "limit 0 keeps everything");
     }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
@@ -120,6 +124,10 @@ int main(int argc, char** argv) {
     check(model.state() == "unconfigured" && requested.isEmpty(), "no callsign -> unconfigured, no request");
 
     check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "save callsign");
+    check(!settings.savePskMaxKm(-1).isEmpty() && !settings.savePskMaxKm(20001).isEmpty() && settings.pskMaxKm() == 0,
+          "invalid PSK distance rejected");
+    check(settings.savePskMaxKm(5000).isEmpty() && settings.pskMaxKm() == 5000, "PSK distance saved");
+    check(settings.savePskMaxKm(0).isEmpty() && settings.pskMaxKm() == 0, "PSK distance reset");
     for (int i = 0; i < 20; ++i) app.processEvents();
     if (model.source()) QFile::remove(model.source()->cachePath());
     model.start();

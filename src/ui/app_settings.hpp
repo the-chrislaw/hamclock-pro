@@ -34,6 +34,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString otaSort READ otaSort NOTIFY optionsChanged)
     Q_PROPERTY(QString aprsHost READ aprsHost NOTIFY optionsChanged)
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
+    Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
     Q_PROPERTY(int aprsRadiusKm READ aprsRadiusKm NOTIFY optionsChanged)
     Q_PROPERTY(int udpSpotPort READ udpSpotPort NOTIFY optionsChanged)
     Q_PROPERTY(bool imperialUnits READ imperialUnits NOTIFY optionsChanged)
@@ -91,6 +92,7 @@ public:
     // APRS-IS server (receive-only) and search radius around DE.
     QString aprsHost() const { return aprs_host_; }
     int aprsPort() const { return aprs_port_; }
+    int pskMaxKm() const { return psk_max_km_; }
     int aprsRadiusKm() const { return aprs_radius_km_; }
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
     QString lookupService() const { return lookup_service_; }
@@ -133,6 +135,8 @@ public:
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
     // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
+    // PSKReporter display limit: only receivers within max_km of DE (0-20000, 0 = any).
+    Q_INVOKABLE QString savePskMaxKm(int max_km);
     Q_INVOKABLE QString saveImperialUnits(bool imperial);
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
     Q_INVOKABLE QString saveWeekStart(bool sunday);
@@ -172,6 +176,7 @@ private:
     int ota_max_age_min_ = 0;
     QString ota_sort_;  // "", "freq" or "dist" (empty = newest first)
     QString aprs_host_ = "rotate.aprs2.net";
+    int psk_max_km_ = 0;
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;

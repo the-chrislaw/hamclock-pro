@@ -278,6 +278,8 @@ Rectangle {
                         FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
+                    FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
+                                field.inputMethodHints: Qt.ImhDigitsOnly }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     RowLayout {
                         Layout.fillWidth: true
@@ -307,6 +309,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveOtaSort(otaSort.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.savePskMaxKm(parseInt(pskMax.text) || 0)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
                                         if (clusterError.text === "")
