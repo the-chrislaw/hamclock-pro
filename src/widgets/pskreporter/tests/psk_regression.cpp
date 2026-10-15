@@ -84,6 +84,9 @@ int main(int argc, char** argv) {
               "overlay: 4-char grid centre, path from DE");
         check(std::abs(layer.markers[1].where.latitude - (56.0 + 1 * 2.5 / 60 + 1.25 / 60)) < 1e-6, "overlay: 6-char centre");
         check(psk::overlay_layer(rs, 1).markers.size() == 1, "overlay: capped");
+        const auto hl = psk::heard_overlay_layer(rs);
+        check(hl.id == "psk-heard" && hl.markers.size() == 2 && hl.markers[0].color != layer.markers[0].color,
+              "overlay: heard layer is separate and coloured differently");
     }
     {
         std::vector<psk::Report> rs(5);
@@ -179,6 +182,12 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.count() == 6 && model.modes().contains("WSPR 5"), "WSPR spots merged into the card");
     check(model.heard().startsWith("I heard 5"), "WSPR heard-by-DE line shown");
+    {
+        bool heard_layer = false;
+        for (const auto& l : MapOverlays::instance().layers())
+            heard_layer = heard_layer || (l.id == psk::kHeardLayerId && !l.markers.empty() && l.markers[0].path_from_de);
+        check(heard_layer, "stations DE heard are drawn as their own layer");
+    }
     check(settings.savePskWspr(false).isEmpty(), "WSPR opt-out saved");
     check(model.heard().isEmpty(), "heard line cleared with WSPR off");
     check(model.count() == 1 && model.modes() == "CW 1", "WSPR off drops its spots");

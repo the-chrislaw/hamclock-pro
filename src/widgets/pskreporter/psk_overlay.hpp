@@ -9,11 +9,16 @@
 namespace hamclock::psk {
 
 inline constexpr char kOverlayLayerId[] = "psk";
+// Stations DE heard on WSPR (drawn in a different colour, separate layer).
+inline constexpr char kHeardLayerId[] = "psk-heard";
 
 // One marker per receiving station (newest report wins, input is newest
 // first), placed at the centre of its 4- or 6-character grid square with a
 // short path from DE. Receivers without a usable grid are not drawn.
 OverlayLayer overlay_layer(const std::vector<Report>& reports, int max_markers = 30);
+// Same placement for stations DE heard (reports already swapped by heard_as_reports):
+// layer kHeardLayerId, amber markers.
+OverlayLayer heard_overlay_layer(const std::vector<Report>& swapped, int max_markers = 30);
 
 // Farthest receiver from DE among reports with a 4/6-character grid (distance
 // to the grid centre). found is false when no report has a usable grid.
