@@ -43,6 +43,9 @@ public:
     QString alert() const { return alert_; }
     // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
     Q_INVOKABLE void selectRow(int index);
+    // Opens (never toggles) the detail box for the listed satellite whose short name matches the
+    // map marker's label, case-insensitively; false when it is not in the list.
+    Q_INVOKABLE bool selectByName(const QString& name);
     // Adds the open detail's satellite to the map tracks, or removes it if already tracked; saved
     // to [satellites] tracked= in options.ini (at most kMaxTracked, the oldest choice drops off).
     Q_INVOKABLE void toggleTracked();

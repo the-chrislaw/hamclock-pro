@@ -255,6 +255,17 @@ void SatellitesModel::selectRow(int index) {
     refresh_detail();
 }
 
+bool SatellitesModel::selectByName(const QString& name) {
+    for (int i = 0; i < static_cast<int>(listed_.size()); ++i) {
+        if (satellite_short_name(QString::fromStdString(listed_[i].tle.name)).compare(name, Qt::CaseInsensitive) != 0) continue;
+        selected_ = i;
+        detail_timer_.start();
+        refresh_detail();
+        return true;
+    }
+    return false;
+}
+
 void SatellitesModel::toggleTracked() {
     if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_) return;
     const QString name = satellite_short_name(QString::fromStdString(listed_[selected_].tle.name));

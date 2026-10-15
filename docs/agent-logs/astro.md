@@ -190,3 +190,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite footprint (backlog D, #246): `footprint_ring()` gives the horizon circle (angular radius acos(R/(R+h))) as 48 faint dots in the "satellites" map layer for each tracked bird (overlay API has markers only, so a dotted ring rather than a polygon). Tests: equator ring is a 20.3 deg circle, near-pole longitudes stay in range, bad input empty. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI.
 - Not mine: #393 (tvos) CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
 - Next: settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 36
+- Marker tap opens the satellite detail box (backlog D, #246): `SatellitesModel::selectByName()` opens (never toggles) the detail for the listed satellite matching the tapped marker's label; the map tap menu (shared `MapTapMenu.qml`, small backward-compatible change: remembers the marker layer, adds a "Details" button only for layer "satellites") calls it through `widgetRegistry.model("satellites")`. Tests: unknown name opens nothing, case-insensitive match, re-select keeps open. Full ctest 154/154 passes; not rendered on a screen (the box shows in the Satellites pane, so the pane must be on screen); ASan/UBSan left to CI.
+- Not mine: #403/#404 (other areas) and #73 conflicting left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: settings editor for TLE, annular/total contacts.
