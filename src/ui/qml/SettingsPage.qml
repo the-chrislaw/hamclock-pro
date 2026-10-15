@@ -297,6 +297,18 @@ Rectangle {
                     }
                     FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
                                 field.inputMethodHints: Qt.ImhDigitsOnly }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        Text { text: "Show on map:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
+                        Repeater {
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            AppButton { property bool on: appSettings.mapSourceVisible(modelData[0]); checkable: false
+                                        text: modelData[1] + (on ? ": on" : ": off"); primary: on
+                                        Connections { target: appSettings; function onOptionsChanged() { on = appSettings.mapSourceVisible(modelData[0]) } }
+                                        onClicked: appSettings.saveMapSourceVisible(modelData[0], !on) }
+                        }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     RowLayout {
                         Layout.fillWidth: true

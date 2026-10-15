@@ -142,6 +142,13 @@ int main(int argc, char** argv) {
     model.setMapVisible(false);
     check(MapOverlays::instance().layers().empty(), "map off removes the layer");
     model.setMapVisible(true);
+    check(settings.mapSourceVisible("psk") && !settings.saveMapSourceVisible("nope", false).isEmpty(),
+          "map source defaults on, unknown key rejected");
+    check(settings.saveMapSourceVisible("psk", false).isEmpty() && !settings.mapSourceVisible("psk") &&
+              MapOverlays::instance().layers().empty(),
+          "Settings toggle hides the PSK layer");
+    check(settings.saveMapSourceVisible("psk", true).isEmpty() && MapOverlays::instance().layers().size() == 1,
+          "Settings toggle shows the PSK layer again");
     now = now.addSecs(25 * 60);
     model.source()->setClock([&] { return now; });
     emit model.ageChanged();

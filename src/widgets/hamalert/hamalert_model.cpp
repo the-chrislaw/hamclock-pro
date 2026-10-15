@@ -6,6 +6,13 @@ namespace hamclock {
 
 HamAlertModel::HamAlertModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("hamalert", "HamAlert", parent), settings_(context.settings), client_(std::move(factory), this) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("hamalert");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("hamalert");
+            if (v != map_visible_) setMapVisible(v);
+        });
+    }
     connect(&client_, &TelnetClient::lineReceived, this, &HamAlertModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &HamAlertModel::on_state);
     if (settings_) connect(settings_, &AppSettings::accountsChanged, this, &HamAlertModel::start);

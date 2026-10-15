@@ -93,7 +93,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 8. HamAlert pane. 9. Nearby APRS pane (APRS-IS, radius filter, receive-only) — ✅ first slice (card, fixed 100 km; settings and map overlay later). 10. Meshtastic pane and map links. 11. Band-activity heatmap (band × continent) — ✅ first slice (counts over the DX cluster's recent spots, shown as a "Busiest band" line in the DX cluster card; standalone heatmap pane, PSK/WSPR/RBN sources later).
 12. 🟡 (WSJT-X, N1MM/DXLog `<spot>` and plain `DX de` lines, opt-in port, localhost/LAN, and the "by me"/"all" scope in Settings done; multicast, "UDP sets DX" and Log4OM not) UDP spot input (WSJT-X, N1MM/DXLog, Log4OM), multicast, "UDP sets DX", "by me"/"all".
 13. Cluster login with SSID and native commands after login.
-14. Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
+14. 🟡 (per-source map on/off for DX/PSK/POTA/HamAlert/APRS/Log in Settings done; label styles and minimum label distance not) Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
 15. 🟡 (ADIF map overlay of logged stations at their grid centre done; NADXCC/NABAND/NAPREF watch keywords done, NAGrid not) ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
 16. 🟡 (xOTA reference parsed from comments and shown as a badge on DX cluster rows; IOTA reference names not done) IOTA reference names and xOTA markers parsed from comments.
 

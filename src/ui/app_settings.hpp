@@ -147,6 +147,9 @@ public:
     Q_INVOKABLE QString saveOverscan(int percent);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
+    // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
+    Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
+    Q_INVOKABLE QString saveMapSourceVisible(const QString& key, bool visible);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -184,6 +187,7 @@ private:
     int udp_port_ = 0;
     bool udp_lan_ = false;
     bool udp_by_me_ = false;
+    QStringList map_hidden_;
     bool imperial_ = false;
     int date_order_ = 0;
     bool clock_12h_ = false;

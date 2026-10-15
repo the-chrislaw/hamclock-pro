@@ -9,6 +9,13 @@ namespace hamclock {
 
 AprsModel::AprsModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("aprs", "Nearby APRS", parent), settings_(context.settings), factory_(std::move(factory)) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("aprs");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("aprs");
+            if (v != map_visible_) setMapVisible(v);
+        });
+    }
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &AprsModel::connect_now);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &AprsModel::start);
