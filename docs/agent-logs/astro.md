@@ -175,3 +175,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Docs only: the Status row for Satellites still said "no sunlit/eclipsed"; the detail box already shows it (`SatellitePropagator::sunlit`, covered in satellites_regression). Row corrected. No code change.
 - Not mine: #371/#372 CI still running at start, #73 conflicting; left alone. Balloons blocked on #314. Remaining D items need shared surfaces (settings editor for TLE, hams.at key via credential store, Set as DX, map-marker tap from G) or hardware-grade ephemeris (annular/total contacts), so no larger slice was safe this run.
 - Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX once G's tap mechanism lands.
+
+## 2026-10-15 (UTC), run 33
+- Map tap details (backlog D, #246 first slice): G's `markerTapped` / tap menu now exists, so the satellite, planet and beacon overlay markers carry a `detail` line (satellite: name and altitude; beacon: frequency and location; planet: name). Tests extended in satellites_regression, beacons_regression, planets_regression. Not done: full satellite detail box on tap (SatNOGS transmitters, Doppler, passes). Not rendered on a screen; the popup is G's existing menu. ASan/UBSan left to CI.
+- Not mine: #383 had no checks at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: satellite detail box from the tap menu, settings editor for TLE, hams.at key, annular/total contacts.

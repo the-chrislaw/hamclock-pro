@@ -107,6 +107,7 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
         OverlayMarker m;
         m.where = Location{now_pt.lat_deg, now_pt.lon_deg};
         m.call = satellite_short_name(QString::fromStdString(tle.name));
+        m.detail = QString("%1, altitude %2 km").arg(QString::fromStdString(tle.name)).arg(qRound(now_pt.alt_km));
         m.color = QColor("#4fb0c6");
         m.shape = OverlayShape::Triangle;
         m.size_px = 5;

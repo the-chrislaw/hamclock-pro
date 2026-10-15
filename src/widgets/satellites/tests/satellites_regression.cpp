@@ -2,6 +2,7 @@
 // Vallado verification case (object 88888), plus structural checks on a real
 // amateur-satellite TLE from the CelesTrak fixture. Offline.
 #include "../../../domain/astro_satellite.hpp"
+#include "../satellites_model.hpp"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -24,6 +25,12 @@ int main(int argc, char** argv) {
         "2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518   105"};
     SatellitePropagator p(ref);
     check(p.valid(), "88888 parses");
+    {
+        const OverlayLayer layer = satellite_overlay_layer({ref}, p.epoch_unix());
+        const OverlayMarker& now_marker = layer.markers.back();
+        check(!now_marker.call.isEmpty() && now_marker.detail.contains("altitude")
+                  && now_marker.detail.contains("km"), "satellite marker carries a tap detail");
+    }
     double r[3];
     check(p.teme(p.epoch_unix(), r), "88888 propagates at epoch");
     // Published t=0 state vector, km.

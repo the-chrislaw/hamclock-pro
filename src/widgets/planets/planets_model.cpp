@@ -34,6 +34,7 @@ OverlayLayer planet_overlay_layer(UtcSeconds now) {
         const PlanetSubpoint s = planet_subpoint(p, now);
         m.where = {s.latitude_deg, s.longitude_deg};
         m.call = QString::fromLatin1(planet_name(p));
+        m.detail = QString("%1 is overhead here").arg(m.call);
         m.color = QColor(colors[i]);
         m.shape = OverlayShape::Dot;
         m.size_px = 4;
