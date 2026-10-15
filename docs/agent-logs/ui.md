@@ -138,3 +138,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 30)
 - Backlog A13 slice: Settings > "Callsign banner" colour (Theme, Amber, Green, Red, White, Rainbow), saved in `options.ini` (`banner/style`, `AppSettings.saveBannerStyle`); `banner_color` in `banner_text.hpp` (rainbow turns hue once per 12 s from the clock), `banner-text-regression` extended. Text size is unchanged, so layout is the same; 800x480 and 1024x600 render with exit 0 and no truncation. Custom title and background colour still pending. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 31)
+- Backlog A13 slice: Settings > "Callsign banner" has a custom title (max 24 characters, `banner/title` in `options.ini`, `AppSettings.saveBannerTitle`); when set, tapping the banner gets a fourth step showing it (`banner_text.hpp`, `banner-text-regression` and `widget-core-regression` extended). Background colour still pending. Settings is not reachable from `--screenshot`, so its layout was not checked visually; dashboard renders at 800x480, 1024x600, 1920x1080 with exit 0.
+- Fixed a latent crash: `AppSettings::station_` was default-initialised, so with no station file the DE/DX coordinates were indeterminate and `BandsModel` randomly threw "invalid location" (QML smoke tests aborted ~60 % of runs once the class layout changed). Now value-initialised (zeros). ctest 151/151, repeated smoke runs 0/15 failures; ASan/UBSan subset (banner, widget-core, smoke) clean, full sanitizer run left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

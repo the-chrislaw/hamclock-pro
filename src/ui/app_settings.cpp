@@ -111,6 +111,7 @@ void AppSettings::loadOptions() {
     week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
     banner_style_ = ini.value("banner/style", 0).toInt();
     if (banner_style_ < 0 || banner_style_ >= kBannerStyles) banner_style_ = 0;
+    banner_title_ = ini.value("banner/title").toString().trimmed().left(kBannerTitleMax);
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
@@ -494,6 +495,18 @@ QString AppSettings::saveBannerStyle(int style) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the banner colour.";
     banner_style_ = style;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBannerTitle(const QString& title) {
+    const QString t = title.trimmed().left(kBannerTitleMax);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (t.isEmpty()) ini.remove("banner/title");
+    else ini.setValue("banner/title", t);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner title.";
+    banner_title_ = t;
     emit optionsChanged();
     return {};
 }

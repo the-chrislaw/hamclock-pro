@@ -41,6 +41,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int dateOrder READ dateOrder NOTIFY optionsChanged)
     Q_PROPERTY(bool clock12h READ clock12h NOTIFY optionsChanged)
     Q_PROPERTY(int bannerStyle READ bannerStyle NOTIFY optionsChanged)
+    Q_PROPERTY(QString bannerTitle READ bannerTitle NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
@@ -80,6 +81,7 @@ public:
     int dateOrder() const { return date_order_; }                      // 0 D M Y, 1 M D Y, 2 ISO
     bool clock12h() const { return clock_12h_; }
     int bannerStyle() const { return banner_style_; }
+    QString bannerTitle() const { return banner_title_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
@@ -143,6 +145,7 @@ public:
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
     Q_INVOKABLE QString saveWeekStart(bool sunday);
     Q_INVOKABLE QString saveBannerStyle(int style);
+    Q_INVOKABLE QString saveBannerTitle(const QString& title);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
@@ -170,7 +173,7 @@ private:
     QString writeAccounts();
 
     QString config_dir_, station_path_, load_error_;
-    StationSettings station_;
+    StationSettings station_{};  // value-init: coordinates are 0, never indeterminate, when no station file exists
     bool configured_ = false;
     QString cluster_host_;
     int cluster_port_ = 7300;
@@ -193,6 +196,7 @@ private:
     bool clock_12h_ = false;
     bool week_sunday_ = false;
     int banner_style_ = 0;
+    QString banner_title_;
     int overscan_ = 0;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;

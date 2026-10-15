@@ -179,6 +179,15 @@ int main(int argc, char** argv) {
         check(ov2.overscanPercent() == 6, "overscan survives restart");
     }
     {
+        QTemporaryDir bt_dir;
+        AppSettings bt({}, bt_dir.path());
+        check(bt.bannerTitle().isEmpty(), "banner title off by default");
+        check(bt.saveBannerTitle("  Club Station ").isEmpty() && bt.bannerTitle() == "Club Station", "banner title saved trimmed");
+        AppSettings bt2({}, bt_dir.path());
+        check(bt2.bannerTitle() == "Club Station", "banner title survives restart");
+        check(bt2.saveBannerTitle("").isEmpty() && bt2.bannerTitle().isEmpty(), "banner title cleared");
+    }
+    {
         // Pane slots: defaults, validation, persistence.
         QTemporaryDir pane_dir;
         AppSettings panes({}, pane_dir.path());
