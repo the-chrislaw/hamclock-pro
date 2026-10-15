@@ -38,6 +38,8 @@ signals:
 
 private:
     void applyFilter();
+    void syncWspr();
+    void mergeRaw();
     void refreshState();
     void refreshStateImpl();
     void publishOverlay();
@@ -46,6 +48,8 @@ private:
     Transport transport_;
     PolledSource* source_ = nullptr;
     QString call_;
+    PolledSource* wspr_source_ = nullptr;
+    psk::Feed psk_raw_, wspr_raw_;
     psk::Feed feed_, raw_;  // feed_ = raw_ limited to the max distance setting
     bool map_visible_ = true;
 };
