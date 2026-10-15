@@ -185,3 +185,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #389 (iPad QML plugins, green). Satellite detail box action (backlog D, #246): "Set as DX (sub-satellite point)" in the Satellites detail box, via `SatellitesModel::setAsDx()` (explicit tap only; DE, callsign and zone untouched; error text shown if no satellite is open). Test extended in satellites_model_regression. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI. Not done: footprint on the map.
 - Not mine: #390 CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
 - Next: footprint, settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 35
+- Satellite footprint (backlog D, #246): `footprint_ring()` gives the horizon circle (angular radius acos(R/(R+h))) as 48 faint dots in the "satellites" map layer for each tracked bird (overlay API has markers only, so a dotted ring rather than a polygon). Tests: equator ring is a 20.3 deg circle, near-pole longitudes stay in range, bad input empty. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI.
+- Not mine: #393 (tvos) CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: settings editor for TLE, hams.at key, annular/total contacts.

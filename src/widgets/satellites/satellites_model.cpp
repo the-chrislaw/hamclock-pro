@@ -84,6 +84,23 @@ QStringList toggle_tracked_names(const QStringList& current, const QString& name
     return out;
 }
 
+std::vector<Location> footprint_ring(double lat_deg, double lon_deg, double alt_km, int points) {
+    std::vector<Location> ring;
+    constexpr double kRe = 6371.0, kPi = 3.14159265358979323846, kRad = kPi / 180.0;
+    if (points < 3 || alt_km <= 0) return ring;
+    const double rho = std::acos(kRe / (kRe + alt_km)); // angular radius of the horizon circle
+    const double la = lat_deg * kRad, lo = lon_deg * kRad;
+    for (int i = 0; i < points; ++i) {
+        const double brg = 2 * kPi * i / points;
+        const double lat = std::asin(std::sin(la) * std::cos(rho) + std::cos(la) * std::sin(rho) * std::cos(brg));
+        double lon = lo + std::atan2(std::sin(brg) * std::sin(rho) * std::cos(la),
+                                     std::cos(rho) - std::sin(la) * std::sin(lat));
+        lon = std::remainder(lon, 2 * kPi);
+        ring.push_back(Location{lat / kRad, lon / kRad});
+    }
+    return ring;
+}
+
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time) {
     OverlayLayer layer;
     layer.id = "satellites";
@@ -104,6 +121,14 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
         }
         SubSatellitePoint now_pt;
         if (!p.sub_point(unix_time, now_pt)) continue;
+        for (const Location& w : footprint_ring(now_pt.lat_deg, now_pt.lon_deg, now_pt.alt_km, 48)) {
+            OverlayMarker f;
+            f.where = w;
+            f.color = QColor("#4fb0c6");
+            f.color.setAlpha(120);
+            f.size_px = 1;
+            layer.markers.push_back(f);
+        }
         OverlayMarker m;
         m.where = Location{now_pt.lat_deg, now_pt.lon_deg};
         m.call = satellite_short_name(QString::fromStdString(tle.name));
