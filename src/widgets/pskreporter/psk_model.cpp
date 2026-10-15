@@ -14,7 +14,15 @@ constexpr int kRecentRows = 6;
 
 PskModel::PskModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport) {
-    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
+    if (settings_) {
+        connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            if (!raw_.ok) return;
+            applyFilter();
+            emit reportsChanged();
+            publishOverlay();
+        });
+    }
 }
 
 PskModel::~PskModel() { MapOverlays::instance().remove_layer(psk::kOverlayLayerId); }
@@ -30,12 +38,20 @@ void PskModel::publishOverlay() {
     else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
 }
 
+void PskModel::applyFilter() {
+    feed_ = raw_;
+    if (settings_ && settings_->pskMaxKm() > 0)
+        feed_.reports = psk::within_distance(raw_.reports, settings_->deLatitude(), settings_->deLongitude(),
+                                             settings_->pskMaxKm());
+}
+
 void PskModel::start() {
     const QString call = settings_ ? settings_->callsign().trimmed().toUpper() : QString();
     if (source_ && call == call_) return;
     delete source_;
     source_ = nullptr;
     feed_ = {};
+    raw_ = {};
     call_ = call;
     emit reportsChanged();
     publishOverlay();
@@ -49,7 +65,8 @@ void PskModel::start() {
                                transport_, this);
     source_->setClock([this] { return now(); });
     connect(source_, &PolledSource::updated, this, [this] {
-        feed_ = psk::parse_reports(source_->body());
+        raw_ = psk::parse_reports(source_->body());
+        applyFilter();
         emit reportsChanged();
         refreshState();
     });

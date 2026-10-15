@@ -22,4 +22,8 @@ struct Farthest {
 };
 Farthest farthest_report(const std::vector<Report>& reports, double de_lat, double de_lon);
 
+// Reports whose receiver grid centre is within max_km of DE, order kept. max_km <= 0 keeps
+// everything; with a limit set, reports without a usable grid are dropped (distance unknown).
+std::vector<Report> within_distance(const std::vector<Report>& reports, double de_lat, double de_lon, double max_km);
+
 } // namespace hamclock::psk

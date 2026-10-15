@@ -97,6 +97,8 @@ void AppSettings::loadOptions() {
     aprs_port_ = ap > 0 && ap < 65536 ? ap : 14580;
     const int ar = ini.value("aprs/radius_km", 100).toInt();
     aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
+    const int pk = ini.value("psk/max_km", 0).toInt();
+    psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
@@ -395,6 +397,17 @@ QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
     aprs_radius_km_ = radius_km;
     emit optionsChanged();
     if (changed) emit aprsChanged();
+    return {};
+}
+
+QString AppSettings::savePskMaxKm(int max_km) {
+    if (max_km < 0 || max_km > 20000) return "PSKReporter distance is 0-20000 km (0 = any).";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/max_km", max_km);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the PSKReporter distance.";
+    psk_max_km_ = max_km;
+    emit optionsChanged();
     return {};
 }
 

@@ -37,6 +37,7 @@ signals:
     void reportsChanged();
 
 private:
+    void applyFilter();
     void refreshState();
     void refreshStateImpl();
     void publishOverlay();
@@ -45,7 +46,7 @@ private:
     Transport transport_;
     PolledSource* source_ = nullptr;
     QString call_;
-    psk::Feed feed_;
+    psk::Feed feed_, raw_;  // feed_ = raw_ limited to the max distance setting
     bool map_visible_ = true;
 };
 
