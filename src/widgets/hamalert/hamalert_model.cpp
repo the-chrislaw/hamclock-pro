@@ -79,7 +79,8 @@ QVariantList HamAlertModel::recent() const {
     for (size_t i = 0; i < spots_.size() && int(i) < kShown; ++i) {
         const auto& s = spots_[i];
         out.push_back(QVariantMap{{"dx", s.dx}, {"frequency", QString::number(s.frequency_khz, 'f', 1)}, {"band", s.band},
-                                  {"mode", s.mode}, {"time", s.time.toString("HH:mm") + "Z"}, {"comment", s.comment}});
+                                  {"mode", s.mode}, {"time", s.time.toString("HH:mm") + "Z"}, {"comment", s.comment},
+                                  {"ota", s.ota_ref.isEmpty() ? QString() : s.ota_program + " " + s.ota_ref}});
     }
     return out;
 }
