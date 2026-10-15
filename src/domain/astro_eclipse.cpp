@@ -86,7 +86,7 @@ const char* solar_eclipse_type_name(SolarEclipseType t) {
 EclipseLocal eclipse_visibility(const SolarEclipse& e, double lat, double lon) {
     if (!std::isfinite(lat) || !std::isfinite(lon) || lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
         throw std::invalid_argument("invalid location");
-    EclipseLocal out{EclipseVisibility::None, 180.0, 0.0};
+    EclipseLocal out{EclipseVisibility::None, 180.0, 0.0, UtcSeconds{0}, 0.0};
     const double la = rad(lat);
     for (int s = -240; s <= 240; s += 2) {
         const UtcSeconds t{e.greatest.value + s * 60};
@@ -101,7 +101,12 @@ EclipseLocal eclipse_visibility(const SolarEclipse& e, double lat, double lon) {
         double c = std::sin(se) * std::sin(me) + std::cos(se) * std::cos(me) * std::cos(da);
         c = std::fmax(-1.0, std::fmin(1.0, c));
         const double sep = std::acos(c) * 180.0 / kPi;
-        if (sep < out.min_separation_deg) { out.min_separation_deg = sep; out.sun_elevation_deg = sun_el; }
+        if (sep < out.min_separation_deg) { out.min_separation_deg = sep; out.sun_elevation_deg = sun_el; out.max_time = t; }
+    }
+    if (out.max_time.value != 0) {
+        // Semi-diameters: Sun 0.2666 deg (mean), Moon from its distance at the moment of maximum.
+        const double rs = 0.2666, rm = std::asin(1737.4 / moon_position(out.max_time).distance_km) * 180.0 / kPi;
+        out.magnitude = std::fmax(0.0, (rs + rm - out.min_separation_deg) / (2 * rs));
     }
     if (out.min_separation_deg < 0.40) out.visibility = EclipseVisibility::Visible;
     else if (out.min_separation_deg < 0.64) out.visibility = EclipseVisibility::Marginal;
