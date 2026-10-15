@@ -171,3 +171,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 38)
 - Backlog A0d slice: page dots on the portrait phone pane (window of up to 7 dots around the current widget, passive so taps and swipes still work; `PaneSlot.qml`). `pane-keys-regression` extended (source-level). Rendered at 390x844 (dots sit at the pane bottom, no clipping) and 1024x600 with exit 0 and no QML warnings; other sizes unchanged. ctest 154/154; ASan/UBSan left to CI. Dedicated landscape phone layout still pending. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 39)
+- Backlog A0d slice: dedicated landscape phone layout (height < 440 and wider than tall): station column, map left, one pane on the right (30 % width), `Main.qml` `phoneWide`; the page-grid inner column became a right-to-left `GridLayout`. 800x480, 1024x600 and portrait unchanged. Rendered 844x390: no clipping. A0d now complete. Not validated on a device.

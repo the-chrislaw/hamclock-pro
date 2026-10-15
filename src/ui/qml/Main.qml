@@ -29,6 +29,8 @@ ApplicationWindow {
 
     // Phone portrait (A0d): one column, station strip over one pane over the map.
     readonly property bool phone: width < 600 && height > width
+    // Phone landscape (A0d): map left, one pane right of it; 800x480 Pi panels keep the 3-pane grid.
+    readonly property bool phoneWide: height < 440 && width > height
     Binding { target: Theme; property: "phone"; value: window.phone }
 
     readonly property real overscanX: width * appSettings.overscanPercent / 100
@@ -89,22 +91,27 @@ ApplicationWindow {
             onTimersRequested: timersLayer.visible = true
         }
 
-        ColumnLayout {
+        GridLayout {
+            columns: window.phoneWide ? 2 : 1
+            layoutDirection: window.phoneWide ? Qt.RightToLeft : Qt.LeftToRight
+            rowSpacing: Theme.gap
+            columnSpacing: Theme.gap
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Theme.gap
 
             RowLayout {
                 id: paneRow
-                Layout.fillWidth: true
-                Layout.preferredHeight: window.phone ? page.height * 0.22 : Math.max(150 * Theme.scale, page.height * 0.4)
-                Layout.maximumHeight: Layout.preferredHeight
-                Layout.minimumHeight: Layout.preferredHeight
+                Layout.fillWidth: !window.phoneWide
+                Layout.fillHeight: window.phoneWide
+                Layout.preferredWidth: window.phoneWide ? page.width * 0.3 : -1
+                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22 : Math.max(150 * Theme.scale, page.height * 0.4))
+                Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
+                Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
                 spacing: Theme.gap
                 function slotAt(i) { return paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
-                    model: window.phone ? 1 : 3
+                    model: (window.phone || window.phoneWide) ? 1 : 3
                     PaneSlot {
                         index: modelData
                         paused: paneChooser.visible || paneOptions.visible
