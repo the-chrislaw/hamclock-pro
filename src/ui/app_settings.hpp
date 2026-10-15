@@ -5,6 +5,7 @@
 // they never sit next to shareable settings. All files are under the per-user
 // config directory unless an explicit station path is given.
 #include "../platform/settings.hpp"
+#include <QHash>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -164,6 +165,12 @@ public:
     // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
     Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
     Q_INVOKABLE QString saveMapSourceVisible(const QString& key, bool visible);
+    // Spot label style per source: -1 = the layer's own, else 0 None, 1 Prefix, 2 Call, 3 Dot.
+    Q_INVOKABLE int mapSourceLabel(const QString& key) const { return map_label_.value(key, -1); }
+    Q_INVOKABLE QString saveMapSourceLabel(const QString& key, int mode);
+    // Minimum distance between spot labels in px (0 = each layer's own).
+    Q_INVOKABLE int mapMinLabelPx() const { return map_min_label_px_; }
+    Q_INVOKABLE QString saveMapMinLabelPx(int px);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -203,6 +210,8 @@ private:
     bool udp_lan_ = false;
     bool udp_by_me_ = false;
     QStringList map_hidden_;
+    QHash<QString, int> map_label_;
+    int map_min_label_px_ = 0;
     bool imperial_ = false;
     int date_order_ = 0;
     bool clock_12h_ = false;

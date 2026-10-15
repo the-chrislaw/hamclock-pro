@@ -1,4 +1,5 @@
 #include "adif_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "adif_overlay.hpp"
 #include "../dxcluster/dxcc_table.hpp"
 #include "../../map/overlay.hpp"
@@ -18,6 +19,7 @@ AdifModel::AdifModel(const WidgetContext& context, QObject* parent)
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
             const bool v = settings_->mapSourceVisible("adif");
             if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
         });
     }
     connect(&watcher_, &QFileSystemWatcher::fileChanged, this, [this] { reload(); });
@@ -34,7 +36,9 @@ void AdifModel::setMapVisible(bool visible) {
 // Only while a log is loaded; clearing or losing the file removes the layer.
 void AdifModel::publishOverlay() {
     if (!map_visible_ || !loaded_) { MapOverlays::instance().remove_layer(adif::kOverlayLayerId); return; }
-    MapOverlays::instance().set_layer(adif::overlay_layer(qsos_));
+    auto layer = adif::overlay_layer(qsos_);
+    apply_spot_label_style(layer, settings_, "adif");
+    MapOverlays::instance().set_layer(layer);
 }
 
 void AdifModel::start() { reload(); }
