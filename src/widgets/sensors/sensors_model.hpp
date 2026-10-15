@@ -15,6 +15,7 @@ class SensorsModel : public WidgetModel {
     Q_PROPERTY(bool hasCpuTemp READ hasCpuTemp NOTIFY changed)
     Q_PROPERTY(QString cpuTemp READ cpuTemp NOTIFY changed)
     Q_PROPERTY(QString cpuNote READ cpuNote NOTIFY changed)
+    Q_PROPERTY(QString cpuPeak READ cpuPeak NOTIFY changed)
     Q_PROPERTY(bool hasWifi READ hasWifi NOTIFY changed)
     Q_PROPERTY(QString wifi READ wifi NOTIFY changed)
     Q_PROPERTY(bool hasEnv READ hasEnv NOTIFY changed)
@@ -36,6 +37,7 @@ public:
     bool hasCpuTemp() const { return temp_.has_value(); }
     QString cpuTemp() const;
     QString cpuNote() const;
+    QString cpuPeak() const;
     bool hasWifi() const { return wifi_.has_value(); }
     QString wifi() const;
     bool hasEnv() const { return env_.any(); }
@@ -56,6 +58,7 @@ private:
     QString root_, wireless_, diskPath_, iio_;
     sensors::EnvReading env_;
     sensors::PressureHistory pressure_;
+    sensors::PeakHistory cpuPeak_;
     std::function<std::optional<platform::ClockSync>()> clockReader_;
     std::optional<platform::ClockSync> clock_;
     AppSettings* settings_ = nullptr;
