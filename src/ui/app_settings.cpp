@@ -6,6 +6,7 @@
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
 #include <QDir>
+#include <QHostAddress>
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
@@ -107,6 +108,11 @@ void AppSettings::loadOptions() {
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
+    {
+        const QString g = ini.value("udp/group").toString().trimmed();
+        QHostAddress a;
+        udp_group_ = a.setAddress(g) && a.protocol() == QAbstractSocket::IPv4Protocol && a.isMulticast() ? g : QString();
+    }
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
     map_hidden_ = ini.value("map_sources/hidden").toStringList();
     for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "adif"}) {
@@ -490,6 +496,22 @@ QString AppSettings::saveUdpSpots(int port, bool lan) {
     udp_port_ = port;
     udp_lan_ = lan;
     emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveUdpGroup(const QString& group) {
+    const QString g = group.trimmed();
+    QHostAddress a;
+    if (!g.isEmpty() && !(a.setAddress(g) && a.protocol() == QAbstractSocket::IPv4Protocol && a.isMulticast()))
+        return "Multicast group must be empty or an IPv4 address from 224.0.0.0 to 239.255.255.255.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/group", g);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP multicast group.";
+    if (udp_group_ != g) {
+        udp_group_ = g;
+        emit optionsChanged();
+    }
     return {};
 }
 

@@ -358,6 +358,7 @@ Rectangle {
                         AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
                                     text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
                                     onClicked: lan = !lan; Layout.preferredWidth: 2 }
+                        FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup; Layout.preferredWidth: 1 }
                         AppButton { id: udpMe; property bool me: appSettings.udpSpotByMe; checkable: false
                                     text: me ? "UDP spots: by me" : "UDP spots: all"; primary: me
                                     onClicked: me = !me; Layout.preferredWidth: 1 }
@@ -436,6 +437,8 @@ Rectangle {
                                             clusterError.text = appSettings.savePskMatch(pskMatch.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveUdpGroup(udpGroup.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpScope(udpMe.me)
                                     } }
