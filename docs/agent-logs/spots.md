@@ -51,7 +51,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: nothing of mine open; #164 (space), #161 (map) CI still running and #73 not mine, left alone. No open `[C]` qa issues.
 - Backlog item 12 (slice): UDP spot input. `parse_udp_spot` accepts N1MM+/DXLog-style `<spot>` XML (flat elements only; DTD/entities rejected, 4 KiB cap, call and frequency validated, implausible timestamps replaced by arrival time) and plain "DX de" lines. `UdpSpotListener` binds only when the user sets a port in Settings: 127.0.0.1 by default, all IPv4 only with the "Accept from LAN" box; no multicast. Spots join the DX cluster list. AppSettings gets `udp/port` (0 = off, else 1024-65535) and `udp/lan` (minimal, backward compatible); Settings DX cluster card gets the two controls. Tests pass normally and under ASan/UBSan (LeakSanitizer only reports libproxy allocations from Qt's system-proxy lookup in this sandbox, shared with the existing QML tests; the new socket opts out of proxies).
 - The XML field names follow N1MM's documented spot broadcast but are not verified against a real capture; tests use synthetic datagrams. Not validated on device; Settings controls not screenshotted (no direct way to render the page).
-- Not done: multicast, "UDP sets DX", by me/all filter, Log4OM format.
+- Not done: WSJT-X binary protocol, multicast, "UDP sets DX", by me/all filter, Log4OM format.
 - Next: HamAlert, OTA filter controls in Settings, WWFF/IOTA; DXCC table still needs cty.dat allowlisted (#136).
 
 ## 2026-10-14 (run 10)
