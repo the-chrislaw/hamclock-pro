@@ -284,6 +284,46 @@ Rectangle {
             }
 
             Card {
+                title: "Screen blanking"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Black overlay for kiosks (the backlight stays on). Tap to wake; inside the night window it blanks again after 1 minute."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [0, 5, 15, 30, 60]
+                            AppButton {
+                                text: modelData === 0 ? "Idle: off" : "Idle " + modelData + " min"
+                                primary: appSettings.blankIdleMinutes === modelData
+                                onClicked: appSettings.saveBlanking(modelData, appSettings.blankOffHour, appSettings.blankOnHour)
+                            }
+                        }
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [[-1, -1, "Night: off"], [22, 6, "22:00-06:00"], [23, 7, "23:00-07:00"], [0, 6, "00:00-06:00"]]
+                            AppButton {
+                                text: modelData[2]
+                                primary: appSettings.blankOffHour === modelData[0] && appSettings.blankOnHour === modelData[1]
+                                onClicked: appSettings.saveBlanking(appSettings.blankIdleMinutes, modelData[0], modelData[1])
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {

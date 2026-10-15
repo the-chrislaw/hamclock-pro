@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "app_settings.hpp"
 #include "banner_text.hpp"
+#include "blanking.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
@@ -127,6 +128,12 @@ void AppSettings::loadOptions() {
     if (!dx_zone_override_.isEmpty() && !QTimeZone(dx_zone_override_.toUtf8()).isValid()) dx_zone_override_.clear();
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
+    {
+        const int idle = ini.value("kiosk/blank_idle", 0).toInt();
+        const int off = ini.value("kiosk/blank_off", -1).toInt();
+        const int on = ini.value("kiosk/blank_on", -1).toInt();
+        if (blanking_config_valid({idle, off, on})) { blank_idle_ = idle; blank_off_ = off; blank_on_ = on; }
+    }
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -593,6 +600,22 @@ QString AppSettings::saveOverscan(int percent) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the overscan inset.";
     overscan_ = percent;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBlanking(int idle_minutes, int off_hour, int on_hour) {
+    if (!blanking_config_valid({idle_minutes, off_hour, on_hour}))
+        return "Idle time must be 0..240 minutes and the screen-off window needs both hours (0..23) or neither.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("kiosk/blank_idle", idle_minutes);
+    ini.setValue("kiosk/blank_off", off_hour);
+    ini.setValue("kiosk/blank_on", on_hour);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the screen blanking settings.";
+    blank_idle_ = idle_minutes;
+    blank_off_ = off_hour;
+    blank_on_ = on_hour;
     emit optionsChanged();
     return {};
 }
