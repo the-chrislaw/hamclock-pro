@@ -100,6 +100,7 @@ int main(int argc, char** argv) {
     check(mars_row, "Mars is up from London at 05:00Z on opposition night");
     const OverlayLayer layer = planet_overlay_layer({utc(2025, 1, 16, 5)});
     check(layer.id == "planets" && layer.markers.size() == 7, "overlay layer has seven planets");
+    check(layer.markers[0].detail.contains(layer.markers[0].call), "tap detail names the planet");
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
