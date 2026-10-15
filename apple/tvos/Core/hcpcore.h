@@ -35,6 +35,14 @@ int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
 int hcp_subsolar_point(int64_t unix_s, double* lat_deg, double* lon_deg);
 int hcp_sun_elevation(int64_t unix_s, double lat_deg, double lon_deg, double* elevation_deg);
 
+/* Next sunrise (kind 0) or sunset (kind 1) strictly after unix_s, UTC seconds.
+ * Returns 0 for bad input or no event within the search window (polar regions). */
+int hcp_next_sun_event(int64_t unix_s, int kind, double lat_deg, double lon_deg, int64_t* event_s);
+/* Same for the Moon (upper limb). */
+int hcp_next_moon_event(int64_t unix_s, int kind, double lat_deg, double lon_deg, int64_t* event_s);
+/* Moon phase name (written to buf) and illuminated fraction 0..1. */
+int hcp_moon_phase(int64_t unix_s, char* buf, size_t cap, double* illuminated);
+
 /* Centre of a 2/4/6-character Maidenhead locator (shared locator_input decoder).
  * Returns 0 for anything but a valid locator. */
 int hcp_locator_center(const char* locator, double* lat_deg, double* lon_deg);

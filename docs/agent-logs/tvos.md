@@ -34,3 +34,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: station locator. C ABI `hcp_locator_center` over the shared Maidenhead decoder (tested on Linux 8/8, zero warnings), `StationStore` (iCloud key-value store with UserDefaults mirror, per the approved design) and a "Sun at your station" card (on-device elevation, no Stale state) with a locator text field.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: sun/moon rise-set at the station, satellites and quakes panes.
+
+## 2026-10-15 (third run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: sun/moon rise-set at the station. C ABI `hcp_next_sun_event`, `hcp_next_moon_event`, `hcp_moon_phase` over the Qt-free shared `astro_sun`/`astro_moon` (added to the standalone TvOSCore build; tested on Linux 8/8, zero warnings). Station card now shows next sunrise/sunset, moonrise/moonset (UTC) and Moon phase, all on device, never stale.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: satellites and quakes panes (need Qt-free TLE / USGS parsers).
