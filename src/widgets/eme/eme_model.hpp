@@ -11,7 +11,7 @@ namespace hamclock {
 // both ends, the next window with the Moon above both horizons, and the
 // distance with the path loss relative to perigee.
 struct EmeSummary {
-    QString de_position, dx_position, window, distance, degradation, declination; // empty = not available
+    QString de_position, dx_position, window, distance, degradation, declination, sun; // empty = not available
     bool mutual_now = false;
 };
 EmeSummary summarize_eme(UtcSeconds now, double de_lat, double de_lon, double dx_lat, double dx_lon);
@@ -26,6 +26,7 @@ class EmeModel : public WidgetModel {
     Q_PROPERTY(QString distance READ distance NOTIFY changed)
     Q_PROPERTY(QString degradation READ degradation NOTIFY changed)
     Q_PROPERTY(QString declination READ declination NOTIFY changed)
+    Q_PROPERTY(QString sun READ sun NOTIFY changed)
 public:
     explicit EmeModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -38,6 +39,7 @@ public:
     QString distance() const { return s_.distance; }
     QString degradation() const { return s_.degradation; }
     QString declination() const { return s_.declination; }
+    QString sun() const { return s_.sun; }
 signals:
     void changed();
 private:

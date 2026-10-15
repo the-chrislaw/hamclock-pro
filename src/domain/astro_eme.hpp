@@ -14,6 +14,10 @@ constexpr double kMoonApogeeKm = 406700.0;
 // (round trip, so the inverse fourth power of distance). Never negative.
 double eme_degradation_db(double distance_km);
 
+// Geocentric angular separation of the Moon from the Sun, degrees [0, 180].
+// Near 0 (new Moon) the Sun sits behind the Moon and raises receiver noise.
+double moon_sun_separation_deg(UtcSeconds utc);
+
 struct MutualWindow {
     UtcSeconds start;  // Moon already above both horizons: start == the search start
     UtcSeconds end;

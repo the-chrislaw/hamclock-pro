@@ -6,6 +6,16 @@ double eme_degradation_db(double distance_km) {
     return 40.0 * std::log10(distance_km / kMoonPerigeeKm);
 }
 
+double moon_sun_separation_deg(UtcSeconds utc) {
+    // Sun's ecliptic latitude is ~0, so cos(sep) = cos(beta_moon) cos(elongation).
+    const MoonPosition m = moon_position(utc);
+    const MoonPhase ph = moon_phase(utc);
+    const double r = 3.14159265358979323846 / 180.0;
+    double c = std::cos(m.latitude_deg * r) * std::cos(ph.elongation_deg * r);
+    c = std::fmax(-1.0, std::fmin(1.0, c));
+    return std::acos(c) / r;
+}
+
 namespace {
 bool both_up(std::int64_t t, double la1, double lo1, double la2, double lo2) {
     return moon_horizontal({t}, la1, lo1).elevation_deg > 0.0 && moon_horizontal({t}, la2, lo2).elevation_deg > 0.0;
