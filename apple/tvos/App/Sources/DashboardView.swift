@@ -10,6 +10,7 @@ struct DashboardView: View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             VStack(alignment: .leading, spacing: 40) {
                 ClockBar(now: ctx.date)
+                if panes.isOn(.map) { MapCard(now: ctx.date) }
                 if panes.isOn(.spaceWeather) {
                 HStack(alignment: .top, spacing: 40) {
                     Card(title: "Kp index", sample: weather.kp, now: ctx.date,
@@ -37,7 +38,7 @@ struct DashboardView: View {
                 if panes.isOn(.quakes) { QuakeCard(now: ctx.date) }
                 Spacer()
                 Button("Panes…") { showSettings = true }
-                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; CelesTrak")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; CelesTrak; Natural Earth")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area

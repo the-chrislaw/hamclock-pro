@@ -70,5 +70,18 @@ int main() {
     check(std::abs(ss.epoch_s - 1221913538LL) < 5, "TLE epoch exposed");
     check(!hcp_sat_state(tle, sizeof tle - 1, 1, te, 48.1, 11.6, &ss), "index out of range");
     check(!hcp_sat_state(tle, sizeof tle - 1, 0, te, 95.0, 11.6, &ss), "bad latitude rejected");
+    // Coastline table.
+    const int parts = hcp_coast_part_count();
+    size_t npts = 0;
+    const float* pts = hcp_coast_points(&npts);
+    check(parts > 100 && pts && npts > 1000, "coastline table exposed");
+    uint32_t cs = 0, cc = 0;
+    check(hcp_coast_part(0, &cs, &cc) && cc >= 2 && cs + cc <= npts, "first coast part in range");
+    check(hcp_coast_part(parts - 1, &cs, &cc) && cs + cc <= npts, "last coast part in range");
+    check(!hcp_coast_part(parts, &cs, &cc) && !hcp_coast_part(-1, &cs, &cc), "coast index range checked");
+    bool inRange = true;
+    for (size_t i = 0; i < npts; ++i)
+        if (pts[2 * i] < -180.f || pts[2 * i] > 180.f || pts[2 * i + 1] < -90.f || pts[2 * i + 1] > 90.f) inRange = false;
+    check(inRange, "coastline coordinates are valid lon/lat");
     return failures ? 1 : 0;
 }
