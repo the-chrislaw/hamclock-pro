@@ -22,6 +22,11 @@ private:
     QHash<QString, quint64> dial_hz_; // by client id, bounded
 };
 
+// "By me" scope for UDP input: keep spots from this station's own programs (spotter "UDP"/"WSJT-X", i.e. no
+// foreign spotter named) or whose spotter has the same base call (SSID, /P etc. ignored) as `my_call`.
+// With `by_me` false everything is kept. An empty `my_call` in by-me mode keeps only the local-program spots.
+bool udp_spot_in_scope(const DxSpot& spot, const QString& my_call, bool by_me);
+
 class UdpSpotListener : public QObject {
     Q_OBJECT
 public:

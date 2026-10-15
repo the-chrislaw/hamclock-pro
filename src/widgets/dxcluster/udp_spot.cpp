@@ -163,4 +163,24 @@ void UdpSpotListener::on_ready() {
     }
 }
 
+namespace {
+QString base_call(QString call) {
+    call = call.trimmed().toUpper();
+    const int dash = call.indexOf('-');
+    if (dash > 0) call.truncate(dash);
+    const QStringList parts = call.split('/', Qt::SkipEmptyParts);
+    QString best;
+    for (const QString& p : parts)
+        if (p.size() > best.size() && p != "P" && p != "M" && p != "QRP") best = p; // longest part is the call
+    return best;
+}
+} // namespace
+
+bool udp_spot_in_scope(const DxSpot& spot, const QString& my_call, bool by_me) {
+    if (!by_me) return true;
+    if (spot.spotter == "UDP" || spot.spotter == "WSJT-X") return true;
+    const QString mine = base_call(my_call);
+    return !mine.isEmpty() && base_call(spot.spotter) == mine;
+}
+
 } // namespace hamclock::dxcluster

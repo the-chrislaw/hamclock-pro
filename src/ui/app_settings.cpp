@@ -99,6 +99,7 @@ void AppSettings::loadOptions() {
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
+    udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
     imperial_ = ini.value("units/imperial", false).toBool();
     date_order_ = ini.value("clock/date_order", 0).toInt();
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
@@ -427,6 +428,18 @@ QString AppSettings::saveUdpSpots(int port, bool lan) {
     udp_port_ = port;
     udp_lan_ = lan;
     emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveUdpScope(bool by_me) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/scope", by_me ? "me" : "all");
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP spot scope.";
+    if (udp_by_me_ != by_me) {
+        udp_by_me_ = by_me;
+        emit optionsChanged();
+    }
     return {};
 }
 

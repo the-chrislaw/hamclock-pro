@@ -173,3 +173,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 12 (slice): WSJT-X binary UDP protocol (schema 2/3) on the existing opt-in UDP port. `WsjtxDecoder` keeps the dial frequency per client id from Status messages and turns Decode messages "CQ [DX] CALL [GRID]" into spots (dial + audio offset, FT8/FT4 mode, spotter "WSJT-X"). Bounds-checked reader; wrong magic, truncated, oversized, non-CQ and decodes before a Status are ignored. No AppSettings change, no new listener. Test builds datagrams by hand; udp/dx tests pass, full suite run locally; ASan/UBSan left to CI. Not validated on device.
 - Not done: multicast, "UDP sets DX", by me/all filter, Log4OM format, WSJT-X Logged/QSO messages.
 - Next: UDP sets DX / by-me filter, WSPR/RBN once a source is chosen, WWFF/GMA once allowlisted (#305).
+
+## 2026-10-15 (run 30)
+- Step 1: merged #327 (qa log, Qt checks green). #73 is stale docs, another area's, left alone. No open `[C]` qa issues.
+- Backlog item 12 (slice): UDP "by me"/"all" scope. `udp_spot_in_scope` keeps spots from local programs (spotter UDP/WSJT-X) or whose spotter has my base call (SSID, /P ignored); "all" keeps everything (default). `AppSettings` gains `udpSpotByMe` (options.ini `[udp] scope=all|me`, backward compatible) and `saveUdpScope`; Settings Spots card has a toggle saved with "Save cluster". Test covers both scopes. 145/145 pass locally; ASan/UBSan left to CI. No Settings screenshot; not validated on device.
+- Not done: multicast, "UDP sets DX", Log4OM format.
+- Next: UDP sets DX, WSPR/RBN once a source is chosen, WWFF/GMA once allowlisted (#305).

@@ -171,6 +171,7 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
         connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::refreshUdp);
     }
     connect(&udp_, &dxcluster::UdpSpotListener::spotReceived, this, [this](const dxcluster::DxSpot& spot) {
+        if (settings_ && !dxcluster::udp_spot_in_scope(spot, settings_->callsign(), settings_->udpSpotByMe())) return;
         list_.add(spot);
         emit countChanged();
     });

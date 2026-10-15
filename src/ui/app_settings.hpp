@@ -42,6 +42,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
+    Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
@@ -79,6 +80,7 @@ public:
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
+    bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
     // On-the-air display filter; empty / 0 = no restriction.
     QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA" or empty
@@ -137,6 +139,7 @@ public:
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
+    Q_INVOKABLE QString saveUdpScope(bool by_me);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -172,6 +175,7 @@ private:
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;
+    bool udp_by_me_ = false;
     bool imperial_ = false;
     int date_order_ = 0;
     bool clock_12h_ = false;
