@@ -54,5 +54,11 @@ if(IOS AND TARGET hamclock-pro)
         # archive with no ApplicationProperties, and -exportArchive then offers
         # no distribution methods ("expected one {} but found app-store").
         XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
-        XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)")
+        XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+        # App icon from the asset catalog (opaque 1024 px; actool derives the
+        # 120/152/167/180 px sizes and CFBundleIconName App Store validation wants).
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon")
+    set(_ios_assets "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/ios/Assets.xcassets")
+    target_sources(hamclock-pro PRIVATE "${_ios_assets}")
+    set_source_files_properties("${_ios_assets}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif()
