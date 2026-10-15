@@ -69,6 +69,16 @@ int main(int argc, char** argv) {
     check(tle_norad_id(Tle{"x", "1", "2"}) == 0, "short line gives 0");
     check(parse_satnogs_transmitters("not json").empty() && parse_satnogs_transmitters("{}").empty(), "malformed input gives none");
 
+    // User-supplied TLEs replace the same NORAD id and append new ones.
+    {
+        const Tle a{"A", "1 00005U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753", "2 00005"};
+        const Tle b{"B", "1 00006U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753", "2 00006"};
+        Tle a2 = a; a2.name = "A-user";
+        const Tle c{"C", "1 00007U 58002B   00179.78495062  .00000023  00000-0  28098-4 0  4753", "2 00007"};
+        const auto m = merge_user_tles({a, b}, {a2, c});
+        check(m.size() == 3 && m[0].name == "A-user" && m[1].name == "B" && m[2].name == "C", "user TLE replaces by NORAD id and appends");
+    }
+
     // Doppler through an inverting transponder: the uplink correction and downlink
     // correction at the same range rate move in opposite senses.
     if (fo) {

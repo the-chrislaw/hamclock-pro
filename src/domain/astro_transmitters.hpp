@@ -29,6 +29,10 @@ std::vector<Transmitter> parse_satnogs_transmitters(const std::string& json);
 // NORAD catalogue number from TLE line 1 (columns 3-7); 0 if unreadable.
 int tle_norad_id(const Tle& tle);
 
+// Merges user-supplied TLEs over a downloaded set: a user TLE replaces the downloaded
+// one with the same NORAD id (even if older) and is appended when it is new.
+std::vector<Tle> merge_user_tles(const std::vector<Tle>& downloaded, const std::vector<Tle>& user);
+
 std::map<int, std::vector<Transmitter>> group_by_norad(const std::vector<Transmitter>& all);
 
 // Downlink frequency (Hz, before Doppler) for a given uplink frequency through a

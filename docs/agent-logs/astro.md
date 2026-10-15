@@ -130,3 +130,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Launches pane (backlog D13, first slice): new `launches` widget parses Launch Library 2 upcoming launches (hourly, cached, Data source policy updated); card shows the next launch with a T- countdown (past launches dropped after a 2 h grace), provider, site, status and the next three in non-compact slots; approximate times marked. Shared changes: `launches` added to the Sky & Space category in PaneChooser.qml; the `--fixtures` transport now ignores a trailing slash in the URL path (backward compatible). Full ctest passes (144/144); rendered offscreen at 800x480 and 1024x600 and 1920x1080 (not on-device), no truncation. ASan/UBSan left to CI.
 - Not mine: #306 CI running, #73 conflicting; left alone. No new `[D]` QA issues.
 - Next: balloons pane (D14), user-supplied TLE, hams.at pane (D8, needs API docs), launch pad map markers.
+
+## 2026-10-15 (UTC), run 24
+- Merged #319 (spots/space PR, green). User-supplied TLE (backlog D7, partial): `user-tles.txt` beside options.ini (3-line or 2-line sets) is merged over the CelesTrak download by NORAD id via `merge_user_tles`; user sets are not limited to the popular-bird list and still obey the 30-day age cut-off. Unit test covers replace and append. Full ctest passes (145/145); no UI change. ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #320/#321 CI still running at start. Balloons (D14) blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.

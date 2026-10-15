@@ -106,7 +106,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 
 **Audit additions (D):**
 6. 🟡 (sky plot of the next pass in the Satellites pane done; DX panel placement not) Satellite pass sky plot in the DX panel, co-visibility planner, group schedule, frequency table and status links.
-7. 🟡 (maximum TLE age of 30 days and an on-card rise alert 5 min before AOS done) Satellite rise/set alert; user-supplied TLE.
+7. 🟡 (maximum TLE age of 30 days and an on-card rise alert 5 min before AOS, and user-supplied TLE via `user-tles.txt` beside options.ini done; no settings editor yet) Satellite rise/set alert; user-supplied TLE.
 8. hams.at upcoming activations pane. 9. 🟡 (worldwide next eclipse pane done, offline; Visible/Borderline/Not visible at DE done, approximate; local magnitude and contact times not done) Next solar eclipse pane. 10. ✅ Planets on the map (offline): Mercury to Saturn sub-planet points as overlay layer "planets", plus a pane of the planets above the horizon at DE; Uranus and Neptune not included. 11. 🟡 (offline chart pane `daylight` done: weekly sunrise/sunset curves in UTC with today marked; DE local time and axis labels not done) Yearly sunrise/sunset ("grayline") chart.
 12. 🟡 (phase disc in the Sun & Moon pane done: drawn from the elongation, lit side mirrored for southern DE, no parallactic-angle tilt or surface texture; link to the EME tool not done) Moon pane image with phase, linked to the EME tool. 13. 🟡 (next launch with T- countdown, provider, site, status and the next three; Launch Library 2, hourly, not on the default dashboard; no map pad markers, no ham-relevant filtering yet) Launches pane. 14. Balloons pane.
 
