@@ -235,3 +235,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: #383 (apple, no checks reported) and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
 - Backlog item 6 (slice): WSPR fetch. `PskModel` runs a second `PolledSource` on `psk::wspr_query_url` (5 min) and merges the spots into the PSKReporter list, stats, farthest and map; all existing filters apply. Opt-in: `AppSettings::pskWspr/savePskWspr` (options.ini `[psk] wspr`, default off, backward compatible) with a Settings button, because the wspr.live fair-use terms still need owner confirmation. Card state stays driven by PSKReporter. Test added with the real fixture. Not validated on device; no screenshot (card needs a callsign).
 - Not done: RBN, WSPR "of DE" direction.
+
+## 2026-10-15 (run 42)
+- Step 1: merged #388 (ui, all checks green). #389 (apple) still running and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues. Could not delete #388's head branch (denied by the sandbox classifier); left for the owner.
+- Backlog item 6 (slice): WSPR "of DE" direction. `psk::wspr_heard_url` (rx_sign = DE), `psk::heard_as_reports` (swap so distance helpers apply), second wspr.live source in `PskModel` (same opt-in, same 5 min poll), card line "I heard N · farthest CALL km band". Not mixed into the "hears me" list or map. No AppSettings change. Tests extended; 153/153 pass locally, no warnings; ASan/UBSan left to CI. No screenshot (card needs a callsign); not validated on device.
+- Not done: RBN, WSPR by-call queries, map paths for heard stations.

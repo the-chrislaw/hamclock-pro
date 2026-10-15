@@ -48,6 +48,11 @@ Feed parse_wspr(const QByteArray& body);
 // has characters outside [A-Z0-9/]. wspr.live asks for fair use: one query per
 // 5 minutes, LIMIT 100.
 QString wspr_query_url(const QString& callsign);
+// Spots heard BY `callsign` in the last hour (of DE; same limits as above).
+QString wspr_heard_url(const QString& callsign);
+// Swaps sender and receiver so a "heard by DE" feed reads like a "hears DE"
+// one: `receiver` becomes the station DE heard (reuses distance helpers).
+std::vector<Report> heard_as_reports(const std::vector<Report>& heard);
 
 // Query URL for "who heard this callsign", or an empty string when the call
 // has characters outside [A-Z0-9/] (nothing is sent for it).

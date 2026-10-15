@@ -75,10 +75,13 @@ void PskModel::mergeRaw() {
 void PskModel::syncWspr() {
     const QString url = settings_ && settings_->pskWspr() && source_ ? psk::wspr_query_url(call_) : QString();
     if (url.isEmpty()) {
-        if (!wspr_source_ && !wspr_raw_.ok) return;
+        if (!wspr_source_ && !wspr_raw_.ok && !heard_source_) return;
         delete wspr_source_;
         wspr_source_ = nullptr;
+        delete heard_source_;
+        heard_source_ = nullptr;
         wspr_raw_ = {};
+        heard_raw_ = {};
         mergeRaw();
         applyFilter();
         emit reportsChanged();
@@ -97,6 +100,14 @@ void PskModel::syncWspr() {
         refreshState();
     });
     wspr_source_->start();
+    heard_source_ = new PolledSource("wspr-heard-" + QString(call_).replace('/', '-').toLower(),
+                                     QUrl(psk::wspr_heard_url(call_)), kPolicy, transport_, this);
+    heard_source_->setClock([this] { return now(); });
+    connect(heard_source_, &PolledSource::updated, this, [this] {
+        heard_raw_ = psk::parse_wspr(heard_source_->body());
+        emit reportsChanged();
+    });
+    heard_source_->start();
 }
 
 void PskModel::start() {
@@ -106,6 +117,9 @@ void PskModel::start() {
     source_ = nullptr;
     delete wspr_source_;
     wspr_source_ = nullptr;
+    delete heard_source_;
+    heard_source_ = nullptr;
+    heard_raw_ = {};
     feed_ = {};
     raw_ = {};
     psk_raw_ = {};
@@ -154,6 +168,20 @@ QString PskModel::farthest() const {
     const bool mi = settings_->imperialUnits();
     const long d = std::lround(mi ? f.km * 0.621371 : f.km);
     return QString("Farthest: %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km").arg(f.band.isEmpty() ? "" : " " + f.band);
+}
+
+QString PskModel::heard() const {
+    if (!settings_ || !heard_raw_.ok || heard_raw_.reports.empty()) return {};
+    const auto swapped = psk::heard_as_reports(heard_raw_.reports);
+    QString out = QString("I heard %1").arg(swapped.size());
+    const auto f = psk::farthest_report(swapped, settings_->deLatitude(), settings_->deLongitude());
+    if (f.found) {
+        const bool mi = settings_->imperialUnits();
+        const long d = std::lround(mi ? f.km * 0.621371 : f.km);
+        out += QString(" · farthest %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km")
+                   .arg(f.band.isEmpty() ? "" : " " + f.band);
+    }
+    return out;
 }
 
 QVariantList PskModel::recent() const {

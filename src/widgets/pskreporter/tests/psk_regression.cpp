@@ -48,6 +48,11 @@ int main(int argc, char** argv) {
         check(s.time == QDateTime(QDate(2026, 10, 15), QTime(12, 12), QTimeZone::utc()), "wspr: time is UTC");
         check(!psk::parse_wspr("not json").ok && !psk::parse_wspr("{}").ok, "wspr: junk rejected");
         check(psk::parse_wspr("{\"data\":[{\"rx_sign\":\"A1B\"}]}").reports.empty(), "wspr: incomplete row skipped");
+        check(psk::wspr_heard_url("w3hh").contains("rx_sign%3D'W3HH'") && psk::wspr_heard_url("a b;").isEmpty(),
+              "wspr: heard-by-DE url");
+        const auto sw = psk::heard_as_reports(w.reports);
+        check(sw[0].receiver == "W3HH" && sw[0].sender == "ON5KQ" && sw[0].receiver_grid == w.reports[0].sender_grid,
+              "wspr: heard feed swaps sender and receiver");
         check(psk::wspr_query_url("w3hh").contains("tx_sign%3D'W3HH'") && psk::wspr_query_url("a b;").isEmpty(),
               "wspr: query url");
     }
@@ -173,7 +178,9 @@ int main(int argc, char** argv) {
     check(settings.savePskWspr(true).isEmpty() && settings.pskWspr(), "WSPR opt-in saved");
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.count() == 6 && model.modes().contains("WSPR 5"), "WSPR spots merged into the card");
+    check(model.heard().startsWith("I heard 5"), "WSPR heard-by-DE line shown");
     check(settings.savePskWspr(false).isEmpty(), "WSPR opt-out saved");
+    check(model.heard().isEmpty(), "heard line cleared with WSPR off");
     check(model.count() == 1 && model.modes() == "CW 1", "WSPR off drops its spots");
 
     check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",

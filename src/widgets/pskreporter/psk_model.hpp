@@ -17,6 +17,7 @@ class PskModel : public WidgetModel {
     Q_PROPERTY(QString bands READ bands NOTIFY reportsChanged)
     Q_PROPERTY(QString modes READ modes NOTIFY reportsChanged)
     Q_PROPERTY(QString farthest READ farthest NOTIFY reportsChanged)
+    Q_PROPERTY(QString heard READ heard NOTIFY reportsChanged)
     Q_PROPERTY(QVariantList recent READ recent NOTIFY reportsChanged)
 public:
     explicit PskModel(const WidgetContext& context, QObject* parent = nullptr);
@@ -30,6 +31,7 @@ public:
     QString bands() const;  // "20m 5 · 40m 2": reports per band, busiest first
     QString modes() const;  // "FT8 6 · CW 2": reports per mode, busiest first
     QString farthest() const;  // "Farthest: JA1XYZ 9,876 km 20m" (miles if imperial), empty if none
+    QString heard() const;  // WSPR heard by DE: "I heard 12 · farthest JA1XYZ 9,876 km 20m" (opt-in), empty if none
     QVariantList recent() const;  // newest first: {call, grid, band, mode, snr, age}
     PolledSource* source() { return source_; }
 
@@ -49,7 +51,8 @@ private:
     PolledSource* source_ = nullptr;
     QString call_;
     PolledSource* wspr_source_ = nullptr;
-    psk::Feed psk_raw_, wspr_raw_;
+    PolledSource* heard_source_ = nullptr;
+    psk::Feed psk_raw_, wspr_raw_, heard_raw_;
     psk::Feed feed_, raw_;  // feed_ = raw_ limited to the max distance setting
     bool map_visible_ = true;
 };
