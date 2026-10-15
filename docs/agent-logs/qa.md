@@ -59,3 +59,38 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Minor, not filed: station card "Short path · 5573 KM · 51 DEG / TRUE" wraps with an orphan "·"; Sun & Moon DX column touches the pane edge at 800x480; map labels still sit on markers.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; changed test assertions all follow intended behaviour additions. Per-widget code was not read line by line.
 - Health: build and tests are green and panes stay honest (Live / Stale / Set up / Offline). Two cosmetic defects found; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 9
+- Last reviewed commit: 7ea1ba5e5fa810cc653af20e42f547df99969888 (PRs #324 to #346, 40 commits since eec6c48).
+- Build and 148/148 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station) and 39 pane widgets at 800x480 and 1024x600 (dark; Planets, Next eclipse, PSKReporter, Weather viewed closely). Nothing scrolls and no QML warnings were logged. The only truncation report is the Weather header "DE · San Francisco, US" in its Loading state, caused by the fixture set not matching the test station (fixture gap, not a product bug).
+- Opened: none. Closed: none (#325 and #326 are already closed). Still open: #150, #151, #152, #246, #247, #269, #281 (owner-filed or owner-input).
+- Diff scan: no QtWidgets, http://, scrolling views, new Qt-version-gated APIs or password handling in added code; the two removed test assertions (planet marker count, air line) follow the intended behaviour additions. Per-widget code was not read line by line; the new Timers page and alarms were not rendered.
+- Health: build and tests are green, layouts fit and panes stay honest (Live / Stale / Set up / Offline). No new defects found; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 10
+- Last reviewed commit: bc889c676e8a7832623326d2615febce725c19ff (PRs #347 to #367, 41 commits since 7ea1ba5).
+- Build and 151/151 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station) and the new hams.at and GPS panes at 800x480 (dark); both fit and show honest Live / Set up states. The other panes were not re-rendered this run.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, scrolling views or password handling in added code; no removed test assertions. New network code: hams.at (HTTPS, fixture present) and the ADS-B endpoint now configurable via options.ini (host and port validated, falls back to 127.0.0.1:8080, http only to the user's own receiver). GPS serial device path is regex-restricted to /dev/tty* and /dev/serial/*. Per-widget code was not read line by line.
+- Health: build and tests are green, layouts fit and panes stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 11
+- Last reviewed commit: ecf3fa7a273326dced802870d213b7c03e14a15b (PRs #368 to #382, 30 commits since bc889c6).
+- Build and 152/152 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, no station file took effect so the station card shows Set up); header, Space weather, Solar wind, DX cluster and map fit with honest Live / Stale / Set up states and nothing scrolls. The new Settings page (blanking, time zone search), Weather card changes and WSPR overlay were not rendered this run.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no removed test assertions. Screen blanking is software-only (black overlay) with unit tests; any options change calls touch() and so wakes a blanked screen (minor, not filed). WSPR parser ships with a fixture. Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 12
+- Last reviewed commit: 286a07897de0a623ec659c1c9393524827e3d3e3 (PRs #383 to #398, 34 commits since ecf3fa7).
+- Build and 154/154 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station): nothing scrolls, panes show honest Live / Stale / Set up states, footers elide with an ellipsis at 800x480 (known, minor). The phone and landscape-phone layouts, WSPR-of-DE, satellite transmitter and footprint changes were not rendered this run.
+- Opened: [A] station card path line wraps with an orphan "·" (first noted in run 8). Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, scrolling views, password handling, new http:// or removed test assertions in added code. The tvOS SatelliteStore.swift fetches CelesTrak over HTTPS with no fixture or offline test (Swift side, minor, not filed). Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. One cosmetic defect filed; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-15 (UTC) QA run 13
+- Last reviewed commit: 7e43bd20acfc43f6b493f69094037cf234b0d415 (PRs #402 to #412, 22 commits since 286a078).
+- Build and 157/157 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark): nothing scrolls, no QML warnings, panes show honest Live / Stale / Set up states and footers elide cleanly. The station file in the test config dir did not take effect (card shows Set up), so the #403 path-line wrap fix, Settings saved configurations, band-activity pane and alarms persistence were not rendered.
+- Opened: none. Closed: none (the run 12 station-path wrap issue is no longer open after #403). Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests (the removed path_text assertions were rewritten with #403). Saved configurations (config_store.hpp) exclude station and credentials and validate names; UDP multicast group is validated IPv4 multicast only. Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).

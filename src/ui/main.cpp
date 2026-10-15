@@ -3,6 +3,8 @@
 #include "app_settings.hpp"
 #include "map_item.hpp"
 #include "station_model.hpp"
+#include "alarms_model.hpp"
+#include "blanking_model.hpp"
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
@@ -126,6 +128,13 @@ int main(int argc, char** argv) {
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
     hamclock::TimersModel timers;
+    hamclock::AlarmsModel alarms(settings.optionsPath());
+    hamclock::BlankingModel blanking;
+    const auto apply_blanking = [&] {
+        blanking.setConfig({settings.blankIdleMinutes(), settings.blankOffHour(), settings.blankOnHour()});
+    };
+    apply_blanking();
+    QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &blanking, apply_blanking);
     location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 
@@ -157,6 +166,8 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("widgetRegistry", &registry);
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timers", &timers);
+    engine.rootContext()->setContextProperty("alarms", &alarms);
+    engine.rootContext()->setContextProperty("blanking", &blanking);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);

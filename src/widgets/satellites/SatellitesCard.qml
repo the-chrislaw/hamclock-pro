@@ -122,6 +122,18 @@ Card {
                 onClicked: root.widget.toggleTracked()
             }
         }
+        Text {
+            id: dxButton
+            property string error: ""
+            text: error !== "" ? error : "Set as DX (sub-satellite point)"
+            color: error !== "" ? Theme.secondary : Theme.accent; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+            elide: Text.ElideRight; Layout.fillWidth: true
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -Theme.gap
+                onClicked: dxButton.error = root.widget.setAsDx()
+            }
+        }
         TapHandler { onTapped: root.widget.selectRow(-1) }
     }
     Text {

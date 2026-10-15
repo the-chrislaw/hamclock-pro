@@ -145,3 +145,53 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Daylight year chart axes (backlog D11, partial): hour guides at 6Z/12Z/18Z with labels and month initials along the bottom, only when the pane has room (compact slots stay bare). QML only. Rendered offscreen at 800x480, 1024x600, 1920x1080 dark and light with a New York DE (not on-device): labels legible, no clipping. Not done: DE local time axis.
 - Not mine: #73 conflicting; left alone. No `[D]` QA issues besides #246 (needs G's tap mechanism); balloons still blocked on #314.
 - Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 27
+- Merged #338 (space docs, green). Uranus and Neptune (backlog D10 completion): JPL approximate elements added to `astro_planets`; both appear in the planets pane (when above the horizon) and as map markers (layer now has seven). Tests: Uranus oppositions 2025-11-21 and 2026-11-25, Neptune 2025-09-23 (within 2 days), Neptune distance 28.9 AU, Uranus about 18.6 AU. Full ctest otherwise passes; no layout change (list rows). ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #339/#340 CI running at start. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 28
+- Eclipse local circumstances (backlog D9, partial): `eclipse_visibility` now also returns the time of maximum at DE (minute resolution) and the magnitude there (fraction of the Sun's diameter, from the Sun-Moon separation and the Moon's distance); the card gains a "Local" row ("Max 18:39Z, 100% of Sun") only when visible/borderline at DE and the pane has room. Tests: 2024-04-08 Dallas (magnitude > 0.95, maximum within 5 min of 18:42Z), Denver partial magnitude 0.6-0.9, London zero. Maximum is a few minutes off NASA's value (ephemeris limit). Full ctest passes except nothing new failing; rendered 800x480, 1024x600, 1920x1080 only for the not-visible case (the next eclipse, 2027-02-06, is not visible from the test DE), so the new row itself was not screenshotted. ASan/UBSan left to CI. Not done: contact times.
+- Not mine: #344 (spots) CI still running at start, #73 conflicting; left alone. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 29
+- hams.at activations pane (backlog D8, first slice): new `hamsat` widget parses the public `hams.at/api/alerts/upcoming` endpoint (documented at hams.at/api/docs; reachable from the sandbox; no key needed to read; Data source policy updated). Card shows the next activation with a countdown, mode, frequency, grid and AOS-LOS, plus the next three in non-compact slots; finished passes dropped by the clock. Fixture is a trimmed real response. Shared change: `hamsat` added to the Sky & Space category in PaneChooser.qml. Rendered offscreen at 800x480, 1024x600 and 1920x1080 dark and light (not on-device); 1024x600 viewed, no clipping. hamsat tests pass; ASan/UBSan left to CI. Not done: API key / personalised passes (settings row), map markers.
+- Not mine: #348/#349 CI still running at start, #73 conflicting; left alone. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX.
+
+## 2026-10-15 (UTC), run 30
+- Daylight year chart DE local time (backlog D11): `daylight_points` takes an optional IANA zone; minutes are shifted by the offset at 12:00 UTC of each day (QTimeZone, no hand-rolled DST) and wrapped, polar gaps kept; the model exposes `localTime` and the card tags guides 6L/12L/18L (Z when no zone). Tests: New York June (EDT) and December (EST) sunrise/sunset against almanac within 5 min, bad zone falls back to UTC, polar gap survives. Daylight tests pass; full ctest and ASan/UBSan left to CI. No screenshot of the pane itself (not on the default dashboard); the QML pane test passes.
+- Not mine: #73 conflicting; left alone. No new `[D]` QA issues. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX.
+
+## 2026-10-15 (UTC), run 31
+- Eclipse contact times (backlog D9, partial): `eclipse_visibility` now walks outward from the local maximum in 20 s steps to give first and last partial contact at DE (marked when the horizon cuts the eclipse off at sunrise/sunset); the card gains a "Partial" row ("17:22 – 19:59Z") when the pane has room. Test: Dallas 2024-04-08 against NASA (17:23 and 20:02 UTC, within 8 min), Denver contacts bracket the maximum, London none. Full ctest passes (151/151). No screenshot of the new row (the next eclipse, 2027-02-06, is not visible from the test DE); QML mirrors the existing rows. ASan/UBSan left to CI. Not done: annular/total contact times (C2/C3).
+- Not mine: #364 (spots) CI running at start, #73 left alone. Balloons still blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX.
+
+## 2026-10-15 (UTC), run 32
+- Docs only: the Status row for Satellites still said "no sunlit/eclipsed"; the detail box already shows it (`SatellitePropagator::sunlit`, covered in satellites_regression). Row corrected. No code change.
+- Not mine: #371/#372 CI still running at start, #73 conflicting; left alone. Balloons blocked on #314. Remaining D items need shared surfaces (settings editor for TLE, hams.at key via credential store, Set as DX, map-marker tap from G) or hardware-grade ephemeris (annular/total contacts), so no larger slice was safe this run.
+- Next: settings editor for tracked/user TLE, hams.at key + personalised passes, Set as DX once G's tap mechanism lands.
+
+## 2026-10-15 (UTC), run 33
+- Map tap details (backlog D, #246 first slice): G's `markerTapped` / tap menu now exists, so the satellite, planet and beacon overlay markers carry a `detail` line (satellite: name and altitude; beacon: frequency and location; planet: name). Tests extended in satellites_regression, beacons_regression, planets_regression. Not done: full satellite detail box on tap (SatNOGS transmitters, Doppler, passes). Not rendered on a screen; the popup is G's existing menu. ASan/UBSan left to CI.
+- Not mine: #383 had no checks at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: satellite detail box from the tap menu, settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 34
+- Merged #389 (iPad QML plugins, green). Satellite detail box action (backlog D, #246): "Set as DX (sub-satellite point)" in the Satellites detail box, via `SatellitesModel::setAsDx()` (explicit tap only; DE, callsign and zone untouched; error text shown if no satellite is open). Test extended in satellites_model_regression. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI. Not done: footprint on the map.
+- Not mine: #390 CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: footprint, settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 35
+- Satellite footprint (backlog D, #246): `footprint_ring()` gives the horizon circle (angular radius acos(R/(R+h))) as 48 faint dots in the "satellites" map layer for each tracked bird (overlay API has markers only, so a dotted ring rather than a polygon). Tests: equator ring is a 20.3 deg circle, near-pole longitudes stay in range, bad input empty. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI.
+- Not mine: #393 (tvos) CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 36
+- Marker tap opens the satellite detail box (backlog D, #246): `SatellitesModel::selectByName()` opens (never toggles) the detail for the listed satellite matching the tapped marker's label; the map tap menu (shared `MapTapMenu.qml`, small backward-compatible change: remembers the marker layer, adds a "Details" button only for layer "satellites") calls it through `widgetRegistry.model("satellites")`. Tests: unknown name opens nothing, case-insensitive match, re-select keeps open. Full ctest 154/154 passes; not rendered on a screen (the box shows in the Satellites pane, so the pane must be on screen); ASan/UBSan left to CI.
+- Not mine: #403/#404 (other areas) and #73 conflicting left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: settings editor for TLE, annular/total contacts.

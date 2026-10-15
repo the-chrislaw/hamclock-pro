@@ -21,4 +21,8 @@ std::vector<Qso> parse(const QString& text, int max_records = 100000);
 // Calls compare without /P, /M, /QRP-style suffixes and EA8/ style prefixes.
 QString base_call(const QString& call);
 
+// Amateur call prefix for NAPref: letters/digits up to the first digit run ("K1ABC" -> "K1",
+// "9A1A" -> "9A1"); a leading "EA8/" style operating prefix wins. Empty when no digit is found.
+QString prefix_of(const QString& call);
+
 } // namespace hamclock::adif

@@ -26,6 +26,20 @@ HcpReading hcp_solarwind_latest_bz(const char* body, size_t len);      /* nT, GS
 int hcp_solarwind_speed_description(double km_s, char* buf, size_t cap);
 int hcp_solarwind_bz_description(double nt, char* buf, size_t cap);
 
+/* USGS GeoJSON summary feed (see quakes.hpp). */
+typedef struct {
+    double magnitude;
+    double latitude, longitude, depth_km;
+    int64_t time_ms;    /* origin time, UTC */
+    char place[96];     /* NUL-terminated, truncated */
+} HcpQuake;
+/* Fills out[] with up to cap quakes, newest first. Returns the number written,
+ * or -1 when the body is not a GeoJSON FeatureCollection. */
+int hcp_quakes_parse(const char* body, size_t len, HcpQuake* out, size_t cap);
+/* Index (into the full parsed list) of the strongest quake, or -1. */
+int hcp_quakes_strongest_index(const char* body, size_t len);
+int hcp_quake_magnitude_class(double magnitude, char* buf, size_t cap);
+
 /* Writes a NUL-terminated string into buf (truncated to cap); returns 1 when non-empty. */
 int hcp_swpc_xray_class(double flux_w_m2, char* buf, size_t cap);
 int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
@@ -35,9 +49,42 @@ int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
 int hcp_subsolar_point(int64_t unix_s, double* lat_deg, double* lon_deg);
 int hcp_sun_elevation(int64_t unix_s, double lat_deg, double lon_deg, double* elevation_deg);
 
+/* Next sunrise (kind 0) or sunset (kind 1) strictly after unix_s, UTC seconds.
+ * Returns 0 for bad input or no event within the search window (polar regions). */
+int hcp_next_sun_event(int64_t unix_s, int kind, double lat_deg, double lon_deg, int64_t* event_s);
+/* Same for the Moon (upper limb). */
+int hcp_next_moon_event(int64_t unix_s, int kind, double lat_deg, double lon_deg, int64_t* event_s);
+/* Moon phase name (written to buf) and illuminated fraction 0..1. */
+int hcp_moon_phase(int64_t unix_s, char* buf, size_t cap, double* illuminated);
+
 /* Centre of a 2/4/6-character Maidenhead locator (shared locator_input decoder).
  * Returns 0 for anything but a valid locator. */
 int hcp_locator_center(const char* locator, double* lat_deg, double* lon_deg);
+
+/* Satellites (shared Qt-free TLE parser + vendored SGP4). Computed on device from the
+ * supplied TLE; the caller owns TLE freshness (epoch age) and must label stale elements. */
+typedef struct HcpSatState {
+    double lat_deg, lon_deg, alt_km;       /* sub-satellite point */
+    double az_deg, el_deg, range_km;       /* look angle from the observer */
+    double range_rate_km_s;                /* > 0: receding */
+    int sunlit;                            /* 1 sunlit, 0 eclipsed */
+    int64_t epoch_s;                       /* TLE epoch, unix seconds */
+} HcpSatState;
+/* Number of valid TLE sets in text (3-line or bare 2-line). Names are copied to name_out
+ * (cap each) when non-null, up to max_names entries laid out contiguously. */
+int hcp_tle_count(const char* text, size_t len);
+/* State of the index-th TLE in text at unix_s for the observer. Returns 0 on bad input,
+ * an out-of-range index or an SGP4 failure (e.g. decayed). */
+int hcp_sat_state(const char* text, size_t len, int index, int64_t unix_s,
+                  double obs_lat_deg, double obs_lon_deg, HcpSatState* out);
+/* Name of the index-th TLE. */
+int hcp_tle_name(const char* text, size_t len, int index, char* buf, size_t cap);
+
+/* World coastline from the shared Natural Earth table (map/coastline.hpp), as polylines.
+ * Points are interleaved (lon, lat) floats in degrees; part i is points [start, start+count). */
+int hcp_coast_part_count(void);
+int hcp_coast_part(int index, uint32_t* start, uint32_t* count);
+const float* hcp_coast_points(size_t* point_count);
 
 #ifdef __cplusplus
 }

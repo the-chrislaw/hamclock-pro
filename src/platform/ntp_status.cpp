@@ -40,6 +40,29 @@ std::optional<ClockSync> parse_timedatectl(const QByteArray& text) {
     return std::nullopt;
 }
 
+std::optional<ClockSync> parse_timesync_status(const QByteArray& text) {
+    const QString t = QString::fromUtf8(text);
+    const auto off = QRegularExpression("Offset:\\s*([+-]?[0-9.]+)\\s*(us|ms|s)\\b").match(t);
+    if (!off.hasMatch()) return std::nullopt;
+    bool ok = false;
+    double v = off.captured(1).toDouble(&ok);
+    if (!ok || !std::isfinite(v)) return std::nullopt;
+    const QString unit = off.captured(2);
+    v = std::abs(v) * (unit == "us" ? 1e-3 : unit == "ms" ? 1.0 : 1000.0);
+    if (v >= 1e6) return std::nullopt;
+    ClockSync s;
+    s.synchronized = true;
+    s.offset_ms = v;
+    const auto st = QRegularExpression("Stratum:\\s*(\\d+)").match(t);
+    if (st.hasMatch()) s.stratum = st.captured(1).toInt();
+    const auto srv = QRegularExpression("Server:\\s*\\S+\\s*\\(([^)]*)\\)").match(t);
+    if (srv.hasMatch()) {
+        const QString name = srv.captured(1).trimmed();
+        if (name.size() <= 64 && QRegularExpression("^[A-Za-z0-9.:_-]+$").match(name).hasMatch()) s.source = name;
+    }
+    return s;
+}
+
 #ifdef Q_OS_LINUX
 static std::optional<QByteArray> run(const QString& program, const QStringList& args) {
     QProcess p;
@@ -57,7 +80,13 @@ std::optional<ClockSync> read_clock_sync() {
 #ifdef Q_OS_LINUX
     if (const auto c = run("chronyc", {"tracking"}))
         if (const auto s = parse_chrony_tracking(*c)) return s;
-    if (const auto d = run("timedatectl", {"show", "-p", "NTPSynchronized"})) return parse_timedatectl(*d);
+    if (const auto d = run("timedatectl", {"show", "-p", "NTPSynchronized"})) {
+        auto s = parse_timedatectl(*d);
+        if (s && s->synchronized)
+            if (const auto ts = run("timedatectl", {"timesync-status"}))
+                if (const auto e = parse_timesync_status(*ts)) return e;
+        return s;
+    }
 #endif
     return std::nullopt;
 }

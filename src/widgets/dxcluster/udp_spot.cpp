@@ -141,13 +141,29 @@ std::optional<DxSpot> WsjtxDecoder::feed(const QByteArray& datagram, const QDate
     return spot;
 }
 
-bool UdpSpotListener::listen(int port, bool lan) {
+bool UdpSpotListener::valid_group(const QString& group) {
+    QHostAddress a;
+    if (!a.setAddress(group.trimmed()) || a.protocol() != QAbstractSocket::IPv4Protocol) return false;
+    return a.isMulticast();
+}
+
+bool UdpSpotListener::listen(int port, bool lan) { return listen(port, lan, QString()); }
+
+bool UdpSpotListener::listen(int port, bool lan, const QString& group) {
     socket_.reset();
     if (port < 1 || port > 65535) return port == 0;
+    const bool multicast = !group.trimmed().isEmpty();
+    if (multicast && !valid_group(group)) return false;
     auto s = std::make_unique<QUdpSocket>();
     s->setProxy(QNetworkProxy::NoProxy); // local socket: never consult a system proxy
-    if (!s->bind(lan ? QHostAddress(QHostAddress::AnyIPv4) : QHostAddress(QHostAddress::LocalHost), quint16(port),
-                 QAbstractSocket::DontShareAddress))
+    if (multicast) {
+        // Several programs may share the multicast port, so the address is shared.
+        if (!s->bind(QHostAddress(QHostAddress::AnyIPv4), quint16(port),
+                     QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint))
+            return false;
+        if (!s->joinMulticastGroup(QHostAddress(group.trimmed()))) return false;
+    } else if (!s->bind(lan ? QHostAddress(QHostAddress::AnyIPv4) : QHostAddress(QHostAddress::LocalHost), quint16(port),
+                        QAbstractSocket::DontShareAddress))
         return false;
     connect(s.get(), &QUdpSocket::readyRead, this, &UdpSpotListener::on_ready);
     socket_ = std::move(s);

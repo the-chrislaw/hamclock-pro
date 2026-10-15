@@ -84,6 +84,23 @@ QStringList toggle_tracked_names(const QStringList& current, const QString& name
     return out;
 }
 
+std::vector<Location> footprint_ring(double lat_deg, double lon_deg, double alt_km, int points) {
+    std::vector<Location> ring;
+    constexpr double kRe = 6371.0, kPi = 3.14159265358979323846, kRad = kPi / 180.0;
+    if (points < 3 || alt_km <= 0) return ring;
+    const double rho = std::acos(kRe / (kRe + alt_km)); // angular radius of the horizon circle
+    const double la = lat_deg * kRad, lo = lon_deg * kRad;
+    for (int i = 0; i < points; ++i) {
+        const double brg = 2 * kPi * i / points;
+        const double lat = std::asin(std::sin(la) * std::cos(rho) + std::cos(la) * std::sin(rho) * std::cos(brg));
+        double lon = lo + std::atan2(std::sin(brg) * std::sin(rho) * std::cos(la),
+                                     std::cos(rho) - std::sin(la) * std::sin(lat));
+        lon = std::remainder(lon, 2 * kPi);
+        ring.push_back(Location{lat / kRad, lon / kRad});
+    }
+    return ring;
+}
+
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time) {
     OverlayLayer layer;
     layer.id = "satellites";
@@ -104,9 +121,18 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
         }
         SubSatellitePoint now_pt;
         if (!p.sub_point(unix_time, now_pt)) continue;
+        for (const Location& w : footprint_ring(now_pt.lat_deg, now_pt.lon_deg, now_pt.alt_km, 48)) {
+            OverlayMarker f;
+            f.where = w;
+            f.color = QColor("#4fb0c6");
+            f.color.setAlpha(120);
+            f.size_px = 1;
+            layer.markers.push_back(f);
+        }
         OverlayMarker m;
         m.where = Location{now_pt.lat_deg, now_pt.lon_deg};
         m.call = satellite_short_name(QString::fromStdString(tle.name));
+        m.detail = QString("%1, altitude %2 km").arg(QString::fromStdString(tle.name)).arg(qRound(now_pt.alt_km));
         m.color = QColor("#4fb0c6");
         m.shape = OverlayShape::Triangle;
         m.size_px = 5;
@@ -229,6 +255,17 @@ void SatellitesModel::selectRow(int index) {
     refresh_detail();
 }
 
+bool SatellitesModel::selectByName(const QString& name) {
+    for (int i = 0; i < static_cast<int>(listed_.size()); ++i) {
+        if (satellite_short_name(QString::fromStdString(listed_[i].tle.name)).compare(name, Qt::CaseInsensitive) != 0) continue;
+        selected_ = i;
+        detail_timer_.start();
+        refresh_detail();
+        return true;
+    }
+    return false;
+}
+
 void SatellitesModel::toggleTracked() {
     if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_) return;
     const QString name = satellite_short_name(QString::fromStdString(listed_[selected_].tle.name));
@@ -236,6 +273,17 @@ void SatellitesModel::toggleTracked() {
     ini.setValue("satellites/tracked", toggle_tracked_names(tracked_names_, name));
     ini.sync();
     recompute();
+}
+
+QString SatellitesModel::setAsDx() {
+    if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_ || !settings_->configured())
+        return QStringLiteral("No satellite selected");
+    SatellitePropagator p(listed_[selected_].tle);
+    SubSatellitePoint sp;
+    if (!p.valid() || !p.sub_point(static_cast<double>(now().toSecsSinceEpoch()), sp))
+        return QStringLiteral("Position unavailable");
+    return settings_->saveStation(settings_->callsign(), settings_->deLatitude(), settings_->deLongitude(),
+                                  sp.lat_deg, sp.lon_deg, settings_->deZone());
 }
 
 void SatellitesModel::refresh_detail() {

@@ -111,3 +111,35 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-fourth run)
 - #334 (area D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E11 slice: sensors card Wi-Fi caption adds "Weakest N dBm (3 h)" (in-memory, one sample/min, full layout only), via `PeakHistory::trough()`. Unit test added; full release suite passes, ASan/UBSan left to CI; no screenshot (card shows only on hardware with Wi-Fi). Not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-fifth run)
+- Merged #344 (area C, green). #345 (area D) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E6 slice: weather card air line adds "dew N °C", computed locally from temperature and humidity (Magnus formula, no extra request; hidden for 0 % RH or out-of-range temperatures). Offline tests against reference values; ASan/UBSan left to CI; no screenshot (no station in harness); not validated on-device. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-sixth run)
+- #350 (area D) had no checks yet, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card Disk caption adds free space ("12.4 GB free" / "850 MB free", full layout only), via `format_free_bytes`. Unit tests for the formatting; ASan/UBSan left to CI; no screenshot (card shows only on hardware with sensors); not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-seventh run)
+- #356 (area C) macOS job still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: radio card Mode caption shows the passband width from rigctld's `m` reply ("2.4 kHz", "500 Hz"); zero/invalid widths hidden, full layout only. Offline parser tests; radio tests pass locally, full suite and ASan/UBSan left to CI; no screenshot (card needs a rig); not run with a real rig. Read-only. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-eighth run)
+- #361/#362 (areas C/D) CI running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E12 slice: serial NMEA GPS. `[gps] device`/`baud` in options.ini (device must be /dev/tty* or /dev/serial/*, no `..`; baud from the usual NMEA set) makes the GPS card read that receiver instead of gpsd, using the existing NMEA parser/tracker. Read-only termios 8N1 reader (Linux/macOS; unavailable elsewhere, card stays unconfigured), no QtSerialPort dependency. Fix older than 5 s is dropped; satellites shown as "N in use" (GGA has no in-view count). Tests via a pty plus config validation; full release suite passes (151/151), ASan/UBSan left to CI. Not run with a real receiver; no screenshot (needs a fix). Does not change DE. Next: DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-ninth run)
+- #364/#365 (areas C/A) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E15 slice: ADS-B receiver host/port from options.ini (`[adsb] host`/`port`), same validation as radio/rotator (plain host chars, port 1..65535, each field falls back to localhost:8080; IPv6 literals bracketed). GET-only as before. Offline URL tests; full release suite passes (151/151), ASan/UBSan left to CI. No Settings control yet; not run against a real receiver. Next: DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, thirtieth run)
+- #371/#372/#373 (areas I/C/D) macOS/iPad jobs still queued, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E7 slice: weather card (full layout only) shows a "Windy map ↗" link centred on DE; tapping calls `Qt.openUrlExternally` with `https://www.windy.com/?lat,lon,6`. The app never fetches windy.com, so no data-source policy entry or allowlist is needed. Offline URL tests; full release suite passes (the dashboard test failed once while a build overlapped, passed on rerun). ASan/UBSan left to CI; no screenshot taken, not validated on-device. Next: DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, thirty-first run)
+- Merged #378 (area C, green). #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E7 slice: weather card (full layout only) adds a "WEFAX charts ↗" link beside "Windy map ↗", opening NOAA's marine radiofax page (https://www.weather.gov/marine/radiofax) in the system browser; never fetched by the app, so no policy entry or allowlist. URL unit test; full release suite passes (152/152), ASan/UBSan left to CI; no screenshot, not validated on-device. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware, or the radio safety review.
+
+## 2026-10-15 (UTC, thirty-second run)
+- Merged #393 (tvOS, green). #394 (area C) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E12 slice: clock sync status now also reads `timedatectl timesync-status` (systemd-timesyncd) to show offset, stratum and server where chrony is absent; read-only, parser accepts us/ms/s and sanitises the server name. Offline parser tests; full release suite passes (154/154), ASan/UBSan left to CI; no screenshot (card needs hardware); not run on a Pi. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware or the radio safety review.

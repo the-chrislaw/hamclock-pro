@@ -1,4 +1,5 @@
 #include "dx_cluster_model.hpp"
+#include "spot_layer_style.hpp"
 #include "../../ui/app_settings.hpp"
 #include "../bandactivity/band_activity.hpp"
 #include "../watchlist/watch_match.hpp"
@@ -91,19 +92,31 @@ QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& 
 bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
     // NADXCC / NABAND are keywords (not callsigns): they match spots the ADIF log still needs.
     QStringList plain;
-    bool want_dxcc = false, want_band = false;
+    bool want_dxcc = false, want_band = false, want_pref = false, want_grid = false;
     for (const auto& e : watch_) {
         if (e == "NADXCC") want_dxcc = true;
         else if (e == "NABAND") want_band = true;
+        else if (e == "NAPREF") want_pref = true;
+        else if (e == "NAGRID") want_grid = true;
         else plain << e;
     }
     if (watchlist::matches(plain, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of))) return true;
-    if ((want_dxcc || want_band) && needed_) {
+    if (want_grid && grid_needed_ && !spot.grid.isEmpty() && grid_needed_(spot.grid)) return true;
+    if ((want_dxcc || want_band || want_pref) && needed_) {
         const QString n = needed_(spot.dx, spot.band);
         if (want_dxcc && n == "NEW DXCC") return true;
+        if (want_pref && n == "NEW PREFIX") return true;
         if (want_band && !n.isEmpty()) return true;
     }
     return false;
+}
+
+void DxSpotList::set_grid_needed_resolver(std::function<bool(const QString&)> r) {
+    beginResetModel();
+    grid_needed_ = std::move(r);
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = isWatched(spots_[i]);
+    watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
+    endResetModel();
 }
 
 void DxSpotList::set_needed_resolver(std::function<QString(const QString&, const QString&)> r) {
@@ -163,6 +176,14 @@ void DxClusterModel::cycleModeFilter() {
 DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("dxcluster", "DX cluster", parent), settings_(context.settings),
       client_(std::move(factory), this), list_(this), udp_(this) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("dx");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("dx");
+            if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
+        });
+    }
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
     if (settings_) {
@@ -186,17 +207,22 @@ void DxClusterModel::setMapVisible(bool visible) {
 
 // Only while the cluster link is live; stale or lost links never leave spots on the map.
 void DxClusterModel::publishOverlay() {
-    if (map_visible_ && state() == "live")
-        MapOverlays::instance().set_layer(dxcluster::overlay_layer(list_.spots(), dxcluster::bundled_entity_resolver()));
-    else
+    if (map_visible_ && state() == "live") {
+        auto layer = dxcluster::overlay_layer(list_.spots(), dxcluster::bundled_entity_resolver());
+        apply_spot_label_style(layer, settings_, "dx");
+        MapOverlays::instance().set_layer(layer);
+    } else
         MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId);
 }
 
 void DxClusterModel::refreshUdp() {
     const int port = settings_ ? settings_->udpSpotPort() : 0;
     const bool lan = settings_ && settings_->udpSpotLan();
-    if (port == udp_.port() && udp_.listening() == (port != 0)) return;
-    if (!udp_.listen(port, lan)) qWarning("UDP spot input: could not bind port %d", port);
+    const QString group = settings_ ? settings_->udpSpotGroup() : QString();
+    const QString key = QString::number(port) + (lan ? "L" : "l") + group;
+    if (key == udp_key_ && udp_.listening() == (port != 0)) return;
+    udp_key_ = key;
+    if (!udp_.listen(port, lan, group)) qWarning("UDP spot input: could not bind port %d", port);
 }
 
 QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
@@ -248,9 +274,15 @@ void register_widget_dxcluster(WidgetRegistry& registry, const WidgetContext& co
             bool needed = false;
             if (QMetaObject::invokeMethod(adif, "entityNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call)) && needed)
                 return QStringLiteral("NEW DXCC");
+            if (QMetaObject::invokeMethod(adif, "prefixNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call)) && needed)
+                return QStringLiteral("NEW PREFIX");
             if (!band.isEmpty() && QMetaObject::invokeMethod(adif, "bandSlotNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, call), Q_ARG(QString, band)) && needed)
                 return QStringLiteral("NEW BAND");
             return QString();
+        });
+        model->setGridNeededResolver([adif](const QString& grid) {
+            bool needed = false;
+            return QMetaObject::invokeMethod(adif, "gridNeeded", Qt::DirectConnection, Q_RETURN_ARG(bool, needed), Q_ARG(QString, grid)) && needed;
         });
     });
 }

@@ -17,6 +17,7 @@ Card {
             label: "Mode"
             visible: root.widget && root.widget.mode !== ""
             value: visible ? root.widget.mode : ""
+            caption: visible && !root.compact ? root.widget.passband : ""
         }
     }
 }

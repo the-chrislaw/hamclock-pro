@@ -134,6 +134,10 @@ void MapItem::resetView() {
     update();
 }
 
+QString MapItem::pathText(double latitude, double longitude) const {
+    return overlay_path_text(scene_.de, Location{latitude, longitude});
+}
+
 void MapItem::panBy(double dx, double dy) {
     if (scene_.projection != MapProjection::Equirectangular) return;
     if (scene_.zoom <= 1.0 || width() <= 0 || height() <= 0) return;

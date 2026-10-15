@@ -41,5 +41,47 @@ int main() {
     check(hcp_locator_center("jn58td", &cl, &co) && std::abs(cl - 48.1458333) < 1e-4 && std::abs(co - 11.625) < 1e-4, "JN58td centre");
     check(hcp_locator_center("JN", &cl, &co) && std::abs(cl - 45.0) < 1e-9 && std::abs(co - 10.0) < 1e-9, "JN field centre");
     check(!hcp_locator_center("ZZ99", &cl, &co) && !hcp_locator_center("JN5", &cl, &co) && !hcp_locator_center(nullptr, &cl, &co), "bad locators rejected");
+    // Sun/Moon events at JN58td (48.1N 11.6E) around the 2026-03-20 equinox: ~12 h days.
+    int64_t rise = 0, set = 0;
+    const int64_t t0 = 1774017960LL;
+    check(hcp_next_sun_event(t0, 0, 48.1458, 11.625, &rise) && rise > t0 && rise - t0 <= 86400, "next sunrise within a day");
+    check(hcp_next_sun_event(t0, 1, 48.1458, 11.625, &set) && set > t0 && set - t0 <= 86400, "next sunset within a day");
+    check(!hcp_next_sun_event(t0, 2, 48.1458, 11.625, &set), "bad kind rejected");
+    check(!hcp_next_sun_event(t0, 0, 95.0, 0, &rise), "bad latitude rejected");
+    check(!hcp_next_sun_event(1782000000LL, 0, 89.0, 0, &rise), "polar day has no sunrise");
+    int64_t mr = 0;
+    check(hcp_next_moon_event(t0, 0, 48.1458, 11.625, &mr) && mr > t0 && mr - t0 <= 3 * 86400, "next moonrise");
+    double ill = -1;
+    check(hcp_moon_phase(t0, buf, sizeof buf, &ill) && ill >= 0 && ill <= 1, "moon phase");
+    check(!hcp_moon_phase(t0, buf, sizeof buf, nullptr), "null illum rejected");
+    // Satellites: ISS element set (epoch 2008-264, Vallado/Celestrak sample).
+    const char tle[] =
+        "ISS (ZARYA)\n"
+        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
+        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n";
+    check(hcp_tle_count(tle, sizeof tle - 1) == 1, "one TLE parsed");
+    check(hcp_tle_count("garbage", 7) == 0 && hcp_tle_count(nullptr, 0) == 0, "bad TLE text rejected");
+    check(hcp_tle_name(tle, sizeof tle - 1, 0, buf, sizeof buf) && std::string(buf) == "ISS (ZARYA)", "TLE name");
+    HcpSatState ss{};
+    const int64_t te = 1221931538LL; // epoch + 5 h
+    check(hcp_sat_state(tle, sizeof tle - 1, 0, te, 48.1, 11.6, &ss), "sat state");
+    check(ss.alt_km > 330 && ss.alt_km < 400, "ISS altitude plausible");
+    check(std::abs(ss.lat_deg) <= 51.7 && ss.el_deg >= -90 && ss.el_deg <= 90 && ss.range_km > 300, "ISS geometry plausible");
+    check(std::abs(ss.epoch_s - 1221913538LL) < 5, "TLE epoch exposed");
+    check(!hcp_sat_state(tle, sizeof tle - 1, 1, te, 48.1, 11.6, &ss), "index out of range");
+    check(!hcp_sat_state(tle, sizeof tle - 1, 0, te, 95.0, 11.6, &ss), "bad latitude rejected");
+    // Coastline table.
+    const int parts = hcp_coast_part_count();
+    size_t npts = 0;
+    const float* pts = hcp_coast_points(&npts);
+    check(parts > 100 && pts && npts > 1000, "coastline table exposed");
+    uint32_t cs = 0, cc = 0;
+    check(hcp_coast_part(0, &cs, &cc) && cc >= 2 && cs + cc <= npts, "first coast part in range");
+    check(hcp_coast_part(parts - 1, &cs, &cc) && cs + cc <= npts, "last coast part in range");
+    check(!hcp_coast_part(parts, &cs, &cc) && !hcp_coast_part(-1, &cs, &cc), "coast index range checked");
+    bool inRange = true;
+    for (size_t i = 0; i < npts; ++i)
+        if (pts[2 * i] < -180.f || pts[2 * i] > 180.f || pts[2 * i + 1] < -90.f || pts[2 * i + 1] > 90.f) inRange = false;
+    check(inRange, "coastline coordinates are valid lon/lat");
     return failures ? 1 : 0;
 }

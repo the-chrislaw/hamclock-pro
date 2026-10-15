@@ -25,7 +25,13 @@ ApplicationWindow {
     // 1.0 on a 1024x600 panel; grows on TVs so text stays readable from the sofa.
     Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, 3)) }
 
-    Binding { target: Theme; property: "dense"; value: window.width <= 1280 && window.height <= 720 }
+    Binding { target: Theme; property: "dense"; value: (window.width <= 1280 && window.height <= 720) || window.phone }
+
+    // Phone portrait (A0d): one column, station strip over one pane over the map.
+    readonly property bool phone: width < 600 && height > width
+    // Phone landscape (A0d): map left, one pane right of it; 800x480 Pi panels keep the 3-pane grid.
+    readonly property bool phoneWide: height < 440 && width > height
+    Binding { target: Theme; property: "phone"; value: window.phone }
 
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
@@ -61,41 +67,51 @@ ApplicationWindow {
 
     // One page, no scrolling: station column | (pane row over map). Every size
     // from 800x480 to 4K shares this grid; slots clip their content.
-    RowLayout {
+    GridLayout {
         id: page
+        columns: window.phone ? 1 : 2
+        rowSpacing: Theme.gap
+        columnSpacing: Theme.gap
         anchors.fill: parent
         anchors.margins: Theme.pad
         anchors.topMargin: (Theme.dense ? Theme.pad : 0) + safeArea.top + window.overscanY
         anchors.leftMargin: Theme.pad + safeArea.left + window.overscanX
         anchors.rightMargin: Theme.pad + safeArea.right + window.overscanX
         anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
-        spacing: Theme.gap
 
         StationCard {
             id: stationCard
-            Layout.preferredWidth: Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.max(0, page.width * 0.22 - 190 * Theme.scale))
-            Layout.fillHeight: true
+            wide: window.phone
+            Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.max(0, page.width * 0.22 - 190 * Theme.scale))
+            Layout.fillWidth: window.phone
+            Layout.fillHeight: !window.phone
+            Layout.preferredHeight: window.phone ? page.height * 0.36 : -1
             onSetupRequested: settingsLayer.visible = true
             onSettingsRequested: settingsLayer.visible = true
             onTimersRequested: timersLayer.visible = true
         }
 
-        ColumnLayout {
+        GridLayout {
+            columns: window.phoneWide ? 2 : 1
+            layoutDirection: window.phoneWide ? Qt.RightToLeft : Qt.LeftToRight
+            rowSpacing: Theme.gap
+            columnSpacing: Theme.gap
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: Theme.gap
 
             RowLayout {
                 id: paneRow
-                Layout.fillWidth: true
-                Layout.preferredHeight: Math.max(150 * Theme.scale, page.height * 0.4)
-                Layout.maximumHeight: Layout.preferredHeight
-                Layout.minimumHeight: Layout.preferredHeight
+                Layout.fillWidth: !window.phoneWide
+                Layout.fillHeight: window.phoneWide
+                Layout.preferredWidth: window.phoneWide ? page.width * 0.3 : -1
+                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22 : Math.max(150 * Theme.scale, page.height * 0.4))
+                Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
+                Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
                 spacing: Theme.gap
                 function slotAt(i) { return paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
-                    model: 3
+                    model: (window.phone || window.phoneWide) ? 1 : 3
                     PaneSlot {
                         index: modelData
                         paused: paneChooser.visible || paneOptions.visible
@@ -128,7 +144,7 @@ ApplicationWindow {
                     dark: Theme.dark
                     uiScale: Theme.scale
                     onTapped: function (lat, lon) { mapTapMenu.openAt(lat, lon) }
-                    onMarkerTapped: function (layer, call, detail, lat, lon) { mapTapMenu.openMarker(layer, call, detail, lat, lon) }
+                    onMarkerTapped: function (layer, call, detail, lat, lon) { mapTapMenu.openMarker(layer, call, detail, lat, lon); mapTapMenu.path = worldMap.pathText(lat, lon) }
                 }
                 MapTapMenu {
                     id: mapTapMenu
@@ -227,6 +243,40 @@ ApplicationWindow {
         color: Theme.canvas
         z: 9
         TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false }
+    }
+
+    // Any touch counts as activity (passive: children still get their taps).
+    TapHandler { gesturePolicy: TapHandler.DragThreshold; onPressedChanged: blanking.touch() }
+
+    // Software screen blanking (kiosk): black overlay, any tap wakes it.
+    Rectangle {
+        id: blankLayer
+        visible: blanking.blanked
+        anchors.fill: parent
+        color: "black"
+        z: 100
+        focus: visible
+        onVisibleChanged: if (visible) forceActiveFocus()
+        Keys.onPressed: function (event) { blanking.touch(); event.accepted = true }
+        MouseArea { anchors.fill: parent; onPressed: blanking.touch() }
+    }
+
+    Rectangle {
+        id: alarmBanner
+        visible: alarms.ringing
+        z: 20
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        width: Math.min(parent.width, 420 * Theme.scale)
+        height: Theme.touch + Theme.pad
+        radius: Theme.radius
+        color: Theme.accent
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: Theme.pad / 2
+            Text { Layout.fillWidth: true; text: alarms.ringingText; color: Theme.canvas; font.pixelSize: Theme.fontValue; font.bold: true; elide: Text.ElideRight }
+            AppButton { text: "Dismiss"; onClicked: alarms.dismiss() }
+        }
     }
 
     Rectangle {

@@ -105,6 +105,13 @@ QString compass_point(int degrees) {
 
 double celsius_to_fahrenheit(double c) { return c * 9.0 / 5.0 + 32.0; }
 
+std::optional<double> dew_point_c(double t, int rh) {
+    if (rh <= 0 || rh > 100 || !(t >= -45 && t <= 60)) return std::nullopt;
+    constexpr double a = 17.62, b = 243.12;  // Magnus coefficients (Sonntag 1990)
+    const double g = std::log(rh / 100.0) + a * t / (b + t);
+    return b * g / (a - g);
+}
+
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
@@ -136,6 +143,16 @@ QString reverse_url(double latitude, double longitude) {
     q.addQueryItem("accept-language", "en");
     url.setQuery(q);
     return url.toString();
+}
+
+QString wefax_url() {
+    return QStringLiteral("https://www.weather.gov/marine/radiofax");
+}
+
+QString windy_url(double latitude, double longitude) {
+    return QStringLiteral("https://www.windy.com/?%1,%2,6")
+        .arg(latitude, 0, 'f', 2)
+        .arg(longitude, 0, 'f', 2);
 }
 
 } // namespace hamclock::weather

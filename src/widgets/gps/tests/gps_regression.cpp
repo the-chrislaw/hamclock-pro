@@ -9,6 +9,9 @@
 #include <QTcpSocket>
 #include <cmath>
 #include <iostream>
+#include <cstdlib>
+#include <fcntl.h>
+#include <unistd.h>
 
 namespace {
 int failures = 0;
@@ -107,5 +110,37 @@ int main(int argc, char** argv) {
     check(!server.hasPendingConnections(), "no connection while suspended");
     lifecycle.setState(Qt::ApplicationActive);
     check(waitFor([&] { return server.hasPendingConnections(); }), "resume reconnects immediately");
+
+    {   // serial config validation
+        using gps::SerialConfig;
+        const auto d = gps::parse_serial_config("/dev/ttyUSB0", "115200", {});
+        check(d.device == "/dev/ttyUSB0" && d.baud == 115200, "serial config accepted");
+        check(gps::parse_serial_config("/etc/passwd", "9600", {}).device.isEmpty(), "non-tty path rejected");
+        check(gps::parse_serial_config("/dev/../etc/x", "9600", {}).device.isEmpty(), "dot-dot rejected");
+        check(gps::parse_serial_config("/dev/ttyS0", "123", {}).baud == 9600, "odd baud falls back");
+    }
+#ifdef Q_OS_LINUX
+    {   // serial NMEA receiver through a pseudo-terminal
+        const int master = posix_openpt(O_RDWR | O_NOCTTY);
+        check(master >= 0 && grantpt(master) == 0 && unlockpt(master) == 0, "pty created");
+        const char* slave = ptsname(master);
+        QString dev = slave ? QString::fromLatin1(slave) : QString();
+        GpsModel serial(ctx);
+        serial.useSerial({dev, 9600});
+        serial.start();
+        check(serial.state() == "loading", "serial opens and waits for a fix");
+        const QByteArray sent = "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n"
+                                "$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        check(::write(master, sent.constData(), size_t(sent.size())) == sent.size(), "pty write");
+        check(waitFor([&] { return serial.hasFix(); }) && serial.state() == "live", "serial fix goes live");
+        check(serial.grid().startsWith("JN58") && serial.satellites() == "8 in use", "serial grid and satellites");
+        ::close(master);
+        check(waitFor([&] { return serial.state() == "unconfigured"; }), "serial loss clears the fix");
+        GpsModel missing(ctx);
+        missing.useSerial({"/dev/ttyNOPE9", 9600});
+        missing.start();
+        check(missing.state() == "unconfigured" && !missing.hasFix(), "absent serial device -> unconfigured");
+    }
+#endif
     return failures ? 1 : 0;
 }

@@ -40,6 +40,12 @@ int main(int argc, char** argv) {
     check(std::fabs(crossing_day(Planet::Mars, utc(2025, 1, 16), 180)) < 2.0, "Mars opposition 2025-01-16");
     check(std::fabs(crossing_day(Planet::Jupiter, utc(2026, 1, 10), 180)) < 2.0, "Jupiter opposition 2026-01-10");
     check(std::fabs(crossing_day(Planet::Saturn, utc(2025, 9, 21), 180)) < 2.0, "Saturn opposition 2025-09-21");
+    // Uranus and Neptune oppositions from the almanac (2025-11-21, 2025-09-23, 2026-11-25).
+    check(std::fabs(crossing_day(Planet::Uranus, utc(2025, 11, 21), 180)) < 2.0, "Uranus opposition 2025-11-21");
+    check(std::fabs(crossing_day(Planet::Neptune, utc(2025, 9, 23), 180)) < 2.0, "Neptune opposition 2025-09-23");
+    check(std::fabs(crossing_day(Planet::Uranus, utc(2026, 11, 25), 180)) < 2.0, "Uranus opposition 2026-11-25");
+    check(std::fabs(planet_position(Planet::Uranus, {utc(2025, 11, 21)}).distance_au - 18.6) < 0.4, "Uranus distance at opposition (about 18.6 AU)");
+    check(std::fabs(planet_position(Planet::Neptune, {utc(2025, 9, 23)}).distance_au - 28.9) < 0.3, "Neptune distance at opposition");
     check(std::fabs(crossing_day(Planet::Mars, utc(2027, 2, 19), 180)) < 2.0, "Mars opposition 2027-02-19");
     // Venus inferior conjunction 2025-03-23.
     check(std::fabs(crossing_day(Planet::Venus, utc(2025, 3, 23), 0)) < 2.0, "Venus inferior conjunction 2025-03-23");
@@ -93,7 +99,8 @@ int main(int argc, char** argv) {
     for (const QVariant& r : rows) mars_row |= r.toMap().value("name").toString() == "Mars";
     check(mars_row, "Mars is up from London at 05:00Z on opposition night");
     const OverlayLayer layer = planet_overlay_layer({utc(2025, 1, 16, 5)});
-    check(layer.id == "planets" && layer.markers.size() == 5, "overlay layer has five planets");
+    check(layer.id == "planets" && layer.markers.size() == 7, "overlay layer has seven planets");
+    check(layer.markers[0].detail.contains(layer.markers[0].call), "tap detail names the planet");
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

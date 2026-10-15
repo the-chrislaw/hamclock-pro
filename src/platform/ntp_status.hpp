@@ -22,6 +22,10 @@ std::optional<ClockSync> parse_chrony_tracking(const QByteArray& text);
 // `timedatectl show -p NTPSynchronized` -> "NTPSynchronized=yes|no".
 std::optional<ClockSync> parse_timedatectl(const QByteArray& text);
 
+// `timedatectl timesync-status` (systemd-timesyncd) -> server name, stratum and offset
+// (units us/ms/s). Only used to enrich a timedatectl "synchronised" answer.
+std::optional<ClockSync> parse_timesync_status(const QByteArray& text);
+
 // Tries chronyc, then timedatectl; absent when neither is usable.
 std::optional<ClockSync> read_clock_sync();
 
