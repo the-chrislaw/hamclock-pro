@@ -80,3 +80,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - H2 slice 3: storms forecast positions on the map. Parses the NHC forecast/advisory text (`parse_forecast`: six forecast and two outlook points with valid time and wind; day/month resolved from the issuance), one PolledSource per storm for the three strongest. Dots (3-4 px, coloured by forecast intensity, tap shows "Trudy forecast 14 18:00Z · 55 kt") are added after the storm markers; used only when the text's storm id and advisory number match the index and the page is fresh, otherwise not drawn. The overlay API has no lines, so no connecting track or cone; the KMZ track needs a zip reader. Fixtures: real forecast advisory and a trimmed real index (Trudy, advisory 4, captured 2026-10-14). Full suite 132/132; ASan/UBSan storms test run. Pane unchanged, so no screenshots.
 - Next: marine map overlay (needs zone geometry); lightning and nets once #142 is resolved.
 - Blocked: lightning and NetLogger on allowlist (#142).
+
+## 2026-10-15 (hourly run)
+- Step 1: open PRs #358, #357, #73 are other areas; left alone. No `qa` issues for [H].
+- Owner decision on #142 (2026-10-15): skip NetLogger (TLS host mismatch) and lightning (GLM too heavy). Added both to ROADMAP "On the radar". JTWC (metoc.navy.mil still 403) and the marine polygon overlay (overlay API has no polygons) remain blocked. Area H has no buildable backlog left. Docs only; no code or screenshots.
