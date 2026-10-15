@@ -54,4 +54,14 @@ private:
     std::vector<std::pair<qint64, double>> samples_;
 };
 
+// Highest value seen in the last 3 h (in-memory, one sample per minute); used for the
+// CPU temperature peak. Absent until a sample exists.
+class PeakHistory {
+public:
+    void add(qint64 epoch_s, double value);
+    std::optional<double> peak() const;
+private:
+    std::vector<std::pair<qint64, double>> samples_;
+};
+
 } // namespace hamclock::sensors

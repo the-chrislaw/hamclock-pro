@@ -149,5 +149,14 @@ int main(int argc, char** argv) {
         s.add(5 * 3600, 1013.0);  // old samples trimmed past 3 h
         check(s.change_per_3h() && std::abs(*s.change_per_3h()) < 1e-9, "window trimmed to 3 h");
     }
+    {
+        sensors::PeakHistory p;
+        check(!p.peak(), "no samples -> no peak");
+        p.add(0, 60.0); p.add(10, 99.0);  // within a minute: ignored
+        p.add(120, 71.5); p.add(240, 65.0);
+        check(p.peak() && *p.peak() == 71.5, "peak is the maximum");
+        p.add(4 * 3600, 50.0);  // older samples leave the 3 h window
+        check(p.peak() && *p.peak() == 50.0, "peak window trimmed to 3 h");
+    }
     return failures ? 1 : 0;
 }

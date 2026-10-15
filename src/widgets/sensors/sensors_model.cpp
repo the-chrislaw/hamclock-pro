@@ -20,6 +20,7 @@ void SensorsModel::start() { refresh(); timer_.start(); }
 
 void SensorsModel::refresh() {
     temp_ = sensors::read_cpu_temp(root_);
+    if (temp_) cpuPeak_.add(now().toSecsSinceEpoch(), *temp_);
     wifi_ = sensors::read_wifi_dbm(wireless_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
     env_ = sensors::read_env_sensor(iio_);
@@ -66,6 +67,11 @@ QString SensorsModel::envDewPoint() const {
 QString SensorsModel::cpuNote() const {
     if (!temp_) return QString();
     return *temp_ >= 80 ? "Hot: throttling likely" : *temp_ >= 70 ? "Warm" : "Normal";
+}
+
+QString SensorsModel::cpuPeak() const {
+    const auto p = cpuPeak_.peak();
+    return p ? QString("Peak %1 °C (3 h)").arg(std::lround(*p)) : QString();
 }
 
 void register_widget_sensors(WidgetRegistry& registry, const WidgetContext& context) {
