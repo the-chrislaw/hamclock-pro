@@ -211,6 +211,7 @@ Rectangle {
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
+                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Theme.gap * 0.6
@@ -363,6 +364,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.savePskMaxKm(parseInt(pskMax.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.savePskMatch(pskMatch.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
                                         if (clusterError.text === "")

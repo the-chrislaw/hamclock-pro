@@ -3,6 +3,7 @@
 #include "banner_text.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
+#include "../widgets/pskreporter/psk_overlay.hpp"
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -99,6 +100,7 @@ void AppSettings::loadOptions() {
     aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
     const int pk = ini.value("psk/max_km", 0).toInt();
     psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
+    psk_match_ = ini.value("psk/match").toString().left(120);
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
@@ -401,6 +403,19 @@ QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
     aprs_radius_km_ = radius_km;
     emit optionsChanged();
     if (changed) emit aprsChanged();
+    return {};
+}
+
+QString AppSettings::savePskMatch(const QString& filter) {
+    const QStringList tokens = psk::match_tokens(filter);
+    const QString norm = tokens.join(", ");
+    if (filter.trimmed().size() > 120) return "PSKReporter filter is too long.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/match", norm);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the PSKReporter filter.";
+    psk_match_ = norm;
+    emit optionsChanged();
     return {};
 }
 

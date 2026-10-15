@@ -47,8 +47,10 @@ void PskModel::publishOverlay() {
 
 void PskModel::applyFilter() {
     feed_ = raw_;
-    if (settings_ && settings_->pskMaxKm() > 0)
-        feed_.reports = psk::within_distance(raw_.reports, settings_->deLatitude(), settings_->deLongitude(),
+    if (!settings_) return;
+    feed_.reports = psk::matching(feed_.reports, psk::match_tokens(settings_->pskMatch()));
+    if (settings_->pskMaxKm() > 0)
+        feed_.reports = psk::within_distance(feed_.reports, settings_->deLatitude(), settings_->deLongitude(),
                                              settings_->pskMaxKm());
 }
 
