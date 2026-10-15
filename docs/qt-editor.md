@@ -1,3 +1,5 @@
+> **Retired (Oct 15):** the standalone `hamclock-pro-editor` program was removed; station entry now lives in the Qt Quick app, Settings > Station (DMS/decimal, Maidenhead, Find). The dialog code below is kept only for the legacy dashboard. Historical notes follow.
+
 # Native Qt station editor prototype
 
 This original C++ dialog uses Qt Core/Gui/Widgets standard controls and the existing `StationEdit`/settings implementation. It contains no copied HamClock implementation, bundled fonts, Qt Virtual Keyboard, network service or radio control.

@@ -6,22 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
 
-add_executable(hamclock-pro-editor MACOSX_BUNDLE
-    src/qt/station_editor.cpp
-    src/qt/station_editor_dialog.cpp
-    src/qt/editor_appearance.cpp
-    src/app/station_edit.cpp
-    src/app/station_view.cpp
-    src/domain/geometry.cpp
-    src/platform/settings.cpp)
-target_link_libraries(hamclock-pro-editor PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(hamclock-pro-editor PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-set_target_properties(hamclock-pro-editor PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.stationeditor
-    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Station Editor")
-
 # QtGui-only map core (renderer, viewport, projection, land geometry): no
 # QtWidgets, so the Qt Quick app and the iPad build depend on this alone.
 add_library(hamclock-map-core STATIC
@@ -472,7 +456,7 @@ include(cmake/AppleBundle.cmake)
 
 # Installation and packaging (used by .github/workflows/release.yml).
 include(GNUInstallDirs)
-install(TARGETS hamclock-pro hamclock-pro-dashboard hamclock-pro-editor hamclock-pro-map-preview hamclock-pro-cli
+install(TARGETS hamclock-pro hamclock-pro-dashboard hamclock-pro-map-preview hamclock-pro-cli
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     BUNDLE DESTINATION .)
 install(FILES LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})

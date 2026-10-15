@@ -190,3 +190,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 43)
 - Backlog A16 slice: saved configurations. `config_store.hpp` (pure: names 1-24 chars, max 12, copies `options.ini` to `configs/<name>.ini`, atomic restore, rename, delete; station and credentials never included), `AppSettings` invokables and a Settings > "Saved configurations" card. Restore reloads AppSettings at once; pane slots, alarms and blanking need a restart (said in the UI). Test `config-store-regression` (new). A13 note corrected (banner background was already done). Settings is not reachable from `--screenshot`, so the card was not checked visually; ctest 157/157, no new warnings; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 44)
+- Backlog A5 slice: retired the standalone `hamclock-pro-editor` (target, `station_editor.cpp`, install entry, README row; Settings > Station in the Qt Quick app covers it). `station_editor_dialog` stays: the legacy dashboard and its tests still use it. Dashboard and map-preview remain until the map card replaces them. Root `CMakeLists.txt` touched only to drop that target (minimal, explained in the PR). Build clean of new warnings, ctest 147/147; ASan/UBSan left to CI; not validated on a device.
