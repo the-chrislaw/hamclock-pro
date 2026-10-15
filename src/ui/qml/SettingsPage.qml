@@ -220,6 +220,9 @@ Rectangle {
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
+                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
+                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
                     FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true

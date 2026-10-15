@@ -131,12 +131,18 @@ int main(int argc, char** argv) {
           "unsafe calls refused");
 
     QString requested;
+    QByteArray wspr_body;
+    {
+        QFile wf(QDir(argv[1]).filePath("wspr-rx.json"));
+        wf.open(QIODevice::ReadOnly);
+        wspr_body = wf.readAll();
+    }
     WidgetContext context;
     context.transport = [&](const QUrl& url, FetchDone done) {
         requested = url.toString();
         FetchResult result;
         result.http_status = 200;
-        result.body = body;
+        result.body = url.host().contains("wspr.live") ? wspr_body : body;
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     QTemporaryDir tmp;
@@ -163,6 +169,12 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasData() && model.count() == 1, "report -> live");
     check(model.modes() == "CW 1", "model modes line");
     check(model.bestSnr() == "14 dB" && model.recent().size() == 1, "summary");
+    check(!settings.pskWspr() && model.count() == 1, "WSPR is off by default");
+    check(settings.savePskWspr(true).isEmpty() && settings.pskWspr(), "WSPR opt-in saved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.count() == 6 && model.modes().contains("WSPR 5"), "WSPR spots merged into the card");
+    check(settings.savePskWspr(false).isEmpty(), "WSPR opt-out saved");
+    check(model.count() == 1 && model.modes() == "CW 1", "WSPR off drops its spots");
 
     check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",
           "live feed publishes the overlay layer");

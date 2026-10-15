@@ -26,6 +26,7 @@ PskModel::PskModel(const WidgetContext& context, QObject* parent)
     if (settings_) {
         connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            syncWspr();
             if (!raw_.ok) return;
             applyFilter();
             emit reportsChanged();
@@ -59,13 +60,56 @@ void PskModel::applyFilter() {
                                              settings_->pskMaxKm());
 }
 
+// Combines the PSKReporter and (optional) WSPR feeds, newest first.
+void PskModel::mergeRaw() {
+    raw_ = psk_raw_;
+    if (wspr_raw_.ok) {
+        raw_.ok = true;
+        raw_.reports.insert(raw_.reports.end(), wspr_raw_.reports.begin(), wspr_raw_.reports.end());
+        std::stable_sort(raw_.reports.begin(), raw_.reports.end(),
+                         [](const psk::Report& a, const psk::Report& b) { return a.time > b.time; });
+    }
+}
+
+// WSPR (wspr.live, fair use: one query per 5 min) only when the user turns it on.
+void PskModel::syncWspr() {
+    const QString url = settings_ && settings_->pskWspr() && source_ ? psk::wspr_query_url(call_) : QString();
+    if (url.isEmpty()) {
+        if (!wspr_source_ && !wspr_raw_.ok) return;
+        delete wspr_source_;
+        wspr_source_ = nullptr;
+        wspr_raw_ = {};
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+        publishOverlay();
+        return;
+    }
+    if (wspr_source_) return;
+    wspr_source_ = new PolledSource("wspr-" + QString(call_).replace('/', '-').toLower(), QUrl(url), kPolicy,
+                                    transport_, this);
+    wspr_source_->setClock([this] { return now(); });
+    connect(wspr_source_, &PolledSource::updated, this, [this] {
+        wspr_raw_ = psk::parse_wspr(wspr_source_->body());
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+        refreshState();
+    });
+    wspr_source_->start();
+}
+
 void PskModel::start() {
     const QString call = settings_ ? settings_->callsign().trimmed().toUpper() : QString();
     if (source_ && call == call_) return;
     delete source_;
     source_ = nullptr;
+    delete wspr_source_;
+    wspr_source_ = nullptr;
     feed_ = {};
     raw_ = {};
+    psk_raw_ = {};
+    wspr_raw_ = {};
     call_ = call;
     emit reportsChanged();
     publishOverlay();
@@ -79,7 +123,8 @@ void PskModel::start() {
                                transport_, this);
     source_->setClock([this] { return now(); });
     connect(source_, &PolledSource::updated, this, [this] {
-        raw_ = psk::parse_reports(source_->body());
+        psk_raw_ = psk::parse_reports(source_->body());
+        mergeRaw();
         applyFilter();
         emit reportsChanged();
         refreshState();
@@ -88,6 +133,7 @@ void PskModel::start() {
     connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     setState("loading", "Contacting PSKReporter…");
     source_->start();
+    syncWspr();
 }
 
 QString PskModel::bestSnr() const {
