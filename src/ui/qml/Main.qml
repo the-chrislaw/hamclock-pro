@@ -230,6 +230,24 @@ ApplicationWindow {
     }
 
     Rectangle {
+        id: alarmBanner
+        visible: alarms.ringing
+        z: 20
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        width: Math.min(parent.width, 420 * Theme.scale)
+        height: Theme.touch + Theme.pad
+        radius: Theme.radius
+        color: Theme.accent
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: Theme.pad / 2
+            Text { Layout.fillWidth: true; text: alarms.ringingText; color: Theme.canvas; font.pixelSize: Theme.fontValue; font.bold: true; elide: Text.ElideRight }
+            AppButton { text: "Dismiss"; onClicked: alarms.dismiss() }
+        }
+    }
+
+    Rectangle {
         id: settingsLayer
         anchors.fill: parent
         visible: false
