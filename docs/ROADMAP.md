@@ -229,6 +229,6 @@ Parked features, not planned now. Revisit if users ask; the issues keep the rese
 | Contest calendar pane | WA7BNM Contest Calendar is "All Rights Reserved" with no reuse terms | Ask WA7BNM for permission (draft email in the owner's notes) or find an openly licensed calendar | #200 |
 | MUF map style (KC2G) | No documented feed or reuse terms | Ask KC2G for a supported endpoint and attribution | #206 |
 | VOACAP-style reliability matrix | Needs a bundled engine (licence review, large) or a hosted API | Evaluate ITURHFProp/VOACAP licences | #206 |
-| Tropo forecast map | Usual source unreachable, no reuse terms | Find an open source or derive from GFS | #206 |
+| Tropo forecast map | Owner decision (#281, Oct 15): won't do for now. Needs weather-model data; the usual source has no confirmed reuse terms | GFS/NOMADS refractivity gradient (public domain; needs `nomads.ncep.noaa.gov` allowlisted and a GRIB2 subsetting route light enough for a Pi) | #206, #281 |
 | Lightning with range rings | Blitzortung terms are restrictive and it is not allowlisted; NOAA GLM (NCEI NetCDF) is too heavy for a Pi and has no small real sample | Find a light, openly licensed strike feed | #142 |
 | NetLogger active nets pane | `api.netlogger.org` fails TLS verification (certificate host mismatch); verification is never disabled | Revisit if NetLogger fixes its certificate; check terms then | #142 |
