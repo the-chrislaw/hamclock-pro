@@ -185,3 +185,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 6 (slice): PSKReporter band statistics. `psk::band_stats/band_summary` count reports per amateur band (busiest first, out-of-band skipped); `PskModel::bands` and a "20m 5 · 40m 2" line (max four bands) on the card. No AppSettings change, no new source. Test added; 147/147 pass locally, zero warnings; ASan/UBSan left to CI (small pure functions). No screenshot (card needs a callsign); not validated on device.
 - Not done: WSPR/RBN sources (RBN is telnet, source decision pending), by-call/grid and max-distance filters.
 - Next: UDP sets DX (#333), Meshtastic (#311), WWFF/GMA (#305) all wait on owner input.
+
+## 2026-10-15 (run 32)
+- Step 1: merged #343 (ui alarms, all checks green). #73 is stale docs, left alone. Nothing of mine open; no open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter "Farthest: CALL km band" line (mi when imperial units are set), from the receiver grid centre to DE. `psk::farthest_report` is pure; the card line hides when no report has a usable grid. No AppSettings change, no new source. Test added; 148/148 pass locally; ASan/UBSan left to CI. No screenshot (card needs a callsign); not validated on device.
+- Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.

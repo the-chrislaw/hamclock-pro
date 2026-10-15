@@ -23,6 +23,13 @@ Card {
             elide: Text.ElideRight
             Layout.fillWidth: true
         }
+        Text {
+            visible: widget && widget.hasData && widget.farthest !== ""
+            text: widget ? widget.farthest : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            elide: Text.ElideRight
+            Layout.fillWidth: true
+        }
         Repeater {
             model: root.compact || !widget ? [] : widget.recent
             delegate: RowLayout {

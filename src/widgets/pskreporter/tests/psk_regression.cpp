@@ -77,6 +77,16 @@ int main(int argc, char** argv) {
         check(psk::band_stats({}).empty(), "band stats: empty");
         check(psk::band_summary(stats, 1) == "20m 3" && psk::band_summary(stats, 5) == "20m 3 · 40m 1", "band summary");
     }
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].receiver = "NEAR"; rs[0].receiver_grid = "IO91";
+        rs[1].receiver = "FAR"; rs[1].receiver_grid = "QM05ab"; rs[1].band = "20m";
+        rs[2].receiver = "BAD"; rs[2].receiver_grid = "ZZ";
+        rs[3].receiver = "COARSE"; rs[3].receiver_grid = "QM";
+        const auto f = psk::farthest_report(rs, 51.5, -0.1);
+        check(f.found && f.call == "FAR" && f.band == "20m" && f.km > 9000 && f.km < 10500, "farthest: Japan from London");
+        check(!psk::farthest_report({}, 0, 0).found && !psk::farthest_report({rs[2], rs[3]}, 0, 0).found, "farthest: none");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
