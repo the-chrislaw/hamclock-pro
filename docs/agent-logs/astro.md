@@ -180,3 +180,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Map tap details (backlog D, #246 first slice): G's `markerTapped` / tap menu now exists, so the satellite, planet and beacon overlay markers carry a `detail` line (satellite: name and altitude; beacon: frequency and location; planet: name). Tests extended in satellites_regression, beacons_regression, planets_regression. Not done: full satellite detail box on tap (SatNOGS transmitters, Doppler, passes). Not rendered on a screen; the popup is G's existing menu. ASan/UBSan left to CI.
 - Not mine: #383 had no checks at start, #73 conflicting; left alone. Balloons blocked on #314.
 - Next: satellite detail box from the tap menu, settings editor for TLE, hams.at key, annular/total contacts.
+
+## 2026-10-15 (UTC), run 34
+- Merged #389 (iPad QML plugins, green). Satellite detail box action (backlog D, #246): "Set as DX (sub-satellite point)" in the Satellites detail box, via `SatellitesModel::setAsDx()` (explicit tap only; DE, callsign and zone untouched; error text shown if no satellite is open). Test extended in satellites_model_regression. Full ctest 154/154 passes; not rendered on a screen; ASan/UBSan left to CI. Not done: footprint on the map.
+- Not mine: #390 CI running at start, #73 conflicting; left alone. Balloons blocked on #314.
+- Next: footprint, settings editor for TLE, hams.at key, annular/total contacts.

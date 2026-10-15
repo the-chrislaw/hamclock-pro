@@ -125,11 +125,20 @@ int main(int argc, char** argv) {
             ini.sync();
             model.recompute();
         }
+        {
+            // Set as DX: DX moves to the sub-satellite point; DE and callsign are untouched.
+            const double de_lat = settings.deLatitude(), de_lon = settings.deLongitude();
+            const QString err = model.setAsDx();
+            check(err.isEmpty(), "setAsDx saves");
+            check(std::abs(settings.dxLatitude()) <= 90 && std::abs(settings.dxLatitude() - 51.5) > 0.01, "DX moved off the old target");
+            check(settings.deLatitude() == de_lat && settings.deLongitude() == de_lon && settings.callsign() == "W1AW", "DE and callsign unchanged");
+        }
         check(toggle_tracked_names({}, "AO-7") == QStringList({"AO-7"}) &&
               toggle_tracked_names({"AO-7", "ISS"}, "iss") == QStringList({"AO-7"}) &&
               toggle_tracked_names({"AO-7", "ISS"}, "FO-29") == QStringList({"ISS", "FO-29"}), "toggle_tracked_names");
         model.selectRow(0);
         check(model.detail().isEmpty(), "second tap closes the detail");
+        check(!model.setAsDx().isEmpty(), "setAsDx with no satellite open reports an error");
         check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&
               compass_point(90) == "E" && compass_point(225) == "SW", "format helpers");
     }

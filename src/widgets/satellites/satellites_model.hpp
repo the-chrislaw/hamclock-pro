@@ -46,6 +46,9 @@ public:
     // Adds the open detail's satellite to the map tracks, or removes it if already tracked; saved
     // to [satellites] tracked= in options.ini (at most kMaxTracked, the oldest choice drops off).
     Q_INVOKABLE void toggleTracked();
+    // Sets the saved DX to the open satellite's sub-satellite point now; returns an empty string
+    // or a user-facing error. Only on an explicit tap, never automatically.
+    Q_INVOKABLE QString setAsDx();
 
 signals:
     void changed();
