@@ -49,6 +49,12 @@ void PskModel::publishOverlay() {
         apply_spot_label_style(layer, settings_, "psk");
         MapOverlays::instance().set_layer(layer);
     } else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
+    // Stations DE heard (WSPR opt-in); same live-only rule, no filters applied to this list.
+    if (map_visible_ && heard_raw_.ok && heard_source_ && !heard_source_->isStale(now())) {
+        auto layer = psk::heard_overlay_layer(psk::heard_as_reports(heard_raw_.reports));
+        apply_spot_label_style(layer, settings_, "psk");
+        MapOverlays::instance().set_layer(layer);
+    } else MapOverlays::instance().remove_layer(psk::kHeardLayerId);
 }
 
 void PskModel::applyFilter() {
@@ -106,6 +112,7 @@ void PskModel::syncWspr() {
     connect(heard_source_, &PolledSource::updated, this, [this] {
         heard_raw_ = psk::parse_wspr(heard_source_->body());
         emit reportsChanged();
+        publishOverlay();
     });
     heard_source_->start();
 }

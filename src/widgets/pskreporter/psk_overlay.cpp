@@ -37,6 +37,13 @@ OverlayLayer overlay_layer(const std::vector<Report>& reports, int max_markers) 
     return layer;
 }
 
+OverlayLayer heard_overlay_layer(const std::vector<Report>& swapped, int max_markers) {
+    OverlayLayer layer = overlay_layer(swapped, max_markers);
+    layer.id = kHeardLayerId;
+    for (auto& m : layer.markers) m.color = QColor("#e0a030");
+    return layer;
+}
+
 Farthest farthest_report(const std::vector<Report>& reports, double de_lat, double de_lon) {
     Farthest best;
     for (const auto& r : reports) {
