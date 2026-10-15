@@ -70,3 +70,12 @@ if(APPLE AND TARGET hamclock-pro)
     target_sources(hamclock-pro PRIVATE "${_privacy}")
     set_source_files_properties("${_privacy}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif()
+
+# Qt for iOS is a static build: QML plugins (QtQuick, Controls, Layouts, ...)
+# are only linked in when imported explicitly. Without this the app starts,
+# fails with 'module "QtQuick" plugin "qtquick2plugin" not found' and exits.
+# The QML files are added as plain resources (not a QML module), so point the
+# import scanner at the source tree.
+if(IOS AND TARGET hamclock-pro)
+    qt_import_qml_plugins(hamclock-pro PATH_TO_SCAN "${CMAKE_CURRENT_SOURCE_DIR}/src")
+endif()
