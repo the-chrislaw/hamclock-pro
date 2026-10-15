@@ -37,6 +37,16 @@ int main(int argc, char** argv) {
     const auto skyc = gps::parse_line(R"({"class":"SKY","uSat":7,"nSat":11})");
     check(skyc.sky.used == 7 && skyc.sky.seen == 11, "SKY summary counts");
 
+    {   // GPS time vs system clock
+        const auto tp = gps::parse_line(R"({"class":"TPV","mode":3,"lat":1,"lon":2,"time":"2026-10-14T12:00:00.000Z"})");
+        check(tp.fix.time && tp.fix.time->toString(Qt::ISODate) == "2026-10-14T12:00:00Z", "TPV time parsed");
+        check(!gps::parse_line(R"({"class":"TPV","mode":3,"time":"nonsense"})").fix.time, "bad time ignored");
+        check(!gps::parse_line(R"({"class":"TPV","mode":3,"time":"1970-01-01T00:00:00.000Z"})").fix.time, "implausible time ignored");
+        const auto g = *tp.fix.time;
+        check(gps::clock_vs_gps_text(g, g.addMSecs(900)).startsWith("Clock agrees"), "small skew is not resolved");
+        check(gps::clock_vs_gps_text(g.addSecs(12), g) == "Clock is 12 s behind GPS", "behind");
+        check(gps::clock_vs_gps_text(g, g.addSecs(5400)) == "Clock is 1.5 h ahead of GPS", "ahead in hours");
+    }
     {   // NMEA 0183 serial sentences (reference sentences with valid checksums)
         const auto gga = gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n");
         check(gga.kind == gps::Nmea::Gga && gga.fix.mode == 3 && gga.used == 8, "GGA fix and satellites");
@@ -46,6 +56,23 @@ int main(int argc, char** argv) {
         check(!gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*48").fix.has_position(), "bad checksum rejected");
         check(!gps::parse_nmea("$GPRMC,123519,V,,,,,,,230394,,*").fix.has_position(), "void RMC has no position");
         check(gps::parse_nmea("garbage").kind == gps::Nmea::Other, "NMEA garbage ignored");
+
+        gps::NmeaStream st;
+        auto a = st.feed("$GPGGA,123519,4807.038,N,01131.0");
+        check(a.isEmpty(), "partial line is held");
+        a = st.feed("00,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n$GPRMC,1");
+        check(a.size() == 1 && gps::parse_nmea(a[0]).kind == gps::Nmea::Gga, "line completed across chunks");
+        check(st.feed(QByteArray(300, 'x') + "\n$X*00\n").size() == 1, "overlong line dropped, next line kept");
+
+        gps::NmeaTracker tr(5);
+        check(!tr.fix(0).has_position() && !tr.utc(0), "tracker empty at start");
+        tr.apply(gps::parse_nmea("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47"), 1000);
+        tr.apply(gps::parse_nmea("$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A"), 1000);
+        check(tr.fix(3000).has_position() && tr.fix(3000).mode == 3 && tr.satellites() == 8, "tracker merges GGA and RMC");
+        check(tr.utc(3000) && tr.utc(3000)->time().second() == 21, "UTC advances with elapsed time");
+        check(!tr.fix(7000).has_position() && !tr.utc(7000), "stale fix and time are not reported");
+        tr.apply(gps::parse_nmea("$GPGGA,123519,,,,,0,00,,,M,,M,,*6B"), 7500);
+        check(!tr.fix(7600).has_position(), "no-fix GGA clears the position");
     }
 
     WidgetContext ctx;

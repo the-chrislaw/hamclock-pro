@@ -170,6 +170,15 @@ int main(int argc, char** argv) {
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
     }
     {
+        QTemporaryDir ov_dir;
+        AppSettings ov({}, ov_dir.path());
+        check(ov.overscanPercent() == 0, "overscan off by default");
+        check(!ov.saveOverscan(11).isEmpty() && !ov.saveOverscan(-1).isEmpty() && ov.overscanPercent() == 0, "bad overscan rejected");
+        check(ov.saveOverscan(6).isEmpty() && ov.overscanPercent() == 6, "overscan applied");
+        AppSettings ov2({}, ov_dir.path());
+        check(ov2.overscanPercent() == 6, "overscan survives restart");
+    }
+    {
         // Pane slots: defaults, validation, persistence.
         QTemporaryDir pane_dir;
         AppSettings panes({}, pane_dir.path());

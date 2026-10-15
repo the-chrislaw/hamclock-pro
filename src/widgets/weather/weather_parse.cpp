@@ -3,6 +3,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QUrl>
+#include <QUrlQuery>
 #include <cmath>
 
 namespace hamclock::weather {
@@ -108,6 +110,32 @@ QString request_url(double latitude, double longitude) {
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
                    "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&past_hours=3&forecast_hours=1&timezone=auto")
         .arg(latitude, 0, 'f', 2).arg(longitude, 0, 'f', 2);
+}
+
+QString parse_place(const QByteArray& body) {
+    const auto address = QJsonDocument::fromJson(body).object().value("address").toObject();
+    QString name;
+    for (const char* key : {"city", "town", "village", "municipality", "hamlet", "county", "state"}) {
+        name = address.value(key).toString().trimmed();
+        if (!name.isEmpty()) break;
+    }
+    if (name.isEmpty() || name.size() > 60) return {};
+    const QString cc = address.value("country_code").toString().toUpper();
+    const bool cc_ok = cc.size() == 2 && cc[0].isLetter() && cc[1].isLetter();
+    return cc_ok ? name + ", " + cc : name;
+}
+
+QString reverse_url(double latitude, double longitude) {
+    QUrl url("https://nominatim.openstreetmap.org/reverse");
+    QUrlQuery q;
+    q.addQueryItem("lat", QString::number(latitude, 'f', 2));
+    q.addQueryItem("lon", QString::number(longitude, 'f', 2));
+    q.addQueryItem("format", "jsonv2");
+    q.addQueryItem("zoom", "10");
+    q.addQueryItem("addressdetails", "1");
+    q.addQueryItem("accept-language", "en");
+    url.setQuery(q);
+    return url.toString();
 }
 
 } // namespace hamclock::weather

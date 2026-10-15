@@ -36,6 +36,32 @@ int main(int argc, char** argv) {
     const auto line = parse_udp_spot("DX de W3LPL: 14025.0 K1ABC CW 1234Z FN20", now);
     check(line && line->dx == "K1ABC" && line->grid == "FN20", "plain cluster line");
 
+    {
+        auto put32 = [](QByteArray& b, quint32 v) { for (int k = 3; k >= 0; --k) b.append(char((v >> (8 * k)) & 0xff)); };
+        auto putstr = [&](QByteArray& b, const QByteArray& t) { put32(b, quint32(t.size())); b.append(t); };
+        auto head = [&](quint32 type) { QByteArray b; put32(b, 0xadbccbdau); put32(b, 2); put32(b, type); putstr(b, "WSJT-X"); return b; };
+        QByteArray st = head(1);
+        for (int k = 7; k >= 0; --k) st.append(char((14074000ull >> (8 * k)) & 0xff));
+        WsjtxDecoder dec;
+        auto decode = [&](const QByteArray& msg, quint32 df) {
+            QByteArray d = head(2);
+            d.append(char(1)); put32(d, 0); put32(d, 0); d.append(QByteArray(8, '\0')); put32(d, df);
+            putstr(d, "~"); putstr(d, msg); d.append(char(0));
+            return d;
+        };
+        check(!dec.feed(decode("CQ K1ABC FN42", 1500), now), "decode before status ignored");
+        check(!dec.feed(st, now), "status yields no spot");
+        const auto w = dec.feed(decode("CQ DX K1ABC FN42", 1500), now);
+        check(w && w->dx == "K1ABC" && w->grid == "FN42" && w->band == "20m" && w->mode == "FT8", "wsjtx CQ DX decode");
+        check(w && qAbs(w->frequency_khz - 14075.5) < 1e-6, "dial plus audio offset");
+        check(dec.feed(decode("CQ K1ABC", 100), now).has_value(), "plain CQ");
+        check(!dec.feed(decode("K1ABC W3LPL -10", 100), now), "non-CQ ignored");
+        QByteArray cut = decode("CQ K1ABC FN42", 100);
+        cut.chop(20);
+        check(!dec.feed(cut, now), "truncated decode ignored");
+        check(!dec.feed(QByteArray("\xad\xbc\xcb\xdb\0\0\0\2\0\0\0\2", 12), now), "wrong magic ignored");
+    }
+
     for (const char* bad : {"", "hello", "<spot></spot>", "<spot><dxcall>K1ABC</dxcall></spot>",
                             "<spot><dxcall>K1ABC</dxcall><frequency>abc</frequency></spot>",
                             "<spot><dxcall>K1ABC</dxcall><frequency>-5</frequency></spot>",
@@ -45,6 +71,17 @@ int main(int argc, char** argv) {
                             "<other><dxcall>K1ABC</dxcall><frequency>14025</frequency></other>"})
         check(!parse_udp_spot(bad, now), bad);
     check(!parse_udp_spot(QByteArray(5000, 'x'), now), "oversized datagram rejected");
+
+    // "By me" scope.
+    DxSpot s; s.spotter = "W3LPL";
+    check(udp_spot_in_scope(s, "k1xx", false), "all: everything kept");
+    check(!udp_spot_in_scope(s, "K1XX", true), "by me: foreign spotter dropped");
+    s.spotter = "K1XX"; check(udp_spot_in_scope(s, "k1xx-7", true), "by me: own call, SSID ignored");
+    s.spotter = "K1XX/P"; check(udp_spot_in_scope(s, "K1XX", true), "by me: /P ignored");
+    s.spotter = "UDP"; check(udp_spot_in_scope(s, "", true), "by me: local program kept without callsign");
+    s.spotter = "WSJT-X"; check(udp_spot_in_scope(s, "K1XX", true), "by me: WSJT-X kept");
+    s.spotter = "K1XXX"; check(!udp_spot_in_scope(s, "K1XX", true), "by me: different call dropped");
+    s.spotter = "W3LPL"; check(!udp_spot_in_scope(s, "", true), "by me: no callsign drops foreign spotter");
 
     // Loopback: port 0 means off; a bound listener delivers a datagram.
     UdpSpotListener l;

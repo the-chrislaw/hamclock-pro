@@ -40,6 +40,12 @@ Popup {
                      onClicked: menu.map.nightShade = !menu.map.nightShade }
             Toggle { label: "Moon / antipode"; on: menu.map ? menu.map.skyPoints : false
                      onClicked: menu.map.skyPoints = !menu.map.skyPoints }
+            Toggle { label: "Country borders"; on: menu.map ? menu.map.borders : false
+                     onClicked: menu.map.borders = !menu.map.borders }
+            Toggle { label: "US state lines"; on: menu.map ? menu.map.states : false
+                     onClicked: menu.map.states = !menu.map.states }
+            Toggle { label: "Cities"; on: menu.map ? menu.map.cities : false
+                     onClicked: menu.map.cities = !menu.map.cities }
             Toggle { label: "Gray map"; on: menu.map ? menu.map.gray : false
                      onClicked: menu.map.gray = !menu.map.gray }
             Toggle { label: "DE/DX path"; on: menu.map ? menu.map.showPath : false
@@ -95,7 +101,7 @@ Popup {
         RowLayout {
             spacing: Theme.gap / 2
             Repeater {
-                model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }]
+                model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }, { t: "Azim one", p: 3 }]
                 Toggle { label: modelData.t; on: menu.map && menu.map.projection === modelData.p
                          onClicked: menu.map.projection = modelData.p }
             }

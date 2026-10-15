@@ -19,5 +19,10 @@ Card {
             value: visible ? root.widget.grid : ""
             caption: visible && !root.compact ? root.widget.position : ""
         }
+        Metric {
+            label: "Clock"
+            visible: !root.compact && root.widget && root.widget.clockCheck !== ""
+            value: visible ? root.widget.clockCheck : ""
+        }
     }
 }

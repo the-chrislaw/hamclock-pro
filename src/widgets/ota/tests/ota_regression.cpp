@@ -4,10 +4,12 @@
 #include "../ota_overlay.hpp"
 #include "../ota_parse.hpp"
 #include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QTemporaryDir>
 #include <QTimeZone>
 #include <QTimer>
 #include <iostream>
@@ -146,6 +148,50 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
     check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");
+
+    {
+        // Settings-driven display filter.
+        QTemporaryDir cfg;
+        AppSettings settings(cfg.filePath("station.conf"), cfg.path());
+        check(!settings.saveOtaFilter("XOTA", "", "", 0).isEmpty() && !settings.saveOtaFilter("", "20 m", "", 0).isEmpty() &&
+              !settings.saveOtaFilter("", "", "C W!", 0).isEmpty() && !settings.saveOtaFilter("", "", "", 5000).isEmpty(),
+              "bad OTA filter values rejected");
+        WidgetContext with_settings;
+        with_settings.settings = &settings;
+        with_settings.transport = context.transport;
+        OtaModel filtered(with_settings);
+        check(filtered.filter().program.isEmpty() && filtered.filter().max_age_min == 0, "no filter by default");
+        check(settings.saveOtaFilter("pota", "20M", "cw", 90).isEmpty(), "valid OTA filter saved");
+        check(filtered.filter().program == "POTA" && filtered.filter().band == "20m" && filtered.filter().mode == "CW" &&
+              filtered.filter().max_age_min == 90, "model follows settings");
+        AppSettings reloaded(cfg.filePath("station.conf"), cfg.path());
+        check(reloaded.otaProgram() == "POTA" && reloaded.otaBand() == "20m" && reloaded.otaMode() == "CW" &&
+              reloaded.otaMaxAgeMin() == 90, "OTA filter survives restart");
+        check(settings.saveOtaFilter("", "", "", 0).isEmpty() && filtered.filter().program.isEmpty(), "filter cleared");
+        check(!settings.saveOtaSort("random").isEmpty(), "bad sort rejected");
+        check(settings.saveOtaSort("DIST").isEmpty() && filtered.filter().sort == "dist" && filtered.filter().has_de, "sort followed by model");
+        AppSettings again(cfg.filePath("station.conf"), cfg.path());
+        check(again.otaSort() == "dist", "sort survives restart");
+        check(settings.saveOtaSort("time").isEmpty() && filtered.filter().sort.isEmpty(), "sort cleared");
+        {
+            ota::Spot near_, far_, none, hi;
+            near_.call = "N"; near_.freq_khz = 14000; near_.has_position = true; near_.latitude = 41; near_.longitude = -73;
+            far_.call = "F"; far_.freq_khz = 7000; far_.has_position = true; far_.latitude = -33; far_.longitude = 151;
+            none.call = "X"; none.freq_khz = 21000;
+            hi.call = "H"; hi.freq_khz = 28000; hi.has_position = true; hi.latitude = 40; hi.longitude = -74;
+            const std::vector<ota::Spot> in{far_, none, near_, hi};
+            const auto now_t = QDateTime::currentDateTimeUtc();
+            ota::Filter f;
+            f.sort = "dist"; f.has_de = true; f.de_lat = 40.7; f.de_lon = -74.0;
+            const auto d = ota::filter(in, f, now_t);
+            check(d.size() == 4 && d[0].call == "H" && d[1].call == "N" && d[2].call == "F" && d[3].call == "X", "distance sort, no-position last");
+            f.sort = "freq";
+            const auto q = ota::filter(in, f, now_t);
+            check(q[0].call == "F" && q[3].call == "H", "frequency sort");
+            f.sort = "bogus";
+            check(ota::filter(in, f, now_t)[0].call == "F", "unknown sort keeps input order");
+        }
+    }
 
     std::cout << "OTA: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

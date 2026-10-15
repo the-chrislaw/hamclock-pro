@@ -17,4 +17,19 @@ struct SolarEclipse {
 // First solar eclipse whose greatest eclipse is strictly after `after`; searches 30 lunations.
 std::optional<SolarEclipse> next_solar_eclipse(UtcSeconds after);
 const char* solar_eclipse_type_name(SolarEclipseType t);
+
+// Whether the eclipse can be seen from a station, from the lunar ephemeris of
+// astro_moon.hpp (about 0.1 degree) and the low-accuracy Sun. The window is
+// +-4 h around the global greatest eclipse; only samples with the Sun above the
+// horizon count. The discs touch at about 0.52 degrees separation, so under
+// 0.40 is Visible, 0.40 to 0.64 Marginal (ephemeris error could decide it) and
+// beyond that None. A yes/no only: no contact times or local magnitude.
+enum class EclipseVisibility { None, Marginal, Visible };
+struct EclipseLocal {
+    EclipseVisibility visibility;
+    double min_separation_deg;   // smallest Sun-Moon separation while the Sun is up; 180 if never up
+    double sun_elevation_deg;    // Sun elevation at that moment
+};
+// Latitude in [-90, 90] and longitude (east positive) in [-180, 180], else std::invalid_argument.
+EclipseLocal eclipse_visibility(const SolarEclipse& e, double latitude_deg, double longitude_deg);
 }

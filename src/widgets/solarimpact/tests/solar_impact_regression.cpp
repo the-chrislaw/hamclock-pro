@@ -32,9 +32,10 @@ int main(int argc, char** argv) {
 
     WidgetContext context;
     bool down = false;
-    context.transport = [&](const QUrl&, FetchDone done) {
+    QByteArray dstBody = "[]";
+    context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult r;
-        if (down) r.error = "network down"; else { r.http_status = 200; r.body = body; }
+        if (down) r.error = "network down"; else { r.http_status = 200; r.body = url.path().contains("kyoto-dst") ? dstBody : body; }
         QTimer::singleShot(0, [done, r] { done(r); });
     };
     auto settle = [&] { for (int i = 0; i < 20; ++i) app.processEvents(); };
@@ -91,6 +92,39 @@ int main(int argc, char** argv) {
     offline.start();
     settle();
     check(offline.state() == "offline" && !offline.hasData() && offline.headline().isEmpty(), "no data and down -> offline");
+
+    // Dst joins the ranking while fresh: real fixture is quiet (-13 nT), then a synthetic intense storm, then stale.
+    QFile dstFile(QDir(argv[1]).filePath("kyoto-dst.json"));
+    check(dstFile.open(QIODevice::ReadOnly), "dst fixture present");
+    dstBody = dstFile.readAll();
+    check(dst_level(-29) == 0 && dst_level(-30) == 1 && dst_level(-50) == 2 && dst_level(-100) == 3 && dst_level(-251) == 5,
+          "dst levels");
+    body = R"({"0":{"DateStamp":"2026-10-14","TimeStamp":"03:00:00","R":{"Scale":"0"},"S":{"Scale":"0"},"G":{"Scale":"1"}},)"
+           R"("-1":{"R":{"Scale":"0"},"S":{"Scale":"0"},"G":{"Scale":"1"}}})";
+    now = QDateTime(QDate(2026, 10, 14), QTime(2, 30), QTimeZone::utc());
+    down = false;
+    SolarImpactModel withDst(context);
+    withDst.setClock([&] { return now; });
+    withDst.source().setClock([&] { return now; });
+    withDst.dstSource().setClock([&] { return now; });
+    QFile::remove(withDst.source().cachePath());
+    QFile::remove(withDst.dstSource().cachePath());
+    withDst.start();
+    settle();
+    rows = withDst.ranked();
+    check(rows.size() == 4 && rows[0].toMap()["letter"].toString() == "G" && rows[3].toMap()["letter"].toString() == "D" &&
+          rows[3].toMap()["word"].toString() == "Quiet", "quiet Dst ranks last");
+    dstBody = R"([{"time_tag":"2026-10-14T01:00:00","dst":-140},{"time_tag":"2026-10-14T02:00:00","dst":-120}])";
+    withDst.dstSource().refreshNow();
+    settle();
+    rows = withDst.ranked();
+    check(rows[0].toMap()["letter"].toString() == "D" && rows[0].toMap()["level"].toInt() == 3 &&
+          rows[0].toMap()["word"].toString() == "Intense" && rows[0].toMap()["max24"].toInt() == 3 &&
+          withDst.headline().startsWith("D3 Intense: Intense storm"), "intense Dst ranks first");
+    now = now.addSecs(7 * 3600);
+    withDst.dstSource().refreshNow();
+    settle();
+    check(withDst.ranked().size() == 3, "stale Dst is dropped from the ranking");
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

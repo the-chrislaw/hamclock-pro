@@ -5,7 +5,8 @@ import HamClock
 // Callsign, UTC and DE local clocks, DE/DX locators and path summary.
 Card {
     id: root
-    title: station.configured ? station.callsign : "Your station"
+    // The banner already shows the callsign; do not repeat it in the title.
+    title: !station.configured ? "Your station" : station.bannerIsCallsign ? "Station" : station.callsign
     signal setupRequested()
     signal settingsRequested()
 
@@ -85,8 +86,8 @@ Card {
 
         Repeater {
             model: station.configured ? [
-                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun },
-                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun }
+                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" },
+                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun, local: station.dxLocal }
             ] : []
             delegate: ColumnLayout {
                 spacing: 1
@@ -94,6 +95,14 @@ Card {
                 Text { text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: modelData.grid; color: Theme.ink; font.pixelSize: Theme.fontTitle * 1.3; font.weight: Font.DemiBold }
                 Text { text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text {
+                    visible: modelData.local.length > 0
+                    text: modelData.local
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontCaption
+                    Layout.fillWidth: true
+                    wrapMode: Text.WordWrap
+                }
                 Text {
                     visible: modelData.sun.length > 0
                     text: "☀ " + modelData.sun

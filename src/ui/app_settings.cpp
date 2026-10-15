@@ -77,10 +77,36 @@ void AppSettings::loadOptions() {
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
+    ota_program_ = ini.value("ota/program").toString();
+    if (ota_program_ != "POTA" && ota_program_ != "SOTA") ota_program_.clear();
+    static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
+    static const QRegularExpression mode_re("^[A-Za-z0-9-]{1,10}$");
+    ota_band_ = ini.value("ota/band").toString();
+    if (!band_re.match(ota_band_).hasMatch()) ota_band_.clear();
+    ota_mode_ = ini.value("ota/mode").toString();
+    if (!mode_re.match(ota_mode_).hasMatch()) ota_mode_.clear();
+    const int age = ini.value("ota/max_age_min", 0).toInt();
+    ota_max_age_min_ = age > 0 && age <= 1440 ? age : 0;
+    ota_sort_ = ini.value("ota/sort").toString();
+    if (ota_sort_ != "freq" && ota_sort_ != "dist") ota_sort_.clear();
+    static const QRegularExpression aprs_host_re("^[A-Za-z0-9.-]{1,253}$");
+    const QString ah = ini.value("aprs/host").toString();
+    if (aprs_host_re.match(ah).hasMatch()) aprs_host_ = ah;
+    const int ap = ini.value("aprs/port", 14580).toInt();
+    aprs_port_ = ap > 0 && ap < 65536 ? ap : 14580;
+    const int ar = ini.value("aprs/radius_km", 100).toInt();
+    aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
+    udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
     imperial_ = ini.value("units/imperial", false).toBool();
+    date_order_ = ini.value("clock/date_order", 0).toInt();
+    if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
+    clock_12h_ = ini.value("clock/h12", false).toBool();
+    week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
+    overscan_ = ini.value("display/overscan", 0).toInt();
+    if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -309,12 +335,85 @@ QString AppSettings::saveAdifPath(const QString& path) {
     return {};
 }
 
+QString AppSettings::saveOtaSort(const QString& sort) {
+    const auto s = sort.trimmed().toLower();
+    if (!s.isEmpty() && s != "time" && s != "freq" && s != "dist") return "Sort must be time, freq or dist.";
+    const QString kept = s == "time" ? QString() : s;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("ota/sort", kept);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the sort order.";
+    ota_sort_ = kept;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min) {
+    const auto prog = program.trimmed().toUpper();
+    const auto b = band.trimmed().toLower();
+    const auto m = mode.trimmed().toUpper();
+    static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
+    static const QRegularExpression mode_re("^[A-Z0-9-]{1,10}$");
+    if (!prog.isEmpty() && prog != "POTA" && prog != "SOTA") return "Program must be POTA, SOTA or empty.";
+    if (!b.isEmpty() && !band_re.match(b).hasMatch()) return "Band looks like 20m or 70cm.";
+    if (!m.isEmpty() && !mode_re.match(m).hasMatch()) return "Mode: letters and digits only (CW, SSB, FT8).";
+    if (max_age_min < 0 || max_age_min > 1440) return "Maximum age is 0-1440 minutes (0 = any).";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("ota/program", prog);
+    ini.setValue("ota/band", b);
+    ini.setValue("ota/mode", m);
+    ini.setValue("ota/max_age_min", max_age_min);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the filter.";
+    ota_program_ = prog;
+    ota_band_ = b;
+    ota_mode_ = m;
+    ota_max_age_min_ = max_age_min;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
+    static const QRegularExpression host_re("^[A-Za-z0-9.-]{1,253}$");
+    QString h = host.trimmed();
+    if (h.isEmpty()) h = "rotate.aprs2.net";
+    if (!host_re.match(h).hasMatch()) return "APRS server may contain only letters, digits, dots and hyphens.";
+    if (port <= 0 || port >= 65536) return "APRS port must be 1-65535.";
+    if (radius_km < 1 || radius_km > 500) return "APRS radius is 1-500 km.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("aprs/host", h);
+    ini.setValue("aprs/port", port);
+    ini.setValue("aprs/radius_km", radius_km);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the APRS settings.";
+    const bool changed = h != aprs_host_ || port != aprs_port_ || radius_km != aprs_radius_km_;
+    aprs_host_ = h;
+    aprs_port_ = port;
+    aprs_radius_km_ = radius_km;
+    emit optionsChanged();
+    if (changed) emit aprsChanged();
+    return {};
+}
+
 QString AppSettings::saveImperialUnits(bool imperial) {
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
     ini.setValue("units/imperial", imperial);
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the units.";
     imperial_ = imperial;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveClockFormat(int date_order, bool h12) {
+    if (date_order < 0 || date_order > 2) return "Unknown date order.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("clock/date_order", date_order);
+    ini.setValue("clock/h12", h12);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the clock format.";
+    date_order_ = date_order;
+    clock_12h_ = h12;
     emit optionsChanged();
     return {};
 }
@@ -328,6 +427,39 @@ QString AppSettings::saveUdpSpots(int port, bool lan) {
     if (ini.status() != QSettings::NoError) return "Could not save the UDP spot settings.";
     udp_port_ = port;
     udp_lan_ = lan;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveUdpScope(bool by_me) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/scope", by_me ? "me" : "all");
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP spot scope.";
+    if (udp_by_me_ != by_me) {
+        udp_by_me_ = by_me;
+        emit optionsChanged();
+    }
+    return {};
+}
+
+QString AppSettings::saveWeekStart(bool sunday) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("clock/week_start", sunday ? 0 : 1);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the week start.";
+    week_sunday_ = sunday;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOverscan(int percent) {
+    if (percent < 0 || percent > 10) return "The overscan inset must be between 0 and 10 %.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/overscan", percent);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the overscan inset.";
+    overscan_ = percent;
     emit optionsChanged();
     return {};
 }

@@ -25,9 +25,13 @@ struct MapScene {
     std::optional<SubsolarPoint> sun;
     bool dark = false;
     double ui_scale = 1; // Theme.scale: grows labels and markers on TVs
+    std::vector<QRectF> reserved;       // item-pixel rects labels must avoid (map buttons)
     std::vector<OverlayLayer> overlays; // drawn in order, above DE/DX
     std::optional<MapStyle> style;      // active base-map style image + legend
     MapGrid grid = MapGrid::None;
+    bool borders = false;               // country borders on the base map
+    bool states = false;                // US state lines on the base map (Natural Earth 110m admin-1)
+    bool cities = false;                // largest cities with names (Natural Earth 110m populated places)
     bool gray = false;                  // grayscale base map
     bool sky_points = false;            // draw sublunar point and DE antipode
     std::optional<Location> moon;       // sublunar point
@@ -51,6 +55,8 @@ private:
     mutable QImage base_, proj_; // caches: equirectangular base, projected raster
     mutable QString base_key_, proj_key_;
     QPainterPath coast_;
+    QPainterPath borders_;
+    QPainterPath states_;
     std::vector<QPainterPath> land_;
 };
 }

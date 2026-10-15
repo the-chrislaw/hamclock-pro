@@ -1,6 +1,8 @@
 #include "rotator_model.hpp"
 #include "../../platform/apple_lifecycle.hpp"
 #include "rotator_parse.hpp"
+#include "../../ui/app_settings.hpp"
+#include <QSettings>
 
 namespace hamclock {
 
@@ -111,7 +113,12 @@ QString RotatorModel::azimuth() const { return az_ ? rotator::format_degrees(*az
 QString RotatorModel::elevation() const { return el_ ? rotator::format_degrees(*el_) : QString(); }
 
 void register_widget_rotator(WidgetRegistry& registry, const WidgetContext& context) {
-    auto* model = new RotatorModel(context);
+    rotator::Endpoint ep{"127.0.0.1", 4533};
+    if (context.settings) {
+        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
+        ep = rotator::parse_endpoint(ini.value("rotator/host").toString(), ini.value("rotator/port").toString(), ep);
+    }
+    auto* model = new RotatorModel(context, ep.host, ep.port);
     registry.add({"rotator", "Rotator", QUrl("qrc:/widgets/rotator/RotatorCard.qml"), "strip", 76}, model);
     QTimer::singleShot(0, model, &RotatorModel::start);
 }

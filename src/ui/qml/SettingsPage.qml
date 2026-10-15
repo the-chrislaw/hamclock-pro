@@ -173,6 +173,67 @@ Rectangle {
             }
 
             Card {
+                title: "Clock format"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: [[0, "Thu 15 Oct"], [1, "Thu Oct 15"], [2, "2026-10-15"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.dateOrder === modelData[0]
+                            onClicked: appSettings.saveClockFormat(modelData[0], appSettings.clock12h)
+                        }
+                    }
+                    Repeater {
+                        model: [[false, "24 h"], [true, "12 h AM/PM"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.clock12h === modelData[0]
+                            onClicked: appSettings.saveClockFormat(appSettings.dateOrder, modelData[0])
+                        }
+                    }
+                    Repeater {
+                        model: [[false, "Week starts Mon"], [true, "Week starts Sun"]]
+                        AppButton {
+                            text: modelData[1]
+                            primary: appSettings.weekStartsSunday === modelData[0]
+                            onClicked: appSettings.saveWeekStart(modelData[0])
+                        }
+                    }
+                }
+            }
+
+            Card {
+                title: "TV overscan"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Inset kept free on every edge, for TVs that crop the picture."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [0, 2, 4, 6, 8, 10]
+                            AppButton {
+                                text: modelData === 0 ? "Off" : modelData + " %"
+                                primary: appSettings.overscanPercent === modelData
+                                onClicked: appSettings.saveOverscan(modelData)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {
@@ -204,9 +265,31 @@ Rectangle {
                         AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
                                     text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
                                     onClicked: lan = !lan; Layout.preferredWidth: 2 }
+                        AppButton { id: udpMe; property bool me: appSettings.udpSpotByMe; checkable: false
+                                    text: me ? "UDP spots: by me" : "UDP spots: all"; primary: me
+                                    onClicked: me = !me; Layout.preferredWidth: 1 }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: aprsHost; label: "APRS-IS server (receive-only)"; text: appSettings.aprsHost; Layout.preferredWidth: 3 }
+                        FormField { id: aprsPort; label: "Port"; text: appSettings.aprsPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                        FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
-                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: otaProgram; label: "On the air: POTA/SOTA (empty = both)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
+                        FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
+                        FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
+                        FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; Layout.preferredWidth: 1 }
+                        FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC or NABAND for spots your ADIF log still needs; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save cluster"; primary: true
@@ -219,7 +302,15 @@ Rectangle {
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAdifPath(adifPath.text)
                                         if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveOtaSort(otaSort.text)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
+                                        if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveUdpScope(udpMe.me)
                                     } }
                     }
                 }

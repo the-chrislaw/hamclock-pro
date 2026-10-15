@@ -42,6 +42,9 @@ MapItem::MapItem(QQuickItem* parent) : QQuickPaintedItem(parent) {
     scene_.projection = static_cast<MapProjection>(options_.projection);
     scene_.sky_points = options_.sky_points;
     scene_.gray = options_.gray;
+    scene_.borders = options_.borders;
+    scene_.states = options_.states;
+    scene_.cities = options_.cities;
     if (options_.center_lon != MapViewOptions::center_auto) scene_.center_lon = options_.center_lon;
     syncOverlays();
     applyStyleOptions();
@@ -219,6 +222,30 @@ void MapItem::setGray(bool on) {
     update();
 }
 
+void MapItem::setBorders(bool on) {
+    if (on == options_.borders) return;
+    options_.borders = scene_.borders = on;
+    saveOptions();
+    emit bordersChanged();
+    update();
+}
+
+void MapItem::setStates(bool on) {
+    if (on == options_.states) return;
+    options_.states = scene_.states = on;
+    saveOptions();
+    emit statesChanged();
+    update();
+}
+
+void MapItem::setCities(bool on) {
+    if (on == options_.cities) return;
+    options_.cities = scene_.cities = on;
+    saveOptions();
+    emit citiesChanged();
+    update();
+}
+
 void MapItem::setLongPath(bool on) {
     if (on == options_.long_path) return;
     options_.long_path = on;
@@ -339,6 +366,10 @@ void MapItem::syncStation() {
 
 void MapItem::paint(QPainter* painter) {
     if (width() <= 0 || height() <= 0) return;
+    // Labels keep clear of the overlaid map buttons (Main.qml: Map menu top left,
+    // +/-/reset top right), sized from the same Theme.scale.
+    const double ui = std::max(1.0, scene_.ui_scale);
+    scene_.reserved = {QRectF(0, 0, 92 * ui, 42 * ui), QRectF(width() - 100 * ui, 0, 100 * ui, 36 * ui)};
     renderer_.paint(*painter, QSizeF(width(), height()), scene_);
 }
 

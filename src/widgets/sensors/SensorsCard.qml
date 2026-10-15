@@ -11,7 +11,7 @@ Card {
             label: "CPU temp"
             available: root.widget && root.widget.hasCpuTemp
             value: available ? root.widget.cpuTemp : ""
-            caption: available && !root.compact ? root.widget.cpuNote : ""
+            caption: available && !root.compact ? root.widget.cpuNote + (root.widget.cpuPeak !== "" ? " · " + root.widget.cpuPeak : "") : ""
         }
         Metric {
             label: "Air temp"

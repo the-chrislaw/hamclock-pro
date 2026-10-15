@@ -55,6 +55,8 @@ int main(int argc, char** argv) {
     check(sock && sock->host == "rotate.aprs2.net" && sock->port == 14580, "connects to APRS-IS");
     emit sock->connected();
     check(sock->written == "user K1ABC pass -1 vers hamclock-pro 0.1 filter r/49.00/-72.00/100\r\n", "receive-only login");
+    check(settings.saveAprs("bad host!", 14580, 100) != "" && settings.saveAprs("x.example", 0, 100) != "" &&
+          settings.saveAprs("x.example", 14580, 501) != "" && settings.aprsHost() == "rotate.aprs2.net", "invalid APRS settings rejected");
     emit sock->dataReceived("# aprsc 2.1\r\nN0CALL-9>APRS:!4903.50N/07201.75W-near\r\nFAR>APRS:!5003.50N/07201.75W-far\r\n");
     check(model.state() == "live" && model.count() == 2, "stations taken");
     const auto n = model.nearest();
@@ -68,6 +70,17 @@ int main(int argc, char** argv) {
     check(MapOverlays::instance().layers().empty(), "per-source map off removes the layer");
     model.setMapVisible(true);
     check(MapOverlays::instance().layers().size() == 1, "map on restores the layer");
+    {
+        FakeSocket* before = sock;
+        check(settings.saveAprs("aprs.example.org", 10152, 50).isEmpty(), "APRS settings saved");
+        check(sock != before && sock->host == "aprs.example.org" && sock->port == 10152, "changed server reconnects there");
+        emit sock->connected();
+        check(sock->written == "user K1ABC pass -1 vers hamclock-pro 0.1 filter r/49.00/-72.00/50\r\n", "radius in the login filter");
+        FakeSocket* now_sock = sock;
+        check(settings.saveAprs("aprs.example.org", 10152, 50).isEmpty() && sock == now_sock, "unchanged save keeps the link");
+        AppSettings again(dir.filePath("station.conf"), dir.path());
+        check(again.aprsHost() == "aprs.example.org" && again.aprsPort() == 10152 && again.aprsRadiusKm() == 50, "persisted");
+    }
     emit sock->closed("reset");
     check(model.state() == "offline", "lost connection shown as offline");
     check(MapOverlays::instance().layers().empty(), "lost link leaves nothing on the map");

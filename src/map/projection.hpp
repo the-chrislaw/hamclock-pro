@@ -28,12 +28,14 @@ MapPoint map_project_robinson(Location location);
 Location map_unproject_robinson(MapPoint point);
 // Which projection the map draws. Equirectangular is the scrolling/zooming
 // MapViewport; the others are drawn whole, fitted and centred in the item.
-enum class MapProjection { Equirectangular = 0, Azimuthal = 1, Robinson = 2 };
-inline constexpr int map_projection_count = 3;
+enum class MapProjection { Equirectangular = 0, Azimuthal = 1, Robinson = 2, AzimuthalOne = 3 };
+inline constexpr int map_projection_count = 4;
 // Pixel frame of a whole-world projection inside an item (G4): the ONE
 // transform the base map, overlays, markers and taps share. Azimuthal is
 // centred on `centre` (a disc, square frame); Robinson shifts longitudes so
-// centre.longitude is in the middle. to_pixel is empty for Equirectangular
+// centre.longitude is in the middle. AzimuthalOne is the same equidistant
+// disc scaled so its rim is 90 degrees of arc from DE: only the near hemisphere,
+// at twice the scale; the far hemisphere has no pixel. to_pixel is empty for Equirectangular
 // (use MapViewport) or an invalid location; to_location is empty outside the
 // outline.
 struct MapFrame {

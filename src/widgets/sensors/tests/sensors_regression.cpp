@@ -83,7 +83,9 @@ int main(int argc, char** argv) {
             "Last offset     : -0.000412345 seconds\n");
         check(good && good->synchronized && good->stratum == 3 && good->offset_ms && std::abs(*good->offset_ms - 0.412345) < 1e-6,
               "chrony tracking parsed");
-        check(good && platform::describe(*good) == "Synced, <1 ms", "sub-ms offset described");
+        check(good && platform::describe(*good) == "Synced, <1 ms, stratum 3 via time.example", "sub-ms offset, stratum and source described");
+        const auto odd = platform::parse_chrony_tracking("Reference ID    : A9FEA97B (bad name!<b>)\nStratum         : 2\nLeap status     : Normal\n");
+        check(odd && odd->source.isEmpty() && platform::describe(*odd) == "Synced, stratum 2", "unsafe source name dropped");
         const auto bad = platform::parse_chrony_tracking("Reference ID    : 00000000 ()\nStratum         : 0\nLeap status     : Not synchronised\n");
         check(bad && !bad->synchronized && !bad->offset_ms && platform::describe(*bad) == "Not synchronised", "unsynchronised chrony not live");
         check(!platform::parse_chrony_tracking("garbage"), "non-chrony text rejected");
@@ -127,9 +129,9 @@ int main(int argc, char** argv) {
         check(cal.envTemp() == "20.0 °C" && cal.envPressure() == "1016 hPa", "model applies options.ini offsets");
     }
     SensorsModel clockOnly(ctx, "/nonexistent/thermal", "/nonexistent/wireless", "/nonexistent/dir", "/nonexistent/iio",
-                           [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2}); });
+                           [] { return std::optional<platform::ClockSync>(platform::ClockSync{true, 12.4, 2, {}}); });
     clockOnly.refresh();
-    check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms", "clock shown");
+    check(clockOnly.state() == "live" && clockOnly.hasClock() && clockOnly.clock() == "Synced, 12 ms, stratum 2", "clock shown");
     {
         sensors::PressureHistory h;
         check(h.trend_word().isEmpty(), "no history -> no trend");
@@ -146,6 +148,15 @@ int main(int argc, char** argv) {
         check(s.trend_word() == "Rising", "rising");
         s.add(5 * 3600, 1013.0);  // old samples trimmed past 3 h
         check(s.change_per_3h() && std::abs(*s.change_per_3h()) < 1e-9, "window trimmed to 3 h");
+    }
+    {
+        sensors::PeakHistory p;
+        check(!p.peak(), "no samples -> no peak");
+        p.add(0, 60.0); p.add(10, 99.0);  // within a minute: ignored
+        p.add(120, 71.5); p.add(240, 65.0);
+        check(p.peak() && *p.peak() == 71.5, "peak is the maximum");
+        p.add(4 * 3600, 50.0);  // older samples leave the 3 h window
+        check(p.peak() && *p.peak() == 50.0, "peak window trimmed to 3 h");
     }
     return failures ? 1 : 0;
 }

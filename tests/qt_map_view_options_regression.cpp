@@ -117,6 +117,21 @@ int main(int argc, char** argv) {
       check(gm.save(ini), "save gray"); MapViewOptions r; r.load(ini); check(r.gray, "gray round trip");
       MapScene gs; gs.sun.reset(); const auto colour = render(gs); gs.gray = true; const auto img = render(gs);
       check(img != colour, "gray renders differently"); }
+    { MapViewOptions bm; check(!bm.borders, "borders default off"); bm.borders = true;
+      check(bm.save(ini), "save borders"); MapViewOptions r; r.load(ini); check(r.borders, "borders round trip");
+      for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
+          MapScene bs; bs.sun.reset(); bs.projection = proj; const auto off = render(bs); bs.borders = true;
+          check(render(bs) != off, "borders render differently"); } }
+    { MapViewOptions sm; check(!sm.states, "states default off"); sm.states = true;
+      check(sm.save(ini), "save states"); MapViewOptions r; r.load(ini); check(r.states, "states round trip");
+      for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
+          MapScene ss; ss.sun.reset(); ss.projection = proj; const auto off = render(ss); ss.states = true;
+          check(render(ss) != off, "states render differently"); } }
+    { MapViewOptions cm; check(!cm.cities, "cities default off"); cm.cities = true;
+      check(cm.save(ini), "save cities"); MapViewOptions r; r.load(ini); check(r.cities, "cities round trip");
+      for (const auto proj : {MapProjection::Equirectangular, MapProjection::Robinson}) {
+          MapScene cs; cs.sun.reset(); cs.projection = proj; const auto off = render(cs); cs.cities = true;
+          check(render(cs) != off, "cities render differently"); } }
     { MapViewOptions lp; check(!lp.long_path, "long path default off"); lp.long_path = true;
       check(lp.save(ini), "save long path"); MapViewOptions r; r.load(ini); check(r.long_path, "long path round trip"); }
     { MapScene ls; ls.sun.reset(); ls.de = Location{40, -75}; ls.dx = Location{51, 0};
@@ -130,9 +145,11 @@ int main(int argc, char** argv) {
       MapScene ps; ps.sun.reset(); ps.de = Location{39.7, -105}; const auto flat = render(ps);
       ps.projection = MapProjection::Azimuthal; const auto az = render(ps);
       ps.projection = MapProjection::Robinson; const auto rb = render(ps);
-      check(az != flat && rb != flat && az != rb, "projections render differently");
+      ps.projection = MapProjection::AzimuthalOne; const auto one = render(ps);
+      check(az != flat && rb != flat && az != rb && one != az && one != flat, "projections render differently");
+      { MapViewOptions o1; o1.projection = 3; check(o1.save(ini), "save azim one"); MapViewOptions r3; r3.load(ini); check(r3.projection == 3, "azim one round trip"); }
       // The DE marker (a ring in the route colour over sea) sits at the frame's pixel for DE.
-      for (const auto proj : {MapProjection::Azimuthal, MapProjection::Robinson}) {
+      for (const auto proj : {MapProjection::Azimuthal, MapProjection::Robinson, MapProjection::AzimuthalOne}) {
           MapScene s; s.sun.reset(); s.projection = proj; s.de = Location{39.7, -105}; s.dx = Location{51.5, -0.1};
           s.route = map_short_path(*s.de, *s.dx);
           QImage img(1024, 600, QImage::Format_ARGB32_Premultiplied); img.fill(Qt::white);

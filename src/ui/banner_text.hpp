@@ -8,6 +8,8 @@ constexpr int kBannerModes = 3;
 
 inline int next_banner_mode(int mode) { return ((mode % kBannerModes) + kBannerModes + 1) % kBannerModes; }
 
+inline bool banner_is_callsign(int mode) { return ((mode % kBannerModes) + kBannerModes) % kBannerModes == 0; }
+
 inline QString banner_text(int mode, const QString& call) {
     const QString c = call.trimmed().toUpper();
     switch (((mode % kBannerModes) + kBannerModes) % kBannerModes) {

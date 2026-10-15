@@ -34,6 +34,12 @@ int main(int argc, char** argv) {
     check(txfile.open(QIODevice::ReadOnly), "transmitter fixture present");
     const QByteArray txbody = txfile.readAll();
 
+    check(pass_alert_text("AO-7", 1000, 1600, 1000 - 240) == "AO-7 rises in 4 min" &&
+          pass_alert_text("AO-7", 1000, 1600, 1000 - 20) == "AO-7 rises in 1 min" &&
+          pass_alert_text("AO-7", 1000, 1600, 1000 - 301).isEmpty() &&
+          pass_alert_text("AO-7", 1000, 1600, 1200) == "AO-7 above horizon" &&
+          pass_alert_text("AO-7", 1000, 1600, 1600).isEmpty(),
+          "pass alert text");
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
           "short names");
@@ -106,6 +112,22 @@ int main(int argc, char** argv) {
         bool known = name == "AO-7" || name == "ISS" || name == "SO-50" || name == "FO-29" || name == "AO-91";
         check(!known || !tx.isEmpty(), "transmitters joined by NORAD id for a satellite in the fixture");
         for (const auto& v : tx) check(v.toMap()["down"].toString().endsWith("MHz") || v.toMap()["up"].toString().endsWith("MHz"), "transmitter frequencies formatted");
+        {
+            // Show/hide track: toggles the first row's satellite in the saved choice.
+            const bool was = d["tracked"].toBool();
+            model.toggleTracked();
+            check(model.detail()["tracked"].toBool() == !was, "toggleTracked flips the tracked state");
+            QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+            check(ini.value("satellites/tracked").toStringList().contains(name, Qt::CaseInsensitive) == !was, "choice saved to options.ini");
+            model.toggleTracked();
+            check(model.detail()["tracked"].toBool() == was, "toggled back");
+            ini.remove("satellites/tracked");
+            ini.sync();
+            model.recompute();
+        }
+        check(toggle_tracked_names({}, "AO-7") == QStringList({"AO-7"}) &&
+              toggle_tracked_names({"AO-7", "ISS"}, "iss") == QStringList({"AO-7"}) &&
+              toggle_tracked_names({"AO-7", "ISS"}, "FO-29") == QStringList({"ISS", "FO-29"}), "toggle_tracked_names");
         model.selectRow(0);
         check(model.detail().isEmpty(), "second tap closes the detail");
         check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&

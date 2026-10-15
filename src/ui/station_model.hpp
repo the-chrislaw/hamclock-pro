@@ -1,7 +1,9 @@
 #pragma once
 // Station header data for QML: UTC and DE local clocks, DE/DX grids, path.
+#include "banner_text.hpp"
 #include "path_text.hpp"
 #include "sun_text.hpp"
+#include "time_zone_search.hpp"
 #include <QObject>
 #include <QString>
 #include <QTimer>
@@ -26,11 +28,13 @@ class StationModel : public QObject {
     Q_PROPERTY(QString distanceText READ distanceText NOTIFY stationChanged)
     Q_PROPERTY(QString pathText READ pathText NOTIFY stationChanged)
     Q_PROPERTY(QString bannerText READ bannerText NOTIFY stationChanged)
+    Q_PROPERTY(bool bannerIsCallsign READ bannerIsCallsign NOTIFY stationChanged)
     Q_PROPERTY(QString auxTime READ auxTime NOTIFY tick)
     Q_PROPERTY(bool longPath READ longPath NOTIFY stationChanged)
     Q_PROPERTY(QString bearingText READ bearingText NOTIFY stationChanged)
     Q_PROPERTY(QString deSun READ deSun NOTIFY tick)
     Q_PROPERTY(QString dxSun READ dxSun NOTIFY tick)
+    Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY tick)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
 public:
     explicit StationModel(AppSettings& settings, QObject* parent = nullptr);
@@ -53,10 +57,12 @@ public:
     Q_INVOKABLE void toggleLongPath();
     Q_INVOKABLE void cycleBanner();   // call -> ON AIR -> 73 DE call (per session)
     QString bannerText() const;
+    bool bannerIsCallsign() const { return banner_is_callsign(banner_mode_); }
     Q_INVOKABLE void cycleAuxTime();  // day of year -> JD -> MJD -> LST -> UNIX (per session)
     QString auxTime() const;          // LST uses the DE longitude, Greenwich when unset
     QString deSun() const;       // next sunrise/sunset at DE, empty when unconfigured
     QString dxSun() const;
+    QString dxLocal() const;     // DX local time from the nearest-city zone, empty if unknown
     bool configured() const;
 
 signals:
@@ -66,6 +72,8 @@ signals:
 private:
     void reload();
     AppSettings& settings_;
+    TimeZoneSearch zones_;
+    QString dx_zone_;
     QTimer timer_;
     bool long_path_ = false;
     bool has_geometry_ = false;

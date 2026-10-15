@@ -1,6 +1,8 @@
 #include "satellites_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 #include <QTimeZone>
 #include <QVariantMap>
@@ -41,6 +43,12 @@ QString satellite_short_name(const QString& tle_name) {
     return amp > 0 ? name.left(amp) : name;
 }
 
+QString pass_alert_text(const QString& name, qint64 aos, qint64 los, qint64 now, int lead_s) {
+    if (now >= aos && now < los) return name + " above horizon";
+    if (aos > now && aos - now <= lead_s) return name + QString(" rises in %1 min").arg(std::max<qint64>(1, (aos - now + 30) / 60));
+    return QString();
+}
+
 std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time) {
     std::vector<Tle> out;
     for (const Tle& tle : tles) {
@@ -61,6 +69,18 @@ std::vector<Tle> choose_tracked(const std::vector<Tle>& tles, const QStringList&
         }
         if (out.size() >= static_cast<std::size_t>(kMaxTracked)) break;
     }
+    return out;
+}
+
+QStringList toggle_tracked_names(const QStringList& current, const QString& name) {
+    QStringList out;
+    bool removed = false;
+    for (const QString& c : current) {
+        if (c.compare(name, Qt::CaseInsensitive) == 0) removed = true;
+        else out << c;
+    }
+    if (!removed) out << name;
+    while (out.size() > kMaxTracked) out.removeFirst();
     return out;
 }
 
@@ -119,6 +139,13 @@ void SatellitesModel::load() {
         for (const char* key : kTracked)
             if (name.contains(QLatin1String(key))) { tles_.push_back(t); break; }
     }
+    // Optional user-supplied elements (`user-tles.txt` beside options.ini); they win over
+    // the download for the same NORAD id and are not limited to the popular-bird list.
+    if (settings_) {
+        QFile f(QFileInfo(settings_->optionsPath()).absolutePath() + "/user-tles.txt");
+        if (f.open(QIODevice::ReadOnly | QIODevice::Text))
+            tles_ = merge_user_tles(tles_, parse_tle_set(f.read(1 << 20).toStdString()));
+    }
     recompute();
 }
 
@@ -126,6 +153,7 @@ void SatellitesModel::recompute() {
     rows_.clear();
     sky_track_.clear();
     listed_.clear();
+    alert_.clear();
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
@@ -138,6 +166,8 @@ void SatellitesModel::recompute() {
     }
     std::vector<Tle> tracked = choose_tracked(tles, wanted);
     auto publish_layer = [&](const std::vector<Tle>& pick) {
+        tracked_names_.clear();
+        for (const Tle& tle : pick) tracked_names_ << satellite_short_name(QString::fromStdString(tle.name));
         if (pick.empty()) MapOverlays::instance().remove_layer("satellites");
         else MapOverlays::instance().set_layer(satellite_overlay_layer(pick, t));
     };
@@ -178,8 +208,11 @@ void SatellitesModel::recompute() {
         if (until <= 0) when = "now";
         else if (until < 90 * 60) when = QString("in %1 min").arg((until + 30) / 60);
         else when = QDateTime::fromSecsSinceEpoch(r.pass.aos, QTimeZone::utc()).toString("HH:mm") + "Z";
-        rows_.append(QVariantMap{{"name", satellite_short_name(QString::fromStdString(r.tle.name))},
-                                 {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)}, {"live", until <= 0}});
+        const QString short_name = satellite_short_name(QString::fromStdString(r.tle.name));
+        const QString alert = pass_alert_text(short_name, r.pass.aos, r.pass.los, static_cast<qint64>(t));
+        if (alert_.isEmpty()) alert_ = alert;
+        rows_.append(QVariantMap{{"name", short_name}, {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)},
+                                 {"live", until <= 0}, {"soon", !alert.isEmpty()}});
     }
     refresh_detail();
     emit changed();
@@ -196,6 +229,15 @@ void SatellitesModel::selectRow(int index) {
     refresh_detail();
 }
 
+void SatellitesModel::toggleTracked() {
+    if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_) return;
+    const QString name = satellite_short_name(QString::fromStdString(listed_[selected_].tle.name));
+    QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+    ini.setValue("satellites/tracked", toggle_tracked_names(tracked_names_, name));
+    ini.sync();
+    recompute();
+}
+
 void SatellitesModel::refresh_detail() {
     QVariantMap d;
     if (selected_ >= 0 && selected_ < static_cast<int>(listed_.size()) && settings_ && settings_->configured()) {
@@ -206,6 +248,7 @@ void SatellitesModel::refresh_detail() {
         LookAngle la;
         if (p.valid() && p.look(t, obs, la)) {
             d["name"] = satellite_short_name(QString::fromStdString(l.tle.name));
+            d["tracked"] = tracked_names_.contains(d["name"].toString(), Qt::CaseInsensitive);
             d["az"] = qRound(la.az_deg);
             d["compass"] = compass_point(la.az_deg);
             d["el"] = qRound(la.el_deg);

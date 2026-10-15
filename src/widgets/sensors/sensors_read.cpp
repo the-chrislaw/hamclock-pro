@@ -110,6 +110,20 @@ QString PressureHistory::trend_word() const {
     return *c > 1.0 ? "Rising" : *c < -1.0 ? "Falling" : "Steady";
 }
 
+void PeakHistory::add(qint64 t, double v) {
+    if (!samples_.empty() && t - samples_.back().first < 60) return;
+    if (!samples_.empty() && t < samples_.back().first) samples_.clear();  // clock stepped back
+    samples_.emplace_back(t, v);
+    while (samples_.size() > 1 && t - samples_.front().first > 3 * 3600) samples_.erase(samples_.begin());
+}
+
+std::optional<double> PeakHistory::peak() const {
+    if (samples_.empty()) return std::nullopt;
+    double m = samples_.front().second;
+    for (const auto& s : samples_) m = std::max(m, s.second);
+    return m;
+}
+
 } // namespace hamclock::sensors
 
 namespace hamclock::sensors {

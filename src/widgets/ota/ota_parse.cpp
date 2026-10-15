@@ -1,5 +1,6 @@
 #include "ota_parse.hpp"
 #include "../dxcluster/dx_spot_parse.hpp"
+#include "../../domain/geometry.hpp"
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -124,6 +125,14 @@ std::vector<Spot> filter(const std::vector<Spot>& spots, const Filter& f, const 
         if (!f.band.isEmpty() && dxcluster::band_for_khz(s.freq_khz) != f.band) continue;
         if (f.max_age_min > 0 && s.time.secsTo(now) > qint64(f.max_age_min) * 60) continue;
         out.push_back(s);
+    }
+    if (f.sort == "freq") {
+        std::stable_sort(out.begin(), out.end(), [](const Spot& a, const Spot& b) { return a.freq_khz < b.freq_khz; });
+    } else if (f.sort == "dist" && f.has_de && valid_location({f.de_lat, f.de_lon})) {
+        const auto dist = [&](const Spot& s) {
+            return s.has_position ? geometry({f.de_lat, f.de_lon}, {s.latitude, s.longitude}).distance_km : 1e12;
+        };
+        std::stable_sort(out.begin(), out.end(), [&](const Spot& a, const Spot& b) { return dist(a) < dist(b); });
     }
     return out;
 }

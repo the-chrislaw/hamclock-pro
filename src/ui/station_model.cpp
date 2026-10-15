@@ -34,8 +34,8 @@ StationModel::StationModel(AppSettings& settings, QObject* parent) : QObject(par
 
 bool StationModel::configured() const { return settings_.configured(); }
 
-QString StationModel::utcTime() const { return QDateTime::currentDateTimeUtc().toString("HH:mm:ss"); }
-QString StationModel::utcDate() const { return QDateTime::currentDateTimeUtc().toString("ddd d MMM yyyy"); }
+QString StationModel::utcTime() const { return clock_time(QDateTime::currentDateTimeUtc(), 0, settings_.clock12h()); }
+QString StationModel::utcDate() const { return clock_date(QDateTime::currentDateTimeUtc(), 0, settings_.dateOrder()); }
 
 QString StationModel::deTime() const {
     const auto zone = settings_.deZone().toStdString();
@@ -47,12 +47,12 @@ QString StationModel::deTime() const {
 
 QString StationModel::deClock() const {
     const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
-    return offset ? clock_time(QDateTime::currentDateTimeUtc(), offset->value) : QString();
+    return offset ? clock_time(QDateTime::currentDateTimeUtc(), offset->value, settings_.clock12h()) : QString();
 }
 
 QString StationModel::deDate() const {
     const auto offset = resolve_de_zone_offset(settings_.deZone().toStdString(), {QDateTime::currentSecsSinceEpoch()});
-    return offset ? clock_date(QDateTime::currentDateTimeUtc(), offset->value) : QString();
+    return offset ? clock_date(QDateTime::currentDateTimeUtc(), offset->value, settings_.dateOrder()) : QString();
 }
 
 QString StationModel::deZoneLabel() const {
@@ -71,7 +71,8 @@ QString StationModel::pathText() const {
 QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
 
 QString StationModel::auxTime() const {
-    return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0);
+    return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0,
+                         settings_.weekStartsSunday());
 }
 
 void StationModel::cycleAuxTime() {
@@ -96,10 +97,15 @@ QString StationModel::dxSun() const {
     return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_) : QString();
 }
 
+QString StationModel::dxLocal() const {
+    return configured() ? zone_local_text(dx_zone_, QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+}
+
 void StationModel::reload() {
     if (!settings_.configured()) {
         callsign_ = de_grid_ = dx_grid_ = de_coordinates_ = dx_coordinates_ = distance_ = bearing_ = {};
         has_geometry_ = false;
+        dx_zone_.clear();
         emit stationChanged();
         return;
     }
@@ -114,6 +120,7 @@ void StationModel::reload() {
         has_geometry_ = true;
         de_lat_ = view.de.latitude; de_lon_ = view.de.longitude;
         dx_lat_ = view.dx.latitude; dx_lon_ = view.dx.longitude;
+        dx_zone_ = zones_.suggestZone(dx_lat_, dx_lon_);
         de_coordinates_ = coordinates(view.de.latitude, view.de.longitude);
         dx_coordinates_ = coordinates(view.dx.latitude, view.dx.longitude);
     } catch (const std::exception&) {

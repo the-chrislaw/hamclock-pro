@@ -20,6 +20,9 @@ struct MapViewOptions {
     QString style;        // base style id; "" = plain base map
     int grid = 0;         // MapGrid
     int projection = 0;   // MapProjection
+    bool borders = false;    // country borders (Natural Earth 110m)
+    bool states = false;     // US state lines (Natural Earth 110m admin-1)
+    bool cities = false;     // largest cities with names (Natural Earth 110m)
     bool gray = false;       // grayscale base map (land, sea, coast)
     bool sky_points = false; // sublunar point and DE antipode markers
     static constexpr int center_auto = 999; // centre on DE

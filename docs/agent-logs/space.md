@@ -98,3 +98,50 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - `SolarTrendCard.qml`: compact slots drop the 30-day flux line (the metrics row already shows it) and keep the Kp bars; the bars now fill the height left in the pane (16 to 90 scaled px) instead of a fixed height. Checked by offscreen screenshots at 800x480, 1024x600 (light), 1280x800 and 1920x1080 (dark). QML only; full ctest passes (132/132). Not validated on device.
 - Other auto-merge PRs: #73 has a merge conflict (not mine), #236 and #237 (other areas) had checks still running; left alone. No open [B] issues.
 - Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): Dst folded into the impact ranking (backlog 12)
+
+- `solarimpact` now also polls `products/kyoto-dst.json` (30 min, same SWPC terms, already in the roadmap policy) and ranks the Kyoto Dst index as a fourth row "D" alongside R/S/G (levels: Quiet 0, Weak 1, Moderate 2, Intense 3, Super 5; 24 h low as the 24 h max). The row is dropped once the latest hourly value is over 6 h old, so an old storm never ranks as current. Kp and X-ray are not added separately: G and R already come from them.
+- Tests: Dst level thresholds, quiet real fixture ranks last, synthetic intense storm ranks first with headline, stale drop; widget test passes under ASan/UBSan, full ctest green. No screenshots taken (offscreen platform unavailable for the app binary here; only a fourth 1.2-line row added, QML pane test passes). Not validated on device.
+- No open [B] issues; #73 (not mine) and the other auto-merge PRs left alone.
+- Next: 13 (VOACAP-style) and 15 (tropo) need source/terms decisions; MUF style needs a terms-checked source.
+
+## 2026-10-14 (UTC): In-house path reliability model (backlog 13, first slice)
+
+- Owner picked option C on #281 ("simple in-house, but not too simple"). New `bands/path_model` (pure C++, offline): great-circle path split into F2 hops of at most 3000 km, foF2/MUF from SFI and the sun's elevation at each hop midpoint, secant-law path MUF, P.533-style D-layer absorption (tuned x0.6), SNR in 2.5 kHz from power, antenna gain, slant free-space loss, ground-reflection loss and ITU-R P.372 rural noise, mode thresholds (SSB/CW/digital), Kp and polar-path penalty. Gives MUF, SNR, takeoff angle, hops and 0..1 reliability per band, plus a band x 24 h matrix. Documented as approximate in the header, not VOACAP.
+- Tests (`path_model_regression`): London-New York distance, 20m open by day, 80m absorbed by day and better at night, 10m closed at night, MUF rises with SFI, Kp 7 cuts reliability, 20 dB less power is 20 dB less SNR, digital needs less SNR, NaN inputs stay finite, matrix shape. No UI yet, so no screenshots. Not validated on device.
+- Next: matrix card (DE to DX timeline) and settings for power/mode/antenna, long-path option; MUF map style and tropo still wait on #281.
+
+## 2026-10-14 (UTC): HF path reliability pane (backlog 13, second slice)
+
+- New `bandsmatrix` widget ("HF path reliability"): runs `bands/path_model` for the DE to DX path over the next 24 UTC hours using SWPC SFI and Kp (same two products and cadence as `bands`). Card shows "Best now: band %" plus per-band percentages (compact), or a band x hour heat grid with an "approximate model" note (full layout). Shows "Set a DX target" when DX is unset or within 50 km of DE; recomputed when the UTC hour turns or the station changes; stale/offline states follow the indices' age. Fixed at SSB, 100 W for now; settings for power/mode/antenna and the MUF map are next.
+- Tests: no station -> no matrix, station gives 8 bands x 24 cells, 20m open and 80m absorbed London-New York by day, hour roll, outage -> stale, DX == DE -> no path. Screenshots of the compact layout at 800x480, 1024x600 and 1920x1080 (dark); the full heat grid layout was not viewed (panes were compact at every size tried). Not validated on device.
+- Shared file touched: one id added to the category map in `PaneChooser.qml`.
+- No mergeable PRs: #286/#287 (others) had checks running, #73 (not mine) conflicts. No open [B] issues other than #281, already answered.
+- Next: power/mode/antenna settings, long-path option; MUF map style and tropo wait on #281.
+
+## 2026-10-14 (UTC): HF path reliability options (backlog 13, third slice)
+
+- `bandsmatrix` reads optional `[bandsmatrix] mode = ssb|cw|digital` and `power_w` (1..1500) from the options file (same mechanism as the sensors offsets); the pane label shows the mode and power used. Unknown mode or out-of-range power falls back to SSB 100 W. Test covers CW 5 W and bad values. No QML change, so no screenshots; no in-app settings UI yet (needs a shared settings page). Not validated on device.
+- Other open PRs (#73, #294, #295) belong to others; left alone. Only [B] issue is #281, already answered.
+- Next: antenna gain option, long-path, in-app settings UI, MUF map style.
+
+## 2026-10-14 (UTC): HF path reliability antenna gain (backlog 13, fourth slice)
+
+- `bandsmatrix` reads optional `[bandsmatrix] antenna_gain_db` (0..30, both ends combined over isotropic, default 6) from the options file; the pane label now ends with the gain in dBi. Out-of-range values fall back to 6. Test extended (12 dBi accepted, 500 ignored). Label text only, no layout change, no screenshots. Not validated on device.
+- No mergeable PRs: #301 and #303 (others) had checks running, #73 (not mine) conflicts. No open [B] issues.
+- Next: long-path option, in-app settings UI, MUF map style; tropo needs a terms-checked source.
+
+## 2026-10-14 (UTC): HF path reliability long path (backlog 13, fifth slice)
+
+- `bands/path_model` gets `PathInput::long_path`: path length is the circumference minus the short arc, hop control points continue away from DX along the great circle. `bandsmatrix` reads `[bandsmatrix] long_path = true|1|yes` from the options file and appends "long path" to the pane label; "no path" still follows the short distance (DX on DE stays unrated).
+- Tests: long London-New York path is ~34400 km, 11+ hops, finite and worse than short; option shown in the label. No layout change beyond label text, no screenshots. Not validated on device.
+- Other PRs (#309, #310, #73) belong to others; #309/#310 had checks running, left alone. Only [B] issue is #281, already answered.
+- Next: in-app settings UI, MUF map style; tropo needs a terms-checked source.
+
+## 2026-10-15 (UTC): MUF map style (backlog 13, sixth slice)
+
+- `bands/path_model` gets `muf_3000_mhz(sfi, lat, lon, utc)` (same foF2 model, one 3000 km hop). New `bands/muf_map` renders it as a 360x180 equirectangular image with a 5-36 MHz legend; `BandsModel` publishes it as map style `muf` ("MUF (approx.)") from fresh SFI/Kp, redraws every 15 min, and removes it when inputs are stale or missing. Fully offline, labelled approximate; no new data source.
+- Tests: `muf_map_regression` (day > night, rises with SFI, polar lower, bad coordinates finite, image size/legend) and bands model checks that the style appears when fresh and disappears when stale; full ctest (145) green, bands tests clean under ASan/UBSan. No QML change, no screenshots. Not validated on device.
+- Only open PR is #73 (not mine, conflicting); left alone. No [B] qa issues; #281 already answered.
+- Next: tropo map style (needs terms-checked source), in-app settings UI for bandsmatrix options, compact-layout recheck once area A's mechanism lands.

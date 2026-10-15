@@ -102,3 +102,30 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Owner priority #269: device build to TestFlight before more Simulator work. Added the `iPad TestFlight upload` job to apple.yml (main pushes only, skips cleanly without ASC secrets or `APPLE_TEAM_ID`): Qt 6.8.3 iOS device build via the Xcode generator, `xcodebuild archive` with cloud automatic signing through the API key (`-allowProvisioningUpdates`), build number = run number, export `app-store-connect` with destination `upload`. Key file deleted on exit, nothing echoed. Pushed onto the open #268 branch (one-PR rule). Untested until a main run; if cloud signing cannot create the distribution certificate I will open "Owner input needed: iOS distribution certificate".
 - Simulator work is now time-boxed to two more runs (#268 is the first).
 - Next: read the first main-run result of the TestFlight job, fix, and add the owner as internal tester if the API allows.
+
+## 2026-10-14 (seventeenth hourly run)
+- No new qa issues for area F; #73/#274-#277 are other areas' (checks queued), left alone.
+- Read main run 38610417758 (first TestFlight run): Configure succeeded but archive died instantly with "build-tf/hamclock-pro.xcodeproj does not exist"; the CMake project is `HamClockPro`, so the Xcode project is `HamClockPro.xcodeproj`. Fixed the path (scheme `hamclock-pro` is the app target). Untested until the next main run. No on-device claims.
+- The Simulator job still fails at link on the kit's device-tagged static archives (Qt 6.5.3; informational). Time-box expires after this run's follow-up; if it still fails I will stop and record the options.
+- Next: read the TestFlight result after merge (signing/provisioning errors -> "Owner input needed" if a distribution certificate is required).
+
+## 2026-10-14 (eighteenth hourly run)
+- No qa issues for area F; #73/#279/#283/#284 are other areas' (no checks yet), left alone.
+- Read main run 38622861499: TestFlight archive failed on automatic signing ("Revoke certificate: Your account already has an Apple Development signing certificate ... private key is not installed"; no iOS development profiles). The Simulator job step passed (still informational; screenshot not verified). Change: archive unsigned (`CODE_SIGNING_ALLOWED=NO`) and let `-exportArchive` sign with the cloud-managed distribution certificate. Untested until a main run; if export also fails, "Owner input needed: iOS distribution certificate" (e.g. a Distribution .p12 secret).
+
+## 2026-10-14 (nineteenth hourly run)
+- No qa issues for area F; #73/#289/#291 are other areas' (checks running), left alone.
+- Read main run 38627403670: TestFlight archive now SUCCEEDS unsigned; export failed with "exportOptionsPlist error for key method expected one {} but found app-store-connect" (the runner's Xcode predates that method name). Changed the export method to `app-store` (same upload destination). Untested until a main run; no on-device claims.
+
+## 2026-10-14 (twentieth hourly run)
+- No qa issues for area F; #73/#297/#299/#300 are other areas' (checks running), left alone.
+- Read main run 38635393173: the unsigned archive exported with "expected one {} but found app-store" (an unsigned archive offers no distribution methods). Followed the owner's recipe in #269: the TestFlight job now imports the Apple Distribution p12 (`IOS_DIST_CERT_P12_BASE64`/`IOS_DIST_CERT_PASSWORD`) into a temporary keychain (deleted at job end), archives with `CODE_SIGN_STYLE=Automatic`, identity "Apple Distribution" and the API key auth flags, then exports/uploads. Skips cleanly when any secret is absent.
+- iOS bundle now uses `packaging/apple/Info-ios.plist` (all four iPad orientations, `UILaunchScreen`, `ITSAppUsesNonExemptEncryption=false`), fixing the two App Store validation warnings from #269. Untested until a main run; no on-device claims.
+
+## 2026-10-14 (twenty-first hourly run)
+- No qa issues for area F; #73/#316 are other areas' (checks queued), left alone.
+- Read main run 38645936030: the distribution cert imports fine, but the archive stops at once with "hamclock-pro has conflicting provisioning settings ... automatically signed for development, but a conflicting code signing identity Apple Distribution". Automatic signing cannot be combined with the distribution identity, and the API key (App Manager) cannot create cloud-managed distribution profiles. Switched to manual signing: new `packaging/apple/asc_profile.py` creates an IOS_APP_STORE profile through the App Store Connect API for the imported certificate (matched by certificate content), installs it, archives with `CODE_SIGN_STYLE=Manual` and exports with a manual `provisioningProfiles` map and upload; the temporary profile is deleted at job end. Needs the bundle ID registered for the team; if not, the script says so and I will open "Owner input needed". Untested until a main run; no on-device claims.
+
+## 2026-10-15 (twenty-second hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73/#322/#323 are other areas' (left alone).
+- Read main run 38657337700: manual signing now works end to end through the archive ("ARCHIVE SUCCEEDED" with the API-created profile), but `-exportArchive` still says "expected one {} but found app-store". The archive offers no distribution methods, which is what Xcode does for a generic archive without `Products/Applications` (CMake's Xcode project leaves INSTALL_PATH/SKIP_INSTALL unset). Set `SKIP_INSTALL=NO` and `INSTALL_PATH=$(LOCAL_APPS_DIR)` on the iOS target and print the archive layout/Info.plist before export for diagnosis. Untested until a main run; no on-device claims.

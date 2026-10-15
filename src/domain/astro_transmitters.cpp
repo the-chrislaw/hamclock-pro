@@ -46,6 +46,19 @@ int tle_norad_id(const Tle& tle) {
     return n;
 }
 
+std::vector<Tle> merge_user_tles(const std::vector<Tle>& downloaded, const std::vector<Tle>& user) {
+    std::vector<Tle> out = downloaded;
+    for (const Tle& u : user) {
+        const int id = tle_norad_id(u);
+        bool replaced = false;
+        if (id != 0)
+            for (Tle& d : out)
+                if (tle_norad_id(d) == id) { d = u; replaced = true; break; }
+        if (!replaced) out.push_back(u);
+    }
+    return out;
+}
+
 std::map<int, std::vector<Transmitter>> group_by_norad(const std::vector<Transmitter>& all) {
     std::map<int, std::vector<Transmitter>> m;
     for (const auto& t : all) m[t.norad_id].push_back(t);

@@ -60,7 +60,7 @@ void DxSpotList::set_filter(const QString& band, const QString& mode) {
 void DxSpotList::add(const dxcluster::DxSpot& spot) {
     beginResetModel(); // at most kCapacity rows, so a reset is cheap and keeps indexes simple
     spots_.push_front(spot);
-    is_watched_.insert(is_watched_.begin(), watchlist::matches(watch_, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of)));
+    is_watched_.insert(is_watched_.begin(), isWatched(spot));
     if (int(spots_.size()) > kCapacity) {
         spots_.pop_back();
         is_watched_.pop_back();
@@ -88,9 +88,29 @@ QVariantList DxSpotList::activity(const std::function<QString(const QString&)>& 
     return out;
 }
 
+bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
+    // NADXCC / NABAND are keywords (not callsigns): they match spots the ADIF log still needs.
+    QStringList plain;
+    bool want_dxcc = false, want_band = false;
+    for (const auto& e : watch_) {
+        if (e == "NADXCC") want_dxcc = true;
+        else if (e == "NABAND") want_band = true;
+        else plain << e;
+    }
+    if (watchlist::matches(plain, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of))) return true;
+    if ((want_dxcc || want_band) && needed_) {
+        const QString n = needed_(spot.dx, spot.band);
+        if (want_dxcc && n == "NEW DXCC") return true;
+        if (want_band && !n.isEmpty()) return true;
+    }
+    return false;
+}
+
 void DxSpotList::set_needed_resolver(std::function<QString(const QString&, const QString&)> r) {
     beginResetModel();
     needed_ = std::move(r);
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = isWatched(spots_[i]);
+    watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     endResetModel();
 }
 
@@ -98,7 +118,7 @@ void DxSpotList::set_watch(const QStringList& entries) {
     beginResetModel();
     watch_ = entries;
     is_watched_.assign(spots_.size(), 0);
-    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = watchlist::matches(watch_, spots_[i].dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of));
+    for (size_t i = 0; i < spots_.size(); ++i) is_watched_[i] = isWatched(spots_[i]);
     watched_ = int(std::count(is_watched_.begin(), is_watched_.end(), char(1)));
     endResetModel();
 }
@@ -151,6 +171,7 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
         connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::refreshUdp);
     }
     connect(&udp_, &dxcluster::UdpSpotListener::spotReceived, this, [this](const dxcluster::DxSpot& spot) {
+        if (settings_ && !dxcluster::udp_spot_in_scope(spot, settings_->callsign(), settings_->udpSpotByMe())) return;
         list_.add(spot);
         emit countChanged();
     });

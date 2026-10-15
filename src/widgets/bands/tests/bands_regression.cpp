@@ -2,6 +2,7 @@
 // Fixtures are trimmed real NOAA SWPC responses captured 2026-10-13.
 #include "../band_outlook.hpp"
 #include "../bands_model.hpp"
+#include "../../../map/styles.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
 #include <QDir>
@@ -89,6 +90,11 @@ int main(int argc, char** argv) {
     check(model.hasOutlook() && model.bands().size() == 8, "model outlook");
     check(model.inputsText() == "SFI 123 · Kp 3.0 · A 15", "inputs shown");
     check(model.period() == "unknown", "no station -> day/night unknown");
+    {
+        bool found = false;
+        for (const auto& st : MapStyles::instance().styles()) found = found || (st.id == "muf" && !st.image.isNull());
+        check(found, "fresh indices publish the MUF map style");
+    }
 
     fail_all = true;
     for (auto* source : {&model.kpSource(), &model.fluxSource()}) {
@@ -99,6 +105,11 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale", "outage -> stale, not live");
     check(model.hasOutlook(), "last outlook kept while stale");
+    {
+        bool found = false;
+        for (const auto& st : MapStyles::instance().styles()) found = found || st.id == "muf";
+        check(!found, "stale indices remove the MUF map style");
+    }
 
     // Day/night at a site: noon vs midnight local at lon 0.
     check(bands::period_at(QDateTime(QDate(2026, 10, 13), QTime(12, 0), QTimeZone::utc()), 51.5, 0.0) == "day", "noon is day");

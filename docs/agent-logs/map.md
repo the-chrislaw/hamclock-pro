@@ -124,3 +124,33 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: #247 slice 2 (mine) open; no open PRs of mine. #259 (apple, not mine) macOS/iPad checks still queued so not merged; #73 (docs) left alone.
 - G0 gestures slice 2 of #247 (PR agent/map-gestures): zoom about the gesture point on the flat map: mouse wheel / trackpad scroll (`wheelEvent`, 1.0015^delta), double tap/click (2x, back to 1x at max), and a `PinchHandler` in Main.qml (touch and macOS trackpad pinch) all call `MapItem::zoomAt(x, y, factor)`; +/- buttons kept. Pure `MapViewport::center_for_anchor` keeps the location under the finger. Zoom stays flat-map only (projected maps are fixed, by design of slice 1). Test: extended `qt-map-viewport-regression` (anchor stays put on 800x310, 1024x600, 1920x1080). Full ctest 137/137 locally; 1024x600 dark render unchanged; gesture feel not exercised (offscreen) and not validated on device. ASan/UBSan left to CI.
 - Next: CQ/ITU zones (need dataset licence record); Azimuthal-one.
+
+## 2026-10-14 (UTC, run 19)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. #274/#276 (not mine) macOS/iPad checks still running, #73 (docs) left alone.
+- G5 slice (PR agent/map-borders): Map menu toggle "Country borders" (options.ini `[map] borders`, default off). New dataset Natural Earth 110m admin-0 boundary lines (public domain, provenance and SHA in `docs/map-provenance.md`), converted by `tools/import_borders.py` into `src/map/borders.hpp` (generated, 3108 points). Borders are drawn dashed and dim into the cached 2048x1024 base image, so they work on the flat map and on azimuthal/Robinson through the same `MapFrame` transform, and cannot drift from the land. Tests: `run_map_tests` (dataset bounds, coverage, US-Canada border near 49N) and `qt-map-view-options-regression` (default, round trip, render differs on flat and Robinson). Not validated on device.
+- Next: US states and cities (licensed data), CQ/ITU zones (need dataset licence record), Azimuthal-one.
+
+## 2026-10-14 (UTC, run 18)
+
+- Orient: #262 (label collisions, qa) is first; no open PRs of mine. #268 (apple, not mine) and #73 (docs) left alone.
+- #262 (PR agent/map-label-collisions): labels now avoid the map buttons (`MapScene::reserved`, top-left Map button and top-right +/-/reset, sized from `ui_scale`), the route line (`line_obstacles` along the drawn path, off-map jumps skipped) and every marker symbol of every layer (all symbols are drawn before any label). Layers place labels by priority (`overlay_label_priority`: satellites, then spots/others, then quakes/fires/storms). DE/DX labels try four corners and take the first clear of the path. Tests: extended `qt-map-overlay-regression` (priority order, obstacle rects, label on a line dropped). Full ctest 138/138 locally; 1920x1080 and 1024x600 dark renders checked (fixtures have no DE so no path in the shot). ASan/UBSan left to CI. Not validated on device. Shared file note: none outside owned paths except the test.
+- Next: CQ/ITU zones (need dataset licence record); Azimuthal-one.
+
+## 2026-10-14 (UTC, run 20)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. #291/#292 (not mine) macOS/iPad checks still running so not merged; #73 (docs) left alone.
+- G4 slice (PR agent/map-azimuth-one): Map menu Projection gains "Azim one" (`MapProjection::AzimuthalOne = 3`, options.ini `[map] projection=3`): the DE-centred equidistant disc scaled so the rim is 90 degrees of arc, near hemisphere only; far-hemisphere points have no pixel (markers/route skipped, taps outside the disc ignored). Same `MapFrame` transform for base map, overlays and taps. Tests: `run_map_tests` (centre, exactly 2x the azimuthal scale, antipode/far hemisphere dropped, round trips, several card sizes) and `qt-map-view-options-regression` (persistence, render differs, DE marker at frame position). Full ctest 142/142 locally; 800x480/1024x600/1920x1080 dark renders checked (fixtures have no DE so it centres on 0,0). ASan/UBSan left to CI. Not validated on device.
+- Next: CQ/ITU zones (need a polygon dataset with a recordable licence; none confirmed yet), US states and cities.
+
+## 2026-10-14 (UTC, run 21)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. #73 (docs, not mine) has merge conflicts; #297/#299/#300/#301 (not mine) macOS/iPad checks still running, left alone.
+- G5 slice (PR agent/map-us-states): Map menu toggle "US state lines" (options.ini `[map] states`, default off). New dataset Natural Earth 110m admin-1 state/province lines (public domain; provenance and SHA in `docs/map-provenance.md`), generated into `src/map/states.hpp` (903 points) by `tools/import_borders.py --states`. Drawn dotted into the cached base image like country borders, so it works on flat and projected maps through the same `MapFrame` transform. Tests: `run_map_tests` (dataset bounds, coverage, a state line near 41N) and `qt-map-view-options-regression` (default, round trip, render differs on flat and Robinson). Full ctest 142/142 locally; 1024x600 and 800x480 dark renders checked. ASan/UBSan left to CI. Not validated on device.
+- Next: cities (licensed data), CQ/ITU zones (need a polygon dataset with a recordable licence; none confirmed yet).
+
+## 2026-10-14 (UTC, run 22)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. Merged #307 (not mine, all checks green). #308 (CI still running) and #73 (docs, conflicts) left alone.
+- G5 slice (PR agent/map-cities): Map menu toggle "Cities" (options.ini `[map] cities`, default off). New dataset Natural Earth 110m populated places (public domain; provenance and SHA in `docs/map-provenance.md`), generated into `src/map/cities.hpp` (243 cities) by `tools/import_cities.py`. Drawn in the vector layer (dot + name, largest first, after all overlay markers/labels, skipping any that collide with markers, labels, route or map buttons), so it works on flat and projected maps through the same `MapFrame` transform. Test: extended `qt-map-view-options-regression` (default, round trip, render differs on flat and Robinson). Full ctest 144/144 locally; 1024x600 and 800x480 dark renders checked (labels clear markers). ASan/UBSan left to CI. Not validated on device.
+- Next: CQ/ITU zones (need a polygon dataset with a recordable licence; none confirmed yet) - consider an "Owner input needed" issue if none is found.

@@ -23,6 +23,8 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString dxTemp READ dxTemp NOTIFY changed)
     Q_PROPERTY(QString dxSummary READ dxSummary NOTIFY changed)
     Q_PROPERTY(QString dxWind READ dxWind NOTIFY changed)
+    Q_PROPERTY(QString deCity READ deCity NOTIFY changed)
+    Q_PROPERTY(QString dxCity READ dxCity NOTIFY changed)
     Q_PROPERTY(QString deLocal READ deLocal NOTIFY changed)
     Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY changed)
 public:
@@ -39,6 +41,8 @@ public:
     QString dxSummary() const { return summary(dx_); }
     QString dxWind() const { return wind(dx_); }
 
+    QString deCity() const { return de_.place; }
+    QString dxCity() const { return dx_.place; }
     QString deLocal() const { return local(de_); }
     QString dxLocal() const { return local(dx_); }
 
@@ -53,10 +57,13 @@ private:
         PolledSource* source = nullptr;
         double lat = 0, lon = 0;
         std::optional<weather::Current> now;
+        PolledSource* place_source = nullptr;  // OSM Nominatim reverse lookup, weekly
+        QString place;                         // "San Francisco, US"; empty until known
     };
     void build();
     void rebuildEnd(End& end, const QString& cache_name, double lat, double lon);
     void parse(End& end);
+    void parsePlace(End& end);
     void refreshState();
     static QString temp(const End& e);
     static QString summary(const End& e);

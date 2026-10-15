@@ -36,6 +36,7 @@ public:
     QVariantList activity(const std::function<QString(const QString&)>& continent_of = {}) const;
     static constexpr int kCapacity = 50;
 private:
+    bool isWatched(const dxcluster::DxSpot& spot) const;
     bool matches(const dxcluster::DxSpot& s) const {
         return (band_.isEmpty() || s.band == band_) && (mode_.isEmpty() || s.mode == mode_);
     }

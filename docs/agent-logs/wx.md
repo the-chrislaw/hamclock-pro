@@ -79,6 +79,31 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - #265/#266 (areas C/D) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E12 slice: `gps_nmea` parser for serial GPS receivers (GGA position/fix/satellites, RMC validity and UTC time; checksum required, void fixes, bad hemispheres and out-of-range values rejected). Offline tests on reference sentences; debug suite for gps passes, ASan/UBSan left to CI. Parser only: no serial reader (QtSerialPort availability to check), no DE or time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
 
+## 2026-10-14 (UTC, seventeenth run)
+- #274 (tvOS) and #73 (area A) open, not mine, left alone. No open `qa` issues for E.
+- E12 slice: NMEA stream layer for the future serial GPS reader. `NmeaStream` splits raw bytes into lines (partial lines held, >128-byte lines dropped); `NmeaTracker` merges GGA+RMC, reports a position/UTC only while younger than 5 s, clears on a no-fix GGA. Offline tests; full release suite and ASan/UBSan gps test pass. Still no serial reader (QtSerialPort not installed here) and no DE/time use. Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, eighteenth run)
+- No open PRs of mine; #289/#290 (areas B/D) had green Linux checks but Apple jobs still running, #73 (area A) open: not mine, left alone. No open `qa` issues for E.
+- E12 slice: GPS card compares the gpsd TPV `time` with the system clock and shows "Clock agrees with GPS (within 2 s)" or "Clock is N s ahead of/behind GPS" (full-size layout only; differences under 2 s are never shown as a precise offset because gpsd reports late). Display only: it never sets the clock or DE. Offline parser/text tests; full release suite passes, ASan/UBSan left to CI; no screenshot (card needs a fix). Not run with a real receiver. Next: serial reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, nineteenth run)
+- #297/#298/#299 (areas tvOS/C/D) have Apple jobs still queued/running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: rigctld and rotctld host/port are read from options.ini (`[radio]`/`[rotator]` `host`, `port`); invalid hosts (anything but letters, digits, `.`, `-`, `:`) and ports outside 1..65535 fall back to the defaults field by field. Remote LAN hosts now possible; still strictly read-only. flrig stays on localhost. Offline parser tests; no Settings control yet (area A page). Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend, header radio display.
+
+## 2026-10-14 (UTC, twentieth run)
+- #306/#307/#73 are other areas' PRs with Apple jobs queued or conflicts: not mine, left alone. No open `qa` issues for E.
+- E12 slice (NTP): the sensors card's clock line now also shows chrony's stratum and reference source ("Synced, 3 ms, stratum 2 via time.example"). The source name is shown only if it is plain host/address characters (<= 64), otherwise dropped. Display only, read-only `chronyc tracking`; no source selection yet (would need privileged config, out of scope). Tests updated and extended; full release suite and ASan/UBSan sensors tests pass. Not run on a Pi. Next: serial GPS reader, DX city/popup (reverse-geocode terms), gpiod backend.
+
+## 2026-10-14 (UTC, twenty-first run)
+- #73 (area A) open and conflicting: not mine, left alone. No open `qa` issues for E.
+- E3 paused: NG3K ADXO is copyrighted with no reuse terms (same as the parked contest calendar); opened "Owner input needed: DXpedition calendar source (E3)" (#315) with options.
+- E6 slice: weather card labels now read "DE · San Francisco, US" / "DX · ...", from OSM Nominatim reverse (zoom 10). Policy recorded in the roadmap: one request per end on position change, delayed 1.2 s / 2.4 s so DX bursts collapse and ends never coincide (<1 req/s), weekly refresh, disk cache; status line credits OpenStreetMap contributors. Real reply fixture, offline parser/URL tests, model test with a fake transport; full release suite and ASan/UBSan weather test pass. No screenshot (needs a station, not in the harness); not run on a device. Next: DX city popup on new DE/DX (area G wiring), serial GPS reader, gpiod backend.
+
+## 2026-10-15 (UTC, twenty-second run)
+- Merged #320 (tvOS, green). #321/#322 (areas C/D) CI still running, #73 (area A) conflicting: not mine. Branch deletion of the merged head was denied by the sandbox, left in place. No open `qa` issues for E.
+- E11 slice: sensors card CPU caption adds "Peak N °C (3 h)" (in-memory, one sample/min, 3 h window; full layout only). Unit tests for the window; full release suite passes, ASan/UBSan left to CI; no screenshot (card shows only on hardware with a thermal zone). Not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
 ## 2026-10-15 (UTC, twenty-third run)
 - #73 (area A) open and conflicting: not mine, left alone. Took open QA issue #326.
 - Fix: `Metric.qml` label now fills its column and elides on the right, so long "DE · City, CC" headings no longer run under the neighbouring weather label. One shared-file change (area A), two lines, backward compatible (short labels render the same). Full release suite passes; ASan/UBSan left to CI. No screenshot with a long city (harness has no station), not validated on-device.

@@ -1,5 +1,7 @@
 #include "adif_model.hpp"
+#include "adif_overlay.hpp"
 #include "../dxcluster/dxcc_table.hpp"
+#include "../../map/overlay.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QFile>
 #include <QFileInfo>
@@ -13,6 +15,19 @@ AdifModel::AdifModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("adif", "Log", parent), settings_(context.settings) {
     connect(&watcher_, &QFileSystemWatcher::fileChanged, this, [this] { reload(); });
     if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &AdifModel::reload);
+}
+
+AdifModel::~AdifModel() { MapOverlays::instance().remove_layer(adif::kOverlayLayerId); }
+
+void AdifModel::setMapVisible(bool visible) {
+    map_visible_ = visible;
+    publishOverlay();
+}
+
+// Only while a log is loaded; clearing or losing the file removes the layer.
+void AdifModel::publishOverlay() {
+    if (!map_visible_ || !loaded_) { MapOverlays::instance().remove_layer(adif::kOverlayLayerId); return; }
+    MapOverlays::instance().set_layer(adif::overlay_layer(qsos_));
 }
 
 void AdifModel::start() { reload(); }
@@ -33,6 +48,7 @@ void AdifModel::load(const QString& path) {
     loaded_ = false;
     if (path.isEmpty()) {
         setState("unconfigured", "Set an ADIF log file in Settings");
+        publishOverlay();
         emit logChanged();
         return;
     }
@@ -40,6 +56,7 @@ void AdifModel::load(const QString& path) {
     QFile file(path);
     if (!file.exists() || QFileInfo(file).size() > kMaxFileBytes || !file.open(QIODevice::ReadOnly)) {
         setState("error", file.exists() ? "Cannot read the ADIF log" : "ADIF log file not found");
+        publishOverlay();
         emit logChanged();
         return;
     }
@@ -54,6 +71,7 @@ void AdifModel::load(const QString& path) {
     }
     loaded_ = true;
     setState("live", QString("%1 QSOs in log").arg(qsos_.size()), QFileInfo(file).lastModified().toUTC());
+    publishOverlay();
     emit logChanged();
 }
 

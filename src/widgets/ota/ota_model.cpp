@@ -1,6 +1,7 @@
 #include "ota_model.hpp"
 #include "ota_overlay.hpp"
 #include "../../net/polled_source.hpp"
+#include "../../ui/app_settings.hpp"
 #include <QTimer>
 
 namespace hamclock {
@@ -29,6 +30,25 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
     connect(pota_, &PolledSource::failed, this, &OtaModel::refreshState);
     connect(sota_, &PolledSource::failed, this, &OtaModel::refreshState);
     connect(this, &WidgetModel::ageChanged, this, &OtaModel::refreshState);
+    if (context.settings) {
+        settings_ = context.settings;
+        loadSettingsFilter();
+        connect(settings_, &AppSettings::optionsChanged, this, &OtaModel::loadSettingsFilter);
+        connect(settings_, &AppSettings::stationChanged, this, &OtaModel::loadSettingsFilter);
+    }
+}
+
+void OtaModel::loadSettingsFilter() {
+    ota::Filter f;
+    f.program = settings_->otaProgram();
+    f.band = settings_->otaBand();
+    f.mode = settings_->otaMode();
+    f.max_age_min = settings_->otaMaxAgeMin();
+    f.sort = settings_->otaSort();
+    f.de_lat = settings_->deLatitude();
+    f.de_lon = settings_->deLongitude();
+    f.has_de = true;
+    setFilter(f);
 }
 
 void OtaModel::start() {

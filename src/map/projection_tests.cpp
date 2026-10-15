@@ -1,4 +1,6 @@
 #include "projection.hpp"
+#include "borders.hpp"
+#include "states.hpp"
 #include "coastline.hpp"
 #include <cmath>
 #include <iostream>
@@ -42,6 +44,32 @@ int run_map_tests() {
     }
     check(next == coastline_point_count, "coastline coverage");
     for (const auto p : coastline_points) check(valid_location({p.latitude,p.longitude}), "coastline coordinate");
+    { // Natural Earth 110m boundary lines: bounds, coverage, and the 49th parallel is there.
+      check(border_point_count > 1000 && border_point_count <= 100000 && border_part_count <= 10000, "border counts");
+      std::size_t bn = 0; bool us_ca = false;
+      for (const auto part : border_parts) {
+          check(part.start == bn && part.count >= 2 && part.count <= border_point_count - part.start, "border part bounds");
+          bn = static_cast<std::size_t>(part.start) + part.count;
+      }
+      check(bn == border_point_count, "border coverage");
+      for (const auto p : border_points) {
+          check(valid_location({p.latitude, p.longitude}), "border coordinate");
+          if (std::fabs(p.latitude - 49.0) < 0.2 && p.longitude > -110 && p.longitude < -100) us_ca = true;
+      }
+      check(us_ca, "US-Canada border near 49N"); }
+    { // Natural Earth 110m admin-1 lines: bounds, coverage, and a Colorado-like box edge (41N, ~-102W..-109W) exists.
+      check(state_point_count > 500 && state_point_count <= 100000 && state_part_count <= 10000, "state counts");
+      std::size_t sn = 0; bool co = false;
+      for (const auto part : state_parts) {
+          check(part.start == sn && part.count >= 2 && part.count <= state_point_count - part.start, "state part bounds");
+          sn = static_cast<std::size_t>(part.start) + part.count;
+      }
+      check(sn == state_point_count, "state coverage");
+      for (const auto p : state_points) {
+          check(valid_location({p.latitude, p.longitude}), "state coordinate");
+          if (std::fabs(p.latitude - 41.0) < 0.1 && p.longitude > -109.1 && p.longitude < -102) co = true;
+      }
+      check(co, "Colorado/Wyoming state line near 41N"); }
     // Azimuthal equidistant: centre, cardinal directions, antipode, round trips.
     {
         auto close = [](double a, double b, double e = 1e-9) { return std::abs(a - b) < e; };
@@ -103,6 +131,30 @@ int run_map_tests() {
             check(!rb.to_location(rb.x + 1, rb.y + 1), "robinson corner is outside the outline");
             const auto mid = rb.to_pixel({0, 30});
             check(mid && close(mid->x, rb.x + rb.w / 2) && close(mid->y, rb.y + rb.h / 2), "robinson centre longitude is the middle");
+        }
+        {   // Azimuthal-one: near hemisphere only, rim at 90 degrees of arc, twice the scale.
+            const Location de{39.7, -105};
+            for (const auto& size : {std::pair<double, double>{1024, 600}, {800, 480}, {1920, 1080}}) {
+                const auto one = MapFrame::fit(MapProjection::AzimuthalOne, de, size.first, size.second);
+                const auto full = MapFrame::fit(MapProjection::Azimuthal, de, size.first, size.second);
+                const auto c = one.to_pixel(de);
+                check(c && close(c->x, one.x + one.w / 2) && close(c->y, one.y + one.h / 2), "azimuth-one centre is the frame centre");
+                const Location p{51.5, -0.1}; // London: about 7,500 km, well inside the hemisphere
+                const auto a = one.to_pixel(p), b = full.to_pixel(p);
+                check(a && b && close(a->x - c->x, 2 * (b->x - (full.x + full.w / 2)), 1e-6), "azimuth-one is the azimuthal map at twice the scale");
+                check(!one.to_pixel({-39.7, 75}), "azimuth-one drops the antipode");
+                check(!one.to_pixel({-20, 100}), "azimuth-one drops the far hemisphere");
+                const auto east = one.to_pixel({0, 0}); // Gulf of Guinea, ~ 105 degrees of arc away
+                check(!east, "azimuth-one drops a point beyond 90 degrees of arc");
+                const auto rim = one.to_pixel({0.0, -105 + 89.0});
+                check(rim && std::hypot(rim->x - c->x, rim->y - c->y) < one.w / 2, "azimuth-one rim point stays inside");
+                for (const Location q : {Location{51.5, -0.1}, Location{10, -150}, Location{60, -60}}) {
+                    const auto px = one.to_pixel(q);
+                    const auto back = px ? one.to_location(px->x, px->y) : std::nullopt;
+                    check(back && close(back->latitude, q.latitude, 1e-6) && close(std::remainder(back->longitude - q.longitude, 360.0), 0.0, 1e-6), "azimuth-one round trip");
+                }
+                check(!one.to_location(one.x + 1, one.y + 1), "azimuth-one corner is outside the disc");
+            }
         }
         check(!MapFrame::fit(MapProjection::Equirectangular, {0, 0}, 100, 100).to_pixel({0, 0}), "flat map uses MapViewport");
         check(!MapFrame::fit(MapProjection::Azimuthal, {0, 0}, 0, 100).to_pixel({0, 0}), "empty item has no frame");

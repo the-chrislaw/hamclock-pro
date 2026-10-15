@@ -105,3 +105,38 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - "More passes" (owner request #246, D3 detail box): the detail box lists the next four passes of the tapped satellite (day, HH:mmZ, peak elevation) on a wrapped "Then ..." line. The model keeps up to five passes per satellite from the existing search; the list rows are unchanged. Test checks at most four later passes with a time and a peak at or above the 10 degree threshold. Full ctest passes (138/138); screenshots and ASan/UBSan left to CI.
 - Not mine: #73 conflicting; left alone. No other `[D]` QA issues.
 - Next: Show track / Set as DX (needs G's tap mechanism), settings control for tracked satellites, pass alerts, eclipse visibility at DE, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 19
+- Eclipse visibility at DE (backlog D9, domain + pane): `eclipse_visibility()` scans +-4 h around the global greatest eclipse (2 min steps), keeps samples with the Sun up and takes the minimum Sun-Moon topocentric separation; under 0.40 deg is Visible, 0.40-0.64 Borderline (Moon ephemeris is ~0.1 deg), else None. The Eclipse card shows an "At DE" row when a station is set. Test (2024-04-08): Dallas and Denver visible, London, Sydney (night), Moscow, Cairo and Tokyo not; invalid latitude throws. No local magnitude or contact times (needs Besselian elements). Screenshots/ASan left to CI.
+- Not mine: #73 conflicting; #273/#274 CI still running. No new `[D]` QA issues.
+- Next: pass alerts, settings control for tracked satellites, moon image (D12), hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 20
+- Moon phase disc (backlog D12, partial): the Sun & Moon card draws the Moon as a Canvas disc from the elongation (crescent/gibbous terminator ellipse, lit side right when waxing, mirrored for a southern DE; no parallactic tilt, no texture). Shown only when the pane has room for the phase row; compact slots keep the text. Test checks elongation near 180 at the 2025-03-14 full moon and the southern flag. Rendered offscreen at 800x480, 1024x600, 1920x1080 (not on-device; no clipping, phase text fits). Not done: link to the EME tool.
+- Not mine: #73 conflicting, #279/#282 CI still running at start; left alone. No new `[D]` QA issues beyond #246 (detail box items remaining need G's tap mechanism).
+- Next: pass alerts, settings control for tracked satellites, hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 21
+- Pass alert (backlog D7, partial): `pass_alert_text` gives "NAME rises in N min" within 5 min of AOS and "NAME above horizon" during a pass; the Satellites model exposes it as `alert` and the card shows it as an accent line, with the matching row highlighted. No sound/notification and no settings for the lead time yet. Unit test covers the boundaries; satellites tests pass. No screenshot (alert only shows when a pass is imminent, which the fixtures do not produce); ASan/UBSan left to CI.
+- Not mine: #288/#289 CI still running at start, #73 conflicting; left alone. No new `[D]` QA issues.
+- Next: settings control for tracked satellites, user-supplied TLE, hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 22
+- Show/Hide track (D3 detail box; stands in for the settings control): the detail box has a "Show track on map" / "Hide track on map" action that adds or removes the satellite in `[satellites] tracked=` (max two, oldest drops off) and republishes the map layer. Pure `toggle_tracked_names` plus a model test of the flip and the saved ini value. Full ctest passes (142/142); no screenshot (the detail box needs a tap); ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #294/#296/#297/#298 CI still running at start. No new `[D]` QA issues.
+- Next: Set as DX (needs G's tap mechanism), user-supplied TLE, hams.at pane (D8).
+
+## 2026-10-14 (UTC), run 23
+- Launches pane (backlog D13, first slice): new `launches` widget parses Launch Library 2 upcoming launches (hourly, cached, Data source policy updated); card shows the next launch with a T- countdown (past launches dropped after a 2 h grace), provider, site, status and the next three in non-compact slots; approximate times marked. Shared changes: `launches` added to the Sky & Space category in PaneChooser.qml; the `--fixtures` transport now ignores a trailing slash in the URL path (backward compatible). Full ctest passes (144/144); rendered offscreen at 800x480 and 1024x600 and 1920x1080 (not on-device), no truncation. ASan/UBSan left to CI.
+- Not mine: #306 CI running, #73 conflicting; left alone. No new `[D]` QA issues.
+- Next: balloons pane (D14), user-supplied TLE, hams.at pane (D8, needs API docs), launch pad map markers.
+
+## 2026-10-15 (UTC), run 24
+- Merged #319 (spots/space PR, green). User-supplied TLE (backlog D7, partial): `user-tles.txt` beside options.ini (3-line or 2-line sets) is merged over the CelesTrak download by NORAD id via `merge_user_tles`; user sets are not limited to the popular-bird list and still obey the 30-day age cut-off. Unit test covers replace and append. Full ctest passes (145/145); no UI change. ASan/UBSan left to CI.
+- Not mine: #73 conflicting; #320/#321 CI still running at start. Balloons (D14) blocked on #314.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 25
+- QA #325 (daylight year chart): the sunrise/sunset paths now break where the time wraps past 00:00 UTC (jump > 720 min between adjacent days) instead of drawing a vertical stroke. QML-only; rendered offscreen at 1024x600 for DE 40.7 N 74.0 W (not on-device): the blue series splits cleanly, no vertical strokes. No unit test (canvas paint logic).
+- Not mine: #328 CI still running at start, #73 conflicting; left alone.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.

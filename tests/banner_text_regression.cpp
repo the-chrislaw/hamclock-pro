@@ -14,6 +14,7 @@ int main() {
     CHECK(banner_text(2, "") == "73");
     CHECK(banner_text(3, "K1") == "K1");
     CHECK(banner_text(-1, "K1") == "73 DE K1");
+    CHECK(banner_is_callsign(0) && banner_is_callsign(3) && !banner_is_callsign(1) && !banner_is_callsign(-1));
     CHECK(next_banner_mode(0) == 1 && next_banner_mode(2) == 0);
     return failures ? 1 : 0;
 }
