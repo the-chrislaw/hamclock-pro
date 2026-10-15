@@ -212,7 +212,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 | **HamAlert.org** telnet login + password | Personal spot alerts | C | Partial: user/password saved in the owner-only credentials file (password C++ only), pane connects to hamalert.org:7300; map overlay done (entity centres, live only; Settings toggle not wired); trigger names and per-alert filters missing |
 | **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Partial: card lists nearest stations (plain and compressed positions); server, port and radius (1–500 km) set in Settings (options.ini `[aprs]`, reconnects on change); map overlay done |
 | **hams.at API key** | Personalised satellite pass info | D | Missing |
-| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display only; DE/time use and serial NMEA pending) |
+| gpsd host **or** serial NMEA device | DE location/time from GPS | E | Partial (gpsd display; serial NMEA receiver via options.ini `[gps]` `device`/`baud`, read-only; DE/time use pending) |
 | NTP server | Time source | E | Missing |
 | rigctld, rotctld, flrig host/port | Radio and rotator | E | Partial (read-only radio; rigctld/rotctld host and port via options.ini `[radio]`/`[rotator]` `host`/`port`, flrig stays on localhost:12345; no Settings control yet) |
 | PiAware ADS-B receiver host | Aircraft on the map | E | Partial (count card from localhost:8080 only; no settings, no map overlay) |
