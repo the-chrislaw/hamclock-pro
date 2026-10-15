@@ -61,6 +61,19 @@ std::vector<std::pair<QString, int>> band_stats(const std::vector<Report>& repor
     return out;
 }
 
+std::vector<std::pair<QString, int>> mode_stats(const std::vector<Report>& reports) {
+    std::vector<std::pair<QString, int>> out;
+    for (const auto& r : reports) {
+        const QString mode = r.mode.trimmed().toUpper();
+        if (mode.isEmpty()) continue;
+        auto it = std::find_if(out.begin(), out.end(), [&](const auto& e) { return e.first == mode; });
+        if (it == out.end()) out.emplace_back(mode, 1);
+        else ++it->second;
+    }
+    std::stable_sort(out.begin(), out.end(), [](const auto& a, const auto& b) { return a.second > b.second; });
+    return out;
+}
+
 QString band_summary(const std::vector<std::pair<QString, int>>& stats, int max_bands) {
     QStringList parts;
     for (const auto& [band, n] : stats) {
