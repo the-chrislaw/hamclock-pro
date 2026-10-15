@@ -24,3 +24,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (fifth run)
 - Main's tvOS CI green (app shell merged as #274). Backlog 4, first slice: Qt-free solar wind parser (`solarwind.cpp`, same fixtures/rules as the Qt oracle), C ABI, and two new cards (solar wind speed, IMF Bz) in the SwiftUI dashboard with Stale/Offline labels. Core tests 8/8 on Linux; Swift verified only by the tvos.yml run on the PR.
 - Next: sun/moon card from the shared solar_position code, then satellites/quakes panes.
+
+## 2026-10-15
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: C ABI for the shared offline solar position (`hcp_subsolar_point`, `hcp_sun_elevation`, tested on Linux 8/8, zero warnings) and a Sun card (subsolar point, computed on device, no Stale state because it needs no network).
+- Swift verified only by the tvos.yml run on the PR.
+- Next: moon/sun rise-set for the observer once settings (location via iCloud KVS) exist; satellites and quakes panes.

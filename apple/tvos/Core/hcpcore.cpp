@@ -1,6 +1,9 @@
 #include "hcpcore.h"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "domain/solar_position.hpp"
+#include <cmath>
+#include <stdexcept>
 #include <cstring>
 #include <string>
 #include <string_view>
@@ -38,4 +41,17 @@ HcpReading hcp_solarwind_latest_bt(const char* b, size_t n) { return wrap(hcp::s
 HcpReading hcp_solarwind_latest_bz(const char* b, size_t n) { return wrap(hcp::solarwind::latest(view(b, n), hcp::solarwind::kBz)); }
 int hcp_solarwind_speed_description(double v, char* buf, size_t cap) { return copy(hcp::solarwind::speed_description(v), buf, cap); }
 int hcp_solarwind_bz_description(double v, char* buf, size_t cap) { return copy(hcp::solarwind::bz_description(v), buf, cap); }
+int hcp_subsolar_point(int64_t t, double* lat, double* lon) {
+    if (!lat || !lon) return 0;
+    const auto p = hamclock::subsolar_point(hamclock::UtcSeconds{t});
+    *lat = p.latitude_deg; *lon = p.longitude_deg;
+    return 1;
+}
+int hcp_sun_elevation(int64_t t, double lat, double lon, double* out) {
+    if (!out) return 0;
+    try {
+        *out = hamclock::solar_elevation_deg(hamclock::subsolar_point(hamclock::UtcSeconds{t}), lat, lon);
+    } catch (const std::invalid_argument&) { return 0; }
+    return 1;
+}
 }

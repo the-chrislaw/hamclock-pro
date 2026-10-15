@@ -24,6 +24,7 @@ struct DashboardView: View {
                          big: { String(format: "%+.1f nT", $0) },
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
+                SunCard(now: ctx.date)
                 Spacer()
                 Text("Data: NOAA Space Weather Prediction Center")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
@@ -71,6 +72,33 @@ private struct Card: View {
             if state != .live {
                 Text(state == .stale ? "STALE" : "OFFLINE")
                     .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
+    }
+}
+
+/// Computed offline by the shared C++ solar_position code from the device clock:
+/// no network involved, so there is no Stale/Offline state (it is exact for `now`).
+private struct SunCard: View {
+    let now: Date
+    var body: some View {
+        var lat = 0.0, lon = 0.0
+        let t = Int64(now.timeIntervalSince1970)
+        let ok = hcp_subsolar_point(t, &lat, &lon) != 0
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Sun").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if ok {
+                Text(String(format: "Overhead %.1f°%@ %.1f°%@",
+                            abs(lat), lat >= 0 ? "N" : "S", abs(lon), lon >= 0 ? "E" : "W"))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text("Subsolar point, computed on device from the clock")
+                    .font(.system(size: 29)).foregroundStyle(.secondary)
+            } else {
+                Text("Unavailable").font(.system(size: 48)).foregroundStyle(.secondary)
             }
         }
         .padding(32)

@@ -30,6 +30,11 @@ int hcp_solarwind_bz_description(double nt, char* buf, size_t cap);
 int hcp_swpc_xray_class(double flux_w_m2, char* buf, size_t cap);
 int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
 
+/* Offline astronomy (shared solar_position code); computed from the supplied UTC
+ * seconds, so it is exact for that instant and never "stale". Returns 0 on bad input. */
+int hcp_subsolar_point(int64_t unix_s, double* lat_deg, double* lon_deg);
+int hcp_sun_elevation(int64_t unix_s, double lat_deg, double lon_deg, double* elevation_deg);
+
 #ifdef __cplusplus
 }
 #endif
