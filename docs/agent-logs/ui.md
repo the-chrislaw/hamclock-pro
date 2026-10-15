@@ -126,3 +126,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 27)
 - Backlog A14 slice: daily and one-time alarms in UTC (`alarms.hpp` pure logic with injected time: next-ring, window-based firing with no double ring, clock jumps over 5 minutes ignored; `AlarmsModel`; `alarms-regression`). The Timers page has a time stepper (15 min) with Daily/Once buttons and a tap-to-delete list; a ringing banner appears over the dashboard until dismissed. Session only, max 8 alarms, visual only (no sound, no GPIO), not persisted. The Timers page is not reachable from `--screenshot`, so its layout was not checked visually; the dashboard still loads with no QML warnings. ctest 148/148; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 28)
+- Backlog A2 slice: keyboard / TV remote on the focused pane: Left/Right step the widget, the Menu key opens the pane options (`PaneSlot.qml` key handlers; Tab focus ring already existed). `pane-keys-regression` (python, source-level: no QML key-event harness exists yet). Arrow-key focus moves between panes still pending. No layout change, so no new screenshots. ctest 149/149; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
