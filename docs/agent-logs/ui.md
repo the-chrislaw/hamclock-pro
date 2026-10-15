@@ -174,3 +174,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-15 (hourly run, 39)
 - Backlog A0d slice: dedicated landscape phone layout (height < 440 and wider than tall): station column, map left, one pane on the right (30 % width), `Main.qml` `phoneWide`; the page-grid inner column became a right-to-left `GridLayout`. 800x480, 1024x600 and portrait unchanged. Rendered 844x390: no clipping. A0d now complete. Not validated on a device.
+
+## 2026-10-15 (hourly run, 40)
+- Issue #401 (station path line wrapped with an orphan "·" / "DEG / TRUE"): `path_detail` now gives three deliberate lines ("Short path", "15991 KM", "266° TRUE") with no-break spaces inside value and unit; `path-text-regression` extended (line count, no breakable space). Rendered with a configured station at 800x480, 1024x600, 1920x1080: no clipping or orphans. ctest 154/154; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
