@@ -203,8 +203,8 @@ private struct SatelliteCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Amateur satellites overhead").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if let tle = sats.tle, let p = station.position {
-                let up = SatelliteStore.visible(tle: tle, at: now, lat: p.lat, lon: p.lon)
+            if sats.tle != nil, let p = station.position {
+                let up = sats.visibleCached(at: now, lat: p.lat, lon: p.lon)
                 if up.isEmpty {
                     Text("None above the horizon").font(.system(size: 48)).foregroundStyle(.secondary)
                 }
