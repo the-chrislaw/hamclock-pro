@@ -69,6 +69,8 @@ Item {
 
     // Keyboard / TV remote: the focused card bubbles unhandled keys up to the slot.
     // Left/Right step the pane, Menu (or Shift+F10 via Key_Menu) opens its options.
+    // Any key counts as activity for screen blanking (does not consume it).
+    Keys.onPressed: function (event) { blanking.touch(); event.accepted = false }
     Keys.onLeftPressed: function (event) { slot.step(-1); event.accepted = true }
     Keys.onRightPressed: function (event) { slot.step(1); event.accepted = true }
     // Up/Down move the focus ring to the previous/next focusable item (same order as Tab).
