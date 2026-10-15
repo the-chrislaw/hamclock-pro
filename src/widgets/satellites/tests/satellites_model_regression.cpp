@@ -138,6 +138,11 @@ int main(int argc, char** argv) {
               toggle_tracked_names({"AO-7", "ISS"}, "FO-29") == QStringList({"ISS", "FO-29"}), "toggle_tracked_names");
         model.selectRow(0);
         check(model.detail().isEmpty(), "second tap closes the detail");
+        const QString first = rows.first().toMap()["name"].toString();
+        check(!model.selectByName("NO-SUCH-SAT") && model.detail().isEmpty(), "unknown marker name opens nothing");
+        check(model.selectByName(first.toLower()) && model.detail()["name"].toString() == first, "marker name opens its detail");
+        check(model.selectByName(first) && !model.detail().isEmpty(), "selecting again keeps it open");
+        model.selectRow(0);
         check(!model.setAsDx().isEmpty(), "setAsDx with no satellite open reports an error");
         check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&
               compass_point(90) == "E" && compass_point(225) == "SW", "format helpers");
