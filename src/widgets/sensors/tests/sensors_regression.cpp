@@ -158,5 +158,11 @@ int main(int argc, char** argv) {
         p.add(4 * 3600, 50.0);  // older samples leave the 3 h window
         check(p.peak() && *p.peak() == 50.0, "peak window trimmed to 3 h");
     }
+    {
+        sensors::PeakHistory w;
+        check(!w.trough(), "no samples -> no trough");
+        w.add(0, -60.0); w.add(120, -82.0); w.add(240, -70.0);
+        check(w.trough() && *w.trough() == -82.0, "trough is the minimum");
+    }
     return failures ? 1 : 0;
 }

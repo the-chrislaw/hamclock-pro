@@ -124,6 +124,13 @@ std::optional<double> PeakHistory::peak() const {
     return m;
 }
 
+std::optional<double> PeakHistory::trough() const {
+    if (samples_.empty()) return std::nullopt;
+    double m = samples_.front().second;
+    for (const auto& s : samples_) m = std::min(m, s.second);
+    return m;
+}
+
 } // namespace hamclock::sensors
 
 namespace hamclock::sensors {
