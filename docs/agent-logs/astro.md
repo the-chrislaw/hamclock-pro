@@ -195,3 +195,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Marker tap opens the satellite detail box (backlog D, #246): `SatellitesModel::selectByName()` opens (never toggles) the detail for the listed satellite matching the tapped marker's label; the map tap menu (shared `MapTapMenu.qml`, small backward-compatible change: remembers the marker layer, adds a "Details" button only for layer "satellites") calls it through `widgetRegistry.model("satellites")`. Tests: unknown name opens nothing, case-insensitive match, re-select keeps open. Full ctest 154/154 passes; not rendered on a screen (the box shows in the Satellites pane, so the pane must be on screen); ASan/UBSan left to CI.
 - Not mine: #403/#404 (other areas) and #73 conflicting left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: settings editor for TLE, annular/total contacts.
+
+## 2026-10-15 (UTC), run 37
+- User TLE editor (backlog D7): `SatellitesModel::userTles()` / `saveUserTles(text)` validate pasted element sets (rejects text with no valid set, nothing written; empty text removes the file), save atomically to `user-tles.txt` beside options.ini and reload. The Satellites card gets a "My TLEs…" link (roomy slots only) opening a paste editor with Save / Clear / Cancel. Tests extended in satellites_model_regression (reject, save, clear). ctest satellites and ASan/UBSan satellites tests pass; not rendered with the editor open (the offscreen pane test has no data, so the link is hidden there); not on-device.
+- Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: annular/total contact times (needs better ephemeris), launches ham filtering, EME sky temperature.

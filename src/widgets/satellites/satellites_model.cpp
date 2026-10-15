@@ -2,6 +2,7 @@
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QFile>
+#include <QSaveFile>
 #include <QFileInfo>
 #include <QSettings>
 #include <QTimeZone>
@@ -173,6 +174,37 @@ void SatellitesModel::load() {
             tles_ = merge_user_tles(tles_, parse_tle_set(f.read(1 << 20).toStdString()));
     }
     recompute();
+}
+
+namespace {
+QString user_tles_path(const AppSettings* settings) {
+    return QFileInfo(settings->optionsPath()).absolutePath() + "/user-tles.txt";
+}
+}
+
+QString SatellitesModel::userTles() const {
+    if (!settings_) return {};
+    QFile f(user_tles_path(settings_));
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return {};
+    return QString::fromUtf8(f.read(1 << 20));
+}
+
+QString SatellitesModel::saveUserTles(const QString& text) {
+    if (!settings_) return "Settings unavailable";
+    const QString path = user_tles_path(settings_);
+    if (text.trimmed().isEmpty()) {
+        QFile::remove(path);
+    } else {
+        if (text.size() > (1 << 20)) return "Too much text (limit 1 MB)";
+        if (parse_tle_set(text.toStdString()).empty())
+            return "No valid element sets found (need the two data lines, optionally a name line above)";
+        QSaveFile f(path);
+        if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) return "Cannot write " + path;
+        f.write(text.toUtf8());
+        if (!f.commit()) return "Cannot write " + path;
+    }
+    load();
+    return {};
 }
 
 void SatellitesModel::recompute() {

@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QTimeZone>
@@ -124,6 +125,15 @@ int main(int argc, char** argv) {
             ini.remove("satellites/tracked");
             ini.sync();
             model.recompute();
+        }
+        {
+            // User TLE editor: invalid text is rejected without writing, valid text is saved and
+            // loaded (a new NORAD id appears in the set), empty text removes the file.
+            check(!model.saveUserTles("not a tle\nat all").isEmpty() && model.userTles().isEmpty(), "invalid user TLE rejected, nothing written");
+            const QString good = "TEST SAT\n1 25544U 98067A   26286.11204827  .00005858  00000+0  11499-3 0  9991\n2 25544  51.6319  76.5194 0006724 256.4602 103.5638 15.48846742590035\n";
+            check(model.saveUserTles(good).isEmpty() && model.userTles() == good, "valid user TLE saved");
+            check(QFileInfo::exists(QFileInfo(settings.optionsPath()).absolutePath() + "/user-tles.txt"), "user-tles.txt beside options.ini");
+            check(model.saveUserTles("  \n").isEmpty() && model.userTles().isEmpty(), "empty text clears");
         }
         {
             // Set as DX: DX moves to the sub-satellite point; DE and callsign are untouched.

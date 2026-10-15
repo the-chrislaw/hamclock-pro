@@ -52,6 +52,12 @@ public:
     // Sets the saved DX to the open satellite's sub-satellite point now; returns an empty string
     // or a user-facing error. Only on an explicit tap, never automatically.
     Q_INVOKABLE QString setAsDx();
+    // The saved `user-tles.txt` text (empty when none).
+    Q_INVOKABLE QString userTles() const;
+    // Validates and saves pasted two/three-line element sets to `user-tles.txt` beside options.ini
+    // and reloads; empty text removes the file. Returns "" on success or a user-facing error
+    // (nothing is written then).
+    Q_INVOKABLE QString saveUserTles(const QString& text);
 
 signals:
     void changed();
