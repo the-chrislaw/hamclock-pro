@@ -9,6 +9,7 @@ QtObject {
     property real scale: 1
     // Small panel (7-inch Pi, 800x480 to 1280x720): no header, tight spacing.
     property bool dense: false
+    property bool phone: false   // portrait phone: one column, one pane
 
     readonly property color canvas: dark ? "#22282c" : "#eeede9"
     readonly property color surface: dark ? "#2b3236" : "#fafaf7"

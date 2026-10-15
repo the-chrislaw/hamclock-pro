@@ -86,13 +86,15 @@ const char* solar_eclipse_type_name(SolarEclipseType t) {
 EclipseLocal eclipse_visibility(const SolarEclipse& e, double lat, double lon) {
     if (!std::isfinite(lat) || !std::isfinite(lon) || lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
         throw std::invalid_argument("invalid location");
-    EclipseLocal out{EclipseVisibility::None, 180.0, 0.0};
+    EclipseLocal out{};
+    out.visibility = EclipseVisibility::None;
+    out.min_separation_deg = 180.0;
     const double la = rad(lat);
-    for (int s = -240; s <= 240; s += 2) {
-        const UtcSeconds t{e.greatest.value + s * 60};
+    // Sun-Moon separation in degrees, or a negative value while the Sun is below the horizon.
+    const auto separation = [&](UtcSeconds t, double* sun_el_out) {
         const SubsolarPoint sub = subsolar_point(t);
         const double sun_el = solar_elevation_deg(sub, lat, lon);
-        if (sun_el <= 0.0) continue;
+        if (sun_el <= 0.0) return -1.0;
         // Sun azimuth from north from its declination and hour angle (west positive).
         const double dec = rad(sub.latitude_deg), h = rad(lon - sub.longitude_deg);
         const double sun_az = std::atan2(std::sin(h), std::cos(h) * std::sin(la) - std::tan(dec) * std::cos(la)) + kPi;
@@ -100,8 +102,37 @@ EclipseLocal eclipse_visibility(const SolarEclipse& e, double lat, double lon) {
         const double se = rad(sun_el), me = rad(m.elevation_deg), da = sun_az - rad(m.azimuth_deg);
         double c = std::sin(se) * std::sin(me) + std::cos(se) * std::cos(me) * std::cos(da);
         c = std::fmax(-1.0, std::fmin(1.0, c));
-        const double sep = std::acos(c) * 180.0 / kPi;
-        if (sep < out.min_separation_deg) { out.min_separation_deg = sep; out.sun_elevation_deg = sun_el; }
+        if (sun_el_out) *sun_el_out = sun_el;
+        return std::acos(c) * 180.0 / kPi;
+    };
+    for (int s = -240; s <= 240; s += 2) {
+        const UtcSeconds t{e.greatest.value + s * 60};
+        double sun_el = 0;
+        const double sep = separation(t, &sun_el);
+        if (sep < 0) continue;
+        if (sep < out.min_separation_deg) { out.min_separation_deg = sep; out.sun_elevation_deg = sun_el; out.max_time = t; }
+    }
+    if (out.max_time.value != 0) {
+        // Semi-diameters: Sun 0.2666 deg (mean), Moon from its distance at the moment of maximum.
+        const double rs = 0.2666, rm = std::asin(1737.4 / moon_position(out.max_time).distance_km) * 180.0 / kPi;
+        out.magnitude = std::fmax(0.0, (rs + rm - out.min_separation_deg) / (2 * rs));
+        if (out.min_separation_deg < rs + rm) {
+            // Contacts: walk outward from the maximum in 20 s steps until the discs part or the Sun sets.
+            // If the Sun is up at the walk's end the contact is real; otherwise it is the horizon cutting it off.
+            const double limit = rs + rm;
+            auto walk = [&](int dir, bool& cut) {
+                std::int64_t t = out.max_time.value;
+                for (int i = 0; i < 720; ++i) {
+                    const double sep = separation(UtcSeconds{t + dir * 20}, nullptr);
+                    if (sep < 0) { cut = true; break; }
+                    if (sep >= limit) break;
+                    t += dir * 20;
+                }
+                return UtcSeconds{t};
+            };
+            out.start_time = walk(-1, out.start_at_sunrise);
+            out.end_time = walk(+1, out.end_at_sunset);
+        }
     }
     if (out.min_separation_deg < 0.40) out.visibility = EclipseVisibility::Visible;
     else if (out.min_separation_deg < 0.64) out.visibility = EclipseVisibility::Marginal;

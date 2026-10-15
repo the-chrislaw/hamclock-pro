@@ -45,6 +45,7 @@ Card {
             label: "Disk"
             visible: root.widget && root.widget.hasDisk
             value: visible ? root.widget.disk : ""
+            caption: visible && !root.compact ? root.widget.diskFree : ""
         }
     }
 }

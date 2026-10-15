@@ -33,6 +33,14 @@ int main(int argc, char** argv) {
     const auto tromso = daylight_points(2026, 69.65, 18.96, 1);
     check(tromso[171].toMap()["rise"].toDouble() < 0, "midnight sun has no rise");
     check(tromso[354].toMap()["set"].toDouble() < 0, "polar night has no set");
+    // New York (40.7N, 74.0W) 21 June 2026: sunrise ~05:25 EDT, sunset ~20:31 EDT; 21 Dec EST ~07:16 / 16:32.
+    const auto ny = daylight_points(2026, 40.71, -74.0, 1, "America/New_York");
+    check(std::fabs(ny[171].toMap()["rise"].toDouble() - (5 * 60 + 25)) < 5, "NY June sunrise local (EDT)");
+    check(std::fabs(ny[171].toMap()["set"].toDouble() - (20 * 60 + 31)) < 5, "NY June sunset local (EDT)");
+    check(std::fabs(ny[354].toMap()["rise"].toDouble() - (7 * 60 + 16)) < 5, "NY Dec sunrise local (EST)");
+    check(std::fabs(ny[354].toMap()["set"].toDouble() - (16 * 60 + 32)) < 5, "NY Dec sunset local (EST)");
+    check(daylight_points(2026, 40.71, -74.0, 1, "Not/AZone")[171].toMap()["rise"].toDouble() > 8 * 60, "bad zone stays UTC");
+    check(tromso[171].toMap()["rise"].toDouble() < 0 && daylight_points(2026, 69.65, 18.96, 1, "Europe/Oslo")[171].toMap()["rise"].toDouble() < 0, "polar gap survives zone shift");
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

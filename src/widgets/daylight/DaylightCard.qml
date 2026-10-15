@@ -3,9 +3,11 @@ import HamClock
 
 Card {
     id: root
-    // Sunrise (amber) and sunset (blue) minutes after 00:00 UTC through the year, today marked.
+    // Sunrise (amber) and sunset (blue) minutes after 00:00 (UTC, or DE local time when the zone is known) through the year, today marked.
     readonly property var pts: root.widget ? root.widget.points : []
     onPtsChanged: plot.requestPaint()
+    readonly property string tzTag: root.widget && root.widget.localTime ? "L" : "Z"
+    onTzTagChanged: plot.requestPaint()
     Text {
         visible: root.widget && root.widget.hasStation && root.pts.length === 0
         text: "—"
@@ -35,7 +37,7 @@ Card {
                 ctx.globalAlpha = 0.35
                 ctx.beginPath(); ctx.moveTo(0, y(hr * 60)); ctx.lineTo(w, y(hr * 60)); ctx.stroke()
                 ctx.globalAlpha = 1
-                if (roomy) ctx.fillText(hr + "Z", 2, y(hr * 60) - 2)
+                if (roomy) ctx.fillText(hr + root.tzTag, 2, y(hr * 60) - 2)
             }
             if (roomy) {
                 const mdays = [31, n === 366 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]

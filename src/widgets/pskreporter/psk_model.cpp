@@ -1,8 +1,10 @@
 #include "psk_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "psk_overlay.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QTimer>
 #include <algorithm>
+#include <cmath>
 
 namespace hamclock {
 namespace {
@@ -13,7 +15,24 @@ constexpr int kRecentRows = 6;
 
 PskModel::PskModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport) {
-    if (settings_) connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("psk");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("psk");
+            if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
+        });
+    }
+    if (settings_) {
+        connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            syncWspr();
+            if (!raw_.ok) return;
+            applyFilter();
+            emit reportsChanged();
+            publishOverlay();
+        });
+    }
 }
 
 PskModel::~PskModel() { MapOverlays::instance().remove_layer(psk::kOverlayLayerId); }
@@ -25,8 +44,59 @@ void PskModel::setMapVisible(bool visible) {
 
 // Drawn only while the feed is live: never stale reports as current.
 void PskModel::publishOverlay() {
-    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(psk::overlay_layer(feed_.reports));
-    else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
+    if (map_visible_ && state() == "live") {
+        auto layer = psk::overlay_layer(feed_.reports);
+        apply_spot_label_style(layer, settings_, "psk");
+        MapOverlays::instance().set_layer(layer);
+    } else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
+}
+
+void PskModel::applyFilter() {
+    feed_ = raw_;
+    if (!settings_) return;
+    feed_.reports = psk::matching(feed_.reports, psk::match_tokens(settings_->pskMatch()));
+    if (settings_->pskMaxKm() > 0)
+        feed_.reports = psk::within_distance(feed_.reports, settings_->deLatitude(), settings_->deLongitude(),
+                                             settings_->pskMaxKm());
+}
+
+// Combines the PSKReporter and (optional) WSPR feeds, newest first.
+void PskModel::mergeRaw() {
+    raw_ = psk_raw_;
+    if (wspr_raw_.ok) {
+        raw_.ok = true;
+        raw_.reports.insert(raw_.reports.end(), wspr_raw_.reports.begin(), wspr_raw_.reports.end());
+        std::stable_sort(raw_.reports.begin(), raw_.reports.end(),
+                         [](const psk::Report& a, const psk::Report& b) { return a.time > b.time; });
+    }
+}
+
+// WSPR (wspr.live, fair use: one query per 5 min) only when the user turns it on.
+void PskModel::syncWspr() {
+    const QString url = settings_ && settings_->pskWspr() && source_ ? psk::wspr_query_url(call_) : QString();
+    if (url.isEmpty()) {
+        if (!wspr_source_ && !wspr_raw_.ok) return;
+        delete wspr_source_;
+        wspr_source_ = nullptr;
+        wspr_raw_ = {};
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+        publishOverlay();
+        return;
+    }
+    if (wspr_source_) return;
+    wspr_source_ = new PolledSource("wspr-" + QString(call_).replace('/', '-').toLower(), QUrl(url), kPolicy,
+                                    transport_, this);
+    wspr_source_->setClock([this] { return now(); });
+    connect(wspr_source_, &PolledSource::updated, this, [this] {
+        wspr_raw_ = psk::parse_wspr(wspr_source_->body());
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+        refreshState();
+    });
+    wspr_source_->start();
 }
 
 void PskModel::start() {
@@ -34,7 +104,12 @@ void PskModel::start() {
     if (source_ && call == call_) return;
     delete source_;
     source_ = nullptr;
+    delete wspr_source_;
+    wspr_source_ = nullptr;
     feed_ = {};
+    raw_ = {};
+    psk_raw_ = {};
+    wspr_raw_ = {};
     call_ = call;
     emit reportsChanged();
     publishOverlay();
@@ -48,7 +123,9 @@ void PskModel::start() {
                                transport_, this);
     source_->setClock([this] { return now(); });
     connect(source_, &PolledSource::updated, this, [this] {
-        feed_ = psk::parse_reports(source_->body());
+        psk_raw_ = psk::parse_reports(source_->body());
+        mergeRaw();
+        applyFilter();
         emit reportsChanged();
         refreshState();
     });
@@ -56,6 +133,7 @@ void PskModel::start() {
     connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     setState("loading", "Contacting PSKReporter…");
     source_->start();
+    syncWspr();
 }
 
 QString PskModel::bestSnr() const {
@@ -66,6 +144,17 @@ QString PskModel::bestSnr() const {
 }
 
 QString PskModel::bands() const { return psk::band_summary(psk::band_stats(feed_.reports), 4); }
+
+QString PskModel::modes() const { return psk::band_summary(psk::mode_stats(feed_.reports), 4); }
+
+QString PskModel::farthest() const {
+    if (!settings_) return {};
+    const auto f = psk::farthest_report(feed_.reports, settings_->deLatitude(), settings_->deLongitude());
+    if (!f.found) return {};
+    const bool mi = settings_->imperialUnits();
+    const long d = std::lround(mi ? f.km * 0.621371 : f.km);
+    return QString("Farthest: %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km").arg(f.band.isEmpty() ? "" : " " + f.band);
+}
 
 QVariantList PskModel::recent() const {
     QVariantList out;

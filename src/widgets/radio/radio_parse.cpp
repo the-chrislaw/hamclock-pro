@@ -32,6 +32,22 @@ std::optional<QString> parse_mode(const QString& line) {
     return m;
 }
 
+std::optional<int> parse_passband_hz(const QString& line) {
+    bool ok = false;
+    const int hz = line.trimmed().toInt(&ok);
+    if (!ok || hz <= 0 || hz > 1000000) return std::nullopt;
+    return hz;
+}
+
+QString format_passband(int hz) {
+    if (hz <= 0) return QString();
+    if (hz < 1000) return QString::number(hz) + " Hz";
+    QString s = QString::number(hz / 1000.0, 'f', 2);
+    while (s.endsWith('0')) s.chop(1);
+    if (s.endsWith('.')) s.chop(1);
+    return s + " kHz";
+}
+
 QString format_frequency(double hz) {
     if (!std::isfinite(hz) || hz <= 0) return QString();
     const double mhz = hz / 1.0e6;

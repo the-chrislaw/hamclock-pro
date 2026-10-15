@@ -55,9 +55,11 @@ public:
     QString pathText() const;
     bool longPath() const { return long_path_; }
     Q_INVOKABLE void toggleLongPath();
+    Q_INVOKABLE QString bannerColor(int style) const;  // "" = theme accent; rainbow follows the clock
+    Q_INVOKABLE QString bannerBackground(int style) const { return banner_background(style); }  // "" = none
     Q_INVOKABLE void cycleBanner();   // call -> ON AIR -> 73 DE call (per session)
     QString bannerText() const;
-    bool bannerIsCallsign() const { return banner_is_callsign(banner_mode_); }
+    bool bannerIsCallsign() const;
     Q_INVOKABLE void cycleAuxTime();  // day of year -> JD -> MJD -> LST -> UNIX (per session)
     QString auxTime() const;          // LST uses the DE longitude, Greenwich when unset
     QString deSun() const;       // next sunrise/sunset at DE, empty when unconfigured

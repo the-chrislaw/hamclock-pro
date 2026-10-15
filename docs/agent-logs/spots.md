@@ -185,3 +185,53 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Backlog item 6 (slice): PSKReporter band statistics. `psk::band_stats/band_summary` count reports per amateur band (busiest first, out-of-band skipped); `PskModel::bands` and a "20m 5 · 40m 2" line (max four bands) on the card. No AppSettings change, no new source. Test added; 147/147 pass locally, zero warnings; ASan/UBSan left to CI (small pure functions). No screenshot (card needs a callsign); not validated on device.
 - Not done: WSPR/RBN sources (RBN is telnet, source decision pending), by-call/grid and max-distance filters.
 - Next: UDP sets DX (#333), Meshtastic (#311), WWFF/GMA (#305) all wait on owner input.
+
+## 2026-10-15 (run 32)
+- Step 1: merged #343 (ui alarms, all checks green). #73 is stale docs, left alone. Nothing of mine open; no open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter "Farthest: CALL km band" line (mi when imperial units are set), from the receiver grid centre to DE. `psk::farthest_report` is pure; the card line hides when no report has a usable grid. No AppSettings change, no new source. Test added; 148/148 pass locally; ASan/UBSan left to CI. No screenshot (card needs a callsign); not validated on device.
+- Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 33)
+- Step 1: nothing of mine open; #348 (ui) had checks still running and #73 (stale docs) is another area's, both left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter mode statistics. `psk::mode_stats` counts reports per mode (case folded, busiest first, empty skipped); `PskModel::modes` and a "FT8 6 · CW 2" line on the card (hidden in compact layout). No AppSettings change, no new source. Test added. Not validated on device; no screenshot (card needs a callsign).
+- Not done: WSPR/RBN, by-call/grid and max-distance filters. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 34)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 15 (slice): `NAPREF` watch keyword and NEW PREFIX badge. `adif::prefix_of` (letters+first digit run, `EA8/` operating prefix wins), `AdifModel::prefixNeeded` (false without a loaded log). Badge priority NEW DXCC > NEW PREFIX > NEW BAND; NAPREF matches NEW PREFIX only, NABAND any needed. No AppSettings change (Settings hint text mentions NAPREF). Tests added; 151/151 pass locally, no warnings in touched files; ASan/UBSan left to CI. Not validated on device.
+- Not done: NAGrid (cluster spots carry no grid).
+
+## 2026-10-15 (run 35)
+- Step 1: nothing of mine open; #360 (ui, macOS/iPad/tvOS checks running) and #73 (stale docs) are other areas', left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter max-distance filter. `psk::within_distance` (grid centre vs DE; with a limit, reports lacking a usable grid are dropped), `PskModel` keeps the raw feed and re-filters on settings change; list, stats, farthest and map all use the filtered set. `AppSettings` gains `pskMaxKm` (options.ini `[psk] max_km`, 0 = any, backward compatible) and `savePskMaxKm`; Settings Spots card field saved with "Save cluster". Tests added; 151/151 pass locally. No new warnings in touched files; ASan/UBSan left to CI. No screenshot (card needs a callsign; one extra Settings field); not validated on device.
+- Not done: PSK by-call/grid filter, WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 36)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 14 (slice): per-source map on/off wired to Settings. `AppSettings::mapSourceVisible/saveMapSourceVisible` (options.ini `[map_sources] hidden=`, default all on, backward compatible); the DX, PSK, POTA, HamAlert, APRS and ADIF models read it at start and follow `optionsChanged` via their existing `setMapVisible`. Settings Spots card gets a "Show on map" row of toggle buttons (applies immediately). Test in the PSK regression; 151/151 pass locally. QML loads without warnings at 800x480 and 1024x600, but the Settings page is not reachable via `--screenshot`, so no Settings screenshot; ASan/UBSan left to CI. Not validated on device.
+- Not done: label styles (None/Prefix/Call/Dot), minimum label distance.
+
+## 2026-10-15 (run 37)
+- Step 1: #370 (space) had macOS/iPad checks still running and #73 is stale docs; both other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
+- Backlog item 6 (slice): PSKReporter by-call/grid filter. `psk::match_tokens` (normalise, max 8 tokens) and `psk::matching` (receiver call or grid starts with a token); `AppSettings::pskMatch/savePskMatch` (options.ini `[psk] match`, empty = all, backward compatible); Settings Spots card field saved with "Save cluster". Applies to list, stats, farthest and map. Tests extended in the PSK regression; 151/151 pass locally. No screenshot (card needs a callsign; one extra Settings field); ASan/UBSan left to CI; not validated on device.
+- Not done: WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 38)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 14 (slice): per-source label style and minimum label distance. `AppSettings::mapSourceLabel/saveMapSourceLabel` (options.ini `[map_sources] label_<src>` = 0 None, 1 Prefix, 2 Call, 3 Dot; absent = layer's own) and `mapMinLabelPx/saveMapMinLabelPx` (`min_label_px`, 0 = layer's own); backward compatible. `apply_spot_label_style` (dxcluster/spot_layer_style.hpp) is applied by the DX, PSK, POTA, HamAlert, APRS and ADIF models, which now republish on any settings change. Settings Spots card gets a "Map labels" button row. Test in the PSK regression; 151/151 pass locally; ASan/UBSan left to CI. Settings page not reachable via `--screenshot`, so no screenshot; not validated on device.
+- Not done: WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) still wait on owner input.
+
+## 2026-10-15 (run 39)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 8 (slice): HamAlert rows now show the xOTA reference parsed from the alert comment (`ota` field, "POTA K-1234") on the card. The alert/trigger name is not parsed: its wire format is not documented or fixtured, so nothing is invented. No AppSettings change. Test extended; 152/152 pass locally, no warnings in touched files; ASan/UBSan left to CI. No screenshot (card needs a login); not validated on device.
+- Not done: HamAlert trigger names/per-alert filters, WSPR/RBN. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.
+
+## 2026-10-15 (run 40)
+- Step 1: nothing of mine open; #73 (stale docs) is another area's, left alone. No open `[C]` qa issues.
+- Backlog item 6 (slice): WSPR parser only. `psk::parse_wspr` (wspr.live JSON, frequency in Hz, mode "WSPR", reuses `psk::Report`) and `psk::wspr_query_url` (by DE, last hour, LIMIT 100). Fixture `wspr-rx.json` is a trimmed real capture (Oct 15). wspr.live is reachable from the sandbox; terms recorded in the roadmap's Data source policy (fair use, owner to confirm). Nothing fetches it yet, so no UI change or screenshot. 152/152 pass locally; ASan/UBSan left to CI. Not validated on device.
+- Next: WSPR fetch in `PskModel` (5 min poll, source toggle), RBN (telnet, source decision pending).
+
+## 2026-10-15 (run 41)
+- Step 1: #383 (apple, no checks reported) and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
+- Backlog item 6 (slice): WSPR fetch. `PskModel` runs a second `PolledSource` on `psk::wspr_query_url` (5 min) and merges the spots into the PSKReporter list, stats, farthest and map; all existing filters apply. Opt-in: `AppSettings::pskWspr/savePskWspr` (options.ini `[psk] wspr`, default off, backward compatible) with a Settings button, because the wspr.live fair-use terms still need owner confirmation. Card state stays driven by PSKReporter. Test added with the real fixture. Not validated on device; no screenshot (card needs a callsign).
+- Not done: RBN, WSPR "of DE" direction.

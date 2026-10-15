@@ -62,3 +62,11 @@ if(IOS AND TARGET hamclock-pro)
     target_sources(hamclock-pro PRIVATE "${_ios_assets}")
     set_source_files_properties("${_ios_assets}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 endif()
+
+# Privacy manifest (App Store requirement): no tracking, no collected data, and
+# the required-reason API declarations. Bundled for macOS and iOS/iPadOS.
+if(APPLE AND TARGET hamclock-pro)
+    set(_privacy "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/PrivacyInfo.xcprivacy")
+    target_sources(hamclock-pro PRIVATE "${_privacy}")
+    set_source_files_properties("${_privacy}" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+endif()

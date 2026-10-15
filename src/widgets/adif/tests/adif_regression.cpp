@@ -82,6 +82,11 @@ int main(int argc, char** argv) {
     check(model.entityNeeded("DL5ABC") && !model.entityNeeded("EA8/DL1ABC"), "operating prefix decides the entity");
     check(!model.bandSlotNeeded("K2AAA", "20m") && !model.bandSlotNeeded("K2AAA", "20M") && model.bandSlotNeeded("K2AAA", "15m"), "band slot needed only when entity+band unworked");
     check(!model.bandSlotNeeded("EA8/XX1X", "40m") && model.bandSlotNeeded("EA8/XX1X", "20m") && !model.bandSlotNeeded("VK9XX", "20m"), "slots per entity; unknown entity never needed");
+    check(adif::prefix_of("K1ABC") == "K1" && adif::prefix_of("9A1A") == "9A1" && adif::prefix_of("EA8/DL1ABC") == "EA8" &&
+          adif::prefix_of("DL5ABC/P") == "DL5" && adif::prefix_of("3DA0XX") == "3DA0" && adif::prefix_of("NODIGIT").isEmpty(),
+          "prefix_of");
+    check(model.prefixNeeded("DL5ABC") && !model.prefixNeeded("EA8/XX1X") && !model.prefixNeeded("W1ZZZ") && model.prefixNeeded("W2ZZZ"),
+          "prefix needed only when no logged call shares it");
     model.setEntityResolver([](const QString& c) { return c == "N0CALL" ? QString("ZZ") : QString("K"); });
     check(model.entityNeeded("N0CALL") && model.bandSlotNeeded("N0CALL", "20m"), "unworked entity needed");
     model.load("");

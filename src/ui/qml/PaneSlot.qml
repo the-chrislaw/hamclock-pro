@@ -67,6 +67,21 @@ Item {
         }
     }
 
+    // Keyboard / TV remote: the focused card bubbles unhandled keys up to the slot.
+    // Left/Right step the pane, Menu (or Shift+F10 via Key_Menu) opens its options.
+    // Any key counts as activity for screen blanking (does not consume it).
+    Keys.onPressed: function (event) { blanking.touch(); event.accepted = false }
+    Keys.onLeftPressed: function (event) { slot.step(-1); event.accepted = true }
+    Keys.onRightPressed: function (event) { slot.step(1); event.accepted = true }
+    // Up/Down move the focus ring to the previous/next focusable item (same order as Tab).
+    Keys.onUpPressed: function (event) { slot.moveFocus(false); event.accepted = true }
+    Keys.onDownPressed: function (event) { slot.moveFocus(true); event.accepted = true }
+    function moveFocus(forward) {
+        var next = slot.nextItemInFocusChain(forward)
+        if (next && next !== slot) next.forceActiveFocus(forward ? Qt.TabFocusReason : Qt.BacktabFocusReason)
+    }
+    Keys.onMenuPressed: function (event) { slot.optionsRequested(slot.index); event.accepted = true }
+
     // Tap anywhere on the pane to change it; swipe sideways to step. Handlers are
     // passive so widgets and the title button keep working.
     TapHandler { onTapped: slot.chooseRequested(slot.index) }

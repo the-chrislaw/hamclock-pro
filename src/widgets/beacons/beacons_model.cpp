@@ -28,6 +28,7 @@ OverlayLayer beacon_overlay_layer(UtcSeconds now) {
         OverlayMarker m;
         m.where = ncdxf_beacon_location(index);
         m.call = QString::fromLatin1(ncdxf_beacon(index).call);
+        m.detail = QString("%1 MHz, %2").arg(ncdxf_band_khz(band) / 1000.0, 0, 'f', 3).arg(QString::fromLatin1(ncdxf_beacon(index).location));
         m.color = QColor("#f2a900");
         m.shape = OverlayShape::Diamond;
         m.size_px = 5;

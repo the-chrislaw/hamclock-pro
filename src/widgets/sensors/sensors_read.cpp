@@ -63,6 +63,20 @@ std::optional<double> read_disk_used_fraction(const QString& path) {
     return 1.0 - double(info.bytesAvailable()) / double(info.bytesTotal());
 }
 
+QString format_free_bytes(qint64 bytes) {
+    if (bytes < 0) return {};
+    const double gb = double(bytes) / 1e9;
+    if (gb >= 100) return QString("%1 GB free").arg(std::llround(gb));
+    if (gb >= 1) return QString("%1 GB free").arg(gb, 0, 'f', 1);
+    return QString("%1 MB free").arg(std::llround(double(bytes) / 1e6));
+}
+
+QString read_disk_free_text(const QString& path) {
+    const QStorageInfo info(path);
+    if (!info.isValid() || !info.isReady() || info.bytesTotal() <= 0) return {};
+    return format_free_bytes(info.bytesAvailable());
+}
+
 EnvReading read_env_sensor(const QString& iio_root) {
     const QDir root(iio_root);
     QStringList devs = root.entryList({"iio:device*"}, QDir::Dirs | QDir::NoDotAndDotDot);

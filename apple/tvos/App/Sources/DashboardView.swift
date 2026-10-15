@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DashboardView: View {
     @EnvironmentObject var weather: SpaceWeatherStore
+    @EnvironmentObject var quakes: QuakeStore
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -28,8 +29,9 @@ struct DashboardView: View {
                     SunCard(now: ctx.date)
                     StationSunCard(now: ctx.date)
                 }
+                QuakeCard(now: ctx.date)
                 Spacer()
-                Text("Data: NOAA Space Weather Prediction Center")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
@@ -115,6 +117,22 @@ private struct SunCard: View {
 private struct StationSunCard: View {
     @EnvironmentObject var station: StationStore
     let now: Date
+
+    /// Next rise (0) / set (1) as UTC HH:mm, computed on device; "none" when the body does not rise/set soon.
+    static func event(_ kind: Int32, _ t: Int64, _ p: (lat: Double, lon: Double), sun: Bool) -> String {
+        var out: Int64 = 0
+        let ok = sun ? hcp_next_sun_event(t, kind, p.lat, p.lon, &out) : hcp_next_moon_event(t, kind, p.lat, p.lon, &out)
+        guard ok != 0 else { return "none" }
+        return Date(timeIntervalSince1970: TimeInterval(out)).formatted(
+            Date.FormatStyle(timeZone: TimeZone(identifier: "UTC")!).hour(.twoDigits(amPM: .omitted)).minute()) + "Z"
+    }
+
+    static func moon(_ t: Int64) -> String {
+        var buf = [CChar](repeating: 0, count: 32)
+        var ill = 0.0
+        guard hcp_moon_phase(t, &buf, buf.count, &ill) != 0 else { return "" }
+        return String(format: "Moon: %@, %.0f%% lit", String(cString: buf), ill * 100)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Sun at your station").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
@@ -125,6 +143,12 @@ private struct StationSunCard: View {
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                     Text(el > 0 ? "Daylight" : (el > -6 ? "Civil twilight" : "Night"))
                         .font(.system(size: 29))
+                    let t = Int64(now.timeIntervalSince1970)
+                    Text("Sunrise " + Self.event(0, t, p, sun: true) + "  Sunset " + Self.event(1, t, p, sun: true))
+                        .font(.system(size: 29))
+                    Text("Moonrise " + Self.event(0, t, p, sun: false) + "  Moonset " + Self.event(1, t, p, sun: false))
+                        .font(.system(size: 29))
+                    Text(Self.moon(t)).font(.system(size: 29)).foregroundStyle(.secondary)
                 }
             } else {
                 Text("Enter your locator").font(.system(size: 48)).foregroundStyle(.secondary)
@@ -135,5 +159,36 @@ private struct StationSunCard: View {
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+    }
+}
+
+/// USGS M2.5+ past day: strongest quake and the five most recent, with the same Stale/Offline rule.
+private struct QuakeCard: View {
+    @EnvironmentObject var quakes: QuakeStore
+    let now: Date
+    var body: some View {
+        let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Earthquakes M2.5+, past day").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if let top = quakes.strongest {
+                Text(String(format: "M%.1f %@", top.magnitude, QuakeStore.magnitudeClass(top.magnitude)))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text(top.place).font(.system(size: 29))
+                ForEach(quakes.recent) { q in
+                    Text(String(format: "M%.1f  ", q.magnitude) + q.place)
+                        .font(.system(size: 29)).foregroundStyle(.secondary).lineLimit(1)
+                }
+            } else {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+            }
+            if state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
     }
 }

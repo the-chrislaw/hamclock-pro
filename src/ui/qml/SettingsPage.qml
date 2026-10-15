@@ -120,6 +120,15 @@ Rectangle {
                                                               : "No suggestion for these coordinates; pick a zone above."
                                     if (id.length) zone.zoneId = id
                                 } }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        TimeZonePicker { id: dxZone; label: "DX time zone (empty = automatic)"; Layout.fillWidth: true
+                                         zoneId: appSettings.dxZoneOverride }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveDxZone(dxZone.zoneId) }
+                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { dxZone.zoneId = ""; appSettings.saveDxZone("") } }
+                    }
                     Text { id: zoneHint; visible: text.length > 0; color: Theme.secondary
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     RowLayout {
@@ -206,6 +215,50 @@ Rectangle {
             }
 
             Card {
+                title: "Callsign banner"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
+                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
+                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: ["Theme", "Amber", "Green", "Red", "White", "Rainbow"]
+                            AppButton {
+                                text: modelData
+                                primary: appSettings.bannerStyle === index
+                                onClicked: appSettings.saveBannerStyle(index)
+                            }
+                        }
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: ["No fill", "Black", "Navy", "Maroon", "White"]
+                            AppButton {
+                                text: "Back: " + modelData
+                                primary: appSettings.bannerBackground === index
+                                onClicked: appSettings.saveBannerBackground(index)
+                            }
+                        }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: bannerTitle; label: "Custom title (tap the banner to show it; empty = off)"; text: appSettings.bannerTitle
+                            field.maximumLength: 24 }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveBannerTitle(bannerTitle.text) }
+                    }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {
@@ -227,6 +280,46 @@ Rectangle {
                                 text: modelData === 0 ? "Off" : modelData + " %"
                                 primary: appSettings.overscanPercent === modelData
                                 onClicked: appSettings.saveOverscan(modelData)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
+                title: "Screen blanking"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Black overlay for kiosks (the backlight stays on). Tap to wake; inside the night window it blanks again after 1 minute."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [0, 5, 15, 30, 60]
+                            AppButton {
+                                text: modelData === 0 ? "Idle: off" : "Idle " + modelData + " min"
+                                primary: appSettings.blankIdleMinutes === modelData
+                                onClicked: appSettings.saveBlanking(modelData, appSettings.blankOffHour, appSettings.blankOnHour)
+                            }
+                        }
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [[-1, -1, "Night: off"], [22, 6, "22:00-06:00"], [23, 7, "23:00-07:00"], [0, 6, "00:00-06:00"]]
+                            AppButton {
+                                text: modelData[2]
+                                primary: appSettings.blankOffHour === modelData[0] && appSettings.blankOnHour === modelData[1]
+                                onClicked: appSettings.saveBlanking(appSettings.blankIdleMinutes, modelData[0], modelData[1])
                             }
                         }
                     }
@@ -278,6 +371,36 @@ Rectangle {
                         FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
+                    FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
+                                field.inputMethodHints: Qt.ImhDigitsOnly }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        Text { text: "Show on map:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
+                        Repeater {
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            AppButton { property bool on: appSettings.mapSourceVisible(modelData[0]); checkable: false
+                                        text: modelData[1] + (on ? ": on" : ": off"); primary: on
+                                        Connections { target: appSettings; function onOptionsChanged() { on = appSettings.mapSourceVisible(modelData[0]) } }
+                                        onClicked: appSettings.saveMapSourceVisible(modelData[0], !on) }
+                        }
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        Text { text: "Map labels:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
+                        Repeater {
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            AppButton { property int mode: appSettings.mapSourceLabel(modelData[0]); checkable: false
+                                        text: modelData[1] + ": " + ["auto", "none", "prefix", "call", "dot"][mode + 1]
+                                        Connections { target: appSettings; function onOptionsChanged() { mode = appSettings.mapSourceLabel(modelData[0]) } }
+                                        onClicked: appSettings.saveMapSourceLabel(modelData[0], mode >= 3 ? -1 : mode + 1) }
+                        }
+                        AppButton { property int px: appSettings.mapMinLabelPx(); checkable: false
+                                    text: "Label gap: " + (px ? px + " px" : "auto")
+                                    Connections { target: appSettings; function onOptionsChanged() { px = appSettings.mapMinLabelPx() } }
+                                    onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     RowLayout {
                         Layout.fillWidth: true
@@ -289,7 +412,7 @@ Rectangle {
                         FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
-                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC or NABAND for spots your ADIF log still needs; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
+                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC, NAPREF or NABAND for spots your ADIF log still needs; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save cluster"; primary: true
@@ -307,6 +430,10 @@ Rectangle {
                                             clusterError.text = appSettings.saveOtaSort(otaSort.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.savePskMaxKm(parseInt(pskMax.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.savePskMatch(pskMatch.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
                                         if (clusterError.text === "")

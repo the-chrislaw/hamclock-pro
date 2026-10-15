@@ -122,3 +122,44 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 26)
 - Backlog A7 slice: `src/ui/kiosk/hamclock-pro-kiosk.service` (eglfs, `--fullscreen`, non-root user, NoNewPrivileges, ProtectSystem=strict) and `KIOSK.md` (user, groups, eglfs/linuxfb fallback, touch calibration, overscan, logs). New `kiosk-unit-regression` (python, offline) checks the unit's key lines. Not installed by CMake yet and not run on a Pi or under systemd; on-screen keyboard decision still open. No UI change, so no screenshots. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 27)
+- Backlog A14 slice: daily and one-time alarms in UTC (`alarms.hpp` pure logic with injected time: next-ring, window-based firing with no double ring, clock jumps over 5 minutes ignored; `AlarmsModel`; `alarms-regression`). The Timers page has a time stepper (15 min) with Daily/Once buttons and a tap-to-delete list; a ringing banner appears over the dashboard until dismissed. Session only, max 8 alarms, visual only (no sound, no GPIO), not persisted. The Timers page is not reachable from `--screenshot`, so its layout was not checked visually; the dashboard still loads with no QML warnings. ctest 148/148; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 28)
+- Backlog A2 slice: keyboard / TV remote on the focused pane: Left/Right step the widget, the Menu key opens the pane options (`PaneSlot.qml` key handlers; Tab focus ring already existed). `pane-keys-regression` (python, source-level: no QML key-event harness exists yet). Arrow-key focus moves between panes still pending. No layout change, so no new screenshots. ctest 149/149; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 29)
+- Backlog A2 slice: Up/Down on a focused pane move the focus ring to the previous/next focusable item (Tab order) via `PaneSlot.moveFocus`; `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 30)
+- Backlog A13 slice: Settings > "Callsign banner" colour (Theme, Amber, Green, Red, White, Rainbow), saved in `options.ini` (`banner/style`, `AppSettings.saveBannerStyle`); `banner_color` in `banner_text.hpp` (rainbow turns hue once per 12 s from the clock), `banner-text-regression` extended. Text size is unchanged, so layout is the same; 800x480 and 1024x600 render with exit 0 and no truncation. Custom title and background colour still pending. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 31)
+- Backlog A13 slice: Settings > "Callsign banner" has a custom title (max 24 characters, `banner/title` in `options.ini`, `AppSettings.saveBannerTitle`); when set, tapping the banner gets a fourth step showing it (`banner_text.hpp`, `banner-text-regression` and `widget-core-regression` extended). Background colour still pending. Settings is not reachable from `--screenshot`, so its layout was not checked visually; dashboard renders at 800x480, 1024x600, 1920x1080 with exit 0.
+- Fixed a latent crash: `AppSettings::station_` was default-initialised, so with no station file the DE/DX coordinates were indeterminate and `BandsModel` randomly threw "invalid location" (QML smoke tests aborted ~60 % of runs once the class layout changed). Now value-initialised (zeros). ctest 151/151, repeated smoke runs 0/15 failures; ASan/UBSan subset (banner, widget-core, smoke) clean, full sanitizer run left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 32)
+- Backlog A13 slice: Settings > "Callsign banner" has a background fill (No fill, Black, Navy, Maroon, White; `banner/background` in `options.ini`, `AppSettings.saveBannerBackground`, `banner_background` in `banner_text.hpp`); the banner draws on a rounded rectangle of that colour. Tests: `banner-text-regression`, `widget-core-regression` extended (validation, persistence). Screenshots at 800x480, 1024x600 (navy fill, amber text, no clipping), 1920x1080 exit 0. The Settings page is not reachable from `--screenshot`, so its layout was not checked visually. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 33)
+- Backlog A0c slice: manual DX time zone override. Settings > Station has a "DX time zone" picker with Save and Auto (`dx/zone` in `options.ini`, `AppSettings.saveDxZone`, validated with `QTimeZone`); `StationModel.dxLocal` uses it, else the automatic zone from the DX coordinates. `widget-core-regression` extended (reject, persist, clear). Settings is not reachable from `--screenshot`, so layout was not checked visually. ctest 151/151, no warnings; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 34)
+- Backlog A15 slice: software screen blanking. `blanking.hpp` (pure: idle timeout 0..240 min, daily local night window that may cross midnight, a touch wakes the screen for 60 s inside the window), `BlankingModel`, Settings > "Screen blanking" (`kiosk/blank_*` in `options.ini`, `AppSettings.saveBlanking`), black overlay in `Main.qml` that any tap dismisses; a passive `TapHandler` counts touches as activity. Overlay only: backlight/DPMS are not touched. Tests: `blanking-regression` (new), `widget-core-regression` extended (validation, persistence). Dashboard renders at 800x480, 1024x600, 1920x1080 with no QML warnings; Settings is not reachable from `--screenshot`, so its layout and the overlay were not checked visually. Keyboard activity does not wake yet. ctest 152/152; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 35)
+- Backlog A15 slice: keyboard activity now wakes the blanked screen and counts as activity (`PaneSlot.qml` passive `Keys.onPressed`; the blank overlay takes focus and any key wakes it). `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 36)
+- Backlog A0d slice: portrait phone layout (width < 600 and taller than wide): `Theme.phone`, page grid becomes one column (station strip 36 % with DE and DX side by side, one pane 22 %, map fills the rest); other sizes unchanged (1024x600 and 800x480 re-rendered, identical). New truncation test `qml-app-truncation-390x844`. Rendered at 390x844 with a configured station: no clipping. Landscape phone (844x390) still uses the desktop grid; page dots pending. ctest 153/153; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs) and #383 (Apple, conflicting) were open; left alone. Issue #151 (time zone picker) is already implemented.

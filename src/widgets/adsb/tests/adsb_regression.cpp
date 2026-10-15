@@ -28,6 +28,12 @@ int main(int argc, char** argv) {
     check(good && good->tracked == 2 && good->withPosition == 1 && good->now == 1000.5, "counts recent aircraft only");
     check(!adsb::parse_aircraft("nope") && !adsb::parse_aircraft("{}") && !adsb::parse_aircraft(R"({"now":1})"), "garbage rejected");
 
+    check(adsb::aircraft_url({}, {}) == "http://127.0.0.1:8080/data/aircraft.json", "default url");
+    check(adsb::aircraft_url("pi.local", "8081") == "http://pi.local:8081/data/aircraft.json", "custom host and port");
+    check(adsb::aircraft_url("::1", "80") == "http://[::1]:80/data/aircraft.json", "ipv6 bracketed");
+    check(adsb::aircraft_url("a/b?x", "0") == "http://127.0.0.1:8080/data/aircraft.json", "bad fields fall back");
+    check(adsb::aircraft_url("10.0.0.5", "99999") == "http://10.0.0.5:8080/data/aircraft.json", "bad port alone falls back");
+
     WidgetContext ctx;
     {
         QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);

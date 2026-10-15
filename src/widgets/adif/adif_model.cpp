@@ -1,4 +1,5 @@
 #include "adif_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "adif_overlay.hpp"
 #include "../dxcluster/dxcc_table.hpp"
 #include "../../map/overlay.hpp"
@@ -13,6 +14,14 @@ namespace { constexpr qint64 kMaxFileBytes = 64LL * 1024 * 1024; }
 
 AdifModel::AdifModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("adif", "Log", parent), settings_(context.settings) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("adif");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("adif");
+            if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
+        });
+    }
     connect(&watcher_, &QFileSystemWatcher::fileChanged, this, [this] { reload(); });
     if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &AdifModel::reload);
 }
@@ -27,7 +36,9 @@ void AdifModel::setMapVisible(bool visible) {
 // Only while a log is loaded; clearing or losing the file removes the layer.
 void AdifModel::publishOverlay() {
     if (!map_visible_ || !loaded_) { MapOverlays::instance().remove_layer(adif::kOverlayLayerId); return; }
-    MapOverlays::instance().set_layer(adif::overlay_layer(qsos_));
+    auto layer = adif::overlay_layer(qsos_);
+    apply_spot_label_style(layer, settings_, "adif");
+    MapOverlays::instance().set_layer(layer);
 }
 
 void AdifModel::start() { reload(); }
@@ -64,6 +75,7 @@ void AdifModel::load(const QString& path) {
     std::stable_sort(qsos_.begin(), qsos_.end(), [](const adif::Qso& a, const adif::Qso& b) { return a.time > b.time; });
     for (const auto& q : qsos_) {
         calls_.insert(adif::base_call(q.call));
+        if (const QString p = adif::prefix_of(q.call); !p.isEmpty()) prefixes_.insert(p);
         const QString e = entityFor(q.call);
         if (e.isEmpty()) continue;
         entities_.insert(e);
@@ -92,6 +104,12 @@ bool AdifModel::entityNeeded(const QString& call) const {
     if (!loaded_) return false;
     const QString e = entityFor(call);
     return !e.isEmpty() && !entities_.contains(e);
+}
+
+bool AdifModel::prefixNeeded(const QString& call) const {
+    if (!loaded_) return false;
+    const QString p = adif::prefix_of(call);
+    return !p.isEmpty() && !prefixes_.contains(p);
 }
 
 bool AdifModel::bandSlotNeeded(const QString& call, const QString& band) const {

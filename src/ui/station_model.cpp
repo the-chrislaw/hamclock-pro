@@ -68,7 +68,9 @@ QString StationModel::pathText() const {
     return path_detail(geometry_, long_path_, settings_.imperialUnits());
 }
 
-QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_); }
+bool StationModel::bannerIsCallsign() const { return banner_is_callsign(banner_mode_, settings_.bannerTitle()); }
+
+QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_, settings_.bannerTitle()); }
 
 QString StationModel::auxTime() const {
     return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0,
@@ -80,8 +82,10 @@ void StationModel::cycleAuxTime() {
     emit tick();
 }
 
+QString StationModel::bannerColor(int style) const { return banner_color(style, QDateTime::currentSecsSinceEpoch()); }
+
 void StationModel::cycleBanner() {
-    banner_mode_ = next_banner_mode(banner_mode_);
+    banner_mode_ = next_banner_mode(banner_mode_, settings_.bannerTitle());
     emit stationChanged();
 }
 
@@ -98,7 +102,7 @@ QString StationModel::dxSun() const {
 }
 
 QString StationModel::dxLocal() const {
-    return configured() ? zone_local_text(dx_zone_, QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+    return configured() ? zone_local_text(settings_.dxZoneOverride().isEmpty() ? dx_zone_ : settings_.dxZoneOverride(), QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
 }
 
 void StationModel::reload() {

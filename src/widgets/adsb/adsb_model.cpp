@@ -1,7 +1,9 @@
 #include "adsb_model.hpp"
 #include "../../platform/apple_lifecycle.hpp"
 #include "adsb_parse.hpp"
+#include "../../ui/app_settings.hpp"
 #include <QNetworkReply>
+#include <QSettings>
 #include <QNetworkRequest>
 #include <cmath>
 
@@ -52,7 +54,12 @@ void AdsbModel::poll() {
 }
 
 void register_widget_adsb(WidgetRegistry& registry, const WidgetContext& context) {
-    auto* model = new AdsbModel(context);
+    QString url = adsb::aircraft_url({}, {});
+    if (context.settings) {
+        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
+        url = adsb::aircraft_url(ini.value("adsb/host").toString(), ini.value("adsb/port").toString());
+    }
+    auto* model = new AdsbModel(context, url);
     registry.add({"adsb", "ADS-B", QUrl("qrc:/widgets/adsb/AdsbCard.qml"), "strip", 76}, model);
     QTimer::singleShot(0, model, &AdsbModel::start);
 }

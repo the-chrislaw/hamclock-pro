@@ -24,6 +24,10 @@ constexpr Elements kJupiter{5.20288700, 0.04838624, 1.30439695, 34.39644051, 14.
                             -0.00011607, -0.00013253, -0.00183714, 3034.74612775, 0.21252668, 0.20469106};
 constexpr Elements kSaturn{9.53667594, 0.05386179, 2.48599187, 49.95424423, 92.59887831, 113.66242448,
                            -0.00125060, -0.00050991, 0.00193609, 1222.49362201, -0.41897216, -0.28867794};
+constexpr Elements kUranus{19.18916464, 0.04725744, 0.77263783, 313.23810451, 170.95427630, 74.01692503,
+                           -0.00196176, -0.00004397, -0.00242939, 428.48202785, 0.40805281, 0.04240589};
+constexpr Elements kNeptune{30.06992276, 0.00859048, 1.77004347, -55.12002969, 44.96476227, 131.78422574,
+                            0.00026291, 0.00005105, 0.00035372, 218.45945325, -0.32241464, -0.00508664};
 
 const Elements& elements(Planet p) {
     switch (p) {
@@ -32,6 +36,8 @@ const Elements& elements(Planet p) {
         case Planet::Mars: return kMars;
         case Planet::Jupiter: return kJupiter;
         case Planet::Saturn: return kSaturn;
+        case Planet::Uranus: return kUranus;
+        case Planet::Neptune: return kNeptune;
     }
     return kMercury;
 }
@@ -75,6 +81,8 @@ const char* planet_name(Planet p) {
         case Planet::Mars: return "Mars";
         case Planet::Jupiter: return "Jupiter";
         case Planet::Saturn: return "Saturn";
+        case Planet::Uranus: return "Uranus";
+        case Planet::Neptune: return "Neptune";
     }
     return "";
 }

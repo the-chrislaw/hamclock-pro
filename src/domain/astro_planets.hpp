@@ -1,13 +1,13 @@
 #pragma once
 #include "clock_state.hpp"
 namespace hamclock {
-// Offline positions of the five naked-eye planets from the JPL "Keplerian
+// Offline positions of the planets Mercury to Neptune (Uranus and Neptune need optics) from the JPL "Keplerian
 // Elements for Approximate Positions of the Major Planets" (E.M. Standish,
 // valid 1800-2050; see the Data source policy in docs/ROADMAP.md). Precessed to the date, no
 // light-time or aberration: good to roughly 0.1-0.3 degree, ample for finding a
 // planet in the sky and for a map marker, not for occultations.
-enum class Planet { Mercury, Venus, Mars, Jupiter, Saturn };
-constexpr int kPlanetCount = 5;
+enum class Planet { Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune };
+constexpr int kPlanetCount = 7;
 const char* planet_name(Planet p);
 struct PlanetPosition {
     double ecliptic_lon_deg;  // geocentric, of date

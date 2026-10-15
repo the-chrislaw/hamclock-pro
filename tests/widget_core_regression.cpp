@@ -177,6 +177,25 @@ int main(int argc, char** argv) {
         check(ov.saveOverscan(6).isEmpty() && ov.overscanPercent() == 6, "overscan applied");
         AppSettings ov2({}, ov_dir.path());
         check(ov2.overscanPercent() == 6, "overscan survives restart");
+        check(ov2.blankIdleMinutes() == 0 && ov2.blankOffHour() == -1, "blanking off by default");
+        check(!ov2.saveBlanking(5, 23, -1).isEmpty() && !ov2.saveBlanking(241, -1, -1).isEmpty() && ov2.blankIdleMinutes() == 0, "bad blanking rejected");
+        check(ov2.saveBlanking(15, 23, 7).isEmpty() && ov2.blankIdleMinutes() == 15 && ov2.blankOnHour() == 7, "blanking applied");
+        AppSettings ov3({}, ov_dir.path());
+        check(ov3.blankIdleMinutes() == 15 && ov3.blankOffHour() == 23, "blanking survives restart");
+    }
+    {
+        QTemporaryDir bt_dir;
+        AppSettings bt({}, bt_dir.path());
+        check(bt.bannerTitle().isEmpty(), "banner title off by default");
+        check(bt.saveBannerTitle("  Club Station ").isEmpty() && bt.bannerTitle() == "Club Station", "banner title saved trimmed");
+        AppSettings bt2({}, bt_dir.path());
+        check(bt2.bannerTitle() == "Club Station", "banner title survives restart");
+        check(bt.bannerBackground() == 0 && !bt.saveBannerBackground(9).isEmpty() && bt.bannerBackground() == 0, "bad banner background rejected");
+        check(bt.saveBannerBackground(2).isEmpty() && AppSettings({}, bt_dir.path()).bannerBackground() == 2, "banner background persists");
+        check(bt.dxZoneOverride().isEmpty() && !bt.saveDxZone("Not/AZone").isEmpty() && bt.dxZoneOverride().isEmpty(), "bad DX zone rejected");
+        check(bt.saveDxZone("Asia/Tokyo").isEmpty() && AppSettings({}, bt_dir.path()).dxZoneOverride() == "Asia/Tokyo", "DX zone override persists");
+        check(bt.saveDxZone("").isEmpty() && AppSettings({}, bt_dir.path()).dxZoneOverride().isEmpty(), "DX zone override cleared");
+        check(bt2.saveBannerTitle("").isEmpty() && bt2.bannerTitle().isEmpty(), "banner title cleared");
     }
     {
         // Pane slots: defaults, validation, persistence.

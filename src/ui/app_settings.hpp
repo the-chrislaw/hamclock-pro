@@ -5,6 +5,7 @@
 // they never sit next to shareable settings. All files are under the per-user
 // config directory unless an explicit station path is given.
 #include "../platform/settings.hpp"
+#include <QHash>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -34,13 +35,23 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString otaSort READ otaSort NOTIFY optionsChanged)
     Q_PROPERTY(QString aprsHost READ aprsHost NOTIFY optionsChanged)
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
+    Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
+    Q_PROPERTY(QString pskMatch READ pskMatch NOTIFY optionsChanged)
+    Q_PROPERTY(bool pskWspr READ pskWspr NOTIFY optionsChanged)
     Q_PROPERTY(int aprsRadiusKm READ aprsRadiusKm NOTIFY optionsChanged)
     Q_PROPERTY(int udpSpotPort READ udpSpotPort NOTIFY optionsChanged)
     Q_PROPERTY(bool imperialUnits READ imperialUnits NOTIFY optionsChanged)
     Q_PROPERTY(int dateOrder READ dateOrder NOTIFY optionsChanged)
     Q_PROPERTY(bool clock12h READ clock12h NOTIFY optionsChanged)
+    Q_PROPERTY(int bannerStyle READ bannerStyle NOTIFY optionsChanged)
+    Q_PROPERTY(int bannerBackground READ bannerBackground NOTIFY optionsChanged)
+    Q_PROPERTY(QString bannerTitle READ bannerTitle NOTIFY optionsChanged)
+    Q_PROPERTY(QString dxZoneOverride READ dxZoneOverride NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
+    Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
+    Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
+    Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
@@ -77,8 +88,15 @@ public:
     int udpSpotPort() const { return udp_port_; }                      // 0 = UDP spot input off
     int dateOrder() const { return date_order_; }                      // 0 D M Y, 1 M D Y, 2 ISO
     bool clock12h() const { return clock_12h_; }
+    int bannerStyle() const { return banner_style_; }
+    int bannerBackground() const { return banner_bg_; }
+    QString bannerTitle() const { return banner_title_; }
+    QString dxZoneOverride() const { return dx_zone_override_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
+    int blankIdleMinutes() const { return blank_idle_; }
+    int blankOffHour() const { return blank_off_; }
+    int blankOnHour() const { return blank_on_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
@@ -91,6 +109,9 @@ public:
     // APRS-IS server (receive-only) and search radius around DE.
     QString aprsHost() const { return aprs_host_; }
     int aprsPort() const { return aprs_port_; }
+    int pskMaxKm() const { return psk_max_km_; }
+    QString pskMatch() const { return psk_match_; }
+    bool pskWspr() const { return psk_wspr_; }  // also query wspr.live (off by default)
     int aprsRadiusKm() const { return aprs_radius_km_; }
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
     QString lookupService() const { return lookup_service_; }
@@ -133,13 +154,35 @@ public:
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
     // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
+    // PSKReporter display limit: only receivers within max_km of DE (0-20000, 0 = any).
+    Q_INVOKABLE QString savePskMaxKm(int max_km);
+    // Receiver call/grid prefixes to keep ("VK, JA, PM95"); empty = all. Max 8 tokens.
+    Q_INVOKABLE QString savePskMatch(const QString& filter);
+    Q_INVOKABLE QString savePskWspr(bool on);
     Q_INVOKABLE QString saveImperialUnits(bool imperial);
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
     Q_INVOKABLE QString saveWeekStart(bool sunday);
+    Q_INVOKABLE QString saveBannerStyle(int style);
+    Q_INVOKABLE QString saveBannerBackground(int style);
+    Q_INVOKABLE QString saveBannerTitle(const QString& title);
+    /// Manual DX time zone (IANA id); empty = automatic from the DX coordinates.
+    Q_INVOKABLE QString saveDxZone(const QString& zone_id);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
+    // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
+    // (local, 0..23; -1 and -1 = none). Software overlay only.
+    Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
+    // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
+    Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
+    Q_INVOKABLE QString saveMapSourceVisible(const QString& key, bool visible);
+    // Spot label style per source: -1 = the layer's own, else 0 None, 1 Prefix, 2 Call, 3 Dot.
+    Q_INVOKABLE int mapSourceLabel(const QString& key) const { return map_label_.value(key, -1); }
+    Q_INVOKABLE QString saveMapSourceLabel(const QString& key, int mode);
+    // Minimum distance between spot labels in px (0 = each layer's own).
+    Q_INVOKABLE int mapMinLabelPx() const { return map_min_label_px_; }
+    Q_INVOKABLE QString saveMapMinLabelPx(int px);
     // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
@@ -160,7 +203,7 @@ private:
     QString writeAccounts();
 
     QString config_dir_, station_path_, load_error_;
-    StationSettings station_;
+    StationSettings station_{};  // value-init: coordinates are 0, never indeterminate, when no station file exists
     bool configured_ = false;
     QString cluster_host_;
     int cluster_port_ = 7300;
@@ -172,15 +215,28 @@ private:
     int ota_max_age_min_ = 0;
     QString ota_sort_;  // "", "freq" or "dist" (empty = newest first)
     QString aprs_host_ = "rotate.aprs2.net";
+    int psk_max_km_ = 0;
+    QString psk_match_;
+    bool psk_wspr_ = false;
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;
     bool udp_by_me_ = false;
+    QStringList map_hidden_;
+    QHash<QString, int> map_label_;
+    int map_min_label_px_ = 0;
     bool imperial_ = false;
     int date_order_ = 0;
     bool clock_12h_ = false;
     bool week_sunday_ = false;
+    int banner_style_ = 0;
+    int banner_bg_ = 0;
+    QString banner_title_;
+    QString dx_zone_override_;
     int overscan_ = 0;
+    int blank_idle_ = 0;
+    int blank_off_ = -1;
+    int blank_on_ = -1;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot

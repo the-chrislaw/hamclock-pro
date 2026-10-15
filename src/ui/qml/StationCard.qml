@@ -7,6 +7,7 @@ Card {
     id: root
     // The banner already shows the callsign; do not repeat it in the title.
     title: !station.configured ? "Your station" : station.bannerIsCallsign ? "Station" : station.callsign
+    property bool wide: false   // phone strip: DE and DX side by side
     signal setupRequested()
     signal settingsRequested()
     signal timersRequested()
@@ -16,19 +17,29 @@ Card {
         spacing: Theme.gap * 0.8
 
         // Callsign banner: tap to cycle call / ON AIR / 73 DE call.
-        Text {
+        Rectangle {
             visible: station.configured
             Layout.fillWidth: true
+            implicitHeight: bannerLabel.implicitHeight
+            readonly property string fill: station.bannerBackground(appSettings.bannerBackground)
+            color: fill.length ? fill : "transparent"
+            radius: Theme.gap * 0.5
+        Text {
+            id: bannerLabel
+            anchors.fill: parent
+            horizontalAlignment: Text.AlignLeft
             fontSizeMode: Text.HorizontalFit
             minimumPixelSize: Theme.fontValue
             text: station.bannerText
-            color: Theme.accent
+            // utcTime ticks every second, which animates the rainbow style.
+            color: { station.utcTime; const c = station.bannerColor(appSettings.bannerStyle); return c.length ? c : Theme.accent }
             font.pixelSize: Theme.fontTitle * 1.6
             font.weight: Font.Bold
             Accessible.role: Accessible.Button
             Accessible.name: "Callsign banner " + text
             Accessible.onPressAction: station.cycleBanner()
             TapHandler { onTapped: station.cycleBanner() }
+        }
         }
 
         // Tap the clock to swap the big clock between UTC and DE local time.
@@ -87,6 +98,11 @@ Card {
 
         Rectangle { color: Theme.divider; implicitHeight: 1; Layout.fillWidth: true }
 
+        GridLayout {
+            Layout.fillWidth: true
+            columns: root.wide ? 2 : 1
+            columnSpacing: Theme.gap
+            rowSpacing: Theme.gap * 0.8
         Repeater {
             model: station.configured ? [
                 { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" },
@@ -95,6 +111,8 @@ Card {
             delegate: ColumnLayout {
                 spacing: 1
                 Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.alignment: Qt.AlignTop
                 Text { text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: modelData.grid; color: Theme.ink; font.pixelSize: Theme.fontTitle * 1.3; font.weight: Font.DemiBold }
                 Text { text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
@@ -115,6 +133,7 @@ Card {
                     wrapMode: Text.WordWrap
                 }
             }
+        }
         }
         Text {
             visible: station.configured
