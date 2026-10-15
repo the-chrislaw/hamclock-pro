@@ -127,3 +127,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-eighth run)
 - #361/#362 (areas C/D) CI running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E12 slice: serial NMEA GPS. `[gps] device`/`baud` in options.ini (device must be /dev/tty* or /dev/serial/*, no `..`; baud from the usual NMEA set) makes the GPS card read that receiver instead of gpsd, using the existing NMEA parser/tracker. Read-only termios 8N1 reader (Linux/macOS; unavailable elsewhere, card stays unconfigured), no QtSerialPort dependency. Fix older than 5 s is dropped; satellites shown as "N in use" (GGA has no in-view count). Tests via a pty plus config validation; full release suite passes (151/151), ASan/UBSan left to CI. Not run with a real receiver; no screenshot (needs a fix). Does not change DE. Next: DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-ninth run)
+- #364/#365 (areas C/A) CI still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E15 slice: ADS-B receiver host/port from options.ini (`[adsb] host`/`port`), same validation as radio/rotator (plain host chars, port 1..65535, each field falls back to localhost:8080; IPv6 literals bracketed). GET-only as before. Offline URL tests; full release suite passes (151/151), ASan/UBSan left to CI. No Settings control yet; not run against a real receiver. Next: DX city popup (area G wiring), gpiod backend.
