@@ -139,3 +139,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, thirty-first run)
 - Merged #378 (area C, green). #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - E7 slice: weather card (full layout only) adds a "WEFAX charts ↗" link beside "Windy map ↗", opening NOAA's marine radiofax page (https://www.weather.gov/marine/radiofax) in the system browser; never fetched by the app, so no policy entry or allowlist. URL unit test; full release suite passes (152/152), ASan/UBSan left to CI; no screenshot, not validated on-device. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware, or the radio safety review.
+
+## 2026-10-15 (UTC, thirty-second run)
+- Merged #393 (tvOS, green). #394 (area C) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E12 slice: clock sync status now also reads `timedatectl timesync-status` (systemd-timesyncd) to show offset, stratum and server where chrony is absent; read-only, parser accepts us/ms/s and sanitises the server name. Offline parser tests; full release suite passes (154/154), ASan/UBSan left to CI; no screenshot (card needs hardware); not run on a Pi. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware or the radio safety review.

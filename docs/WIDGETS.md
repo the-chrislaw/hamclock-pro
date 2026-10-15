@@ -132,7 +132,7 @@ Data: transmitters from SatNOGS DB API (`https://db.satnogs.org/api/transmitters
 9. Radio: PTT-driven ON AIR, then (after a safety review) tune to a tapped spot; flrig and rigctld.
 10. 🟡 (read-only rotctld position card done; tracking the selected satellite or DX pending the radio/rotator safety review) Rotator pane (rotctld) that can track the selected satellite or DX.
 11. BME280 environment panes (temperature, pressure, humidity, dew point; corrections); CPU temperature, Wi-Fi RSSI and disk-use history.
-12. NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
+12. 🟡 (clock card shows offset, stratum and server for chrony and for systemd-timesyncd via `timedatectl timesync-status`; no NTP source choice yet; serial NMEA GPS location done) NTP choice; gpsd/NMEA for time as well as location; IP geolocation.
 13. NetLogger active nets pane.
 14. 🟡 (output interface with null and fake backends done; no hardware backend yet) GPIO outputs/inputs (alarm, countdown lights, ON AIR, satellite alarm) behind a `src/platform` interface, Linux/Pi only.
 15. 🟡 (read-only aircraft count card from the local PiAware aircraft.json done; map overlay pending) PiAware ADS-B link.
