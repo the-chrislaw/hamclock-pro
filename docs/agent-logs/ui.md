@@ -122,3 +122,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 26)
 - Backlog A7 slice: `src/ui/kiosk/hamclock-pro-kiosk.service` (eglfs, `--fullscreen`, non-root user, NoNewPrivileges, ProtectSystem=strict) and `KIOSK.md` (user, groups, eglfs/linuxfb fallback, touch calibration, overscan, logs). New `kiosk-unit-regression` (python, offline) checks the unit's key lines. Not installed by CMake yet and not run on a Pi or under systemd; on-screen keyboard decision still open. No UI change, so no screenshots. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 44)
+- Backlog A5 slice: retired the standalone `hamclock-pro-editor` (target, `station_editor.cpp`, install entry, README row; Settings > Station in the Qt Quick app covers it). `station_editor_dialog` stays: the legacy dashboard and its tests still use it. Dashboard and map-preview remain until the map card replaces them. Root `CMakeLists.txt` touched only to drop that target (minimal, explained in the PR). Build clean of new warnings, ctest 147/147; ASan/UBSan left to CI; not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

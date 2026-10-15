@@ -24,7 +24,6 @@ On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro-dashboard.ap
 | Program | Purpose |
 |---|---|
 | `hamclock-pro-dashboard --station PATH` | Main native dashboard: UTC, DE/DX, real map with land fill, Big Clock, stopwatch, countdown. Edit station saves through the shared dialog. |
-| `hamclock-pro-editor --station PATH` or `--new-station PATH` | Standalone station editor. Save validates and persists; Cancel discards. New-file saves refuse an existing destination. |
 | `hamclock-pro-map-preview --station PATH` | Read-only map preview with station grids and short-path route. |
 | `hamclock-pro-cli` | Offline command-line tools (below). |
 

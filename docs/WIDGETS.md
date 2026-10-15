@@ -44,7 +44,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 2. 🟡 (done: overscan inset 0–10 % in Settings, saved; pending: remote/keyboard focus order, focus ring) TV mode: overscan inset setting, remote/keyboard focus order across cards, focus ring, large type.
 3. Settings: locator entry (Maidenhead) as alternative to lat/lon, time-zone picker list, map click to set DX.
 4. Map: full-card map, pan-free zoom presets, grayline band styling, DE/DX labels; then port the map drawing from QWidget to a pure QPainter renderer.
-5. Port Big Clock, Stopwatch, Countdown, DE time settings dialogs into QML pages; then retire the Qt Widgets programs (`hamclock-pro-dashboard`, `-editor`, `-map-preview`).
+5. Port Big Clock, Stopwatch, Countdown, DE time settings dialogs into QML pages; then retire the Qt Widgets programs (`-editor` retired Oct 15; `hamclock-pro-dashboard` and `-map-preview` remain).
 6. Pane rotation (F26): user chooses which widgets show in which slot; layout saved.
 7. 🟡 (done: `--fullscreen`, systemd unit and eglfs guide in `src/ui/kiosk/`, syntax-checked only; pending: on-screen keyboard decision, device validation) Kiosk: systemd unit + `--fullscreen`, eglfs instructions; on-screen keyboard decision.
 
