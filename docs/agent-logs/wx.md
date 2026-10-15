@@ -135,3 +135,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, thirtieth run)
 - #371/#372/#373 (areas I/C/D) macOS/iPad jobs still queued, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E7 slice: weather card (full layout only) shows a "Windy map ↗" link centred on DE; tapping calls `Qt.openUrlExternally` with `https://www.windy.com/?lat,lon,6`. The app never fetches windy.com, so no data-source policy entry or allowlist is needed. Offline URL tests; full release suite passes (the dashboard test failed once while a build overlapped, passed on rerun). ASan/UBSan left to CI; no screenshot taken, not validated on-device. Next: DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, thirty-first run)
+- Merged #378 (area C, green). #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- E7 slice: weather card (full layout only) adds a "WEFAX charts ↗" link beside "Windy map ↗", opening NOAA's marine radiofax page (https://www.weather.gov/marine/radiofax) in the system browser; never fetched by the app, so no policy entry or allowlist. URL unit test; full release suite passes (152/152), ASan/UBSan left to CI; no screenshot, not validated on-device. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware, or the radio safety review.

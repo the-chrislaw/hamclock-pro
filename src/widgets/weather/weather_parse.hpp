@@ -42,6 +42,9 @@ QString parse_place(const QByteArray& body);
 QString reverse_url(double latitude, double longitude);
 // Windy map page centred on a point (https://www.windy.com/?lat,lon,zoom); a plain link the user opens, never fetched by the app.
 QString windy_url(double latitude, double longitude);
+
+// NOAA marine radiofax (WEFAX) schedules and charts; a plain link the user opens, never fetched by the app.
+QString wefax_url();
 // Request URL for a point; coordinates rounded to 2 decimals (~1 km).
 QString request_url(double latitude, double longitude);
 

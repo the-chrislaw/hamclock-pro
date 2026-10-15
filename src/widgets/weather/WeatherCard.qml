@@ -29,16 +29,29 @@ Card {
                 Layout.maximumWidth: root.width / 2
             }
         }
-        Text {
-            // Opens windy.com in the system browser; the app itself never fetches it.
+        RowLayout {
             visible: !root.compact && root.widget && root.widget.deWindyUrl.length > 0
-            text: "Windy map ↗"
-            color: Theme.accent
-            font.pixelSize: Theme.fontCaption
-            MouseArea {
-                anchors.fill: parent
-                anchors.margins: -Theme.gap
-                onClicked: Qt.openUrlExternally(root.widget.deWindyUrl)
+            spacing: Theme.gap * 2
+            // Both links open in the system browser; the app itself never fetches them.
+            Text {
+                text: "Windy map ↗"
+                color: Theme.accent
+                font.pixelSize: Theme.fontCaption
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -Theme.gap
+                    onClicked: Qt.openUrlExternally(root.widget.deWindyUrl)
+                }
+            }
+            Text {
+                text: "WEFAX charts ↗"
+                color: Theme.accent
+                font.pixelSize: Theme.fontCaption
+                MouseArea {
+                    anchors.fill: parent
+                    anchors.margins: -Theme.gap
+                    onClicked: Qt.openUrlExternally(root.widget.wefaxUrl)
+                }
             }
         }
     }

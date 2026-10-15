@@ -27,6 +27,7 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString dxCity READ dxCity NOTIFY changed)
     Q_PROPERTY(QString deWindyUrl READ deWindyUrl NOTIFY changed)
     Q_PROPERTY(QString dxWindyUrl READ dxWindyUrl NOTIFY changed)
+    Q_PROPERTY(QString wefaxUrl READ wefaxUrl CONSTANT)
     Q_PROPERTY(QString deLocal READ deLocal NOTIFY changed)
     Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY changed)
 public:
@@ -47,6 +48,7 @@ public:
     QString dxCity() const { return dx_.place; }
     QString deWindyUrl() const { return windy(de_); }
     QString dxWindyUrl() const { return windy(dx_); }
+    QString wefaxUrl() const { return weather::wefax_url(); }
     QString deLocal() const { return local(de_); }
     QString dxLocal() const { return local(dx_); }
 

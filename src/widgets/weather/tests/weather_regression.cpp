@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
     const QByteArray body = file.readAll();
 
     check(weather::windy_url(37.7749, -122.4194) == "https://www.windy.com/?37.77,-122.42,6", "windy url");
+    check(weather::wefax_url() == "https://www.weather.gov/marine/radiofax", "wefax url");
     check(weather::windy_url(-33.9, 151.2) == "https://www.windy.com/?-33.90,151.20,6", "windy url southern hemisphere");
 
     QFile rev(QDir(argv[1]).filePath("reverse"));
