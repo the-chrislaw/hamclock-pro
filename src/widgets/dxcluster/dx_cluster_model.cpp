@@ -218,8 +218,11 @@ void DxClusterModel::publishOverlay() {
 void DxClusterModel::refreshUdp() {
     const int port = settings_ ? settings_->udpSpotPort() : 0;
     const bool lan = settings_ && settings_->udpSpotLan();
-    if (port == udp_.port() && udp_.listening() == (port != 0)) return;
-    if (!udp_.listen(port, lan)) qWarning("UDP spot input: could not bind port %d", port);
+    const QString group = settings_ ? settings_->udpSpotGroup() : QString();
+    const QString key = QString::number(port) + (lan ? "L" : "l") + group;
+    if (key == udp_key_ && udp_.listening() == (port != 0)) return;
+    udp_key_ = key;
+    if (!udp_.listen(port, lan, group)) qWarning("UDP spot input: could not bind port %d", port);
 }
 
 QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {

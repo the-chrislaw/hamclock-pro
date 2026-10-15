@@ -102,6 +102,7 @@ private:
     TelnetClient client_;
     DxSpotList list_;
     dxcluster::UdpSpotListener udp_;
+    QString udp_key_;
     QString band_filter_, mode_filter_;
 };
 

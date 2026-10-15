@@ -53,6 +53,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
     Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
+    Q_PROPERTY(QString udpSpotGroup READ udpSpotGroup NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
@@ -99,6 +100,7 @@ public:
     int blankOnHour() const { return blank_on_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
+    QString udpSpotGroup() const { return udp_group_; }               // IPv4 multicast group, empty = unicast
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
     // On-the-air display filter; empty / 0 = no restriction.
     QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA" or empty
@@ -173,6 +175,7 @@ public:
     // (local, 0..23; -1 and -1 = none). Software overlay only.
     Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
+    Q_INVOKABLE QString saveUdpGroup(const QString& group);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
     // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
     Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
@@ -221,6 +224,7 @@ private:
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;
+    QString udp_group_;
     bool udp_by_me_ = false;
     QStringList map_hidden_;
     QHash<QString, int> map_label_;

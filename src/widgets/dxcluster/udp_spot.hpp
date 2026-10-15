@@ -34,6 +34,11 @@ public:
     // Binds 127.0.0.1 (lan = false) or all IPv4 interfaces (lan = true). port 0 stops listening.
     // Returns false when the port cannot be bound.
     bool listen(int port, bool lan);
+    // As above, and with a non-empty `group` (IPv4 multicast address, 224.0.0.0/4, e.g. WSJT-X's 224.0.0.1)
+    // binds all interfaces with a shared address and joins the group. Any other group text is refused.
+    bool listen(int port, bool lan, const QString& group);
+    // True for a syntactically valid IPv4 multicast group address.
+    static bool valid_group(const QString& group);
     bool listening() const { return socket_ && socket_->state() == QAbstractSocket::BoundState; }
     int port() const { return socket_ ? socket_->localPort() : 0; }
 signals:
