@@ -27,7 +27,24 @@ Card {
             const x = d => d / n * w
             const y = m => h - m / 1440 * h
             ctx.strokeStyle = Theme.hairline; ctx.lineWidth = 1
-            ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke()
+            // Hour guides (UTC) with labels on the left, month initials along the bottom when there is room.
+            const fs = Math.max(8, Math.round(Theme.fontCaption * 0.8))
+            const roomy = h > 90 && w > 120
+            ctx.font = fs + "px sans-serif"; ctx.fillStyle = Theme.secondary
+            for (const hr of [6, 12, 18]) {
+                ctx.globalAlpha = 0.35
+                ctx.beginPath(); ctx.moveTo(0, y(hr * 60)); ctx.lineTo(w, y(hr * 60)); ctx.stroke()
+                ctx.globalAlpha = 1
+                if (roomy) ctx.fillText(hr + "Z", 2, y(hr * 60) - 2)
+            }
+            if (roomy) {
+                const mdays = [31, n === 366 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+                let d0 = 0
+                for (let m = 0; m < 12; ++m) {
+                    ctx.fillText("JFMAMJJASOND"[m], x(d0) + 2, h - 2)
+                    d0 += mdays[m]
+                }
+            }
             const series = [["rise", "#e0a030"], ["set", "#4a7fc0"]]
             for (const s of series) {
                 ctx.strokeStyle = s[1]; ctx.lineWidth = 2
