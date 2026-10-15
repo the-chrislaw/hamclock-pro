@@ -123,3 +123,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-seventh run)
 - #356 (area C) macOS job still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E4 slice: radio card Mode caption shows the passband width from rigctld's `m` reply ("2.4 kHz", "500 Hz"); zero/invalid widths hidden, full layout only. Offline parser tests; radio tests pass locally, full suite and ASan/UBSan left to CI; no screenshot (card needs a rig); not run with a real rig. Read-only. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-eighth run)
+- #361/#362 (areas C/D) CI running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E12 slice: serial NMEA GPS. `[gps] device`/`baud` in options.ini (device must be /dev/tty* or /dev/serial/*, no `..`; baud from the usual NMEA set) makes the GPS card read that receiver instead of gpsd, using the existing NMEA parser/tracker. Read-only termios 8N1 reader (Linux/macOS; unavailable elsewhere, card stays unconfigured), no QtSerialPort dependency. Fix older than 5 s is dropped; satellites shown as "N in use" (GGA has no in-view count). Tests via a pty plus config validation; full release suite passes (151/151), ASan/UBSan left to CI. Not run with a real receiver; no screenshot (needs a fix). Does not change DE. Next: DX city popup (area G wiring), gpiod backend.
