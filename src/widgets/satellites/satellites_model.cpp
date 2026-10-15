@@ -239,6 +239,17 @@ void SatellitesModel::toggleTracked() {
     recompute();
 }
 
+QString SatellitesModel::setAsDx() {
+    if (selected_ < 0 || selected_ >= static_cast<int>(listed_.size()) || !settings_ || !settings_->configured())
+        return QStringLiteral("No satellite selected");
+    SatellitePropagator p(listed_[selected_].tle);
+    SubSatellitePoint sp;
+    if (!p.valid() || !p.sub_point(static_cast<double>(now().toSecsSinceEpoch()), sp))
+        return QStringLiteral("Position unavailable");
+    return settings_->saveStation(settings_->callsign(), settings_->deLatitude(), settings_->deLongitude(),
+                                  sp.lat_deg, sp.lon_deg, settings_->deZone());
+}
+
 void SatellitesModel::refresh_detail() {
     QVariantMap d;
     if (selected_ >= 0 && selected_ < static_cast<int>(listed_.size()) && settings_ && settings_->configured()) {
