@@ -6,6 +6,8 @@ qml = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml/PaneSlot.qml
 want = {
     "Keys.onLeftPressed": r"step\(-1\)",
     "Keys.onRightPressed": r"step\(1\)",
+    "Keys.onUpPressed": r"moveFocus\(false\)",
+    "Keys.onDownPressed": r"moveFocus\(true\)",
     "Keys.onMenuPressed": r"optionsRequested",
 }
 for key, call in want.items():

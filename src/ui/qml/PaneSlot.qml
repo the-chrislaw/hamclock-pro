@@ -71,6 +71,13 @@ Item {
     // Left/Right step the pane, Menu (or Shift+F10 via Key_Menu) opens its options.
     Keys.onLeftPressed: function (event) { slot.step(-1); event.accepted = true }
     Keys.onRightPressed: function (event) { slot.step(1); event.accepted = true }
+    // Up/Down move the focus ring to the previous/next focusable item (same order as Tab).
+    Keys.onUpPressed: function (event) { slot.moveFocus(false); event.accepted = true }
+    Keys.onDownPressed: function (event) { slot.moveFocus(true); event.accepted = true }
+    function moveFocus(forward) {
+        var next = slot.nextItemInFocusChain(forward)
+        if (next && next !== slot) next.forceActiveFocus(forward ? Qt.TabFocusReason : Qt.BacktabFocusReason)
+    }
     Keys.onMenuPressed: function (event) { slot.optionsRequested(slot.index); event.accepted = true }
 
     // Tap anywhere on the pane to change it; swipe sideways to step. Handlers are

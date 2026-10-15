@@ -130,3 +130,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 28)
 - Backlog A2 slice: keyboard / TV remote on the focused pane: Left/Right step the widget, the Menu key opens the pane options (`PaneSlot.qml` key handlers; Tab focus ring already existed). `pane-keys-regression` (python, source-level: no QML key-event harness exists yet). Arrow-key focus moves between panes still pending. No layout change, so no new screenshots. ctest 149/149; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-15 (hourly run, 29)
+- Backlog A2 slice: Up/Down on a focused pane move the focus ring to the previous/next focusable item (Tab order) via `PaneSlot.moveFocus`; `pane-keys-regression` extended (source-level). No layout change, so no new screenshots. ctest 151/151; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
