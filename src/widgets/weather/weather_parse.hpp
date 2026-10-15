@@ -40,6 +40,8 @@ QString local_time_text(const QDateTime& utc, int offset_s);
 QString parse_place(const QByteArray& body);
 // Nominatim reverse request (zoom 10 = city level); coordinates rounded to 2 decimals.
 QString reverse_url(double latitude, double longitude);
+// Windy map page centred on a point (https://www.windy.com/?lat,lon,zoom); a plain link the user opens, never fetched by the app.
+QString windy_url(double latitude, double longitude);
 // Request URL for a point; coordinates rounded to 2 decimals (~1 km).
 QString request_url(double latitude, double longitude);
 

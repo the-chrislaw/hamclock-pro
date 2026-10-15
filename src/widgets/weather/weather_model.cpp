@@ -76,6 +76,10 @@ void WeatherModel::parse(End& end) {
         end.now.reset();
 }
 
+QString WeatherModel::windy(const End& e) {
+    return e.source ? weather::windy_url(e.lat, e.lon) : QString();
+}
+
 QString WeatherModel::temp(const End& e) {
     return e.now ? QString("%1 °C").arg(e.now->temperature_c, 0, 'f', 1) : QString();
 }

@@ -31,6 +31,9 @@ int main(int argc, char** argv) {
     check(file.open(QIODevice::ReadOnly), "fixture readable");
     const QByteArray body = file.readAll();
 
+    check(weather::windy_url(37.7749, -122.4194) == "https://www.windy.com/?37.77,-122.42,6", "windy url");
+    check(weather::windy_url(-33.9, 151.2) == "https://www.windy.com/?-33.90,151.20,6", "windy url southern hemisphere");
+
     QFile rev(QDir(argv[1]).filePath("reverse"));
     check(rev.open(QIODevice::ReadOnly), "reverse fixture readable");
     const QByteArray rev_body = rev.readAll();

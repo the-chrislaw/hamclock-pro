@@ -25,6 +25,8 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString dxWind READ dxWind NOTIFY changed)
     Q_PROPERTY(QString deCity READ deCity NOTIFY changed)
     Q_PROPERTY(QString dxCity READ dxCity NOTIFY changed)
+    Q_PROPERTY(QString deWindyUrl READ deWindyUrl NOTIFY changed)
+    Q_PROPERTY(QString dxWindyUrl READ dxWindyUrl NOTIFY changed)
     Q_PROPERTY(QString deLocal READ deLocal NOTIFY changed)
     Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY changed)
 public:
@@ -43,6 +45,8 @@ public:
 
     QString deCity() const { return de_.place; }
     QString dxCity() const { return dx_.place; }
+    QString deWindyUrl() const { return windy(de_); }
+    QString dxWindyUrl() const { return windy(dx_); }
     QString deLocal() const { return local(de_); }
     QString dxLocal() const { return local(dx_); }
 
@@ -65,6 +69,7 @@ private:
     void parse(End& end);
     void parsePlace(End& end);
     void refreshState();
+    static QString windy(const End& e);  // empty until the end has a position
     static QString temp(const End& e);
     static QString summary(const End& e);
     static QString wind(const End& e);
