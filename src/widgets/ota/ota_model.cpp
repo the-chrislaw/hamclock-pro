@@ -1,4 +1,5 @@
 #include "ota_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "ota_overlay.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
@@ -37,6 +38,7 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
             connect(settings_, &AppSettings::optionsChanged, this, [this] {
                 const bool v = settings_->mapSourceVisible("ota");
                 if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
             });
         }
         loadSettingsFilter();
@@ -102,8 +104,11 @@ void OtaModel::setMapVisible(bool visible) {
 
 // Never keep markers for data that is not live.
 void OtaModel::publishOverlay() {
-    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(ota::overlay_layer(spots_));
-    else MapOverlays::instance().remove_layer(ota::kOverlayLayerId);
+    if (map_visible_ && state() == "live") {
+        auto layer = ota::overlay_layer(spots_);
+        apply_spot_label_style(layer, settings_, "ota");
+        MapOverlays::instance().set_layer(layer);
+    } else MapOverlays::instance().remove_layer(ota::kOverlayLayerId);
 }
 
 void OtaModel::refreshState() {

@@ -107,6 +107,12 @@ void AppSettings::loadOptions() {
     udp_lan_ = ini.value("udp/lan", false).toBool();
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
     map_hidden_ = ini.value("map_sources/hidden").toStringList();
+    for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "adif"}) {
+        const int m = ini.value(QString("map_sources/label_") + k, -1).toInt();
+        if (m >= 0 && m <= 3) map_label_.insert(k, m);
+    }
+    const int mpx = ini.value("map_sources/min_label_px", 0).toInt();
+    map_min_label_px_ = mpx >= 0 && mpx <= 200 ? mpx : 0;
     imperial_ = ini.value("units/imperial", false).toBool();
     date_order_ = ini.value("clock/date_order", 0).toInt();
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
@@ -478,6 +484,31 @@ QString AppSettings::saveUdpScope(bool by_me) {
         udp_by_me_ = by_me;
         emit optionsChanged();
     }
+    return {};
+}
+
+QString AppSettings::saveMapSourceLabel(const QString& key, int mode) {
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    if (!kKeys.contains(key)) return "Unknown map source.";
+    if (mode < -1 || mode > 3) return "Unknown label style.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (mode < 0) ini.remove("map_sources/label_" + key);
+    else ini.setValue("map_sources/label_" + key, mode);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the label style.";
+    const int before = map_label_.value(key, -1);
+    if (mode < 0) map_label_.remove(key); else map_label_.insert(key, mode);
+    if (before != mode) emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveMapMinLabelPx(int px) {
+    if (px < 0 || px > 200) return "Label distance must be 0-200 px.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("map_sources/min_label_px", px);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the label distance.";
+    if (px != map_min_label_px_) { map_min_label_px_ = px; emit optionsChanged(); }
     return {};
 }
 

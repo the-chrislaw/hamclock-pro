@@ -1,4 +1,5 @@
 #include "psk_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "psk_overlay.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QTimer>
@@ -19,6 +20,7 @@ PskModel::PskModel(const WidgetContext& context, QObject* parent)
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
             const bool v = settings_->mapSourceVisible("psk");
             if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
         });
     }
     if (settings_) {
@@ -41,8 +43,11 @@ void PskModel::setMapVisible(bool visible) {
 
 // Drawn only while the feed is live: never stale reports as current.
 void PskModel::publishOverlay() {
-    if (map_visible_ && state() == "live") MapOverlays::instance().set_layer(psk::overlay_layer(feed_.reports));
-    else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
+    if (map_visible_ && state() == "live") {
+        auto layer = psk::overlay_layer(feed_.reports);
+        apply_spot_label_style(layer, settings_, "psk");
+        MapOverlays::instance().set_layer(layer);
+    } else MapOverlays::instance().remove_layer(psk::kOverlayLayerId);
 }
 
 void PskModel::applyFilter() {

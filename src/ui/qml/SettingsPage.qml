@@ -342,6 +342,22 @@ Rectangle {
                                         onClicked: appSettings.saveMapSourceVisible(modelData[0], !on) }
                         }
                     }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        Text { text: "Map labels:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
+                        Repeater {
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            AppButton { property int mode: appSettings.mapSourceLabel(modelData[0]); checkable: false
+                                        text: modelData[1] + ": " + ["auto", "none", "prefix", "call", "dot"][mode + 1]
+                                        Connections { target: appSettings; function onOptionsChanged() { mode = appSettings.mapSourceLabel(modelData[0]) } }
+                                        onClicked: appSettings.saveMapSourceLabel(modelData[0], mode >= 3 ? -1 : mode + 1) }
+                        }
+                        AppButton { property int px: appSettings.mapMinLabelPx(); checkable: false
+                                    text: "Label gap: " + (px ? px + " px" : "auto")
+                                    Connections { target: appSettings; function onOptionsChanged() { px = appSettings.mapMinLabelPx() } }
+                                    onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
+                    }
                     FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     RowLayout {
                         Layout.fillWidth: true

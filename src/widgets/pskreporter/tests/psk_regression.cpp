@@ -162,6 +162,19 @@ int main(int argc, char** argv) {
           "Settings toggle hides the PSK layer");
     check(settings.saveMapSourceVisible("psk", true).isEmpty() && MapOverlays::instance().layers().size() == 1,
           "Settings toggle shows the PSK layer again");
+    check(settings.mapSourceLabel("psk") == -1 && !settings.saveMapSourceLabel("psk", 9).isEmpty() &&
+              !settings.saveMapSourceLabel("nope", 1).isEmpty(),
+          "label style defaults to the layer's own; bad input rejected");
+    check(settings.saveMapSourceLabel("psk", int(OverlayLabelMode::Dot)).isEmpty() && settings.saveMapMinLabelPx(70).isEmpty() &&
+              MapOverlays::instance().layers()[0].labels == OverlayLabelMode::Dot &&
+              MapOverlays::instance().layers()[0].min_label_distance_px == 70,
+          "Settings label style and distance reach the PSK layer");
+    check(!settings.saveMapMinLabelPx(500).isEmpty(), "label distance range checked");
+    settings.saveMapSourceLabel("psk", -1);
+    settings.saveMapMinLabelPx(0);
+    check(MapOverlays::instance().layers()[0].labels == OverlayLabelMode::Call &&
+              MapOverlays::instance().layers()[0].min_label_distance_px == 44,
+          "reset restores the layer's own style");
     now = now.addSecs(25 * 60);
     model.source()->setClock([&] { return now; });
     emit model.ageChanged();

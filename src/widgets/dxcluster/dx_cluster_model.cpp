@@ -1,4 +1,5 @@
 #include "dx_cluster_model.hpp"
+#include "spot_layer_style.hpp"
 #include "../../ui/app_settings.hpp"
 #include "../bandactivity/band_activity.hpp"
 #include "../watchlist/watch_match.hpp"
@@ -170,6 +171,7 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
             const bool v = settings_->mapSourceVisible("dx");
             if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
         });
     }
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
@@ -195,9 +197,11 @@ void DxClusterModel::setMapVisible(bool visible) {
 
 // Only while the cluster link is live; stale or lost links never leave spots on the map.
 void DxClusterModel::publishOverlay() {
-    if (map_visible_ && state() == "live")
-        MapOverlays::instance().set_layer(dxcluster::overlay_layer(list_.spots(), dxcluster::bundled_entity_resolver()));
-    else
+    if (map_visible_ && state() == "live") {
+        auto layer = dxcluster::overlay_layer(list_.spots(), dxcluster::bundled_entity_resolver());
+        apply_spot_label_style(layer, settings_, "dx");
+        MapOverlays::instance().set_layer(layer);
+    } else
         MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId);
 }
 
