@@ -154,3 +154,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. Merged #307 (not mine, all checks green). #308 (CI still running) and #73 (docs, conflicts) left alone.
 - G5 slice (PR agent/map-cities): Map menu toggle "Cities" (options.ini `[map] cities`, default off). New dataset Natural Earth 110m populated places (public domain; provenance and SHA in `docs/map-provenance.md`), generated into `src/map/cities.hpp` (243 cities) by `tools/import_cities.py`. Drawn in the vector layer (dot + name, largest first, after all overlay markers/labels, skipping any that collide with markers, labels, route or map buttons), so it works on flat and projected maps through the same `MapFrame` transform. Test: extended `qt-map-view-options-regression` (default, round trip, render differs on flat and Robinson). Full ctest 144/144 locally; 1024x600 and 800x480 dark renders checked (labels clear markers). ASan/UBSan left to CI. Not validated on device.
 - Next: CQ/ITU zones (need a polygon dataset with a recordable licence; none confirmed yet) - consider an "Owner input needed" issue if none is found.
+
+## 2026-10-15 (UTC, run 23)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. #396 (not mine) macOS/iPad checks still running so not merged; #73 (docs) left alone. CQ/ITU zones stay blocked on #353 (owner input).
+- G0 slice (PR agent/map-marker-detail): the marker tap popup now also shows "From DE: <km>, <bearing>" via new pure `overlay_path_text` (spherical `geometry`; distance only for same place/antipode; empty without DE) exposed to QML as `MapItem::pathText`. Test: extended `qt-map-overlay-regression`. Full ctest 154/154 locally; 1024x600 dark render loads with no QML errors (popup itself not screenshotted: offscreen has no tap). ASan/UBSan left to CI. Not validated on device.
+- Next: waiting on #353 for CQ/ITU zones.

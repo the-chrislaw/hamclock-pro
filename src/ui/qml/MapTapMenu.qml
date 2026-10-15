@@ -12,6 +12,7 @@ Popup {
     property string error: ""
     property string title: ""   // marker call, empty for a bare map tap
     property string detail: ""
+    property string path: ""     // distance and bearing from DE
     padding: Theme.pad
     modal: false
     focus: true
@@ -28,7 +29,7 @@ Popup {
         openAt(lat, lon, true)
     }
     function openAt(lat, lon, keep) {
-        if (keep !== true) { title = ""; detail = "" }
+        if (keep !== true) { title = ""; detail = ""; path = "" }
         latitude = lat
         longitude = lon
         error = ""
@@ -68,6 +69,12 @@ Popup {
             color: Theme.ink
             font.pixelSize: Theme.fontBody
             font.weight: Font.Bold
+        }
+        Text {
+            visible: menu.title !== "" && menu.path !== ""
+            text: "From DE: " + menu.path
+            color: Theme.secondary
+            font.pixelSize: Theme.fontBody
         }
         RowLayout {
             spacing: Theme.gap
