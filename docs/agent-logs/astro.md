@@ -135,3 +135,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Merged #319 (spots/space PR, green). User-supplied TLE (backlog D7, partial): `user-tles.txt` beside options.ini (3-line or 2-line sets) is merged over the CelesTrak download by NORAD id via `merge_user_tles`; user sets are not limited to the popular-bird list and still obey the 30-day age cut-off. Unit test covers replace and append. Full ctest passes (145/145); no UI change. ASan/UBSan left to CI.
 - Not mine: #73 conflicting; #320/#321 CI still running at start. Balloons (D14) blocked on #314.
 - Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
+
+## 2026-10-15 (UTC), run 25
+- QA #325 (daylight year chart): the sunrise/sunset paths now break where the time wraps past 00:00 UTC (jump > 720 min between adjacent days) instead of drawing a vertical stroke. QML-only; rendered offscreen at 1024x600 for DE 40.7 N 74.0 W (not on-device): the blue series splits cleanly, no vertical strokes. No unit test (canvas paint logic).
+- Not mine: #328 CI still running at start, #73 conflicting; left alone.
+- Next: settings editor for tracked/user TLE, hams.at pane (D8, needs API docs/key), Set as DX.
