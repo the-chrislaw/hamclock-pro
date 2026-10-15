@@ -206,6 +206,23 @@ Rectangle {
             }
 
             Card {
+                title: "Callsign banner"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: ["Theme", "Amber", "Green", "Red", "White", "Rainbow"]
+                        AppButton {
+                            text: modelData
+                            primary: appSettings.bannerStyle === index
+                            onClicked: appSettings.saveBannerStyle(index)
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {
