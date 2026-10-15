@@ -1,0 +1,30 @@
+# HamClock Pro kiosk: starts the dashboard at boot on Raspberry Pi OS Lite
+# (no desktop) using Qt's eglfs platform. See KIOSK.md in this directory.
+# Install: sudo cp hamclock-pro-kiosk.service /etc/systemd/system/
+#          sudo systemctl enable --now hamclock-pro-kiosk
+[Unit]
+Description=HamClock Pro dashboard (kiosk)
+After=network-online.target systemd-udevd.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Run as an ordinary user that is a member of the "video" and "input" groups.
+User=hamclock
+SupplementaryGroups=video input render
+Environment=QT_QPA_PLATFORM=eglfs
+# Touch and keyboard through libinput; no incoming listeners are opened.
+Environment=QT_QPA_EGLFS_KMS_ATOMIC=1
+Environment=QT_QPA_EGLFS_ALWAYS_SET_MODE=1
+ExecStart=/usr/bin/hamclock-pro --fullscreen
+Restart=on-failure
+RestartSec=5
+# The dashboard needs no privileges.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ReadWritePaths=/home/hamclock/.config/hamclock-pro /home/hamclock/.cache/hamclock-pro /home/hamclock/.local/share/hamclock-pro
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

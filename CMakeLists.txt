@@ -201,6 +201,8 @@ if(BUILD_TESTING)
     set_tests_properties(land-import-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
     add_test(NAME pane-categories-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_categories_regression.py)
     set_tests_properties(pane-categories-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
+    add_test(NAME kiosk-unit-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/kiosk_unit_regression.py)
+    set_tests_properties(kiosk-unit-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
 endif()
 
 if(BUILD_TESTING)
