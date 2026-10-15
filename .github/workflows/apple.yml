@@ -275,7 +275,7 @@ jobs:
   # stored in the repo. The key file is deleted at the end; nothing is echoed.
   ios-testflight:
     name: iPad TestFlight upload
-    runs-on: macos-14
+    runs-on: macos-15
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     continue-on-error: true
     timeout-minutes: 60
@@ -284,6 +284,13 @@ jobs:
       BUNDLE_ID: com.chrislaw.hamclockpro
     steps:
       - uses: actions/checkout@v4
+      # App Store Connect only accepts builds from the iOS 26 SDK (Xcode 26).
+      - name: Select Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$X" ] || { echo "no Xcode 26 on this runner"; ls /Applications | grep -i xcode; exit 1; }
+          sudo xcode-select -s "$X"
+          xcodebuild -version
       - name: Check secrets
         id: gate
         env:
