@@ -145,4 +145,10 @@ QString reverse_url(double latitude, double longitude) {
     return url.toString();
 }
 
+QString windy_url(double latitude, double longitude) {
+    return QStringLiteral("https://www.windy.com/?%1,%2,6")
+        .arg(latitude, 0, 'f', 2)
+        .arg(longitude, 0, 'f', 2);
+}
+
 } // namespace hamclock::weather
