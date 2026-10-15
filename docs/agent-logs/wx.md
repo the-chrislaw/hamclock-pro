@@ -119,3 +119,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, twenty-sixth run)
 - #350 (area D) had no checks yet, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E11 slice: sensors card Disk caption adds free space ("12.4 GB free" / "850 MB free", full layout only), via `format_free_bytes`. Unit tests for the formatting; ASan/UBSan left to CI; no screenshot (card shows only on hardware with sensors); not run on a Pi. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.
+
+## 2026-10-15 (UTC, twenty-seventh run)
+- #356 (area C) macOS job still running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E4 slice: radio card Mode caption shows the passband width from rigctld's `m` reply ("2.4 kHz", "500 Hz"); zero/invalid widths hidden, full layout only. Offline parser tests; radio tests pass locally, full suite and ASan/UBSan left to CI; no screenshot (card needs a rig); not run with a real rig. Read-only. Next: serial GPS reader, DX city popup (area G wiring), gpiod backend.

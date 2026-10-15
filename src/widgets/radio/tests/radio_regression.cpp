@@ -39,6 +39,10 @@ int main(int argc, char** argv) {
     check(!radio::parse_frequency_hz("0"), "zero rejected");
     check(!radio::parse_frequency_hz("abc"), "garbage rejected");
     check(radio::parse_mode("USB").value_or("") == "USB", "mode parsed");
+    check(radio::parse_passband_hz("2400").value_or(0) == 2400, "passband parsed");
+    check(!radio::parse_passband_hz("0") && !radio::parse_passband_hz("RPRT -1") && !radio::parse_passband_hz("99999999"), "bad passband rejected");
+    check(radio::format_passband(2400) == "2.4 kHz" && radio::format_passband(500) == "500 Hz" && radio::format_passband(15000) == "15 kHz", "passband text");
+    check(radio::format_passband(0).isEmpty(), "no passband text for 0");
     check(!radio::parse_mode("RPRT -11"), "error reply is not a mode");
     check(!radio::parse_mode("a b;rm"), "odd mode rejected");
     check(radio::format_frequency(14074000) == "14.074 MHz", "format 14.074");
