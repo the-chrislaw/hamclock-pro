@@ -114,3 +114,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-14 (hourly run, 24)
 - Backlog A2 slice: Settings > "TV overscan" (Off, 2-10 %) keeps a margin of that share of width/height free on every edge, saved in `options.ini` (`display/overscan`, `AppSettings.saveOverscan`, validated 0..10; `widget-core-regression` extended). Added to the safe-area margins in `Main.qml`. Screenshot at 1024x600 with 6 % shows the inset and no clipping; 1920x1080 rendered. Settings page layout not viewable via `--screenshot`. Focus order and focus ring still pending. ctest 144/144; ASan/UBSan left to CI. Not validated on a device.
 - Merged #308 (green). #309 checks running; #73 stale. Left alone.
+
+## 2026-10-15 (hourly run, 25)
+- Backlog 0c/A5 slice: stopwatch and countdown as a QML page (`TimersPage.qml`), opened by long-pressing the station clock. Logic is `timers.hpp` (injected time, `timers-regression`: start/stop/reset, countdown pause/expire, formatting); `TimersModel` drives it at 100 ms while running. Session only; no alarm sound, Big Clock and the Qt Widgets dialogs are not retired yet. The page is not reachable from `--screenshot`, so its layout was not checked visually (QML loads without warnings). ctest 146/146; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

@@ -31,6 +31,7 @@ ApplicationWindow {
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
     Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
     header: Rectangle {
@@ -76,6 +77,7 @@ ApplicationWindow {
             Layout.fillHeight: true
             onSetupRequested: settingsLayer.visible = true
             onSettingsRequested: settingsLayer.visible = true
+            onTimersRequested: timersLayer.visible = true
         }
 
         ColumnLayout {
@@ -216,6 +218,15 @@ ApplicationWindow {
         parent: window.contentItem
         onChangeRequested: function (slotIndex) { paneChooser.slot = slotIndex; paneChooser.open() }
         onStepRequested: function (slotIndex, direction) { paneRow.slotAt(slotIndex).step(direction) }
+    }
+
+    Rectangle {
+        id: timersLayer
+        anchors.fill: parent
+        visible: false
+        color: Theme.canvas
+        z: 9
+        TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false }
     }
 
     Rectangle {

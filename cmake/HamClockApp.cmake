@@ -29,6 +29,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/station_model.cpp
     src/ui/time_zone_search.cpp
     src/ui/location_tools.cpp
+    src/ui/timers_model.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
@@ -42,7 +43,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -151,6 +152,11 @@ if(BUILD_TESTING)
     target_link_libraries(aux-time-text-regression PRIVATE Qt6::Core)
     add_test(NAME aux-time-text-regression COMMAND aux-time-text-regression)
     set_tests_properties(aux-time-text-regression PROPERTIES TIMEOUT 30)
+    add_executable(timers-regression tests/timers_regression.cpp)
+    target_include_directories(timers-regression PRIVATE src)
+    target_link_libraries(timers-regression PRIVATE Qt6::Core)
+    add_test(NAME timers-regression COMMAND timers-regression)
+    set_tests_properties(timers-regression PROPERTIES TIMEOUT 30)
     add_executable(banner-text-regression tests/banner_text_regression.cpp)
     target_include_directories(banner-text-regression PRIVATE src)
     target_link_libraries(banner-text-regression PRIVATE Qt6::Core)
