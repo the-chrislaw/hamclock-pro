@@ -7,6 +7,7 @@ import HamClock
 Item {
     id: root
     signal closeRequested()
+    signal bigClockRequested()
     property int alarmMinutes: 7 * 60
 
     GridLayout {
@@ -107,10 +108,18 @@ Item {
     }
 
     AppButton {
+        id: closeButton
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: Theme.pad
         text: "Close"
         onClicked: root.closeRequested()
+    }
+    AppButton {
+        anchors.right: closeButton.left
+        anchors.rightMargin: Theme.gap
+        anchors.bottom: closeButton.bottom
+        text: "Big Clock"
+        onClicked: root.bigClockRequested()
     }
 }
