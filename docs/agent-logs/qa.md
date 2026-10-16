@@ -129,3 +129,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: #454 [A] text size 150 % truncates pane chooser title at 800x480. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: text size (#452) is validated to 100/115/130/150 and tested for default, rejection and restart; map zoom test (#450) adds coverage, none removed. No QtWidgets, http:// or password handling. tvOS Swift not reviewed line by line.
 - Health: build and tests are green and layouts stay honest at default settings. One minor opt-in layout defect filed; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 19
+- Last reviewed commit: 2c000a4 (PRs #455 to #459, 10 commits since aad0012).
+- Build and 156/156 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (dark and light, unconfigured station): nothing scrolls, panes show honest Live / Stale / Set up states, the 800x480 titles are whole. #454 was already closed by #456 (pane badge drops to a dot when the title needs the width); 150 % text size was not re-rendered.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. Moon bright-limb tilt (#457) uses the Meeus ch. 48 position angle minus the parallactic angle and has new regression checks; the visual orientation was not compared against a real sky chart. tvOS Swift not reviewed line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
