@@ -210,3 +210,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Launches ham hint (backlog D13, partial): `launches::ham_hint()` flags rideshare/cubesat/amateur and ISS-visit launches from name, mission and mission type only (a hint, not a payload claim); shown in the detail line and as a star on later rows. Tests: Bandwagon hinted, Starlink/MMX not, crew and amateur cases. Launches ctest passes, full ctest run; not rendered on a screen; ASan/UBSan left to CI.
 - Not mine: #421 (tvos) CI still running at start, #73 conflicting; left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: annular/total contacts, pad markers on the map.
+
+## 2026-10-16 (UTC), run 40
+- Launch pad markers (backlog D13): `launches::pad_position()` maps the location text to an approximate position for about 25 spaceports (unknown sites get no marker, nothing guessed); the model publishes a "launches" map layer, one marker per site labelled with the mission, tap detail "name · T-countdown", removed when the list is stale or empty. Tests: Vandenberg/Jiuquan positions, unknown site, layer present with one marker per site, layer removed on stale. Full ctest run; not rendered on a screen; ASan/UBSan left to CI.
+- Not mine: #425 and #73 left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: annular/total contacts, Moon pane EME link.
