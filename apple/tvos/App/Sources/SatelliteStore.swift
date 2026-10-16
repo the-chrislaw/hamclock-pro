@@ -55,15 +55,15 @@ final class SatelliteStore: ObservableObject {
         fetched = Date()
     }
 
-    private var cache: (bucket: Int64, lat: Double, lon: Double, tle: Int, passes: [SatPass])?
+    private var cache: (bucket: Int64, lat: Double, lon: Double, tle: Int, limit: Int, passes: [SatPass])?
 
     /// Cached per 5 s: each core call re-parses the whole TLE set, so don't redo it every clock tick.
-    func visibleCached(at now: Date, lat: Double, lon: Double) -> [SatPass] {
+    func visibleCached(at now: Date, lat: Double, lon: Double, limit: Int = 5) -> [SatPass] {
         guard let tle else { return [] }
         let bucket = Int64(now.timeIntervalSince1970) / 5
-        if let c = cache, c.bucket == bucket, c.lat == lat, c.lon == lon, c.tle == tle.count { return c.passes }
-        let passes = Self.visible(tle: tle, at: Date(timeIntervalSince1970: TimeInterval(bucket * 5)), lat: lat, lon: lon)
-        cache = (bucket, lat, lon, tle.count, passes)
+        if let c = cache, c.bucket == bucket, c.lat == lat, c.lon == lon, c.tle == tle.count, c.limit == limit { return c.passes }
+        let passes = Self.visible(tle: tle, at: Date(timeIntervalSince1970: TimeInterval(bucket * 5)), lat: lat, lon: lon, limit: limit)
+        cache = (bucket, lat, lon, tle.count, limit, passes)
         return passes
     }
 
