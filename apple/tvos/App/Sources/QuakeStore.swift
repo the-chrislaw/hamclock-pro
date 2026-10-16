@@ -5,12 +5,15 @@ struct QuakeItem: Identifiable, Equatable {
     var time: Int64 // origin time, UTC ms
     var magnitude: Double
     var place: String
+    var lat = 0.0
+    var lon = 0.0
 }
 
 /// USGS 2.5+ day feed. Swift fetches, the Qt-free C++ core parses (hcpcore.h).
 @MainActor
 final class QuakeStore: ObservableObject {
     @Published var recent: [QuakeItem] = []
+    @Published var all: [QuakeItem] = [] // every parsed quake, for the map
     @Published var strongest: QuakeItem?
     @Published var fetched: Date?
 
@@ -45,8 +48,9 @@ final class QuakeStore: ObservableObject {
             let text = withUnsafePointer(to: &place) {
                 $0.withMemoryRebound(to: CChar.self, capacity: 96) { String(cString: $0) }
             }
-            return QuakeItem(time: q.time_ms, magnitude: q.magnitude, place: text)
+            return QuakeItem(time: q.time_ms, magnitude: q.magnitude, place: text, lat: q.latitude, lon: q.longitude)
         }
+        self.all = all.prefix(Int(n)).map(item)
         recent = all.prefix(Int(n)).prefix(5).map(item)
         strongest = top >= 0 && Int(top) < all.count ? item(all[Int(top)]) : nil
         fetched = Date()

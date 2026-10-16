@@ -87,6 +87,25 @@ final class SatelliteStore: ObservableObject {
         }
     }
 
+    private var pointCache: (bucket: Int64, tle: Int, points: [CGPoint])?
+
+    /// Sub-satellite points (lon, lat) of every satellite, cached per 5 s like visibleCached.
+    func subPointsCached(at now: Date) -> [CGPoint] {
+        guard let tle else { return [] }
+        let bucket = Int64(now.timeIntervalSince1970) / 5
+        if let c = pointCache, c.bucket == bucket, c.tle == tle.count { return c.points }
+        let t = bucket * 5
+        let pts = tle.withUnsafeBytes { raw -> [CGPoint] in
+            let p = raw.bindMemory(to: CChar.self).baseAddress
+            return (0..<Int(hcp_tle_count(p, tle.count))).compactMap { i in
+                var s = HcpSatState()
+                return hcp_sat_state(p, tle.count, Int32(i), t, 0, 0, &s) != 0 ? CGPoint(x: s.lon_deg, y: s.lat_deg) : nil
+            }
+        }
+        pointCache = (bucket, tle.count, pts)
+        return pts
+    }
+
     /// Oldest-TLE age drives the label: elements older than 14 days drift noticeably.
     static func tleAgeDays(_ p: SatPass, now: Date) -> Double { now.timeIntervalSince(p.epoch) / 86400 }
 }

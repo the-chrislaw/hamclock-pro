@@ -6,6 +6,8 @@ import SwiftUI
 /// Overlay data (quakes, satellites) is added here only while its own store is live.
 struct MapCard: View {
     @EnvironmentObject var station: StationStore
+    @EnvironmentObject var quakes: QuakeStore
+    @EnvironmentObject var sats: SatelliteStore
     let now: Date
 
     private static let coast: [[CGPoint]] = {
@@ -40,6 +42,11 @@ struct MapCard: View {
 
     var body: some View {
         let sub = Self.subsolar(now)
+        // Overlays appear only while their data is fresh enough to be honest about.
+        let quakeState = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        let quakePts = quakeState == .live ? quakes.all : []
+        let satPts = sats.fetched.map { now.timeIntervalSince($0) <= 86400 * 2 } == true
+            ? sats.subPointsCached(at: now) : []
         VStack(alignment: .leading, spacing: 12) {
             Text("World map").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
             Canvas { ctx, size in
@@ -61,6 +68,16 @@ struct MapCard: View {
                     }
                 }
                 ctx.stroke(land, with: .color(.green.opacity(0.85)), lineWidth: 2)
+                for q in quakePts {
+                    let r = 4 + 3 * max(0, q.magnitude - 2.5)
+                    let s = pt(CGPoint(x: q.lon, y: q.lat))
+                    ctx.stroke(Path(ellipseIn: CGRect(x: s.x - r, y: s.y - r, width: 2 * r, height: 2 * r)),
+                               with: .color(.orange.opacity(0.9)), lineWidth: 2)
+                }
+                for p in satPts {
+                    let s = pt(p)
+                    ctx.fill(Path(CGRect(x: s.x - 3, y: s.y - 3, width: 6, height: 6)), with: .color(.cyan))
+                }
                 if let sub {
                     let s = pt(CGPoint(x: sub.lon, y: sub.lat))
                     ctx.fill(Path(ellipseIn: CGRect(x: s.x - 14, y: s.y - 14, width: 28, height: 28)),
@@ -74,7 +91,7 @@ struct MapCard: View {
             }
             .aspectRatio(2, contentMode: .fit)
             .background(Color(red: 0.02, green: 0.07, blue: 0.14))
-            Text("Yellow: subsolar point. Red: your station. Coastlines: Natural Earth (public domain). Computed on device.")
+            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Coastlines: Natural Earth (public domain). Computed on device.")
                 .font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(32)

@@ -63,3 +63,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: world map. C ABI over the shared Qt-free coastline table (`hcp_coast_part_count`, `hcp_coast_part`, `hcp_coast_points`; tested on Linux 9/9, zero warnings) and a SwiftUI Canvas `MapCard` (coastlines, day/night terminator, subsolar point, station marker; all on device, never stale) plus a "World map" pane toggle. Natural Earth attribution added.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: map overlays (quakes, satellite sub-points) only while their store is live; DE/DX preset views; land fill.
+
+## 2026-10-16
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map overlays. Quakes (USGS, ring radius by magnitude) are drawn only while the feed is live (< 15 min old); satellite sub-points (shared SGP4) only while the TLE fetch is < 2 days old. Both labelled in the map caption. Swift only; core already exposed lat/lon.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: land fill, DE/DX preset views.
