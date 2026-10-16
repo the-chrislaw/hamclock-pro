@@ -93,14 +93,20 @@ bool DxSpotList::isWatched(const dxcluster::DxSpot& spot) const {
     // NADXCC / NABAND are keywords (not callsigns): they match spots the ADIF log still needs.
     QStringList plain;
     bool want_dxcc = false, want_band = false, want_pref = false, want_grid = false;
+    QStringList ota;
     for (const auto& e : watch_) {
-        if (e == "NADXCC") want_dxcc = true;
+        // OTA = any reference named in the comment; POTA/SOTA/IOTA/WWFF = that programme only.
+        if (e == "OTA" || e == "POTA" || e == "SOTA" || e == "IOTA" || e == "WWFF") ota << e;
+        else if (e == "NADXCC") want_dxcc = true;
         else if (e == "NABAND") want_band = true;
         else if (e == "NAPREF") want_pref = true;
         else if (e == "NAGRID") want_grid = true;
         else plain << e;
     }
     if (watchlist::matches(plain, spot.dx, entity_of_ ? entity_of_ : std::function<QString(const QString&)>(entity_of))) return true;
+    if (!spot.ota_ref.isEmpty())
+        for (const auto& k : ota)
+            if (k == "OTA" || k == spot.ota_program.toUpper()) return true;
     if (want_grid && grid_needed_ && !spot.grid.isEmpty() && grid_needed_(spot.grid)) return true;
     if ((want_dxcc || want_band || want_pref) && needed_) {
         const QString n = needed_(spot.dx, spot.band);

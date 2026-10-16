@@ -179,6 +179,16 @@ int main(int argc, char** argv) {
         dl->set_watch({});
     }
     model.setNeededResolver({});
+    {
+        auto* dl = qobject_cast<DxSpotList*>(model.spots());
+        dl->set_watch({"OTA"});
+        check(dl->watchedCount() == 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "OTA keyword watches spots naming a reference");
+        dl->set_watch({"POTA"});
+        check(dl->watchedCount() == 1, "POTA keyword matches a POTA spot");
+        dl->set_watch({"SOTA", "IOTA", "WWFF"});
+        check(dl->watchedCount() == 0, "other programme keywords ignore it");
+        dl->set_watch({});
+    }
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 
