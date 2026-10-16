@@ -201,3 +201,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 46)
 - Merged #417 (Big Clock); its macOS universal job failed on a runner "hdiutil: Resource busy" DMG error, not code, and the Qt checks were green.
 - Backlog A0b slice: Settings station card now suggests the time zone right after Find or grid entry (shared `suggestZone`; the button remains). Settings is not reachable from `--screenshot`, so not checked visually; build/ctest results in the PR. Not validated on a device.
+
+## 2026-10-16 (hourly run, 47)
+- Backlog A5 slice: retired the standalone `hamclock-pro-map-preview` (target, `src/qt/map_preview.cpp`, `docs/qt-map-preview.md`, install entry, README row); the QML map card covers it. Root `CMakeLists.txt` touched only to drop that target (minimal, explained in the PR). `hamclock-pro-dashboard` remains. Pre-existing legacy warnings (de_clock dialogs, one test) are unchanged. ASan/UBSan left to CI. Not validated on a device.
