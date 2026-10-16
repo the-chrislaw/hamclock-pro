@@ -57,7 +57,7 @@ QString StationModel::deDate() const {
 
 QString StationModel::deZoneLabel() const {
     const auto zone = settings_.deZone();
-    if (zone.isEmpty()) return "Set a time zone in Settings for local time";
+    if (zone.isEmpty()) return "Set a time zone in Settings";
     if (!is_valid_de_zone_id(zone.toStdString())) return "Unknown time zone " + zone;
     const QTimeZone tz(zone.toUtf8());
     return zone + " · " + tz.abbreviation(QDateTime::currentDateTimeUtc());

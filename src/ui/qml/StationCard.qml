@@ -153,7 +153,7 @@ Card {
             Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             Text {
-                text: "Add your callsign and location to see locators, paths and local time."
+                text: "Add callsign and location to see paths and local time."
                 color: Theme.secondary
                 font.pixelSize: Theme.fontBody
                 wrapMode: Text.WordWrap
