@@ -19,6 +19,7 @@ SunSummary summarize_sun(UtcSeconds now, double latitude_deg, double longitude_d
 struct MoonSummary {
     QString phase, illumination, next_rise, next_set, position; // empty = not available
     double elongation_deg = 0; // Moon minus Sun ecliptic longitude, for drawing the disc
+    double tilt_deg = 0;       // bright-limb direction, counter-clockwise from zenith (parallactic angle included)
     bool southern = false;     // observer in the southern hemisphere: the lit side is mirrored
 };
 MoonSummary summarize_moon(UtcSeconds now, double latitude_deg, double longitude_deg);
@@ -43,6 +44,7 @@ class SunMoonModel : public WidgetModel {
     Q_PROPERTY(QString moonSet READ moonSet NOTIFY changed)
     Q_PROPERTY(QString moonPosition READ moonPosition NOTIFY changed)
     Q_PROPERTY(double moonElongation READ moonElongation NOTIFY changed)
+    Q_PROPERTY(double moonTilt READ moonTilt NOTIFY changed)
     Q_PROPERTY(bool moonSouthern READ moonSouthern NOTIFY changed)
     Q_PROPERTY(QString nextSeason READ nextSeason NOTIFY changed)
 public:
@@ -65,6 +67,7 @@ public:
     QString moonSet() const { return moon_.next_set; }
     QString moonPosition() const { return moon_.position; }
     double moonElongation() const { return moon_.elongation_deg; }
+    double moonTilt() const { return moon_.tilt_deg; }
     bool moonSouthern() const { return moon_.southern; }
     QString nextSeason() const { return season_; }
 

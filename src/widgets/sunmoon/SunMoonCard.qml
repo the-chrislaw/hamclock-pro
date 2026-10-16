@@ -39,27 +39,31 @@ Card {
             Layout.columnSpan: root.showPhase ? 2 : 3; Layout.topMargin: Theme.gap
         }
         // Moon disc drawn from the elongation: lit limb on the right when
-        // waxing (northern observer), mirrored in the south. Orientation
-        // ignores the parallactic angle.
+        // waxing, then rotated by the bright-limb direction at DE so it is
+        // tilted as in the sky (this also flips it for a southern observer).
         Canvas {
             id: disc
             visible: root.showPhase && !!root.widget && !!root.widget.moonPhase
             Layout.rowSpan: 2; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             Layout.preferredWidth: Math.min(rowH * 2, 96); Layout.preferredHeight: Layout.preferredWidth
             readonly property real elong: root.widget ? root.widget.moonElongation : 0
-            readonly property bool south: root.widget ? root.widget.moonSouthern : false
+            readonly property real tilt: root.widget ? root.widget.moonTilt : 0
             readonly property color ink: Theme.ink
             onElongChanged: requestPaint()
-            onSouthChanged: requestPaint()
+            onTiltChanged: requestPaint()
             onInkChanged: requestPaint()
             onWidthChanged: requestPaint()
             onPaint: {
                 const ctx = getContext("2d");
                 ctx.reset();
+                ctx.translate(width / 2, height / 2);
+                // counter-clockwise tilt away from the default (lit right when waxing, left when waning)
+                ctx.rotate(-(tilt - (elong < 180 ? -90 : 90)) * Math.PI / 180);
+                ctx.translate(-width / 2, -height / 2);
                 const r = Math.min(width, height) / 2 - 1, cx = width / 2, cy = height / 2;
                 const k = Math.cos(elong * Math.PI / 180);   // 1 new .. -1 full
                 const waxing = elong < 180;
-                const litRight = waxing !== south;
+                const litRight = waxing;
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI);
                 ctx.fillStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.15); ctx.fill();
                 // lit region: half disc on the lit side, bounded by the terminator ellipse

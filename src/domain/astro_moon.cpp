@@ -170,4 +170,27 @@ std::optional<UtcSeconds> next_moon_event(UtcSeconds after, MoonEventKind kind, 
             if (e.kind == kind && e.time.value > after.value) return e.time;
     return std::nullopt;
 }
+
+double bright_limb_position_angle(double sun_ra, double sun_dec, double moon_ra, double moon_dec) {
+    const double da = rad(sun_ra - moon_ra), ds = rad(sun_dec), dm = rad(moon_dec);
+    return wrap360(deg(std::atan2(std::cos(ds) * std::sin(da),
+                                  std::sin(ds) * std::cos(dm) - std::cos(ds) * std::sin(dm) * std::cos(da))));
+}
+
+double moon_bright_limb_tilt_deg(UtcSeconds utc, double lat, double lon) {
+    check_station(lat, lon);
+    const double jde = jde_of(utc);
+    const MoonPosition p = position_at_jde(jde);
+    double sun_lon, sun_dist;
+    sun_lon_dist(jde, sun_lon, sun_dist);
+    const double eps = rad(mean_obliquity_deg((jde - 2451545.0) / 36525.0));
+    const double sl = rad(sun_lon);
+    const double sun_ra = deg(std::atan2(std::cos(eps) * std::sin(sl), std::cos(sl)));
+    const double sun_dec = deg(std::asin(std::sin(eps) * std::sin(sl)));
+    const double chi = bright_limb_position_angle(sun_ra, sun_dec, p.ra_deg, p.dec_deg);
+    const double h = rad(gmst_deg(jd_utc(static_cast<double>(utc.value))) + lon - p.ra_deg);
+    const double latr = rad(lat), dec = rad(p.dec_deg);
+    const double q = deg(std::atan2(std::sin(h), std::tan(latr) * std::cos(dec) - std::sin(dec) * std::cos(h)));
+    return std::fmod(chi - q + 540.0, 360.0) - 180.0;   // [-180, 180)
+}
 } // namespace hamclock
