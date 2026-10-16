@@ -23,7 +23,7 @@ ApplicationWindow {
                 (appSettings.appearance === "system" && systemPalette.window.hslLightness < 0.5)))
     }
     // 1.0 on a 1024x600 panel; grows on TVs so text stays readable from the sofa.
-    Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, 3)) }
+    Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, 3)) * appSettings.textScalePercent / 100 }
 
     Binding { target: Theme; property: "dense"; value: (window.width <= 1280 && window.height <= 720) || window.phone }
 

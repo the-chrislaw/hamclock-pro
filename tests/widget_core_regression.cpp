@@ -177,6 +177,10 @@ int main(int argc, char** argv) {
         check(ov.saveOverscan(6).isEmpty() && ov.overscanPercent() == 6, "overscan applied");
         AppSettings ov2({}, ov_dir.path());
         check(ov2.overscanPercent() == 6, "overscan survives restart");
+        check(ov2.textScalePercent() == 100, "text size normal by default");
+        check(!ov2.saveTextScale(120).isEmpty() && ov2.textScalePercent() == 100, "bad text size rejected");
+        check(ov2.saveTextScale(130).isEmpty() && ov2.textScalePercent() == 130, "text size applied");
+        { AppSettings ov3({}, ov_dir.path()); check(ov3.textScalePercent() == 130, "text size survives restart"); }
         check(ov2.blankIdleMinutes() == 0 && ov2.blankOffHour() == -1, "blanking off by default");
         check(!ov2.saveBlanking(5, 23, -1).isEmpty() && !ov2.saveBlanking(241, -1, -1).isEmpty() && ov2.blankIdleMinutes() == 0, "bad blanking rejected");
         check(ov2.saveBlanking(15, 23, 7).isEmpty() && ov2.blankIdleMinutes() == 15 && ov2.blankOnHour() == 7, "blanking applied");

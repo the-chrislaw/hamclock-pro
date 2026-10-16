@@ -49,6 +49,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString dxZoneOverride READ dxZoneOverride NOTIFY optionsChanged)
     Q_PROPERTY(bool weekStartsSunday READ weekStartsSunday NOTIFY optionsChanged)
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
+    Q_PROPERTY(int textScalePercent READ textScalePercent NOTIFY optionsChanged)
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
     Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
@@ -95,6 +96,7 @@ public:
     QString dxZoneOverride() const { return dx_zone_override_; }
     bool weekStartsSunday() const { return week_sunday_; }
     int overscanPercent() const { return overscan_; }
+    int textScalePercent() const { return text_scale_; }
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
     int blankOnHour() const { return blank_on_; }
@@ -180,6 +182,8 @@ public:
     Q_INVOKABLE QString saveDxZone(const QString& zone_id);
     // TV overscan inset: 0..10 % of width/height kept free on every edge.
     Q_INVOKABLE QString saveOverscan(int percent);
+    // Large-type option for TVs and the 7-inch screen: 100, 115, 130 or 150 %.
+    Q_INVOKABLE QString saveTextScale(int percent);
     // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
     // (local, 0..23; -1 and -1 = none). Software overlay only.
     Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
@@ -248,6 +252,7 @@ private:
     QString banner_title_;
     QString dx_zone_override_;
     int overscan_ = 0;
+    int text_scale_ = 100;
     int blank_idle_ = 0;
     int blank_off_ = -1;
     int blank_on_ = -1;

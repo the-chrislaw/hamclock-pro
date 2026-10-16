@@ -136,6 +136,8 @@ void AppSettings::loadOptions() {
     if (!dx_zone_override_.isEmpty() && !QTimeZone(dx_zone_override_.toUtf8()).isValid()) dx_zone_override_.clear();
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
+    text_scale_ = ini.value("display/text_scale", 100).toInt();
+    if (text_scale_ != 100 && text_scale_ != 115 && text_scale_ != 130 && text_scale_ != 150) text_scale_ = 100;
     {
         const int idle = ini.value("kiosk/blank_idle", 0).toInt();
         const int off = ini.value("kiosk/blank_off", -1).toInt();
@@ -662,6 +664,18 @@ QString AppSettings::saveOverscan(int percent) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the overscan inset.";
     overscan_ = percent;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveTextScale(int percent) {
+    if (percent != 100 && percent != 115 && percent != 130 && percent != 150)
+        return "The text size must be 100, 115, 130 or 150 %.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/text_scale", percent);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the text size.";
+    text_scale_ = percent;
     emit optionsChanged();
     return {};
 }
