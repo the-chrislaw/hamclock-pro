@@ -191,6 +191,7 @@ private struct StationSunCard: View {
 private struct QuakeCard: View {
     @EnvironmentObject var quakes: QuakeStore
     let now: Date
+    @State private var showDetail = false
     var body: some View {
         let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
         VStack(alignment: .leading, spacing: 12) {
@@ -215,6 +216,38 @@ private struct QuakeCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
+        .onTapGesture { showDetail = true } // Siri Remote Select; Menu closes the sheet
+        .sheet(isPresented: $showDetail) { QuakeDetailView(now: now) }
+    }
+}
+
+/// Full-screen list of every quake in the USGS feed (strongest first), with the same age label.
+private struct QuakeDetailView: View {
+    @EnvironmentObject var quakes: QuakeStore
+    let now: Date
+    var body: some View {
+        let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Earthquakes M2.5+, past day (\(quakes.all.count))").font(.system(size: 48, weight: .bold))
+            if state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(quakes.all.sorted { $0.magnitude > $1.magnitude }.prefix(40)) { q in
+                        let ago = Int(now.timeIntervalSince1970 - Double(q.time) / 1000) / 60
+                        Text(String(format: "M%.1f  %@  (%dh%02dm ago)", q.magnitude, q.place, ago / 60, ago % 60))
+                            .font(.system(size: 29)).lineLimit(1).focusable()
+                    }
+                }
+            }
+            if let f = quakes.fetched {
+                Text("Feed fetched " + f.formatted(date: .omitted, time: .shortened) + " - USGS Earthquake Hazards Program")
+                    .font(.system(size: 29)).foregroundStyle(.secondary)
+            }
+        }
+        .padding(90)
     }
 }
 
