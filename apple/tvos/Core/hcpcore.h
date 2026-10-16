@@ -80,6 +80,16 @@ int hcp_sat_state(const char* text, size_t len, int index, int64_t unix_s,
 /* Name of the index-th TLE. */
 int hcp_tle_name(const char* text, size_t len, int index, char* buf, size_t cap);
 
+/* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
+ * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
+ * Fills out[] with up to cap bands (80m..10m); returns the number written. */
+typedef struct {
+    char band[8];
+    double mhz;
+    int day, night;
+} HcpBand;
+int hcp_hf_outlook(double sfi, double kp, double a_index, HcpBand* out, size_t cap);
+
 /* World coastline from the shared Natural Earth table (map/coastline.hpp), as polylines.
  * Points are interleaved (lon, lat) floats in degrees; part i is points [start, start+count). */
 int hcp_coast_part_count(void);

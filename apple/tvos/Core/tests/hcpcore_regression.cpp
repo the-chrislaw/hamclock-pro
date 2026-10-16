@@ -83,5 +83,23 @@ int main() {
     for (size_t i = 0; i < npts; ++i)
         if (pts[2 * i] < -180.f || pts[2 * i] > 180.f || pts[2 * i + 1] < -90.f || pts[2 * i + 1] > 90.f) inRange = false;
     check(inRange, "coastline coordinates are valid lon/lat");
+    // HF outlook: same expectations as src/widgets/bands/tests.
+    HcpBand hb[8];
+    auto find = [&](int n, const char* name) -> const HcpBand* {
+        for (int i = 0; i < n; ++i) if (std::string(hb[i].band) == name) return &hb[i];
+        return nullptr;
+    };
+    int nb = hcp_hf_outlook(123, 3, 15, hb, 8);
+    check(nb == 8 && find(nb, "20m") && find(nb, "20m")->day == 2, "20m good by day at SFI 123");
+    check(find(nb, "10m")->day == 0 && find(nb, "10m")->night == 0, "10m closed at SFI 123");
+    check(find(nb, "80m")->day == 0, "80m poor by day (D layer)");
+    nb = hcp_hf_outlook(200, 3, 0, hb, 8);
+    check(find(nb, "10m")->day == 2 && find(nb, "10m")->night == 0, "10m open by day only at SFI 200");
+    int calm20 = find(nb, "20m")->day;
+    nb = hcp_hf_outlook(200, 5, 0, hb, 8);
+    check(find(nb, "20m")->day == calm20 - 1, "Kp 5 lowers a band one step");
+    nb = hcp_hf_outlook(200, 7, 0, hb, 8);
+    check(find(nb, "20m")->day == 0, "Kp 7 lowers two steps");
+    check(hcp_hf_outlook(123, 3, 15, hb, 3) == 3 && !hcp_hf_outlook(1, 1, 1, nullptr, 8), "cap and null respected");
     return failures ? 1 : 0;
 }

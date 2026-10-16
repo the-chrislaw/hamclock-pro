@@ -98,3 +98,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: space weather detail view. Select on any of the five SWPC cards opens a sheet listing Kp, flux, X-ray, wind and Bz with observed time, fetch time and Stale/Offline labels, plus SWPC attribution. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: remaining panes from the design doc, any owner feedback on the design review.
+
+## 2026-10-16 (eighth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: HF band outlook card. Qt-free port of `hf_outlook` (`Core/bands.cpp`, C ABI `hcp_hf_outlook`) with the Qt test expectations as the oracle; card driven by live SFI and Kp (A index is not fetched on TV, so only the Kp storm rule applies, stated on the card). Hidden when inputs are offline; Stale/Offline labels follow the older input. New pane toggle.
+- Host core tests pass on Linux; Swift verified only by the tvos.yml run on the PR.
+- Next: weather (Open-Meteo) and tropical storms (NHC) panes.
