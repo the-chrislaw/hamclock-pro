@@ -1,4 +1,5 @@
 #include "hcpcore.h"
+#include "bands.hpp"
 #include "quakes.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
@@ -151,6 +152,20 @@ int hcp_sat_state(const char* t, size_t n, int index, int64_t unix_s,
     *out = HcpSatState{sp.lat_deg, sp.lon_deg, sp.alt_km, la.az_deg, la.el_deg, la.range_km,
                        la.range_rate_km_s, lit ? 1 : 0, static_cast<int64_t>(p.epoch_unix())};
     return 1;
+}
+int hcp_hf_outlook(double sfi, double kp, double a_index, HcpBand* out, size_t cap) {
+    if (!out) return 0;
+    const auto bands = hcp::bands::hf_outlook(sfi, kp, a_index);
+    size_t n = 0;
+    for (const auto& b : bands) {
+        if (n >= cap) break;
+        HcpBand& o = out[n++];
+        copy(b.band, o.band, sizeof o.band);
+        o.mhz = b.mhz;
+        o.day = static_cast<int>(b.day);
+        o.night = static_cast<int>(b.night);
+    }
+    return static_cast<int>(n);
 }
 int hcp_coast_part_count(void) { return static_cast<int>(hamclock::coastline_part_count); }
 int hcp_coast_part(int index, uint32_t* start, uint32_t* count) {

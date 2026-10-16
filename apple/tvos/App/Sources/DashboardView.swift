@@ -31,6 +31,7 @@ struct DashboardView: View {
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
                 }
+                if panes.isOn(.bands) { BandsCard(now: ctx.date) }
                 HStack(alignment: .top, spacing: 40) {
                     if panes.isOn(.sun) { SunCard(now: ctx.date) }
                     if panes.isOn(.station) { StationSunCard(now: ctx.date) }
@@ -110,6 +111,57 @@ private struct Card: View {
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
         .onTapGesture { onSelect() } // Siri Remote Select opens the space weather detail sheet
+    }
+}
+
+/// HF day/night outlook from the shared band_outlook heuristic (not VOACAP), driven by the live
+/// SFI and Kp. The A index is not fetched on TV, so only the Kp storm rule applies. Without
+/// both inputs, or when they are offline, no outlook is shown rather than a guess.
+private struct BandsCard: View {
+    @EnvironmentObject var weather: SpaceWeatherStore
+    let now: Date
+
+    private static func color(_ c: Int32) -> Color { c == 2 ? .green : c == 1 ? .yellow : .red }
+    private static func outlook(sfi: Double, kp: Double) -> [HcpBand] {
+        var bands = [HcpBand](repeating: HcpBand(), count: 8)
+        let n = Int(hcp_hf_outlook(sfi, kp, 0, &bands, bands.count))
+        return Array(bands.prefix(n))
+    }
+    private static func name(_ c: Int32) -> String { c == 2 ? "Good" : c == 1 ? "Fair" : "Poor" }
+
+    var body: some View {
+        let inputs = [weather.flux, weather.kp].compactMap { $0 }
+        let oldest = inputs.map(\.fetched).min()
+        let state = SpaceWeatherStore.freshness(oldest.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("HF band outlook").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if let flux = weather.flux, let kp = weather.kp, state != .offline {
+                let bands = Self.outlook(sfi: flux.value, kp: kp.value)
+                HStack(alignment: .top, spacing: 28) {
+                    ForEach(0..<bands.count, id: \.self) { i in
+                        let b = bands[i]
+                        VStack(spacing: 6) {
+                            Text(withUnsafeBytes(of: b.band) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) })
+                                .font(.system(size: 36, weight: .bold))
+                            Text("Day " + Self.name(b.day)).font(.system(size: 29)).foregroundStyle(Self.color(b.day))
+                            Text("Night " + Self.name(b.night)).font(.system(size: 29)).foregroundStyle(Self.color(b.night))
+                        }
+                    }
+                }
+                Text(String(format: "From SFI %.0f and Kp %.1f. Rough heuristic, not VOACAP.", flux.value, kp.value))
+                    .font(.system(size: 29)).foregroundStyle(.secondary)
+            } else {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+            }
+            if state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
     }
 }
 

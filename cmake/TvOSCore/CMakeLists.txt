@@ -28,6 +28,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/swpc.cpp
     ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
     ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
+    ${HCP_ROOT}/apple/tvos/Core/bands.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
 # Vendored Vallado SGP4: third-party code, not ours to reformat; silence its warnings only.
 set_source_files_properties(${D}/astro_sgp4/SGP4.cpp PROPERTIES COMPILE_OPTIONS "-w")
