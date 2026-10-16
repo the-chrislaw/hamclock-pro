@@ -220,3 +220,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 51)
 - Backlog A5 slice: retired the last standalone Qt Widgets program, `hamclock-pro-dashboard` (target, `dashboard_main.cpp`, `station_dashboard.*`, `qt-dashboard-regression`, install entry, README row; README now lists `hamclock-pro`). Root `CMakeLists.txt` touched only to drop that target (minimal, explained in the PR). The legacy dialogs and `world_map_widget` stay for their own tests. Full build with no warnings, ctest 156/156; no UI change so no screenshots beyond a 1024x600/800x480 sanity render. ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs) and #443 (apple, conflicting) were open; left alone.
+
+## 2026-10-16 (hourly run, 52)
+- Backlog A0 slice (every pixel on 7-inch): unconfigured station card hints shortened ("Set a time zone in Settings", "Add callsign and location to see paths and local time.") so they take fewer wrapped lines at 1024x600. Rendered 1024x600, 800x480, 1920x1080: exit 0, no QML warnings, no truncation. ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
