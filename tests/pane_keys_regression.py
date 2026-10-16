@@ -28,4 +28,14 @@ if "bigClockRequested" not in timers or "bigClockLayer" not in main or "BigClock
 settings = (root / "SettingsPage.qml").read_text()
 if "Qt.quit()" not in settings or "exitCard.armed" not in settings:
     sys.exit("SettingsPage.qml: Exit button must need a second tap")
+# Every registered widget needs a category in the pane chooser, or it lands under "Other".
+chooser = (root / "PaneChooser.qml").read_text()
+ids = set()
+for f in (root.parent.parent).rglob("*.cpp"):
+    ids.update(re.findall(r'registry\.add\(\{"([a-z0-9_]+)"', f.read_text(errors="ignore")))
+if not ids:
+    sys.exit("no registered widgets found")
+missing = sorted(i for i in ids if not re.search(r"\b" + i + r":", chooser))
+if missing:
+    sys.exit("PaneChooser.qml: no category for " + ", ".join(missing))
 print("ok")

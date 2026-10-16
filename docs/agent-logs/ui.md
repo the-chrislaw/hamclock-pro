@@ -232,3 +232,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 54)
 - QA #454 (text size 150 % truncated the pane chooser title at 800x480): the card header's status badge now drops to a dot (word kept in the accessible name) when the title plus the full badge would not fit, so the title keeps the width and stays whole. Rendered 800x480 at 150 %: no TRUNCATED report, titles whole (two lines where needed). The footer status reason is still shortened on purpose (`elideOk`); the data age is never cut. 1024x600 at 150 % also exit 0. ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-16 (hourly run, 55)
+- Backlog A8 guard: `pane-keys-regression` now fails when a widget registered with `registry.add({"id", ...` has no category in `PaneChooser.qml` (it would silently fall under "Other"). Checked it passes today (41 widgets, all covered) and fails when a category entry is removed. Test-only change; no UI change, no screenshots. Not validated on a device.
+- Only #460 (QA log, still in CI) and #73 (stale docs, not mine) were open; left alone.
