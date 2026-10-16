@@ -138,3 +138,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No qa issues for area F beyond #269; no open PR of mine; #73/#335 are other areas' (#334 already merging), left alone.
 - Read main runs 38667904657 and 38670241305: the `iPad TestFlight upload` job passes every step (cert import, archive, export, upload, keychain cleanup), as do macOS tests, universal build, sign/notarize and the Simulator job. Commented on #269. CI logs only: not checked in App Store Connect, no on-device claims.
 - Next: once #269 is confirmed, phone/universal target (F10), then the Simulator screenshot (still unverified) and the credential-store review.
+
+## 2026-10-16 (hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73 (conflicting) and #442 (Simulator job still running) are other areas, left alone. Main Apple runs green (latest 38862524593). Remaining F items wait on area A UI (attribution, phone layout). CI logs only; no on-device claims.
