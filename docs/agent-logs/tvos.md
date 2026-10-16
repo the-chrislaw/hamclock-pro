@@ -73,3 +73,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map regional preset. Select on the map toggles World / Regional (±45° lon, ±22.5° lat around the station; needs a locator, else stays on world). Night polygon drawn at ±360° offsets so windows straddling the antimeridian work; wrapped coastline segments dropped. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: land fill, DX preset (target locator).
+
+## 2026-10-16 (third run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map land fill. Closed coastline rings that do not cross the antimeridian or a regional window edge are filled dark green under the outlines; the rest stay outline-only. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: DX preset (target locator).

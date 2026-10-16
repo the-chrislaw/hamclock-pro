@@ -47,6 +47,13 @@ struct MapCard: View {
         return edge + [CGPoint(x: 180, y: pole), CGPoint(x: -180, y: pole)]
     }
 
+    /// A ring can be filled when it is closed and has no antimeridian jump between neighbours.
+    static func isFillable(_ part: [CGPoint]) -> Bool {
+        guard part.count >= 4, let a = part.first, let b = part.last,
+              abs(a.x - b.x) < 1e-3, abs(a.y - b.y) < 1e-3 else { return false }
+        return !zip(part, part.dropFirst()).contains { abs($0.x - $1.x) >= 180 }
+    }
+
     private static func subsolar(_ now: Date) -> (lat: Double, lon: Double)? {
         var lat = 0.0, lon = 0.0
         return hcp_subsolar_point(Int64(now.timeIntervalSince1970), &lat, &lon) != 0 ? (lat, lon) : nil
@@ -86,6 +93,15 @@ struct MapCard: View {
                         ctx.fill(night, with: .color(.black.opacity(0.55)))
                     }
                 }
+                // Land fill: only closed rings that never cross the antimeridian or a window edge
+                // (Antarctica and the Russian Far East stay outline-only rather than filled wrongly).
+                var fill = Path()
+                for part in Self.coast where Self.isFillable(part) {
+                    let pts = part.map(pt)
+                    if zip(pts, pts.dropFirst()).contains(where: { abs($0.x - $1.x) > size.width / 2 }) { continue }
+                    fill.addLines(pts); fill.closeSubpath()
+                }
+                ctx.fill(fill, with: .color(Color(red: 0.05, green: 0.2, blue: 0.1)))
                 var land = Path()
                 for part in Self.coast {
                     // Skip segments that wrap across the antimeridian.
@@ -120,7 +136,7 @@ struct MapCard: View {
             }
             .aspectRatio(2, contentMode: .fit)
             .background(Color(red: 0.02, green: 0.07, blue: 0.14))
-            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Coastlines: Natural Earth (public domain). Computed on device. Select toggles world / regional view once a station locator is set.")
+            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Land fill and coastlines: Natural Earth (public domain). Computed on device. Select toggles world / regional view once a station locator is set.")
                 .font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(32)
