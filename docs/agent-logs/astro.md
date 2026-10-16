@@ -230,3 +230,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - EME next perigee/apogee (backlog D5, partial): `next_lunar_apsis()` finds the next distance extreme from the ephemeris (3 h scan, ternary refine); the EME card gains an "Apsis" row (nearer of next perigee/apogee, UTC date and distance) in roomy slots. Tests: 2025-11-05 supermoon perigee within 3 h of ~22:30 UTC and ~357,000 km, apogee mid-November, result strictly after the start. Time is only good to about an hour (flat curve). Not rendered on a screen; ASan/UBSan left to CI.
 - Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400. Annular/total contacts skipped again: lunar ephemeris (~0.1 deg) is too coarse for second/third contact.
 - Next: Moon pane EME link (needs an approved URL), per-band sky temperature.
+
+## 2026-10-16 (UTC), run 44
+- Next equinox/solstice (extra to backlog D1, no owner input needed): `season_event()` / `next_season_event()` in `astro_sun` (Meeus ch. 27 mean terms plus 24 periodic terms, TT minus 69 s); the Sun & Moon card gains a "Next season" row in roomy slots ("December solstice 21 Dec 20:50 UTC"). Tests: all four 2026 events within 3 min of almanac times, rollover into the next year, summary text. Full ctest 157/157 passes; ASan/UBSan left to CI; not rendered at the three sizes (only the existing offscreen pane test ran); not on-device.
+- Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
+- Next: annular/total contacts remain blocked on ephemeris accuracy; little unblocked backlog left.
