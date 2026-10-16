@@ -155,3 +155,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-15 (twenty-eighth hourly run)
 - Merged #418 (green, other area's). #417's `macOS universal build` failed on `hdiutil: create failed - Resource busy`: macdeployqt printed the error but exited 0, so the existing retry loop never retried and the later `mv` failed. Both dmg steps (macOS tests job and universal job) now retry on a missing dmg instead of the exit status. CI logs only; no on-device claims.
+
+## 2026-10-16 (hourly run)
+- No qa issues for area F beyond #269; no open PR of mine; #73 (conflicting) and #442 (Simulator job still running) are other areas, left alone. Main Apple runs green (latest 38862524593). Remaining F items wait on area A UI (attribution, phone layout). CI logs only; no on-device claims.
