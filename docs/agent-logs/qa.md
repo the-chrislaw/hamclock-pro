@@ -115,3 +115,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. Season times (#442) are computed offline (Meeus) and checked against 2026 almanac values within 3 minutes. Settings Exit (#438) needs a second tap and is hidden on iOS. Minor, not filed: sun_regression.cpp prints its "checks, failures" line before the new season checks run.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 17
+- Last reviewed commit: 02cab7f (PRs #445 to #449, 10 commits since 35594b2).
+- Build and 156/156 tests pass on main. Rendered the default layout at 800x480 dark (unconfigured station): nothing scrolls, the shortened station hints (#447) fit without clipping, panes show honest Live / Set up states. Other sizes and light theme not re-rendered (only two strings changed in src/).
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: the only src/ changes are two hint strings; the rest is tvOS Swift (map DX view, quake detail) and docs. No QtWidgets, http:// or weakened tests. Swift not reviewed line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
