@@ -68,3 +68,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map overlays. Quakes (USGS, ring radius by magnitude) are drawn only while the feed is live (< 15 min old); satellite sub-points (shared SGP4) only while the TLE fetch is < 2 days old. Both labelled in the map caption. Swift only; core already exposed lat/lon.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: land fill, DE/DX preset views.
+
+## 2026-10-16 (second run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map regional preset. Select on the map toggles World / Regional (±45° lon, ±22.5° lat around the station; needs a locator, else stays on world). Night polygon drawn at ±360° offsets so windows straddling the antimeridian work; wrapped coastline segments dropped. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: land fill, DX preset (target locator).
