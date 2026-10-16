@@ -15,6 +15,8 @@ struct Launch {
     QString pad;
     QString location;
     QString status;    // abbreviation: Go, TBC, TBD, Success, Hold ...
+    QString mission;
+    QString mission_type;  // "Dedicated Rideshare", "Communications" ...
     QDateTime net;     // no-earlier-than time, UTC
     bool precise = false;  // time accurate to the minute or better
 };
@@ -27,6 +29,12 @@ struct Feed {
 // Rows with no name or an unreadable time are skipped. A body without a
 // "results" array yields ok == false.
 Feed parse(const QByteArray& body);
+
+// A short hint when the launch may be of interest to amateurs, from the name
+// and mission text only: rideshares/cubesat flights often carry amateur radio
+// satellites, ISS visits bring ARISS opportunities. It is a hint, never a
+// claim about payloads; empty when nothing matches.
+QString ham_hint(const Launch& launch);
 
 // "T-2d 3h", "T-5h 12m", "T-12m", "T+0m" once past.
 QString countdown_text(const QDateTime& net, const QDateTime& now);
