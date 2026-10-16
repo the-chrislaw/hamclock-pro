@@ -143,3 +143,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (UTC, thirty-second run)
 - Merged #393 (tvOS, green). #394 (area C) CI running, #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - E12 slice: clock sync status now also reads `timedatectl timesync-status` (systemd-timesyncd) to show offset, stratum and server where chrony is absent; read-only, parser accepts us/ms/s and sanitises the server name. Offline parser tests; full release suite passes (154/154), ASan/UBSan left to CI; no screenshot (card needs hardware); not run on a Pi. Remaining E backlog is blocked on owner input (#315, #342), area G wiring, hardware or the radio safety review.
+
+## 2026-10-16 (UTC, thirty-third run)
+- Merged #439 (tvOS, green). #73 (area A) conflicting: not mine. No open `qa` issues for E.
+- Docs only: recorded the owner's #342 decision (IP geolocation won't do) in WIDGETS E12 and ROADMAP "On the radar". No code change. Remaining E backlog is blocked on owner input (#315), area G wiring, hardware or the radio safety review.
