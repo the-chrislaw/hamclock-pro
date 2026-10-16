@@ -225,3 +225,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Co-visibility in the satellite detail box (backlog D6): the detail map gains "mutual" (next DE+DX window within 48 h, "none in 48 h" otherwise), shown as a "DE+DX ..." line in roomy slots only; only when DX is set and differs from DE; computed once per 10-minute bucket, not per second. Test extended in satellites_model_regression. Satellites ctests pass; full ctest and ASan/UBSan left to CI; not rendered on a screen.
 - Not mine: #432/#433 CI running at start, #73 conflicting; left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: annular/total contacts, Moon pane EME link.
+
+## 2026-10-16 (UTC), run 43
+- EME next perigee/apogee (backlog D5, partial): `next_lunar_apsis()` finds the next distance extreme from the ephemeris (3 h scan, ternary refine); the EME card gains an "Apsis" row (nearer of next perigee/apogee, UTC date and distance) in roomy slots. Tests: 2025-11-05 supermoon perigee within 3 h of ~22:30 UTC and ~357,000 km, apogee mid-November, result strictly after the start. Time is only good to about an hour (flat curve). Not rendered on a screen; ASan/UBSan left to CI.
+- Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400. Annular/total contacts skipped again: lunar ephemeris (~0.1 deg) is too coarse for second/third contact.
+- Next: Moon pane EME link (needs an approved URL), per-band sky temperature.

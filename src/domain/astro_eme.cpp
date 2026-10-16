@@ -16,6 +16,26 @@ double moon_sun_separation_deg(UtcSeconds utc) {
     return std::acos(c) / r;
 }
 
+std::optional<LunarApsis> next_lunar_apsis(UtcSeconds after, bool perigee) {
+    const double sign = perigee ? 1.0 : -1.0;  // minimise sign * distance
+    auto f = [&](std::int64_t t) { return sign * moon_position({t}).distance_km; };
+    constexpr std::int64_t step = 3 * 3600;
+    std::int64_t a = after.value, b = a + step, c = b + step;
+    double fa = f(a), fb = f(b), fc = f(c);
+    for (; a < after.value + 32LL * 86400; a = b, b = c, c += step, fa = fb, fb = fc, fc = f(c)) {
+        if (!(fb < fa && fb <= fc)) continue;
+        std::int64_t lo = a, hi = c;
+        while (hi - lo > 30) {  // ternary search on a unimodal bracket
+            const std::int64_t m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+            if (f(m1) < f(m2)) hi = m2; else lo = m1;
+        }
+        const std::int64_t t = (lo + hi) / 2;
+        if (t <= after.value) continue;
+        return LunarApsis{{t}, moon_position({t}).distance_km};
+    }
+    return std::nullopt;
+}
+
 namespace {
 bool both_up(std::int64_t t, double la1, double lo1, double la2, double lo2) {
     return moon_horizontal({t}, la1, lo1).elevation_deg > 0.0 && moon_horizontal({t}, la2, lo2).elevation_deg > 0.0;

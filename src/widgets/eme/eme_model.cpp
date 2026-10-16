@@ -24,6 +24,13 @@ EmeSummary summarize_eme(UtcSeconds now, double de_lat, double de_lon, double dx
     out.declination = QString("Dec %1°").arg(p.dec_deg, 0, 'f', 1);
     const double sep = moon_sun_separation_deg(now);
     out.sun = QString("%1° from Moon%2").arg(qRound(sep)).arg(sep < 10.0 ? " (sun noise)" : "");
+    // The nearer of the next perigee and apogee, with its date: when to plan big-dish or small-station EME.
+    const auto per = next_lunar_apsis(now, true), apo = next_lunar_apsis(now, false);
+    if (per && (!apo || per->time.value <= apo->time.value)) {
+        out.apsis = QString("Perigee %1 (%2 km)").arg(QDateTime::fromSecsSinceEpoch(per->time.value, QTimeZone::utc()).toString("d MMM HH:mm") + "Z").arg(qRound(per->distance_km / 100.0) * 100);
+    } else if (apo) {
+        out.apsis = QString("Apogee %1 (%2 km)").arg(QDateTime::fromSecsSinceEpoch(apo->time.value, QTimeZone::utc()).toString("d MMM HH:mm") + "Z").arg(qRound(apo->distance_km / 100.0) * 100);
+    }
     if (const auto w = next_mutual_moon_window(now, de_lat, de_lon, dx_lat, dx_lon)) {
         out.mutual_now = w->in_progress;
         const std::int64_t minutes = (w->end.value - now.value + 30) / 60;
