@@ -257,6 +257,7 @@ private struct SatelliteCard: View {
     @EnvironmentObject var sats: SatelliteStore
     @EnvironmentObject var station: StationStore
     let now: Date
+    @State private var showDetail = false
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Amateur satellites overhead").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
@@ -287,5 +288,42 @@ private struct SatelliteCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
+        .onTapGesture { showDetail = true } // Siri Remote Select; Menu closes the sheet
+        .sheet(isPresented: $showDetail) { SatelliteDetailView(now: now) }
+    }
+}
+
+/// Every satellite currently above the horizon (up to 40), highest first, with TLE age.
+private struct SatelliteDetailView: View {
+    @EnvironmentObject var sats: SatelliteStore
+    @EnvironmentObject var station: StationStore
+    let now: Date
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Amateur satellites above the horizon").font(.system(size: 48, weight: .bold))
+            if sats.tle != nil, let p = station.position {
+                let up = sats.visibleCached(at: now, lat: p.lat, lon: p.lon, limit: 40)
+                if let f = sats.fetched, now.timeIntervalSince(f) > 86400 * 2 {
+                    Text("OFFLINE, using cached elements")
+                        .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+                }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        if up.isEmpty { Text("None above the horizon").font(.system(size: 36)).foregroundStyle(.secondary) }
+                        ForEach(up) { s in
+                            let age = SatelliteStore.tleAgeDays(s, now: now)
+                            Text(String(format: "%@  az %.0f°  el %.0f°  %.0f km  TLE %.1f d", s.name, s.azimuth, s.elevation, s.rangeKm, age)
+                                 + (s.sunlit ? "" : "  eclipsed") + (age > 14 ? "  STALE" : ""))
+                                .font(.system(size: 29)).lineLimit(1).focusable()
+                        }
+                    }
+                }
+            } else {
+                Text(station.position == nil ? "Enter your locator" : "No data").font(.system(size: 36)).foregroundStyle(.secondary)
+            }
+            Text("Elements: CelesTrak, propagated on this device (SGP4)")
+                .font(.system(size: 29)).foregroundStyle(.secondary)
+        }
+        .padding(90)
     }
 }

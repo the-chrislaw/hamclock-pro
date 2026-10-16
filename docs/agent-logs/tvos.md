@@ -88,3 +88,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: quake detail view. Select on the quake card opens a sheet listing up to 40 quakes, strongest first, with age, Stale/Offline label and USGS attribution. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: detail views for satellites (pass list) and space weather.
+
+## 2026-10-16 (sixth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: satellite detail view. Select on the satellite card opens a sheet listing every satellite above the horizon (up to 40) with TLE age, Stale/Offline labels and CelesTrak attribution. `visibleCached` gained a `limit` key. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: space weather detail view.
