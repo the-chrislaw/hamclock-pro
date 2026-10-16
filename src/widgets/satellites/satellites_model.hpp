@@ -43,9 +43,21 @@ public:
     QString alert() const { return alert_; }
     // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
     Q_INVOKABLE void selectRow(int index);
+    // Opens (never toggles) the detail box for the listed satellite whose short name matches the
+    // map marker's label, case-insensitively; false when it is not in the list.
+    Q_INVOKABLE bool selectByName(const QString& name);
     // Adds the open detail's satellite to the map tracks, or removes it if already tracked; saved
     // to [satellites] tracked= in options.ini (at most kMaxTracked, the oldest choice drops off).
     Q_INVOKABLE void toggleTracked();
+    // Sets the saved DX to the open satellite's sub-satellite point now; returns an empty string
+    // or a user-facing error. Only on an explicit tap, never automatically.
+    Q_INVOKABLE QString setAsDx();
+    // The saved `user-tles.txt` text (empty when none).
+    Q_INVOKABLE QString userTles() const;
+    // Validates and saves pasted two/three-line element sets to `user-tles.txt` beside options.ini
+    // and reloads; empty text removes the file. Returns "" on success or a user-facing error
+    // (nothing is written then).
+    Q_INVOKABLE QString saveUserTles(const QString& text);
 
 signals:
     void changed();
@@ -72,6 +84,7 @@ private:
     QString alert_;
     QStringList tracked_names_;   // short names currently drawn on the map
     QTimer detail_timer_;
+    QString mutual_key_, mutual_text_;   // cached DE+DX co-visibility line for the open detail
 };
 
 // Alert text for a pass: "NAME rises in N min" within lead_s before AOS, "NAME above horizon"
@@ -100,8 +113,12 @@ QStringList toggle_tracked_names(const QStringList& current, const QString& name
 // Short display name: the bracketed designator ("AO-7") if present, else the trimmed name.
 QString satellite_short_name(const QString& tle_name);
 
+// Points of the visibility footprint (horizon circle) of a satellite at the given sub-point and
+// altitude, evenly spaced by bearing; empty for fewer than 3 points or a non-positive altitude.
+std::vector<Location> footprint_ring(double lat_deg, double lon_deg, double alt_km, int points);
+
 // Map layer "satellites": each tracked satellite's current sub-point (labelled
-// triangle) plus its ground track from -10 to +50 min as unlabelled dots.
+// triangle) plus its ground track from -10 to +50 min as unlabelled dots and a dotted footprint ring.
 OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_time);
 
 void register_widget_satellites(WidgetRegistry& registry, const WidgetContext& context);

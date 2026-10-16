@@ -77,6 +77,12 @@ int main(int argc, char** argv) {
     p2.end();
     check(img2.pixelColor(360, 180) != QColor(255, 0, 0), "hidden layer not drawn");
     {
+        check(overlay_path_text(std::nullopt, {0, 0}).isEmpty(), "no DE, no path text");
+        check(overlay_path_text(Location{0, 0}, {0, 90}) == "10008 km, 90°", "quarter circle east of DE");
+        check(overlay_path_text(Location{0, 0}, {0, 0}) == "0 km", "same place has distance only");
+        check(overlay_path_text(Location{0, 0}, {0, 180}) == "20015 km", "antipode has distance only");
+    }
+    {
         // Marker hit test: nearest visible marker within the radius, across world copies.
         const auto vp = MapViewport::fill(720, 360, 0.0);
         OverlayMarker a; a.where = {0, 0}; a.call = "A"; a.detail = "first";
@@ -108,6 +114,18 @@ int main(int argc, char** argv) {
                     if (qGray(a.pixel(x, y)) / 24 != qGray(b.pixel(x, y)) / 24) ++diff;
             check(diff * 50 < long(a.width()) * a.height() / 4, "base-scaled painter matches direct render (land and overlays share one transform)");
         }
+    }
+    {
+        // Issue #423: two bodies ~40 px apart (Venus, Mercury) must never overprint labels.
+        const QRectF view(0, 0, 400, 100);
+        const QSizeF t(36, 12);
+        const QPointF venus(100, 50), mercury(140, 50);
+        std::vector<QRectF> used = {QRectF(venus.x() - 4, venus.y() - 4, 8, 8), QRectF(mercury.x() - 4, mercury.y() - 4, 8, 8)};
+        const auto first = place_label(view, venus, 4, t, used);
+        check(first.has_value() && !first->intersects(used[1]), "first planet label clears the neighbouring marker");
+        if (first) used.push_back(*first);
+        const auto second = place_label(view, mercury, 4, QSizeF(48, 12), used);
+        check(!second || !second->intersects(*first), "second planet label never overprints the first");
     }
     return failures == 0 ? 0 : 1;
 }

@@ -1,4 +1,5 @@
 #include "aprs_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "aprs_overlay.hpp"
 #include "../../map/overlay.hpp"
 #include "../../domain/geometry.hpp"
@@ -9,6 +10,14 @@ namespace hamclock {
 
 AprsModel::AprsModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("aprs", "Nearby APRS", parent), settings_(context.settings), factory_(std::move(factory)) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("aprs");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("aprs");
+            if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
+        });
+    }
     retry_.setSingleShot(true);
     connect(&retry_, &QTimer::timeout, this, &AprsModel::connect_now);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &AprsModel::start);
@@ -30,7 +39,9 @@ void AprsModel::publishOverlay() {
     std::sort(order.begin(), order.end(), [](const Entry* a, const Entry* b) { return a->heard > b->heard; });
     std::vector<aprs::Station> list;
     for (const auto* e : order) list.push_back(e->station);
-    MapOverlays::instance().set_layer(aprs::overlay_layer(list));
+    auto layer = aprs::overlay_layer(list);
+    apply_spot_label_style(layer, settings_, "aprs");
+    MapOverlays::instance().set_layer(layer);
 }
 
 QString AprsModel::login_line(const QString& call, double lat, double lon, int radius_km) {

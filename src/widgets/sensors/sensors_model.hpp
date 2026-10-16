@@ -27,6 +27,7 @@ class SensorsModel : public WidgetModel {
     Q_PROPERTY(QString envDewPoint READ envDewPoint NOTIFY changed)
     Q_PROPERTY(bool hasClock READ hasClock NOTIFY changed)
     Q_PROPERTY(QString clock READ clock NOTIFY changed)
+    Q_PROPERTY(QString diskFree READ diskFree NOTIFY changed)
     Q_PROPERTY(bool hasDisk READ hasDisk NOTIFY changed)
     Q_PROPERTY(QString disk READ disk NOTIFY changed)
 public:
@@ -52,11 +53,13 @@ public:
     QString clock() const { return clock_ ? platform::describe(*clock_) : QString(); }
     bool hasDisk() const { return disk_.has_value(); }
     QString disk() const;
+    QString diskFree() const { return diskFree_; }
 public slots:
     void refresh();
 signals:
     void changed();
 private:
+    QString diskFree_;
     QString root_, wireless_, diskPath_, iio_;
     sensors::EnvReading env_;
     sensors::PressureHistory pressure_;

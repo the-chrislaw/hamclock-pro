@@ -1,9 +1,11 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import HamClock
 
 Card {
     id: root
+    fillBody: tleEditor.visible
     // Next passes at DE: satellite, when, peak elevation (elevation hidden in a compact slot).
     // Roomy slots also get a polar sky plot of the first pass (north up, zenith at the centre).
     readonly property bool showSky: width > 240 * Theme.scale && height > 150 * Theme.scale && widget && widget.skyTrack.length > 1
@@ -17,6 +19,7 @@ Card {
         elide: Text.ElideRight; width: parent.width
     }
     RowLayout {
+        id: passRow
         visible: !root.showDetail
         y: alertLine.visible ? alertLine.height + Theme.gap * 0.4 : 0
         width: parent.width
@@ -92,6 +95,12 @@ Card {
             elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text {
+            visible: root.showDetail && root.d.mutual !== undefined && !root.compact
+            text: root.showDetail && root.d.mutual ? "DE+DX " + root.d.mutual : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        Text {
             visible: root.showDetail && root.d.more !== undefined && root.d.more.length > 0
             text: root.showDetail && root.d.more ? "Then " + root.d.more.map(m => m.aos + " " + m.maxEl + "°").join("  ") : ""
             color: Theme.secondary; font.pixelSize: Theme.fontCaption
@@ -122,6 +131,18 @@ Card {
                 onClicked: root.widget.toggleTracked()
             }
         }
+        Text {
+            id: dxButton
+            property string error: ""
+            text: error !== "" ? error : "Set as DX (sub-satellite point)"
+            color: error !== "" ? Theme.secondary : Theme.accent; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+            elide: Text.ElideRight; Layout.fillWidth: true
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -Theme.gap
+                onClicked: dxButton.error = root.widget.setAsDx()
+            }
+        }
         TapHandler { onTapped: root.widget.selectRow(-1) }
     }
     Text {
@@ -129,5 +150,55 @@ Card {
         text: root.widget.allStale ? "Element sets over 30 days old" : "No passes in the next 24 h"
         color: Theme.secondary
         font.pixelSize: Theme.fontCaption
+    }
+    // Own element sets (pasted two/three-line TLEs, saved to user-tles.txt); roomy slots only.
+    Text {
+        id: tleLink
+        visible: !root.showDetail && !root.compact && !tleEditor.visible && root.widget
+        y: passRow.y + passRow.height + Theme.gap
+        text: "My TLEs…"
+        color: Theme.accent; font.pixelSize: Theme.fontCaption
+        MouseArea {
+            anchors.fill: parent
+            anchors.margins: -Theme.gap
+            onClicked: { tleText.text = root.widget.userTles(); tleError.text = ""; tleEditor.visible = true }
+        }
+    }
+    ColumnLayout {
+        id: tleEditor
+        visible: false
+        anchors.fill: parent
+        spacing: Theme.gap * 0.5
+        Text {
+            text: "Paste your own element sets (they override the download)"
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        ScrollView {
+            Layout.fillWidth: true; Layout.fillHeight: true
+            TextArea {
+                id: tleText
+                color: Theme.ink; font.family: "monospace"; font.pixelSize: Theme.fontCaption
+                wrapMode: TextEdit.NoWrap; selectByMouse: true
+            }
+        }
+        Text {
+            id: tleError
+            visible: text !== ""
+            color: Theme.accent; font.pixelSize: Theme.fontCaption
+            wrapMode: Text.WordWrap; Layout.fillWidth: true
+        }
+        RowLayout {
+            spacing: Theme.gap
+            AppButton {
+                text: "Save"; primary: true
+                onClicked: { tleError.text = root.widget.saveUserTles(tleText.text); if (tleError.text === "") tleEditor.visible = false }
+            }
+            AppButton {
+                text: "Clear"
+                onClicked: { tleError.text = root.widget.saveUserTles(""); if (tleError.text === "") tleEditor.visible = false }
+            }
+            AppButton { text: "Cancel"; onClicked: tleEditor.visible = false }
+        }
     }
 }

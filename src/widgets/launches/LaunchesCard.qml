@@ -27,7 +27,7 @@ Card {
                 spacing: Theme.gap
                 Text { text: modelData.when; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
                        Layout.preferredWidth: Theme.fontBody * 7 }
-                Text { text: modelData.name; color: Theme.ink; font.pixelSize: Theme.fontBody
+                Text { text: modelData.name + (modelData.ham ? "  ★" : ""); color: Theme.ink; font.pixelSize: Theme.fontBody
                        elide: Text.ElideRight; Layout.fillWidth: true }
             }
         }

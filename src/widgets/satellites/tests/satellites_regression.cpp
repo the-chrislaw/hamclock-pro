@@ -2,6 +2,7 @@
 // Vallado verification case (object 88888), plus structural checks on a real
 // amateur-satellite TLE from the CelesTrak fixture. Offline.
 #include "../../../domain/astro_satellite.hpp"
+#include "../satellites_model.hpp"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -24,6 +25,25 @@ int main(int argc, char** argv) {
         "2 88888  72.8435 115.9689 0086731  52.6988 110.5714 16.05824518   105"};
     SatellitePropagator p(ref);
     check(p.valid(), "88888 parses");
+    {
+        const OverlayLayer layer = satellite_overlay_layer({ref}, p.epoch_unix());
+        const OverlayMarker& now_marker = layer.markers.back();
+        check(!now_marker.call.isEmpty() && now_marker.detail.contains("altitude")
+                  && now_marker.detail.contains("km"), "satellite marker carries a tap detail");
+    }
+    {
+        // ISS-like 420 km: angular radius acos(R/(R+h)) is about 20.3 deg.
+        const auto ring = footprint_ring(0, 0, 420, 36);
+        check(ring.size() == 36, "footprint ring has the requested points");
+        bool ok = true;
+        for (const Location& w : ring) ok = ok && std::fabs(std::acos(std::cos(w.latitude * M_PI / 180) * std::cos(w.longitude * M_PI / 180)) * 180 / M_PI - 20.3) < 0.1;
+        check(ok, "footprint at the equator is a circle of ~20.3 deg");
+        const auto polar = footprint_ring(89, 10, 420, 12);
+        bool wrapped = true;
+        for (const Location& w : polar) wrapped = wrapped && w.longitude >= -180 && w.longitude <= 180 && w.latitude <= 90;
+        check(wrapped, "footprint near the pole stays in range");
+        check(footprint_ring(0, 0, 0, 36).empty() && footprint_ring(0, 0, 420, 2).empty(), "footprint rejects bad input");
+    }
     double r[3];
     check(p.teme(p.epoch_unix(), r), "88888 propagates at epoch");
     // Published t=0 state vector, km.
@@ -131,6 +151,29 @@ int main(int argc, char** argv) {
     }
     check(sane, "passes ordered, short, peak elevation consistent");
     for (std::size_t i = 1; i < passes.size(); ++i) check(passes[i].aos > passes[i - 1].los, "passes do not overlap");
+
+    // Co-visibility: windows lie inside a pass of each station; identical stations match passes.
+    {
+        const Observer dx{35.7, 139.7, 0.0};
+        const double from = ao7.epoch_unix() + 3600;
+        const auto win = ao7.mutual_windows(de, dx, from, 5 * 86400.0, 0.0, 20);
+        bool ok = true;
+        for (const auto& w : win) {
+            const double mid = 0.5 * (w.start + w.end);
+            LookAngle la, lb;
+            ao7.look(mid, de, la);
+            ao7.look(mid, dx, lb);
+            ok = ok && w.end > w.start && la.el_deg > 0 && lb.el_deg > 0;
+            ao7.look(w.start + 1, de, la);
+            ao7.look(w.start + 1, dx, lb);
+            ok = ok && std::min(la.el_deg, lb.el_deg) > -0.2;
+        }
+        check(ok, "mutual windows have both stations above the horizon");
+        const auto same = ao7.mutual_windows(de, de, from, 86400.0, 0.0, 50);
+        const auto solo = ao7.passes(de, from, 86400.0, 0.0, 50);
+        check(!same.empty() && same.size() == solo.size(), "identical stations: windows equal passes");
+        check(ao7.mutual_windows(de, dx, from, 86400.0, 0.0, 0).empty(), "zero windows requested");
+    }
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

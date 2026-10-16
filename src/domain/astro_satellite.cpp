@@ -221,6 +221,47 @@ std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double fro
     return out;
 }
 
+std::vector<SatellitePropagator::MutualWindow> SatellitePropagator::mutual_windows(
+    const Observer& a, const Observer& b, double from, double horizon_s, double min_el,
+    int max_windows) const {
+    std::vector<MutualWindow> out;
+    if (!impl_->ok || max_windows <= 0) return out;
+    const double step = 20.0;
+    // Smaller of the two elevations: the pair sees the satellite when this is >= min_el.
+    auto lowest = [&](double t) {
+        LookAngle la, lb;
+        if (!look(t, a, la) || !look(t, b, lb)) return -90.0;
+        return std::min(la.el_deg, lb.el_deg);
+    };
+    auto cross = [&](double lo, double hi) {
+        const bool lo_up = lowest(lo) >= min_el;
+        for (int i = 0; i < 20; ++i) {
+            const double m = 0.5 * (lo + hi);
+            ((lowest(m) >= min_el) == lo_up ? lo : hi) = m;
+        }
+        return 0.5 * (lo + hi);
+    };
+    bool in_win = lowest(from) >= min_el;
+    double start = from, best = in_win ? lowest(from) : -90;
+    for (double t = from + step; t <= from + horizon_s && static_cast<int>(out.size()) < max_windows; t += step) {
+        const double v = lowest(t);
+        const bool up = v >= min_el;
+        if (up && !in_win) {
+            start = cross(t - step, t);
+            in_win = true;
+            best = v;
+        } else if (up) {
+            best = std::max(best, v);
+        } else if (in_win) {
+            out.push_back({static_cast<std::int64_t>(std::llround(start)),
+                           static_cast<std::int64_t>(std::llround(cross(t - step, t))), best});
+            in_win = false;
+            best = -90;
+        }
+    }
+    return out;
+}
+
 std::vector<PassSample> SatellitePropagator::pass_track(const Observer& obs, const SatPass& pass,
                                                         int max_samples) const {
     std::vector<PassSample> out;

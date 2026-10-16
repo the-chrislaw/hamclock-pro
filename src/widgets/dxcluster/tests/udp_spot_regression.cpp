@@ -106,6 +106,16 @@ int main(int argc, char** argv) {
     l.listen(0, false);
     check(!l.listening(), "stop listening");
 
+    // Multicast: group validation (no network needed) and a refused bad group.
+    check(UdpSpotListener::valid_group("224.0.0.1") && UdpSpotListener::valid_group("239.255.0.9"), "multicast groups valid");
+    check(!UdpSpotListener::valid_group("192.168.1.5") && !UdpSpotListener::valid_group("ff02::1") &&
+              !UdpSpotListener::valid_group("") && !UdpSpotListener::valid_group("nope"),
+          "non-multicast groups refused");
+    check(!l.listen(47250, true, "10.0.0.1") && !l.listening(), "listen refuses a unicast group");
+    // Joining needs a multicast-capable interface, which a sandbox may lack: only assert when it binds.
+    if (l.listen(47251, false, "224.0.0.1")) check(l.listening() && l.port() == 47251, "joins a multicast group");
+    l.listen(0, false);
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

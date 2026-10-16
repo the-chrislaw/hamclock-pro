@@ -45,9 +45,19 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" build-mac/hamclock-pro.app/Contents/Info.plist
           test -s build-mac/hamclock-pro.app/Contents/Resources/AppIcon.icns
           file build-mac/hamclock-pro.app/Contents/Resources/AppIcon.icns
+          plutil -lint build-mac/hamclock-pro.app/Contents/Resources/PrivacyInfo.xcprivacy
+          /usr/libexec/PlistBuddy -c "Print :NSPrivacyTracking" build-mac/hamclock-pro.app/Contents/Resources/PrivacyInfo.xcprivacy
       - name: Build unsigned dmg
         run: |
-          macdeployqt build-mac/hamclock-pro.app -dmg
+          # macdeployqt can print an hdiutil "Resource busy" error yet exit 0,
+          # so retry on a missing dmg rather than on the exit status.
+          for attempt in 1 2 3; do
+            rm -f build-mac/hamclock-pro.dmg
+            macdeployqt build-mac/hamclock-pro.app -dmg || true
+            [ -f build-mac/hamclock-pro.dmg ] && break
+            [ "$attempt" = 3 ] && exit 1
+            sleep 15
+          done
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
       - uses: actions/upload-artifact@v4
         with:
@@ -92,7 +102,9 @@ jobs:
           export PATH="$HOME/Qt/$IOS_QT_VERSION/macos/bin:$PATH"
           # hdiutil occasionally fails with "Resource busy" on hosted runners; retry.
           for attempt in 1 2 3; do
-            macdeployqt build-universal/hamclock-pro.app -dmg && break
+            rm -f build-universal/hamclock-pro.dmg
+            macdeployqt build-universal/hamclock-pro.app -dmg || true
+            [ -f build-universal/hamclock-pro.dmg ] && break
             [ "$attempt" = 3 ] && exit 1
             sleep 15
           done
@@ -273,10 +285,13 @@ jobs:
   # every step skips cleanly while the App Store Connect secrets or APPLE_TEAM_ID
   # are absent. Cloud signing uses the API key, so no certificate or profile is
   # stored in the repo. The key file is deleted at the end; nothing is echoed.
+  # Owner switch: uploads run only while the repository variable
+  # TESTFLIGHT_UPLOADS is 'true'. The owner paused TestFlight until builds are
+  # stable (2026-10-16); don't remove or bypass this condition.
   ios-testflight:
     name: iPad TestFlight upload
     runs-on: macos-15
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.TESTFLIGHT_UPLOADS == 'true'
     continue-on-error: true
     timeout-minutes: 60
     env:

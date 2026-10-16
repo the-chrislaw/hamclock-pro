@@ -158,7 +158,20 @@ int main(int argc, char** argv) {
         check(dl->watchedCount() == 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "NADXCC keyword watches the needed-entity spot");
         dl->set_watch({"NABAND"});
         check(dl->watchedCount() == 1, "NABAND keyword also matches any needed slot");
+        model.setNeededResolver([](const QString&, const QString&) { return QStringLiteral("NEW PREFIX"); });
+        dl->set_watch({"NAPREF"});
+        check(dl->watchedCount() == dl->totalCount(), "NAPREF matches new-prefix spots");
+        dl->set_watch({"NADXCC"});
+        check(dl->watchedCount() == 0, "NADXCC ignores new-prefix-only spots");
+        dl->set_watch({"NAGRID"});
+        check(dl->watchedCount() == 0, "NAGRID without a resolver matches nothing");
+        model.setGridNeededResolver([](const QString& g) { return g == "FN20"; });
+        check(dl->watchedCount() >= 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "NAGRID matches the spot whose grid is needed");
+        model.setGridNeededResolver([](const QString&) { return false; });
+        check(dl->watchedCount() == 0, "NAGRID ignores spots in worked grids");
         model.setNeededResolver([](const QString&, const QString&) { return QStringLiteral("NEW BAND"); });
+        dl->set_watch({"NAPREF"});
+        check(dl->watchedCount() == 0, "NAPREF ignores new-band-only spots");
         dl->set_watch({"NADXCC"});
         check(dl->watchedCount() == 0, "NADXCC ignores a new-band-only spot");
         dl->set_watch({"NABAND"});
@@ -166,6 +179,16 @@ int main(int argc, char** argv) {
         dl->set_watch({});
     }
     model.setNeededResolver({});
+    {
+        auto* dl = qobject_cast<DxSpotList*>(model.spots());
+        dl->set_watch({"OTA"});
+        check(dl->watchedCount() == 1 && dl->data(dl->index(0), DxSpotList::WatchedRole).toBool(), "OTA keyword watches spots naming a reference");
+        dl->set_watch({"POTA"});
+        check(dl->watchedCount() == 1, "POTA keyword matches a POTA spot");
+        dl->set_watch({"SOTA", "IOTA", "WWFF"});
+        check(dl->watchedCount() == 0, "other programme keywords ignore it");
+        dl->set_watch({});
+    }
     for (int i = 0; i < 80; ++i) emit model.client().lineReceived(lines[1]);
     check(model.spotCount() == DxSpotList::kCapacity, "list capped");
 

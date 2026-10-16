@@ -67,6 +67,21 @@ Item {
         }
     }
 
+    // Keyboard / TV remote: the focused card bubbles unhandled keys up to the slot.
+    // Left/Right step the pane, Menu (or Shift+F10 via Key_Menu) opens its options.
+    // Any key counts as activity for screen blanking (does not consume it).
+    Keys.onPressed: function (event) { blanking.touch(); event.accepted = false }
+    Keys.onLeftPressed: function (event) { slot.step(-1); event.accepted = true }
+    Keys.onRightPressed: function (event) { slot.step(1); event.accepted = true }
+    // Up/Down move the focus ring to the previous/next focusable item (same order as Tab).
+    Keys.onUpPressed: function (event) { slot.moveFocus(false); event.accepted = true }
+    Keys.onDownPressed: function (event) { slot.moveFocus(true); event.accepted = true }
+    function moveFocus(forward) {
+        var next = slot.nextItemInFocusChain(forward)
+        if (next && next !== slot) next.forceActiveFocus(forward ? Qt.TabFocusReason : Qt.BacktabFocusReason)
+    }
+    Keys.onMenuPressed: function (event) { slot.optionsRequested(slot.index); event.accepted = true }
+
     // Tap anywhere on the pane to change it; swipe sideways to step. Handlers are
     // passive so widgets and the title button keep working.
     TapHandler { onTapped: slot.chooseRequested(slot.index) }
@@ -80,6 +95,32 @@ Item {
             if (active) return
             const dx = centroid.position.x - centroid.pressPosition.x
             if (Math.abs(dx) > 60 * Theme.scale) slot.step(dx < 0 ? 1 : -1)
+        }
+    }
+
+    // Phone: page dots (a window of up to 7 around the current widget) so a swipe
+    // shows where it is in the list. Passive; taps and swipes go through to the pane.
+    Row {
+        id: pageDots
+        visible: Theme.phone && slot.ids().length > 1
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 2 * Theme.scale
+        spacing: 5 * Theme.scale
+        readonly property var all: slot.ids()
+        readonly property int at: Math.max(0, all.indexOf(slot.choice))
+        readonly property int first: Math.max(0, Math.min(all.length - 7, at - 3))
+        Repeater {
+            model: Math.min(7, pageDots.all.length)
+            Rectangle {
+                readonly property bool current: pageDots.first + index === pageDots.at
+                width: (current ? 8 : 5) * Theme.scale
+                height: width
+                radius: width / 2
+                anchors.verticalCenter: parent.verticalCenter
+                color: current ? Theme.accent : Theme.secondary
+                opacity: current ? 1 : 0.5
+            }
         }
     }
 

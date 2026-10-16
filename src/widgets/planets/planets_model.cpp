@@ -23,7 +23,7 @@ QVariantList planet_rows(UtcSeconds now, double de_lat, double de_lon) {
 }
 
 OverlayLayer planet_overlay_layer(UtcSeconds now) {
-    static const char* colors[kPlanetCount] = {"#b0a79a", "#f5e6a8", "#e0603b", "#d9a066", "#cdb87a"};
+    static const char* colors[kPlanetCount] = {"#b0a79a", "#f5e6a8", "#e0603b", "#d9a066", "#cdb87a", "#8fd3d9", "#5b7fe0"};
     OverlayLayer layer;
     layer.id = "planets";
     layer.labels = OverlayLabelMode::Call;
@@ -34,6 +34,7 @@ OverlayLayer planet_overlay_layer(UtcSeconds now) {
         const PlanetSubpoint s = planet_subpoint(p, now);
         m.where = {s.latitude_deg, s.longitude_deg};
         m.call = QString::fromLatin1(planet_name(p));
+        m.detail = QString("%1 is overhead here").arg(m.call);
         m.color = QColor(colors[i]);
         m.shape = OverlayShape::Dot;
         m.size_px = 4;

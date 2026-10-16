@@ -7,9 +7,14 @@ import HamClock
 Item {
     id: root
     signal closeRequested()
+    signal bigClockRequested()
+    property int alarmMinutes: 7 * 60
 
     GridLayout {
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: alarmArea.top
         anchors.margins: Theme.pad
         columns: width > 560 * Theme.scale ? 2 : 1
         columnSpacing: Theme.gap
@@ -75,11 +80,46 @@ Item {
         }
     }
 
+    Column {
+      id: alarmArea
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.bottom: parent.bottom
+      anchors.margins: Theme.pad
+      spacing: Theme.gap
+      Flow {
+        width: parent.width
+        spacing: Theme.gap
+        Repeater {
+            model: alarms.items
+            AppButton { text: modelData; onClicked: alarms.remove(index); Accessible.description: "Tap to delete" }
+        }
+      }
+      Row {
+        spacing: Theme.gap
+        Text { anchors.verticalCenter: parent.verticalCenter; text: "Alarm (UTC)"; color: Theme.secondary; font.pixelSize: Theme.fontBody }
+        AppButton { text: "-"; onClicked: alarmMinutes = (alarmMinutes + 1440 - 15) % 1440 }
+        Text { anchors.verticalCenter: parent.verticalCenter; text: Qt.formatTime(new Date(2000, 0, 1, Math.floor(alarmMinutes / 60), alarmMinutes % 60), "HH:mm"); color: Theme.ink; font.pixelSize: Theme.fontBody + 4 }
+        AppButton { text: "+"; onClicked: alarmMinutes = (alarmMinutes + 15) % 1440 }
+        AppButton { text: "Daily"; onClicked: alarms.add(Math.floor(alarmMinutes / 60), alarmMinutes % 60, true) }
+        AppButton { text: "Once"; onClicked: alarms.add(Math.floor(alarmMinutes / 60), alarmMinutes % 60, false) }
+        Text { anchors.verticalCenter: parent.verticalCenter; visible: alarms.items.length > 0; text: "tap an alarm to delete"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+      }
+    }
+
     AppButton {
+        id: closeButton
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.margins: Theme.pad
         text: "Close"
         onClicked: root.closeRequested()
+    }
+    AppButton {
+        anchors.right: closeButton.left
+        anchors.rightMargin: Theme.gap
+        anchors.bottom: closeButton.bottom
+        text: "Big Clock"
+        onClicked: root.bigClockRequested()
     }
 }

@@ -26,7 +26,7 @@ RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject
     connect(&flrig_, &FlrigClient::lost, this, [this] {
         if (!fromFlrig_) return;
         fromFlrig_ = false;
-        hz_.reset(); mode_.clear();
+        hz_.reset(); mode_.clear(); passband_.reset();
         setState("unconfigured", "flrig connection lost");
         emit changed();
     });
@@ -76,7 +76,7 @@ void RadioModel::onDisconnected() {
     const bool had = hz_.has_value() || state() != "unconfigured";
     poll_.stop();
     wait_ = Wait::Idle;
-    hz_.reset(); mode_.clear();
+    hz_.reset(); mode_.clear(); passband_.reset();
     setState("unconfigured", had && state() != "unconfigured" ? "rigctld connection lost" : "rigctld not running on this device");
     emit changed();
 }
@@ -104,7 +104,7 @@ void RadioModel::onReadyRead() {
 
 void RadioModel::fail(const QString& text) {
     wait_ = Wait::Idle;
-    hz_.reset(); mode_.clear();
+    hz_.reset(); mode_.clear(); passband_.reset();
     setState("error", text);
     emit changed();
 }
@@ -121,6 +121,7 @@ void RadioModel::handleLine(const QString& line) {
     case Wait::ModeName: {
         const auto m = radio::parse_mode(line);
         mode_ = m.value_or(QString());
+        passband_.reset();
         if (m) wait_ = Wait::ModePassband;     // a passband line follows a mode
         else wait_ = Wait::Idle;               // RPRT error: frequency still valid
         setState("live", mode_.isEmpty() ? "Frequency only" : "Connected", now());
@@ -129,6 +130,8 @@ void RadioModel::handleLine(const QString& line) {
     }
     case Wait::ModePassband:
         wait_ = Wait::Idle;
+        passband_ = radio::parse_passband_hz(line);
+        emit changed();
         break;
     case Wait::Idle:
         break;

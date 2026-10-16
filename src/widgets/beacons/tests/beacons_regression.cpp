@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
         const OverlayLayer layer = beacon_overlay_layer({base});
         check(layer.id == "beacons" && layer.markers.size() == 5, "overlay has the five on-air beacons");
         check(layer.markers[0].call == "4U1UN", "first marker is the 14.100 beacon");
+        check(layer.markers[0].detail.startsWith("14.100 MHz"), "tap detail names the frequency");
     }
     return failures ? 1 : 0;
 }

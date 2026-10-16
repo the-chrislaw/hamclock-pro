@@ -6,22 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Qt6 6.4 REQUIRED COMPONENTS Core Gui Widgets)
 
-add_executable(hamclock-pro-editor MACOSX_BUNDLE
-    src/qt/station_editor.cpp
-    src/qt/station_editor_dialog.cpp
-    src/qt/editor_appearance.cpp
-    src/app/station_edit.cpp
-    src/app/station_view.cpp
-    src/domain/geometry.cpp
-    src/platform/settings.cpp)
-target_link_libraries(hamclock-pro-editor PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(hamclock-pro-editor PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-set_target_properties(hamclock-pro-editor PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.stationeditor
-    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Station Editor")
-
 # QtGui-only map core (renderer, viewport, projection, land geometry): no
 # QtWidgets, so the Qt Quick app and the iPad build depend on this alone.
 add_library(hamclock-map-core STATIC
@@ -120,19 +104,6 @@ if(BUILD_TESTING)
     set_tests_properties(qt-map-styles-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 30)
 endif()
 
-add_executable(hamclock-pro-map-preview MACOSX_BUNDLE
-    src/qt/map_preview.cpp
-    src/qt/editor_appearance.cpp
-    src/app/station_view.cpp
-    src/platform/settings.cpp)
-target_link_libraries(hamclock-pro-map-preview PRIVATE hamclock-world-map)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(hamclock-pro-map-preview PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-set_target_properties(hamclock-pro-map-preview PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.mappreview
-    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Map Preview")
-
 if(BUILD_TESTING)
     add_executable(qt-station-dialog-regression
         tests/qt_station_dialog_regression.cpp
@@ -151,37 +122,6 @@ if(BUILD_TESTING)
     set_tests_properties(qt-station-dialog-regression qt-station-dialog-mac-layout PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
 endif()
 
-add_executable(hamclock-pro-dashboard MACOSX_BUNDLE
-    src/qt/dashboard_main.cpp
-    src/qt/station_dashboard.cpp
-    src/qt/station_editor_dialog.cpp
-    src/qt/editor_appearance.cpp
-    src/app/station_edit.cpp
-    src/app/station_view.cpp
-    src/platform/settings.cpp)
-target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-world-map)
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(hamclock-pro-dashboard PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-set_target_properties(hamclock-pro-dashboard PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.dashboard
-    MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro Dashboard")
-if(BUILD_TESTING)
-    add_executable(qt-dashboard-regression
-        tests/qt_dashboard_regression.cpp
-        src/qt/station_dashboard.cpp
-        src/qt/station_editor_dialog.cpp
-        src/qt/editor_appearance.cpp
-        src/app/station_edit.cpp
-        src/app/station_view.cpp
-        src/platform/settings.cpp)
-    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-world-map)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-        target_compile_options(qt-dashboard-regression PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
-    add_test(NAME qt-dashboard-regression COMMAND qt-dashboard-regression)
-    set_tests_properties(qt-dashboard-regression PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" TIMEOUT 15)
-endif()
 
 if(BUILD_TESTING)
     add_executable(locator-input-regression tests/locator_input_regression.cpp src/domain/locator_input.cpp src/domain/geometry.cpp)
@@ -200,6 +140,7 @@ if(BUILD_TESTING)
     add_test(NAME land-import-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/land_import_regression.py)
     set_tests_properties(land-import-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
     add_test(NAME pane-categories-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_categories_regression.py)
+    add_test(NAME pane-keys-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_keys_regression.py)
     set_tests_properties(pane-categories-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
     add_test(NAME kiosk-unit-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/kiosk_unit_regression.py)
     set_tests_properties(kiosk-unit-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
@@ -280,9 +221,7 @@ target_link_libraries(hamclock-stopwatch-dialog PUBLIC hamclock-dashboard-appear
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-stopwatch-dialog PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-stopwatch-dialog)
 if(BUILD_TESTING)
-    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-stopwatch-dialog)
     add_executable(qt-stopwatch-dialog-regression tests/qt_stopwatch_dialog_regression.cpp)
     target_link_libraries(qt-stopwatch-dialog-regression PRIVATE hamclock-stopwatch-dialog)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -332,9 +271,7 @@ target_link_libraries(hamclock-countdown-dialog PUBLIC hamclock-dashboard-appear
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-countdown-dialog PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-countdown-dialog)
 if(BUILD_TESTING)
-    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-countdown-dialog)
     add_executable(qt-countdown-dialog-regression tests/qt_countdown_dialog_regression.cpp)
     target_link_libraries(qt-countdown-dialog-regression PRIVATE hamclock-countdown-dialog)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -384,9 +321,7 @@ target_link_libraries(hamclock-big-clock-dialog PUBLIC hamclock-dashboard-appear
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(hamclock-big-clock-dialog PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-target_link_libraries(hamclock-pro-dashboard PRIVATE hamclock-big-clock-dialog)
 if(BUILD_TESTING)
-    target_link_libraries(qt-dashboard-regression PRIVATE hamclock-big-clock-dialog)
     add_executable(qt-big-clock-dialog-regression tests/qt_big_clock_dialog_regression.cpp)
     target_link_libraries(qt-big-clock-dialog-regression PRIVATE hamclock-big-clock-dialog)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -471,7 +406,7 @@ include(cmake/AppleBundle.cmake)
 
 # Installation and packaging (used by .github/workflows/release.yml).
 include(GNUInstallDirs)
-install(TARGETS hamclock-pro hamclock-pro-dashboard hamclock-pro-editor hamclock-pro-map-preview hamclock-pro-cli
+install(TARGETS hamclock-pro hamclock-pro-cli
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     BUNDLE DESTINATION .)
 install(FILES LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})

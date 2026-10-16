@@ -29,6 +29,9 @@ QString pressure_trend_word(double change_hpa);
 QString wmo_description(int code);        // "Clear sky", "Light rain", …
 QString compass_point(int degrees);       // 16-point rose, direction wind comes FROM
 double celsius_to_fahrenheit(double c);
+// Dew point (Magnus formula, °C) from air temperature and relative humidity; computed locally, no extra request.
+// Absent for humidity <= 0 or outside -45..60 °C where the formula is not meaningful.
+std::optional<double> dew_point_c(double temperature_c, int humidity_pct);
 // "14:32 (UTC-7)" for a UTC instant and offset in seconds.
 QString local_time_text(const QDateTime& utc, int offset_s);
 // Place label from a Nominatim `reverse` reply (addressdetails=1): the city, town
@@ -37,6 +40,11 @@ QString local_time_text(const QDateTime& utc, int offset_s);
 QString parse_place(const QByteArray& body);
 // Nominatim reverse request (zoom 10 = city level); coordinates rounded to 2 decimals.
 QString reverse_url(double latitude, double longitude);
+// Windy map page centred on a point (https://www.windy.com/?lat,lon,zoom); a plain link the user opens, never fetched by the app.
+QString windy_url(double latitude, double longitude);
+
+// NOAA marine radiofax (WEFAX) schedules and charts; a plain link the user opens, never fetched by the app.
+QString wefax_url();
 // Request URL for a point; coordinates rounded to 2 decimals (~1 km).
 QString request_url(double latitude, double longitude);
 

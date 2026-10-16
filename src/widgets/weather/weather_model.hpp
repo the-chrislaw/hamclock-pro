@@ -25,6 +25,9 @@ class WeatherModel : public WidgetModel {
     Q_PROPERTY(QString dxWind READ dxWind NOTIFY changed)
     Q_PROPERTY(QString deCity READ deCity NOTIFY changed)
     Q_PROPERTY(QString dxCity READ dxCity NOTIFY changed)
+    Q_PROPERTY(QString deWindyUrl READ deWindyUrl NOTIFY changed)
+    Q_PROPERTY(QString dxWindyUrl READ dxWindyUrl NOTIFY changed)
+    Q_PROPERTY(QString wefaxUrl READ wefaxUrl CONSTANT)
     Q_PROPERTY(QString deLocal READ deLocal NOTIFY changed)
     Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY changed)
 public:
@@ -43,6 +46,9 @@ public:
 
     QString deCity() const { return de_.place; }
     QString dxCity() const { return dx_.place; }
+    QString deWindyUrl() const { return windy(de_); }
+    QString dxWindyUrl() const { return windy(dx_); }
+    QString wefaxUrl() const { return weather::wefax_url(); }
     QString deLocal() const { return local(de_); }
     QString dxLocal() const { return local(dx_); }
 
@@ -65,11 +71,12 @@ private:
     void parse(End& end);
     void parsePlace(End& end);
     void refreshState();
+    static QString windy(const End& e);  // empty until the end has a position
     static QString temp(const End& e);
     static QString summary(const End& e);
     static QString wind(const End& e);
     QString local(const End& e) const;  // "14:32 (UTC-7)"
-    static QString air(const End& e);  // "61% RH · 1015 hPa · 20% cloud"
+    static QString air(const End& e);  // "61% RH · dew 8 °C · 1015 hPa · 20% cloud"
 
     WidgetContext context_;
     AppSettings* settings_;

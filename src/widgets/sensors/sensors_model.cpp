@@ -24,6 +24,7 @@ void SensorsModel::refresh() {
     wifi_ = sensors::read_wifi_dbm(wireless_);
     if (wifi_) wifiHistory_.add(now().toSecsSinceEpoch(), *wifi_);
     disk_ = sensors::read_disk_used_fraction(diskPath_);
+    diskFree_ = disk_ ? sensors::read_disk_free_text(diskPath_) : QString();
     env_ = sensors::read_env_sensor(iio_);
     if (settings_ && env_.any()) {
         // Optional corrections for a sensor that reads off: [sensors] temp_offset_c / pressure_offset_hpa.

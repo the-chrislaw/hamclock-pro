@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "flrig_client.hpp"
+#include "radio_parse.hpp"
 #include <QTcpSocket>
 #include <QTimer>
 #include <optional>
@@ -19,6 +20,7 @@ class RadioModel : public WidgetModel {
     Q_PROPERTY(QString frequency READ frequency NOTIFY changed)
     Q_PROPERTY(QString band READ band NOTIFY changed)
     Q_PROPERTY(QString mode READ mode NOTIFY changed)
+    Q_PROPERTY(QString passband READ passband NOTIFY changed)
 public:
     explicit RadioModel(const WidgetContext& context, QString host = "127.0.0.1", quint16 port = 4532, QObject* parent = nullptr);
     void start();
@@ -26,6 +28,7 @@ public:
     QString frequency() const;
     QString band() const;
     QString mode() const { return mode_; }
+    QString passband() const { return passband_ ? radio::format_passband(*passband_) : QString(); }
 signals:
     void changed();
 private slots:
@@ -52,6 +55,7 @@ private:
     Wait wait_ = Wait::Idle;
     std::optional<double> hz_;
     QString mode_;
+    std::optional<int> passband_;
 };
 
 void register_widget_radio(WidgetRegistry& registry, const WidgetContext& context);

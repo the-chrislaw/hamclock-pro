@@ -38,6 +38,10 @@ struct OverlayLayer {
 };
 // Text a marker shows in a label mode; empty for None and Dot.
 QString overlay_label_text(const OverlayMarker& marker, OverlayLabelMode mode);
+// "1234 km, 56° (long 38766 km, 236°)"-style line for the tap popup: distance and
+// initial bearing from DE to `where`; empty when DE is unset or the bearing is
+// undefined (same place or antipode, distance only then).
+QString overlay_path_text(std::optional<Location> de, Location where);
 // Greedy, order-preserving: result[i] is true when anchor i keeps its label.
 // Label priority of a layer id (lower wins a collision): satellites, then
 // spots and everything else, then hazards (quakes, fires, storms).

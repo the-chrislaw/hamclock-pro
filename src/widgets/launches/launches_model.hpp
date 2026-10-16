@@ -2,6 +2,7 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include "launches_parse.hpp"
+#include "../../map/overlay.hpp"
 #include <QVariantList>
 
 namespace hamclock {
@@ -33,6 +34,7 @@ signals:
 
 private:
     void refreshState();
+    void updateMapLayer();
 
     PolledSource* source_;
     launches::Feed feed_;

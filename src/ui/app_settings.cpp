@@ -1,12 +1,18 @@
 #include <algorithm>
 #include "app_settings.hpp"
+#include "banner_text.hpp"
+#include "blanking.hpp"
+#include "config_store.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
+#include "../widgets/pskreporter/psk_overlay.hpp"
 #include <QDir>
+#include <QHostAddress>
 #include <QFile>
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QTimeZone>
 #include <QStandardPaths>
 #include <exception>
 
@@ -96,17 +102,46 @@ void AppSettings::loadOptions() {
     aprs_port_ = ap > 0 && ap < 65536 ? ap : 14580;
     const int ar = ini.value("aprs/radius_km", 100).toInt();
     aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
+    const int pk = ini.value("psk/max_km", 0).toInt();
+    psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
+    psk_match_ = ini.value("psk/match").toString().left(120);
+    psk_wspr_ = ini.value("psk/wspr", false).toBool();
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
+    {
+        const QString g = ini.value("udp/group").toString().trimmed();
+        QHostAddress a;
+        udp_group_ = a.setAddress(g) && a.protocol() == QAbstractSocket::IPv4Protocol && a.isMulticast() ? g : QString();
+    }
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
+    map_hidden_ = ini.value("map_sources/hidden").toStringList();
+    for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "adif"}) {
+        const int m = ini.value(QString("map_sources/label_") + k, -1).toInt();
+        if (m >= 0 && m <= 3) map_label_.insert(k, m);
+    }
+    const int mpx = ini.value("map_sources/min_label_px", 0).toInt();
+    map_min_label_px_ = mpx >= 0 && mpx <= 200 ? mpx : 0;
     imperial_ = ini.value("units/imperial", false).toBool();
     date_order_ = ini.value("clock/date_order", 0).toInt();
     if (date_order_ < 0 || date_order_ > 2) date_order_ = 0;
     clock_12h_ = ini.value("clock/h12", false).toBool();
     week_sunday_ = ini.value("clock/week_start", 1).toInt() == 0;
+    banner_style_ = ini.value("banner/style", 0).toInt();
+    if (banner_style_ < 0 || banner_style_ >= kBannerStyles) banner_style_ = 0;
+    banner_bg_ = ini.value("banner/background", 0).toInt();
+    if (banner_bg_ < 0 || banner_bg_ >= kBannerBackgrounds) banner_bg_ = 0;
+    banner_title_ = ini.value("banner/title").toString().trimmed().left(kBannerTitleMax);
+    dx_zone_override_ = ini.value("dx/zone").toString().trimmed();
+    if (!dx_zone_override_.isEmpty() && !QTimeZone(dx_zone_override_.toUtf8()).isValid()) dx_zone_override_.clear();
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
+    {
+        const int idle = ini.value("kiosk/blank_idle", 0).toInt();
+        const int off = ini.value("kiosk/blank_off", -1).toInt();
+        const int on = ini.value("kiosk/blank_on", -1).toInt();
+        if (blanking_config_valid({idle, off, on})) { blank_idle_ = idle; blank_off_ = off; blank_on_ = on; }
+    }
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
     for (int slot = 0; slot < kPaneSlots; ++slot) {
@@ -395,6 +430,40 @@ QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
     return {};
 }
 
+QString AppSettings::savePskMatch(const QString& filter) {
+    const QStringList tokens = psk::match_tokens(filter);
+    const QString norm = tokens.join(", ");
+    if (filter.trimmed().size() > 120) return "PSKReporter filter is too long.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/match", norm);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the PSKReporter filter.";
+    psk_match_ = norm;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::savePskWspr(bool on) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/wspr", on);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the WSPR setting.";
+    psk_wspr_ = on;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::savePskMaxKm(int max_km) {
+    if (max_km < 0 || max_km > 20000) return "PSKReporter distance is 0-20000 km (0 = any).";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/max_km", max_km);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the PSKReporter distance.";
+    psk_max_km_ = max_km;
+    emit optionsChanged();
+    return {};
+}
+
 QString AppSettings::saveImperialUnits(bool imperial) {
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
     ini.setValue("units/imperial", imperial);
@@ -431,6 +500,22 @@ QString AppSettings::saveUdpSpots(int port, bool lan) {
     return {};
 }
 
+QString AppSettings::saveUdpGroup(const QString& group) {
+    const QString g = group.trimmed();
+    QHostAddress a;
+    if (!g.isEmpty() && !(a.setAddress(g) && a.protocol() == QAbstractSocket::IPv4Protocol && a.isMulticast()))
+        return "Multicast group must be empty or an IPv4 address from 224.0.0.0 to 239.255.255.255.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/group", g);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP multicast group.";
+    if (udp_group_ != g) {
+        udp_group_ = g;
+        emit optionsChanged();
+    }
+    return {};
+}
+
 QString AppSettings::saveUdpScope(bool by_me) {
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
     ini.setValue("udp/scope", by_me ? "me" : "all");
@@ -438,6 +523,48 @@ QString AppSettings::saveUdpScope(bool by_me) {
     if (ini.status() != QSettings::NoError) return "Could not save the UDP spot scope.";
     if (udp_by_me_ != by_me) {
         udp_by_me_ = by_me;
+        emit optionsChanged();
+    }
+    return {};
+}
+
+QString AppSettings::saveMapSourceLabel(const QString& key, int mode) {
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    if (!kKeys.contains(key)) return "Unknown map source.";
+    if (mode < -1 || mode > 3) return "Unknown label style.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (mode < 0) ini.remove("map_sources/label_" + key);
+    else ini.setValue("map_sources/label_" + key, mode);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the label style.";
+    const int before = map_label_.value(key, -1);
+    if (mode < 0) map_label_.remove(key); else map_label_.insert(key, mode);
+    if (before != mode) emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveMapMinLabelPx(int px) {
+    if (px < 0 || px > 200) return "Label distance must be 0-200 px.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("map_sources/min_label_px", px);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the label distance.";
+    if (px != map_min_label_px_) { map_min_label_px_ = px; emit optionsChanged(); }
+    return {};
+}
+
+QString AppSettings::saveMapSourceVisible(const QString& key, bool visible) {
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    if (!kKeys.contains(key)) return "Unknown map source.";
+    QStringList hidden = map_hidden_;
+    hidden.removeAll(key);
+    if (!visible) hidden << key;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("map_sources/hidden", hidden);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the map layer setting.";
+    if (hidden != map_hidden_) {
+        map_hidden_ = hidden;
         emit optionsChanged();
     }
     return {};
@@ -453,6 +580,81 @@ QString AppSettings::saveWeekStart(bool sunday) {
     return {};
 }
 
+QStringList AppSettings::configNames() const { return config_list(config_dir_); }
+
+QString AppSettings::saveConfig(const QString& name) {
+    const QString err = config_save(config_dir_, name);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
+}
+
+QString AppSettings::restoreConfig(const QString& name) {
+    const QString err = config_restore(config_dir_, name);
+    if (!err.isEmpty()) return err;
+    loadOptions();
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::deleteConfig(const QString& name) {
+    const QString err = config_delete(config_dir_, name);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
+}
+
+QString AppSettings::renameConfig(const QString& from, const QString& to) {
+    const QString err = config_rename(config_dir_, from, to);
+    if (err.isEmpty()) emit configsChanged();
+    return err;
+}
+
+QString AppSettings::saveBannerStyle(int style) {
+    if (style < 0 || style >= kBannerStyles) return "Unknown banner colour.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("banner/style", style);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner colour.";
+    banner_style_ = style;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBannerBackground(int style) {
+    if (style < 0 || style >= kBannerBackgrounds) return "Unknown banner background.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("banner/background", style);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner background.";
+    banner_bg_ = style;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBannerTitle(const QString& title) {
+    const QString t = title.trimmed().left(kBannerTitleMax);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (t.isEmpty()) ini.remove("banner/title");
+    else ini.setValue("banner/title", t);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the banner title.";
+    banner_title_ = t;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveDxZone(const QString& zone_id) {
+    const QString z = zone_id.trimmed();
+    if (!z.isEmpty() && !QTimeZone(z.toUtf8()).isValid()) return "Unknown time zone.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (z.isEmpty()) ini.remove("dx/zone");
+    else ini.setValue("dx/zone", z);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the DX time zone.";
+    dx_zone_override_ = z;
+    emit optionsChanged();
+    return {};
+}
+
 QString AppSettings::saveOverscan(int percent) {
     if (percent < 0 || percent > 10) return "The overscan inset must be between 0 and 10 %.";
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
@@ -460,6 +662,22 @@ QString AppSettings::saveOverscan(int percent) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the overscan inset.";
     overscan_ = percent;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBlanking(int idle_minutes, int off_hour, int on_hour) {
+    if (!blanking_config_valid({idle_minutes, off_hour, on_hour}))
+        return "Idle time must be 0..240 minutes and the screen-off window needs both hours (0..23) or neither.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("kiosk/blank_idle", idle_minutes);
+    ini.setValue("kiosk/blank_off", off_hour);
+    ini.setValue("kiosk/blank_on", on_hour);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the screen blanking settings.";
+    blank_idle_ = idle_minutes;
+    blank_off_ = off_hour;
+    blank_on_ = on_hour;
     emit optionsChanged();
     return {};
 }

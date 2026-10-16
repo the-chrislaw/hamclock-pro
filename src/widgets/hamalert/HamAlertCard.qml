@@ -24,7 +24,8 @@ Card {
                 Text { text: modelData.time; color: Theme.secondary; font.pixelSize: Theme.fontBody }
                 Text { text: modelData.dx; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
                        Layout.preferredWidth: Theme.fontBody * 6 }
-                Text { text: modelData.frequency + " " + modelData.mode; color: Theme.secondary; font.pixelSize: Theme.fontBody
+                Text { text: modelData.frequency + " " + modelData.mode + (modelData.ota ? " · " + modelData.ota : "")
+                       color: Theme.secondary; font.pixelSize: Theme.fontBody
                        elide: Text.ElideRight; Layout.fillWidth: true }
             }
         }

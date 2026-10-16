@@ -1,13 +1,13 @@
 #pragma once
 // Auxiliary time line under the station clock: tap cycles
-// day of year -> Julian date -> MJD -> local sidereal time -> UNIX time.
+// day of year -> Julian date -> MJD -> local sidereal time -> UNIX time -> solar time.
 #include <QDateTime>
 #include <QString>
 #include <cmath>
 
 namespace hamclock {
 
-constexpr int kAuxTimeModes = 5;
+constexpr int kAuxTimeModes = 6;
 
 inline int next_aux_time_mode(int mode) { return ((mode % kAuxTimeModes) + kAuxTimeModes + 1) % kAuxTimeModes; }
 
@@ -16,6 +16,17 @@ inline double local_sidereal_hours(qint64 unix_secs, double longitude_deg) {
     const double jd = static_cast<double>(unix_secs) / 86400.0 + 2440587.5;
     const double deg = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + longitude_deg;
     return std::fmod(std::fmod(deg, 360.0) + 360.0, 360.0) / 15.0;
+}
+
+// Apparent (sundial) solar time in hours [0, 24) at an east-positive longitude: UTC plus the
+// longitude offset plus the equation of time (approximation, good to about a minute).
+inline double solar_time_hours(qint64 unix_secs, double longitude_deg) {
+    const auto d = QDateTime::fromSecsSinceEpoch(unix_secs, Qt::UTC).date();
+    const double b = 2.0 * M_PI * (d.dayOfYear() - 81) / 365.0;
+    const double eot_min = 9.87 * std::sin(2 * b) - 7.53 * std::cos(b) - 1.5 * std::sin(b);
+    const double utc_h = static_cast<double>(((unix_secs % 86400) + 86400) % 86400) / 3600.0;
+    const double h = utc_h + longitude_deg / 15.0 + eot_min / 60.0;
+    return std::fmod(std::fmod(h, 24.0) + 24.0, 24.0);
 }
 
 // Week of the year. Monday start: ISO 8601. Sunday start: US style, week 1 is the week
@@ -40,6 +51,13 @@ inline QString aux_time_text(int mode, qint64 unix_secs, double longitude_deg, b
             .arg(tenths % 60, 2, 10, QLatin1Char('0'));
     }
     case 4: return QStringLiteral("UNIX %1").arg(unix_secs);
+    case 5: {
+        const int secs = static_cast<int>(std::floor(solar_time_hours(unix_secs, longitude_deg) * 3600.0)) % 86400;
+        return QStringLiteral("Solar %1:%2:%3")
+            .arg(secs / 3600, 2, 10, QLatin1Char('0'))
+            .arg(secs / 60 % 60, 2, 10, QLatin1Char('0'))
+            .arg(secs % 60, 2, 10, QLatin1Char('0'));
+    }
     default: {
         const auto d = QDateTime::fromSecsSinceEpoch(unix_secs, Qt::UTC).date();
         return QStringLiteral("Day %1 of %2 · week %3").arg(d.dayOfYear()).arg(d.daysInYear()).arg(week_of_year(d, sunday_week));

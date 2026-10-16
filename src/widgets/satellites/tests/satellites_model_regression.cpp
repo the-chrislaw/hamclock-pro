@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QTimeZone>
@@ -125,11 +126,37 @@ int main(int argc, char** argv) {
             ini.sync();
             model.recompute();
         }
+        {
+            // User TLE editor: invalid text is rejected without writing, valid text is saved and
+            // loaded (a new NORAD id appears in the set), empty text removes the file.
+            check(!model.saveUserTles("not a tle\nat all").isEmpty() && model.userTles().isEmpty(), "invalid user TLE rejected, nothing written");
+            const QString good = "TEST SAT\n1 25544U 98067A   26286.11204827  .00005858  00000+0  11499-3 0  9991\n2 25544  51.6319  76.5194 0006724 256.4602 103.5638 15.48846742590035\n";
+            check(model.saveUserTles(good).isEmpty() && model.userTles() == good, "valid user TLE saved");
+            check(QFileInfo::exists(QFileInfo(settings.optionsPath()).absolutePath() + "/user-tles.txt"), "user-tles.txt beside options.ini");
+            check(model.saveUserTles("  \n").isEmpty() && model.userTles().isEmpty(), "empty text clears");
+        }
+        {
+            // Set as DX: DX moves to the sub-satellite point; DE and callsign are untouched.
+            const double de_lat = settings.deLatitude(), de_lon = settings.deLongitude();
+            const QString err = model.setAsDx();
+            check(err.isEmpty(), "setAsDx saves");
+            check(std::abs(settings.dxLatitude()) <= 90 && std::abs(settings.dxLatitude() - 51.5) > 0.01, "DX moved off the old target");
+            check(settings.deLatitude() == de_lat && settings.deLongitude() == de_lon && settings.callsign() == "W1AW", "DE and callsign unchanged");
+            const QString mutual = model.detail()["mutual"].toString();
+            check(mutual.endsWith("to DX, max") == false && (mutual == "none in 48 h" || mutual.contains("(to DX, max")),
+                  "detail carries the DE+DX co-visibility line once DX differs from DE");
+        }
         check(toggle_tracked_names({}, "AO-7") == QStringList({"AO-7"}) &&
               toggle_tracked_names({"AO-7", "ISS"}, "iss") == QStringList({"AO-7"}) &&
               toggle_tracked_names({"AO-7", "ISS"}, "FO-29") == QStringList({"ISS", "FO-29"}), "toggle_tracked_names");
         model.selectRow(0);
         check(model.detail().isEmpty(), "second tap closes the detail");
+        const QString first = rows.first().toMap()["name"].toString();
+        check(!model.selectByName("NO-SUCH-SAT") && model.detail().isEmpty(), "unknown marker name opens nothing");
+        check(model.selectByName(first.toLower()) && model.detail()["name"].toString() == first, "marker name opens its detail");
+        check(model.selectByName(first) && !model.detail().isEmpty(), "selecting again keeps it open");
+        model.selectRow(0);
+        check(!model.setAsDx().isEmpty(), "setAsDx with no satellite open reports an error");
         check(format_mhz(145800000) == "145.8000 MHz" && compass_point(0) == "N" && compass_point(359) == "N" &&
               compass_point(90) == "E" && compass_point(225) == "SW", "format helpers");
     }

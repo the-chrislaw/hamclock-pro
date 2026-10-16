@@ -30,6 +30,8 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/time_zone_search.cpp
     src/ui/location_tools.cpp
     src/ui/timers_model.cpp
+    src/ui/alarms_model.cpp
+    src/ui/blanking_model.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
@@ -43,7 +45,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -157,6 +159,23 @@ if(BUILD_TESTING)
     target_link_libraries(timers-regression PRIVATE Qt6::Core)
     add_test(NAME timers-regression COMMAND timers-regression)
     set_tests_properties(timers-regression PROPERTIES TIMEOUT 30)
+    add_executable(alarms-regression tests/alarms_regression.cpp src/ui/alarms_model.cpp)
+    target_include_directories(alarms-regression PRIVATE src)
+    target_link_libraries(alarms-regression PRIVATE Qt6::Core)
+    set_target_properties(alarms-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME alarms-regression COMMAND alarms-regression)
+    set_tests_properties(alarms-regression PROPERTIES TIMEOUT 30)
+    add_executable(blanking-regression tests/blanking_regression.cpp src/ui/blanking_model.cpp)
+    target_include_directories(blanking-regression PRIVATE src)
+    target_link_libraries(blanking-regression PRIVATE Qt6::Core)
+    set_target_properties(blanking-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME blanking-regression COMMAND blanking-regression)
+    set_tests_properties(blanking-regression PROPERTIES TIMEOUT 30)
+    add_executable(config-store-regression tests/config_store_regression.cpp)
+    target_include_directories(config-store-regression PRIVATE src)
+    target_link_libraries(config-store-regression PRIVATE Qt6::Core)
+    add_test(NAME config-store-regression COMMAND config-store-regression)
+    set_tests_properties(config-store-regression PROPERTIES TIMEOUT 30)
     add_executable(banner-text-regression tests/banner_text_regression.cpp)
     target_include_directories(banner-text-regression PRIVATE src)
     target_link_libraries(banner-text-regression PRIVATE Qt6::Core)
@@ -180,7 +199,7 @@ if(BUILD_TESTING)
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
     # Exit code 4 = a visible Text is truncated (issue #152); sizes cover small, primary and TV.
-    foreach(size 800x480 1920x1080)
+    foreach(size 800x480 1920x1080 390x844 844x390)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30

@@ -1,6 +1,8 @@
 #include "gps_model.hpp"
 #include "../../platform/apple_lifecycle.hpp"
 #include "../../domain/geometry.hpp"
+#include "../../ui/app_settings.hpp"
+#include <QSettings>
 #include <cmath>
 
 namespace hamclock {
@@ -13,6 +15,15 @@ GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* pa
     auto& lifecycle = AppLifecycle::instance();
     connect(&lifecycle, &AppLifecycle::suspended, this, &GpsModel::onSuspended);
     connect(&lifecycle, &AppLifecycle::resumed, this, &GpsModel::onResumed);
+    connect(&serial_, &gps::SerialPort::data, this, &GpsModel::onSerialData);
+    connect(&serial_, &gps::SerialPort::closed, this, [this] {
+        const bool had = serial_seen_;
+        serial_seen_ = false; fix_ = {}; haveTpv_ = false;
+        setState("unconfigured", had ? "GPS serial device lost" : "GPS serial device unavailable");
+        emit changed();
+    });
+    serial_tick_.setInterval(2000);
+    connect(&serial_tick_, &QTimer::timeout, this, &GpsModel::refreshSerial);
     connect(&socket_, &QTcpSocket::connected, this, &GpsModel::onConnected);
     connect(&socket_, &QTcpSocket::readyRead, this, &GpsModel::onReadyRead);
     connect(&socket_, &QTcpSocket::disconnected, this, &GpsModel::onDisconnected);
@@ -21,11 +32,17 @@ GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* pa
     });
 }
 
-void GpsModel::start() { started_ = true; connectNow(); retry_.start(); }
+void GpsModel::start() {
+    started_ = true;
+    connectNow();
+    retry_.start();
+}
 
 // iPad: iOS kills sockets of suspended apps, so close cleanly and reconnect on resume.
 void GpsModel::onSuspended() {
     retry_.stop();
+    serial_tick_.stop();
+    serial_.close();
     socket_.abort();
     if (started_) onDisconnected();
 }
@@ -37,6 +54,17 @@ void GpsModel::onResumed() {
 }
 
 void GpsModel::connectNow() {
+    if (!serial_cfg_.device.isEmpty()) {
+        if (serial_.is_open()) return;
+        if (serial_.open(serial_cfg_.device, serial_cfg_.baud)) {
+            nmea_stream_ = {}; nmea_ = gps::NmeaTracker(); serial_seen_ = false;
+            setState("loading", "Waiting for a GPS fix");
+            serial_tick_.start();
+        } else {
+            setState("unconfigured", "GPS serial device unavailable");
+        }
+        return;
+    }
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;
     socket_.connectToHost(host_, port_);
 }
@@ -62,6 +90,31 @@ void GpsModel::onReadyRead() {
         apply(buffer_.left(nl));
         buffer_.remove(0, nl + 1);
     }
+}
+
+void GpsModel::onSerialData(const QByteArray& chunk) {
+    const qint64 ms = now().toMSecsSinceEpoch();
+    for (const auto& line : nmea_stream_.feed(chunk)) {
+        const auto n = gps::parse_nmea(line);
+        if (n.kind != gps::Nmea::Other) { serial_seen_ = true; nmea_.apply(n, ms); }
+    }
+    refreshSerial();
+}
+
+// A position older than the tracker's limit is dropped, so a receiver that goes
+// quiet or loses its fix is never shown as live.
+void GpsModel::refreshSerial() {
+    if (!serial_.is_open()) return;
+    const qint64 ms = now().toMSecsSinceEpoch();
+    fix_ = nmea_.fix(ms);
+    if (fix_.has_position()) {
+        if (const auto t = nmea_.utc(ms)) fix_.time = *t;
+    }
+    sky_ = {nmea_.satellites(), 0};   // NMEA GGA gives satellites in use only
+    haveTpv_ = serial_seen_;
+    if (fix_.has_position()) setState("live", fix_.mode >= 3 ? "3D fix" : "2D fix", now());
+    else setState("loading", serial_seen_ ? "No GPS fix yet" : "Waiting for a GPS fix");
+    emit changed();
 }
 
 void GpsModel::apply(const QByteArray& line) {
@@ -97,11 +150,17 @@ QString GpsModel::clockCheck() const {
 }
 
 QString GpsModel::satellites() const {
+    if (sky_.seen == 0 && sky_.used > 0) return QString("%1 in use").arg(sky_.used);
     return sky_.seen > 0 ? QString("%1 of %2").arg(sky_.used).arg(sky_.seen) : QString();
 }
 
 void register_widget_gps(WidgetRegistry& registry, const WidgetContext& context) {
     auto* model = new GpsModel(context);
+    if (context.settings) {
+        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
+        const auto cfg = gps::parse_serial_config(ini.value("gps/device").toString(), ini.value("gps/baud").toString(), {});
+        if (!cfg.device.isEmpty()) model->useSerial(cfg);
+    }
     registry.add({"gps", "GPS", QUrl("qrc:/widgets/gps/GpsCard.qml"), "strip", 75}, model);
     QTimer::singleShot(0, model, &GpsModel::start);
 }

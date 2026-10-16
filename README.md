@@ -19,13 +19,11 @@ CI runs the same build and tests on Ubuntu, plus an AddressSanitizer/UBSan build
 
 ## Programs
 
-On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro-dashboard.app/Contents/MacOS/hamclock-pro-dashboard`; elsewhere they are plain binaries in `build/`.
+On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro.app/Contents/MacOS/hamclock-pro`; elsewhere they are plain binaries in `build/`.
 
 | Program | Purpose |
 |---|---|
-| `hamclock-pro-dashboard --station PATH` | Main native dashboard: UTC, DE/DX, real map with land fill, Big Clock, stopwatch, countdown. Edit station saves through the shared dialog. |
-| `hamclock-pro-editor --station PATH` or `--new-station PATH` | Standalone station editor. Save validates and persists; Cancel discards. New-file saves refuse an existing destination. |
-| `hamclock-pro-map-preview --station PATH` | Read-only map preview with station grids and short-path route. |
+| `hamclock-pro` | The Qt Quick dashboard (`--help` lists options). |
 | `hamclock-pro-cli` | Offline command-line tools (below). |
 
 Use a private directory you control for station files. Instrument panes without a data provider are explicitly marked unavailable; no simulated reading is presented as live. No radio control, incoming network service, live data provider or telemetry is implemented.

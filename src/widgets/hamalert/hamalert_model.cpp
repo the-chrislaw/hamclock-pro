@@ -1,4 +1,5 @@
 #include "hamalert_model.hpp"
+#include "../dxcluster/spot_layer_style.hpp"
 #include "../../ui/app_settings.hpp"
 #include "../../map/overlay.hpp"
 
@@ -6,6 +7,14 @@ namespace hamclock {
 
 HamAlertModel::HamAlertModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("hamalert", "HamAlert", parent), settings_(context.settings), client_(std::move(factory), this) {
+    if (settings_) {
+        map_visible_ = settings_->mapSourceVisible("hamalert");
+        connect(settings_, &AppSettings::optionsChanged, this, [this] {
+            const bool v = settings_->mapSourceVisible("hamalert");
+            if (v != map_visible_) setMapVisible(v);
+            else publishOverlay();
+        });
+    }
     connect(&client_, &TelnetClient::lineReceived, this, &HamAlertModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &HamAlertModel::on_state);
     if (settings_) connect(settings_, &AppSettings::accountsChanged, this, &HamAlertModel::start);
@@ -24,6 +33,7 @@ void HamAlertModel::publishOverlay() {
     auto layer = dxcluster::overlay_layer(spots_, resolver_);
     layer.id = kOverlayLayerId;
     for (auto& m : layer.markers) m.color = QColor("#e9c46a");
+    apply_spot_label_style(layer, settings_, "hamalert");
     MapOverlays::instance().set_layer(layer);
 }
 
@@ -69,7 +79,8 @@ QVariantList HamAlertModel::recent() const {
     for (size_t i = 0; i < spots_.size() && int(i) < kShown; ++i) {
         const auto& s = spots_[i];
         out.push_back(QVariantMap{{"dx", s.dx}, {"frequency", QString::number(s.frequency_khz, 'f', 1)}, {"band", s.band},
-                                  {"mode", s.mode}, {"time", s.time.toString("HH:mm") + "Z"}, {"comment", s.comment}});
+                                  {"mode", s.mode}, {"time", s.time.toString("HH:mm") + "Z"}, {"comment", s.comment},
+                                  {"ota", s.ota_ref.isEmpty() ? QString() : s.ota_program + " " + s.ota_ref}});
     }
     return out;
 }

@@ -37,6 +37,25 @@ int main(int argc, char** argv) {
     check(r.has_snr && r.snr_db == 14, "SNR");
     check(r.time == QDateTime::fromSecsSinceEpoch(1791913278, QTimeZone::utc()), "time is UTC");
 
+    {
+        QFile wf(QDir(argv[1]).filePath("wspr-rx.json"));
+        check(wf.open(QIODevice::ReadOnly), "wspr fixture present");
+        const auto w = psk::parse_wspr(wf.readAll());
+        check(w.ok && w.reports.size() == 5, "wspr: five spots");
+        const auto& s = w.reports.front();
+        check(s.sender == "W3HH" && s.receiver == "ON5KQ" && s.receiver_grid == "JO10OS", "wspr: calls and grids");
+        check(s.mode == "WSPR" && s.band == "10m" && s.has_snr && s.snr_db == -14, "wspr: mode, band, SNR");
+        check(s.time == QDateTime(QDate(2026, 10, 15), QTime(12, 12), QTimeZone::utc()), "wspr: time is UTC");
+        check(!psk::parse_wspr("not json").ok && !psk::parse_wspr("{}").ok, "wspr: junk rejected");
+        check(psk::parse_wspr("{\"data\":[{\"rx_sign\":\"A1B\"}]}").reports.empty(), "wspr: incomplete row skipped");
+        check(psk::wspr_heard_url("w3hh").contains("rx_sign%3D'W3HH'") && psk::wspr_heard_url("a b;").isEmpty(),
+              "wspr: heard-by-DE url");
+        const auto sw = psk::heard_as_reports(w.reports);
+        check(sw[0].receiver == "W3HH" && sw[0].sender == "ON5KQ" && sw[0].receiver_grid == w.reports[0].sender_grid,
+              "wspr: heard feed swaps sender and receiver");
+        check(psk::wspr_query_url("w3hh").contains("tx_sign%3D'W3HH'") && psk::wspr_query_url("a b;").isEmpty(),
+              "wspr: query url");
+    }
     check(psk::parse_reports("<receptionReports/>").ok && psk::parse_reports("<receptionReports/>").reports.empty(),
           "empty document is ok");
     check(!psk::parse_reports("").ok && !psk::parse_reports("<html><p>").ok && !psk::parse_reports("nope").ok,
@@ -65,6 +84,9 @@ int main(int argc, char** argv) {
               "overlay: 4-char grid centre, path from DE");
         check(std::abs(layer.markers[1].where.latitude - (56.0 + 1 * 2.5 / 60 + 1.25 / 60)) < 1e-6, "overlay: 6-char centre");
         check(psk::overlay_layer(rs, 1).markers.size() == 1, "overlay: capped");
+        const auto hl = psk::heard_overlay_layer(rs);
+        check(hl.id == "psk-heard" && hl.markers.size() == 2 && hl.markers[0].color != layer.markers[0].color,
+              "overlay: heard layer is separate and coloured differently");
     }
     {
         std::vector<psk::Report> rs(5);
@@ -77,6 +99,39 @@ int main(int argc, char** argv) {
         check(psk::band_stats({}).empty(), "band stats: empty");
         check(psk::band_summary(stats, 1) == "20m 3" && psk::band_summary(stats, 5) == "20m 3 · 40m 1", "band summary");
     }
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].mode = "ft8"; rs[1].mode = "CW"; rs[2].mode = "FT8"; rs[3].mode = "";
+        const auto ms = psk::mode_stats(rs);
+        check(ms.size() == 2 && ms[0].first == "FT8" && ms[0].second == 2 && ms[1].first == "CW",
+              "mode stats: case folded, busiest first, empty skipped");
+        check(psk::band_summary(ms, 4) == "FT8 2 · CW 1" && psk::mode_stats({}).empty(), "mode summary");
+    }
+    {
+        std::vector<psk::Report> rs(4);
+        rs[0].receiver = "NEAR"; rs[0].receiver_grid = "IO91";
+        rs[1].receiver = "FAR"; rs[1].receiver_grid = "QM05ab"; rs[1].band = "20m";
+        rs[2].receiver = "BAD"; rs[2].receiver_grid = "ZZ";
+        rs[3].receiver = "COARSE"; rs[3].receiver_grid = "QM";
+        const auto f = psk::farthest_report(rs, 51.5, -0.1);
+        check(f.found && f.call == "FAR" && f.band == "20m" && f.km > 9000 && f.km < 10500, "farthest: Japan from London");
+        check(!psk::farthest_report({}, 0, 0).found && !psk::farthest_report({rs[2], rs[3]}, 0, 0).found, "farthest: none");
+        const auto near = psk::within_distance(rs, 51.5, -0.1, 2000);
+        check(near.size() == 1 && near[0].receiver == "NEAR", "within 2000 km: only the near grid; bad/coarse grids dropped");
+        check(psk::within_distance(rs, 51.5, -0.1, 12000).size() == 2, "within 12000 km: near and far");
+        check(psk::within_distance(rs, 51.5, -0.1, 0).size() == 4, "limit 0 keeps everything");
+    }
+    {
+        std::vector<psk::Report> rs(3);
+        rs[0].receiver = "VK2ABC"; rs[0].receiver_grid = "QF56";
+        rs[1].receiver = "JA1XYZ"; rs[1].receiver_grid = "PM95ab";
+        rs[2].receiver = "G4ZZZ"; rs[2].receiver_grid = "io91";
+        const auto t = psk::match_tokens(" vk,JA; pm95 bad! vk ");
+        check(t == QStringList({"VK", "JA", "PM95"}), "match tokens: normalised, deduped, junk dropped");
+        check(psk::matching(rs, t).size() == 2 && psk::matching(rs, {}).size() == 3, "matching by call prefix");
+        check(psk::matching(rs, psk::match_tokens("IO91")).size() == 1, "matching by grid prefix, case folded");
+        check(psk::matching(rs, psk::match_tokens("ZL")).empty(), "matching: none");
+    }
     check(psk::query_url("w1aw").contains("senderCallsign=W1AW&") && psk::query_url("w1aw").contains("appcontact="),
           "query URL");
     check(psk::query_url("EA8/W1AW").contains("EA8%2FW1AW"), "slash encoded");
@@ -84,12 +139,18 @@ int main(int argc, char** argv) {
           "unsafe calls refused");
 
     QString requested;
+    QByteArray wspr_body;
+    {
+        QFile wf(QDir(argv[1]).filePath("wspr-rx.json"));
+        wf.open(QIODevice::ReadOnly);
+        wspr_body = wf.readAll();
+    }
     WidgetContext context;
     context.transport = [&](const QUrl& url, FetchDone done) {
         requested = url.toString();
         FetchResult result;
         result.http_status = 200;
-        result.body = body;
+        result.body = url.host().contains("wspr.live") ? wspr_body : body;
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     QTemporaryDir tmp;
@@ -102,19 +163,60 @@ int main(int argc, char** argv) {
     check(model.state() == "unconfigured" && requested.isEmpty(), "no callsign -> unconfigured, no request");
 
     check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "save callsign");
+    check(!settings.savePskMaxKm(-1).isEmpty() && !settings.savePskMaxKm(20001).isEmpty() && settings.pskMaxKm() == 0,
+          "invalid PSK distance rejected");
+    check(settings.savePskMaxKm(5000).isEmpty() && settings.pskMaxKm() == 5000, "PSK distance saved");
+    check(settings.savePskMatch(" vk, ja ").isEmpty() && settings.pskMatch() == "VK, JA", "PSK filter saved normalised");
+    check(settings.savePskMatch("").isEmpty() && settings.pskMatch().isEmpty(), "PSK filter reset");
+    check(settings.savePskMaxKm(0).isEmpty() && settings.pskMaxKm() == 0, "PSK distance reset");
     for (int i = 0; i < 20; ++i) app.processEvents();
     if (model.source()) QFile::remove(model.source()->cachePath());
     model.start();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(requested.contains("senderCallsign=W1AW"), "request uses the settings callsign");
     check(model.state() == "live" && model.hasData() && model.count() == 1, "report -> live");
+    check(model.modes() == "CW 1", "model modes line");
     check(model.bestSnr() == "14 dB" && model.recent().size() == 1, "summary");
+    check(!settings.pskWspr() && model.count() == 1, "WSPR is off by default");
+    check(settings.savePskWspr(true).isEmpty() && settings.pskWspr(), "WSPR opt-in saved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(model.count() == 6 && model.modes().contains("WSPR 5"), "WSPR spots merged into the card");
+    check(model.heard().startsWith("I heard 5"), "WSPR heard-by-DE line shown");
+    {
+        bool heard_layer = false;
+        for (const auto& l : MapOverlays::instance().layers())
+            heard_layer = heard_layer || (l.id == psk::kHeardLayerId && !l.markers.empty() && l.markers[0].path_from_de);
+        check(heard_layer, "stations DE heard are drawn as their own layer");
+    }
+    check(settings.savePskWspr(false).isEmpty(), "WSPR opt-out saved");
+    check(model.heard().isEmpty(), "heard line cleared with WSPR off");
+    check(model.count() == 1 && model.modes() == "CW 1", "WSPR off drops its spots");
 
     check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",
           "live feed publishes the overlay layer");
     model.setMapVisible(false);
     check(MapOverlays::instance().layers().empty(), "map off removes the layer");
     model.setMapVisible(true);
+    check(settings.mapSourceVisible("psk") && !settings.saveMapSourceVisible("nope", false).isEmpty(),
+          "map source defaults on, unknown key rejected");
+    check(settings.saveMapSourceVisible("psk", false).isEmpty() && !settings.mapSourceVisible("psk") &&
+              MapOverlays::instance().layers().empty(),
+          "Settings toggle hides the PSK layer");
+    check(settings.saveMapSourceVisible("psk", true).isEmpty() && MapOverlays::instance().layers().size() == 1,
+          "Settings toggle shows the PSK layer again");
+    check(settings.mapSourceLabel("psk") == -1 && !settings.saveMapSourceLabel("psk", 9).isEmpty() &&
+              !settings.saveMapSourceLabel("nope", 1).isEmpty(),
+          "label style defaults to the layer's own; bad input rejected");
+    check(settings.saveMapSourceLabel("psk", int(OverlayLabelMode::Dot)).isEmpty() && settings.saveMapMinLabelPx(70).isEmpty() &&
+              MapOverlays::instance().layers()[0].labels == OverlayLabelMode::Dot &&
+              MapOverlays::instance().layers()[0].min_label_distance_px == 70,
+          "Settings label style and distance reach the PSK layer");
+    check(!settings.saveMapMinLabelPx(500).isEmpty(), "label distance range checked");
+    settings.saveMapSourceLabel("psk", -1);
+    settings.saveMapMinLabelPx(0);
+    check(MapOverlays::instance().layers()[0].labels == OverlayLabelMode::Call &&
+              MapOverlays::instance().layers()[0].min_label_distance_px == 44,
+          "reset restores the layer's own style");
     now = now.addSecs(25 * 60);
     model.source()->setClock([&] { return now; });
     emit model.ageChanged();

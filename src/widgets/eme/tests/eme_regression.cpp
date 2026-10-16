@@ -54,8 +54,29 @@ int main(int argc, char** argv) {
         check(mid && mid->in_progress && std::llabs(mid->end.value - w->end.value) <= 1, "in-progress window ends at the same edge");
     }
 
+ // Perigee 2025-11-05 about 22:30 UTC at ~356,800 km (almanac; the supermoon, full Moon was 13:19).
+    {
+        const auto per = next_lunar_apsis({utc(2025, 10, 30)}, true);
+        check(per.has_value(), "perigee found");
+        if (per) {
+            check(std::llabs(per->time.value - utc(2025, 11, 5, 22, 30)) < 3 * 3600, "perigee time within 3 h of the almanac");
+            check(std::fabs(per->distance_km - 357000.0) < 1500.0, "perigee distance about 357000 km");
+        }
+        const auto apo = next_lunar_apsis({utc(2025, 10, 30)}, false);
+        check(apo && apo->distance_km > 404000.0 && apo->time.value > utc(2025, 11, 12) && apo->time.value < utc(2025, 11, 22), "apogee mid November, far");
+        check(!next_lunar_apsis({utc(2025, 10, 30)}, true) || next_lunar_apsis({utc(2025, 10, 30)}, true)->time.value > utc(2025, 10, 30), "apsis strictly after the start");
+    }
+
+    // Separation: full Moon 2025-03-14 06:55 UTC (total lunar eclipse, Sun-Moon ~180),
+    // new Moon 2025-03-29 10:58 UTC (partial solar eclipse, a few degrees),
+    // first quarter 2025-03-06 16:32 UTC (~90).
+    check(moon_sun_separation_deg({utc(2025, 3, 14, 7, 0)}) > 178.0, "full Moon is opposite the Sun");
+    check(moon_sun_separation_deg({utc(2025, 3, 29, 11, 0)}) < 3.0, "new Moon eclipse day is next to the Sun");
+    check(std::fabs(moon_sun_separation_deg({utc(2025, 3, 6, 16, 32)}) - 90.0) < 3.0, "first quarter is about 90 degrees");
+
     const EmeSummary s = summarize_eme(t0, la1, lo1, -33.9, 151.2);
     check(s.distance.endsWith(" km") && s.degradation.startsWith("+") && s.de_position.startsWith("Az "), "summary text shape");
+    check(s.sun.contains("from Moon"), "summary has the Sun separation");
     check(!s.window.isEmpty(), "summary has a window text");
 
     std::cout << checks << " checks, " << failures << " failures\n";

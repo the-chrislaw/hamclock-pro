@@ -92,6 +92,11 @@ int main(int argc, char** argv) {
         check(platform::parse_timedatectl("NTPSynchronized=yes\n")->synchronized, "timedatectl yes");
         check(!platform::parse_timedatectl("NTPSynchronized=no\n")->synchronized, "timedatectl no");
         check(!platform::parse_timedatectl("oops"), "timedatectl garbage rejected");
+        const auto ts = platform::parse_timesync_status("       Server: 192.0.2.1 (ntp.example.org)\n      Stratum: 2\n       Offset: -1.5ms\n        Delay: 12ms\n");
+        check(ts && ts->synchronized && ts->stratum == 2 && ts->source == "ntp.example.org" && ts->offset_ms && std::abs(*ts->offset_ms - 1.5) < 1e-9, "timesync-status parsed");
+        const auto tu = platform::parse_timesync_status("Offset: +250us\n");
+        check(tu && tu->offset_ms && std::abs(*tu->offset_ms - 0.25) < 1e-9 && tu->source.isEmpty(), "timesync microseconds");
+        check(!platform::parse_timesync_status("Server: n/a\n"), "timesync without offset rejected");
     }
 
     WidgetContext ctx;
@@ -164,5 +169,9 @@ int main(int argc, char** argv) {
         w.add(0, -60.0); w.add(120, -82.0); w.add(240, -70.0);
         check(w.trough() && *w.trough() == -82.0, "trough is the minimum");
     }
+    check(sensors::format_free_bytes(12'400'000'000) == "12.4 GB free", "free GB one decimal");
+    check(sensors::format_free_bytes(250'000'000'000) == "250 GB free", "free GB rounded when large");
+    check(sensors::format_free_bytes(850'000'000) == "850 MB free", "free MB under 1 GB");
+    check(sensors::format_free_bytes(-1).isEmpty(), "negative bytes -> empty");
     return failures ? 1 : 0;
 }

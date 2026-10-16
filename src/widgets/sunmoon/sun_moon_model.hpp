@@ -23,6 +23,9 @@ struct MoonSummary {
 };
 MoonSummary summarize_moon(UtcSeconds now, double latitude_deg, double longitude_deg);
 
+// "June solstice 21 Jun 08:24 UTC": the next equinox or solstice, offline.
+QString summarize_season(UtcSeconds now);
+
 class SunMoonModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(bool hasStation READ hasStation NOTIFY changed)
@@ -41,6 +44,7 @@ class SunMoonModel : public WidgetModel {
     Q_PROPERTY(QString moonPosition READ moonPosition NOTIFY changed)
     Q_PROPERTY(double moonElongation READ moonElongation NOTIFY changed)
     Q_PROPERTY(bool moonSouthern READ moonSouthern NOTIFY changed)
+    Q_PROPERTY(QString nextSeason READ nextSeason NOTIFY changed)
 public:
     explicit SunMoonModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -62,6 +66,7 @@ public:
     QString moonPosition() const { return moon_.position; }
     double moonElongation() const { return moon_.elongation_deg; }
     bool moonSouthern() const { return moon_.southern; }
+    QString nextSeason() const { return season_; }
 
 signals:
     void changed();
@@ -72,6 +77,7 @@ private:
     bool has_station_ = false;
     SunSummary de_, dx_;
     MoonSummary moon_; // as seen from DE
+    QString season_;   // next equinox or solstice, UTC
 };
 
 void register_widget_sunmoon(WidgetRegistry& registry, const WidgetContext& context);

@@ -34,3 +34,47 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: station locator. C ABI `hcp_locator_center` over the shared Maidenhead decoder (tested on Linux 8/8, zero warnings), `StationStore` (iCloud key-value store with UserDefaults mirror, per the approved design) and a "Sun at your station" card (on-device elevation, no Stale state) with a locator text field.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: sun/moon rise-set at the station, satellites and quakes panes.
+
+## 2026-10-15 (third run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: sun/moon rise-set at the station. C ABI `hcp_next_sun_event`, `hcp_next_moon_event`, `hcp_moon_phase` over the Qt-free shared `astro_sun`/`astro_moon` (added to the standalone TvOSCore build; tested on Linux 8/8, zero warnings). Station card now shows next sunrise/sunset, moonrise/moonset (UTC) and Moon phase, all on device, never stale.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: satellites and quakes panes (need Qt-free TLE / USGS parsers).
+
+## 2026-10-15 (fourth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Qt-free USGS quakes parser (`quakes.cpp`, same fixture/rules as the Qt oracle), C ABI (`hcp_quakes_parse`, strongest index, magnitude class), tested on Linux 9/9, zero warnings. New "Earthquakes M2.5+" card (strongest + 5 most recent) with Stale/Offline labels and USGS attribution.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: satellites pane (needs a Qt-free TLE parser + SGP4 port), settings.
+
+## 2026-10-15 (fifth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: satellites core. The shared `astro_satellite` (TLE parser + vendored SGP4) is already Qt-free, so it joins the standalone TvOSCore build (SGP4 third-party warnings silenced for that file only). C ABI `hcp_tle_count`, `hcp_tle_name`, `hcp_sat_state` (sub-point, az/el/range, range rate, sunlit, TLE epoch so the UI can flag old elements). Tested on Linux 9/9, zero warnings. No Swift changes this run.
+- Next: Swift satellites pane (CelesTrak/AMSAT TLE fetch with Stale label by TLE epoch age; needs allowlist check), settings.
+
+## 2026-10-15 (sixth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: Swift satellites card. `SatelliteStore` fetches CelesTrak amateur TLEs (<= every 12 h, cached in Caches, honest User-Agent), the shared SGP4 core propagates on device; the card lists the 5 highest satellites above the horizon at the station with az/el/range/eclipse. Labels: STALE ELEMENTS when TLE epoch > 14 days, OFFLINE when the fetch is > 2 days old or absent. CelesTrak attribution added.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: settings (pane selection), map with shared overlay data.
+
+## 2026-10-15 (seventh run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: pane settings. `PaneStore` (iCloud key-value store + UserDefaults mirror) hides/shows the five panes; a "Panes..." button opens a toggle sheet. Swift only, no core change; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: map with shared overlay data (needs the shared land/overlay data Qt-free).
+
+## 2026-10-15 (eighth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: world map. C ABI over the shared Qt-free coastline table (`hcp_coast_part_count`, `hcp_coast_part`, `hcp_coast_points`; tested on Linux 9/9, zero warnings) and a SwiftUI Canvas `MapCard` (coastlines, day/night terminator, subsolar point, station marker; all on device, never stale) plus a "World map" pane toggle. Natural Earth attribution added.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: map overlays (quakes, satellite sub-points) only while their store is live; DE/DX preset views; land fill.
+
+## 2026-10-16
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map overlays. Quakes (USGS, ring radius by magnitude) are drawn only while the feed is live (< 15 min old); satellite sub-points (shared SGP4) only while the TLE fetch is < 2 days old. Both labelled in the map caption. Swift only; core already exposed lat/lon.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: land fill, DE/DX preset views.
+
+## 2026-10-16 (second run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map regional preset. Select on the map toggles World / Regional (±45° lon, ±22.5° lat around the station; needs a locator, else stays on world). Night polygon drawn at ±360° offsets so windows straddling the antimeridian work; wrapped coastline segments dropped. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: land fill, DX preset (target locator).
+
+## 2026-10-16 (third run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map land fill. Closed coastline rings that do not cross the antimeridian or a regional window edge are filled dark green under the outlines; the rest stay outline-only. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: DX preset (target locator).
