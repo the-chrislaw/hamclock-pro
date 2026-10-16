@@ -166,3 +166,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: open `[G]` qa issue #423 (planet labels overprint); no open PRs of mine; #73 (docs, not mine) left alone. CQ/ITU zones stay blocked on #353.
 - #423 (PR agent/map-planet-labels): re-rendered 1920x1080 dark on current main; Venus's label is already dropped and Mercury's kept, no overprint, because the #262 collision work places every label against all marker symbols and earlier labels. Added a regression test (two bodies 40 px apart never overprint) to `qt-map-overlay-regression`. No renderer change needed. Full map ctest passes locally; ASan/UBSan left to CI. Not validated on device.
 - Next: waiting on #353 for CQ/ITU zones.
+
+## 2026-10-16 (UTC, run 25)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine; #73 (docs, not mine, conflicting) left alone. CQ/ITU zones stay blocked on #353.
+- G0 gestures slice: pinch, wheel and double-tap zoom already exist. Added the missing zoom-about-point test to `qt-map-viewport-regression` (the location under the gesture stays under it at 800x480, 1024x600, 1920x1080 and zooms 1.5/2/4; scale multiplies by zoom). Tried two-finger tap to zoom out via `TapHandler.minimumPointCount`, but Qt 6.4.2 has no such property (QML failed to load), so it was dropped; recorded in WIDGETS.md. Map ctest passes locally. ASan/UBSan left to CI. Not validated on device.
+- Next: two-finger tap needs Qt 6.5+ or a MapItem touch-event path; otherwise waiting on #353.

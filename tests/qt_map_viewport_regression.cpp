@@ -71,6 +71,23 @@ int main(int argc, char** argv) {
     v = MapViewport::fill(0, 0, 0);
     check(v.scale == 0, "empty size is harmless");
 
+    // Zoom about a point: the location under the gesture stays under it, at several sizes and zooms.
+    for (const QSize size : {QSize(1024, 600), QSize(800, 480), QSize(1920, 1080)}) {
+        for (const double z : {1.5, 2.0, 4.0}) {
+            const auto base = MapViewport::fill(size.width(), size.height(), 0.0);
+            const double px = size.width() * 0.3, py = size.height() * 0.6;
+            const auto at = base.location_at(px, py);
+            auto zoomed = MapViewport::fill(size.width(), size.height(), 0.0, std::nullopt, std::nullopt, z);
+            const auto c = zoomed.center_for_anchor(at, px, py);
+            zoomed = MapViewport::fill(size.width(), size.height(), 0.0, std::nullopt, std::nullopt, z, c.lon, c.lat);
+            const auto back = zoomed.location_at(px, py);
+            // Pan is clamped so the world still covers the item; unclamped anchors must hold exactly.
+            const bool clamped = std::fabs(zoomed.center_lat - c.lat) > 1e-9;
+            check(clamped || (std::fabs(back.lat - at.lat) < 1e-6 && std::fabs(back.lon - at.lon) < 1e-6), "zoom keeps the anchor under the gesture");
+            check(std::fabs(zoomed.scale / base.scale - z) < 1e-9, "zoom multiplies the covering scale");
+        }
+    }
+
     // Rendering: every column of the pane carries map content (not flat sea).
     MapScene scene;
     scene.de = Location{37.77, -122.42};
