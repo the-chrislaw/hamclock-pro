@@ -270,3 +270,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: only #73 (stale docs, another area's) open; left alone. No open `[C]` qa issues.
 - Backlog item 15/16 (slice): "On The Air" watch keywords. `OTA` (any reference) and `POTA`/`SOTA`/`IOTA`/`WWFF` in the watch list highlight DX cluster spots whose comment names such a reference (from the existing parser; nothing invented). No AppSettings change; Settings hint updated. Test extended; dx/watch tests pass locally, full ASan/UBSan left to CI. No screenshot (text hint only); not validated on device.
 - Not done: RBN (#399), WSPR by-call, IOTA names. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.
+
+## 2026-10-16 (run 49)
+- Step 1: only #73 (stale docs, another area's) open; left alone. No open `[C]` qa issues.
+- Remaining C items are blocked (RBN #399, Meshtastic #311, UDP sets DX #333, WWFF/GMA #305, IOTA names #426) or need a real HamAlert/ONTA fixture that does not exist, so nothing invented. Docs-only slice: backlog item 9 still said APRS settings and map overlay were "later"; both are done (see settings parity row). No code change.
