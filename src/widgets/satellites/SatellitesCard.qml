@@ -95,6 +95,12 @@ Card {
             elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text {
+            visible: root.showDetail && root.d.mutual !== undefined && !root.compact
+            text: root.showDetail && root.d.mutual ? "DE+DX " + root.d.mutual : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            elide: Text.ElideRight; Layout.fillWidth: true
+        }
+        Text {
             visible: root.showDetail && root.d.more !== undefined && root.d.more.length > 0
             text: root.showDetail && root.d.more ? "Then " + root.d.more.map(m => m.aos + " " + m.maxEl + "°").join("  ") : ""
             color: Theme.secondary; font.pixelSize: Theme.fontCaption

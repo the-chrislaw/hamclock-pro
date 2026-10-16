@@ -220,3 +220,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Co-visibility planner, domain slice (backlog D6): `SatellitePropagator::mutual_windows()` finds windows when a satellite is above a minimum elevation at two stations at once (20 s steps, bisected edges). Tests: windows have both stations above the horizon, identical stations give exactly the pass list, zero windows requested. Satellites ctests pass; no UI yet (next: show the next DE+DX window in the detail box); not rendered; ASan/UBSan left to CI.
 - Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: show the mutual window in the satellite detail box, annular/total contacts.
+
+## 2026-10-16 (UTC), run 42
+- Co-visibility in the satellite detail box (backlog D6): the detail map gains "mutual" (next DE+DX window within 48 h, "none in 48 h" otherwise), shown as a "DE+DX ..." line in roomy slots only; only when DX is set and differs from DE; computed once per 10-minute bucket, not per second. Test extended in satellites_model_regression. Satellites ctests pass; full ctest and ASan/UBSan left to CI; not rendered on a screen.
+- Not mine: #432/#433 CI running at start, #73 conflicting; left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: annular/total contacts, Moon pane EME link.

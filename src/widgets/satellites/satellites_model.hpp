@@ -84,6 +84,7 @@ private:
     QString alert_;
     QStringList tracked_names_;   // short names currently drawn on the map
     QTimer detail_timer_;
+    QString mutual_key_, mutual_text_;   // cached DE+DX co-visibility line for the open detail
 };
 
 // Alert text for a pass: "NAME rises in N min" within lead_s before AOS, "NAME above horizon"
