@@ -101,3 +101,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: [G] Venus and Mercury map labels overlap. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http:// or password handling in added code; no removed test assertions. A ScrollView was added inside the satellites TLE text editor (field scroll, not page scroll; not filed). User TLE saving is size-limited, validated and written atomically beside options.ini.
 - Health: build and tests are green and layouts stay honest. One cosmetic defect filed; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 15
+- Last reviewed commit: 848dcd6 (PRs #424 to #436, 24 commits since f13cbb3).
+- Build and 157/157 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station that took effect) plus the satellites, launches and EME panes: nothing scrolls, states are honest (Live / Stale / Set up / Offline), the Venus/Mercury labels no longer overlap at 1024x600. The EME Apsis row only appears when the pane is tall enough (by design). Launch-pad map labels can be long (e.g. "Martian Moons eXploration (MMX)"), minor, not filed.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views, password handling or removed test assertions in added code. Per-widget code was not read line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
