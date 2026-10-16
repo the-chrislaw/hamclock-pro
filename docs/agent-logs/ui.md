@@ -228,3 +228,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 53)
 - Backlog A2 slice (TV large type): Settings > "Text size" (100/115/130/150 %, `display/text_scale` in `options.ini`) multiplies `Theme.scale`. `widget-core-regression` extended (default, rejection, apply, restart). Rendered 1024x600 and 1920x1080 with 130 % and the default: exit 0, no QML warnings; I did not inspect the images (Settings itself is not reachable from `--screenshot`). ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-16 (hourly run, 54)
+- QA #454 (text size 150 % truncated the pane chooser title at 800x480): the card header's status badge now drops to a dot (word kept in the accessible name) when the title plus the full badge would not fit, so the title keeps the width and stays whole. Rendered 800x480 at 150 %: no TRUNCATED report, titles whole (two lines where needed). The footer status reason is still shortened on purpose (`elideOk`); the data age is never cut. 1024x600 at 150 % also exit 0. ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

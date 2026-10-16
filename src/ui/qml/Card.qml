@@ -64,7 +64,14 @@ Rectangle {
                     onClicked: { card.forceActiveFocus(); card.titleActivated() }
                 }
             }
-            StatusBadge { visible: card.showStatus; status: widget ? widget.state : "" }
+            // Title first: when the title plus the full badge does not fit on one line, the badge drops to a dot.
+            TextMetrics { id: titleMetrics; text: titleText.text; font: titleText.font }
+            StatusBadge {
+                id: badge
+                visible: card.showStatus
+                status: widget ? widget.state : ""
+                dotOnly: titleMetrics.advanceWidth + fullWidth + Theme.gap * 0.6 > column.width
+            }
         }
         Item {
             id: body
