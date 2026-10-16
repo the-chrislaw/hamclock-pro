@@ -212,3 +212,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 49)
 - Backlog A14 slice: auxiliary time line gains a "Solar" mode (apparent solar time = UTC + longitude + equation of time, about a minute accurate; uses the DE longitude), last in the tap cycle. `aux-time-text-regression` extended (value range, longitude shift, wrap, cycle). Text-only change; no layout change, no new screenshots. ctest 157/157; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-16 (hourly run, 50)
+- Backlog A15 slice: Settings > "Exit" card (hidden on iOS): "Exit HamClock Pro" needs a second tap within 5 s, then `Qt.quit()`. Deliberately no reboot/shutdown (privileged). `pane-keys-regression` checks the two-tap wiring. Settings is not reachable from `--screenshot`, so not checked visually. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

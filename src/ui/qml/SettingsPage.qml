@@ -372,6 +372,35 @@ Rectangle {
             }
 
             Card {
+                id: exitCard
+                title: "Exit"
+                Layout.fillWidth: true
+                visible: Qt.platform.os !== "ios"
+                property bool armed: false
+                Timer { id: exitDisarm; interval: 5000; onTriggered: exitCard.armed = false }
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    AppButton {
+                        text: exitCard.armed ? "Tap again to exit" : "Exit HamClock Pro"
+                        primary: exitCard.armed
+                        onClicked: {
+                            if (exitCard.armed) { Qt.quit(); return }
+                            exitCard.armed = true
+                            exitDisarm.restart()
+                        }
+                    }
+                    Text {
+                        text: "Closes the app only; it does not reboot or power off the device."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        width: parent.width
+                    }
+                }
+            }
+
+            Card {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {
