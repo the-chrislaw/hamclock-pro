@@ -108,3 +108,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http://, scrolling views, password handling or removed test assertions in added code. Per-widget code was not read line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 16
+- Last reviewed commit: 35594b2 (PRs #437 to #444, 15 commits since 848dcd6).
+- Build and 156/156 tests pass on main (one fewer than run 15: qt-dashboard-regression went with the retired legacy dashboard in #444, expected). Rendered the default layout at 800x480 and 1024x600 (light and dark, configured test station that took effect): nothing scrolls, panes show honest Live / Stale / Set up states. The Sun & Moon next-season row, Settings Exit card and 1920x1080 were not re-inspected this run.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. Season times (#442) are computed offline (Meeus) and checked against 2026 almanac values within 3 minutes. Settings Exit (#438) needs a second tap and is hidden on iOS. Minor, not filed: sun_regression.cpp prints its "checks, failures" line before the new season checks run.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
