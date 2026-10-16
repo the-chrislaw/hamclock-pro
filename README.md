@@ -24,7 +24,6 @@ On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro-dashboard.ap
 | Program | Purpose |
 |---|---|
 | `hamclock-pro-dashboard --station PATH` | Main native dashboard: UTC, DE/DX, real map with land fill, Big Clock, stopwatch, countdown. Edit station saves through the shared dialog. |
-| `hamclock-pro-map-preview --station PATH` | Read-only map preview with station grids and short-path route. |
 | `hamclock-pro-cli` | Offline command-line tools (below). |
 
 Use a private directory you control for station files. Instrument panes without a data provider are explicitly marked unavailable; no simulated reading is presented as live. No radio control, incoming network service, live data provider or telemetry is implemented.
