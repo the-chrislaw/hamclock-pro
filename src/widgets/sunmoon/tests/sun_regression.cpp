@@ -101,5 +101,16 @@ int main(int argc, char** argv) {
     check(model.state() == "unconfigured" && !model.hasStation() && model.deRise().isEmpty(), "unconfigured without station");
 
     std::cout << checks << " checks, " << failures << " failures\n";
+    // Equinoxes and solstices 2026 (USNO/timeanddate, UTC), within 3 minutes.
+    const std::int64_t want[4] = {utc(2026, 3, 20, 14, 46), utc(2026, 6, 21, 8, 24), utc(2026, 9, 23, 0, 5), utc(2026, 12, 21, 20, 50)};
+    for (int k = 0; k < 4; ++k) {
+        const auto e = season_event(2026, static_cast<SeasonKind>(k));
+        std::cerr << "season " << k << " off by " << e.time.value - want[k] << " s\n";
+        check(std::llabs(e.time.value - want[k]) <= 180, "season event matches almanac");
+    }
+    check(next_season_event(UtcSeconds{utc(2026, 10, 16)}).kind == SeasonKind::DecemberSolstice, "next season after mid-October");
+    check(next_season_event(UtcSeconds{utc(2026, 12, 21, 21, 0)}).time.value > utc(2027, 3, 1), "next season rolls into next year");
+    check(summarize_season(UtcSeconds{utc(2026, 10, 16)}) == "December solstice 21 Dec 20:50 UTC", "season summary text");
+
     return failures ? 1 : 0;
 }

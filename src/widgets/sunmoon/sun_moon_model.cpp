@@ -33,6 +33,13 @@ SunSummary summarize_sun(UtcSeconds now, double lat, double lon) {
     return out;
 }
 
+QString summarize_season(UtcSeconds now) {
+    static const char* names[] = {"March equinox", "June solstice", "September equinox", "December solstice"};
+    const SeasonEvent e = next_season_event(now);
+    return QString("%1 %2 UTC").arg(names[static_cast<int>(e.kind)],
+        QDateTime::fromSecsSinceEpoch(e.time.value, QTimeZone::utc()).toString("d MMM HH:mm"));
+}
+
 MoonSummary summarize_moon(UtcSeconds now, double lat, double lon) {
     MoonSummary out;
     const MoonPhase phase = moon_phase(now);
@@ -61,6 +68,7 @@ void SunMoonModel::recompute() {
         has_station_ = false;
         de_ = dx_ = {};
         moon_ = {};
+        season_.clear();
         setState("unconfigured", "Set your station location in Settings");
         emit changed();
         return;
@@ -69,6 +77,7 @@ void SunMoonModel::recompute() {
     de_ = summarize_sun(t, settings_->deLatitude(), settings_->deLongitude());
     dx_ = summarize_sun(t, settings_->dxLatitude(), settings_->dxLongitude());
     moon_ = summarize_moon(t, settings_->deLatitude(), settings_->deLongitude());
+    season_ = summarize_season(t);
     has_station_ = true;
     setState("live", "Computed offline from the system clock", now());
     emit changed();

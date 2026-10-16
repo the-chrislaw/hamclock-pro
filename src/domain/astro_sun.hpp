@@ -29,3 +29,14 @@ std::optional<UtcSeconds> next_sun_event(UtcSeconds after, SunEventKind kind,
 struct SunYearDay { int day_of_year; double rise_min; double set_min; PolarState polar; };
 std::vector<SunYearDay> sun_year_series(int year, double latitude_deg, double longitude_deg);
 }
+
+namespace hamclock {
+// Equinoxes and solstices (Meeus ch. 27, accurate to about a minute for
+// 1900-2100). Kind 0 = March equinox, 1 = June solstice, 2 = September
+// equinox, 3 = December solstice (northern-hemisphere names).
+enum class SeasonKind { MarchEquinox, JuneSolstice, SeptemberEquinox, DecemberSolstice };
+struct SeasonEvent { SeasonKind kind; UtcSeconds time; };
+SeasonEvent season_event(int year, SeasonKind kind);
+// First season event strictly after `after`.
+SeasonEvent next_season_event(UtcSeconds after);
+}
