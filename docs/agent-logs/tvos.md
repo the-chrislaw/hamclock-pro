@@ -93,3 +93,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: satellite detail view. Select on the satellite card opens a sheet listing every satellite above the horizon (up to 40) with TLE age, Stale/Offline labels and CelesTrak attribution. `visibleCached` gained a `limit` key. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: space weather detail view.
+
+## 2026-10-16 (seventh run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: space weather detail view. Select on any of the five SWPC cards opens a sheet listing Kp, flux, X-ray, wind and Bz with observed time, fetch time and Stale/Offline labels, plus SWPC attribution. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: remaining panes from the design doc, any owner feedback on the design review.
