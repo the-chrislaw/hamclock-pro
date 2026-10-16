@@ -19,6 +19,8 @@ Feed parse(const QByteArray& body) {
         l.net = QDateTime::fromString(o.value("net").toString(), Qt::ISODate).toUTC();
         if (l.name.isEmpty() || !l.net.isValid()) continue;
         l.provider = o.value("lsp_name").toString();
+        l.mission = o.value("mission").toString();
+        l.mission_type = o.value("mission_type").toString();
         l.pad = o.value("pad").toString();
         l.location = o.value("location").toString();
         l.status = o.value("status").toObject().value("abbrev").toString();
@@ -29,6 +31,17 @@ Feed parse(const QByteArray& body) {
     std::stable_sort(feed.launches.begin(), feed.launches.end(),
                      [](const Launch& a, const Launch& b) { return a.net < b.net; });
     return feed;
+}
+
+QString ham_hint(const Launch& l) {
+    const QString text = l.name + ' ' + l.mission + ' ' + l.mission_type;
+    auto has = [&](const char* w) { return text.contains(QLatin1String(w), Qt::CaseInsensitive); };
+    if (has("amateur") || has("oscar") || has("cubesat")) return "Amateur/cubesat payloads";
+    if (has("rideshare") || has("transporter") || has("bandwagon")) return "Rideshare: possible amateur sats";
+    if (has("international space station") || has("iss ") || has("crew-") || has("cygnus") || has("progress ms") ||
+        has("soyuz ms") || has("CRS-"))
+        return "ISS visit (ARISS)";
+    return {};
 }
 
 QString countdown_text(const QDateTime& net, const QDateTime& now) {

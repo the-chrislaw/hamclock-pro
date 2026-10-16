@@ -47,6 +47,8 @@ QString LaunchesModel::nextDetail() const {
     QStringList parts;
     for (const auto& p : {u.front().provider, u.front().location, u.front().status})
         if (!p.isEmpty()) parts << p;
+    const auto hint = launches::ham_hint(u.front());
+    if (!hint.isEmpty()) parts << hint;
     return parts.join(" · ");
 }
 
@@ -54,7 +56,8 @@ QVariantList LaunchesModel::later() const {
     QVariantList out;
     const auto u = launches::upcoming(feed_, now(), 1 + kLaterRows);
     for (size_t i = 1; i < u.size(); ++i)
-        out.push_back(QVariantMap{{"name", u[i].name}, {"when", when_text(u[i], now())}, {"status", u[i].status}});
+        out.push_back(QVariantMap{{"name", u[i].name}, {"when", when_text(u[i], now())}, {"status", u[i].status},
+                                    {"ham", !launches::ham_hint(u[i]).isEmpty()}});
     return out;
 }
 

@@ -205,3 +205,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - EME Moon-Sun separation (backlog D5, partial): `moon_sun_separation_deg()` (geocentric, from the Moon's ecliptic latitude and elongation); the EME summary gains "N° from Moon" with "(sun noise)" under 10°, and a "Sun" row in the card when there is room. Tests: full Moon ~180°, 2025-03-29 new Moon eclipse day under 3°, first quarter ~90°. Per-band sky temperature still not done (needs a galactic background map I cannot validate offline). Not rendered on a screen; ASan/UBSan left to CI.
 - Not mine: #417 has a failing macOS universal build, #73 conflicting; left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: annular/total contacts, launches ham filtering.
+
+## 2026-10-16 (UTC), run 39
+- Launches ham hint (backlog D13, partial): `launches::ham_hint()` flags rideshare/cubesat/amateur and ISS-visit launches from name, mission and mission type only (a hint, not a payload claim); shown in the detail line and as a star on later rows. Tests: Bandwagon hinted, Starlink/MMX not, crew and amateur cases. Launches ctest passes, full ctest run; not rendered on a screen; ASan/UBSan left to CI.
+- Not mine: #421 (tvos) CI still running at start, #73 conflicting; left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: annular/total contacts, pad markers on the map.

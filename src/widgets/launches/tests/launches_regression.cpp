@@ -35,6 +35,13 @@ int main(int argc, char** argv) {
     check(feed.launches[1].net == utc(2026, 10, 15, 23, 44) && feed.launches[1].status == "Go" &&
           feed.launches[1].precise, "second row time and status");
     check(!feed.launches.back().precise && feed.launches.back().status == "TBD", "date-only launch is approximate");
+    check(launches::ham_hint(feed.launches[2]).startsWith("Rideshare"), "Bandwagon rideshare hinted");
+    check(launches::ham_hint(feed.launches[3]).isEmpty() && launches::ham_hint(feed.launches[4]).isEmpty(),
+          "Starlink and MMX not hinted");
+    launches::Launch iss; iss.name = "Falcon 9 | Crew-14";
+    check(launches::ham_hint(iss) == "ISS visit (ARISS)", "crew flight hinted");
+    launches::Launch cube; cube.name = "Electron | Amateur radio cubesat"; 
+    check(launches::ham_hint(cube) == "Amateur/cubesat payloads", "amateur payload hinted");
     check(!launches::parse("").ok && !launches::parse("{}").ok, "non-list rejected");
     check(launches::parse(R"({"results":[{"name":"","net":"2026-01-01T00:00:00Z"},{"name":"x","net":"junk"}]})").launches.empty(),
           "malformed rows skipped");
