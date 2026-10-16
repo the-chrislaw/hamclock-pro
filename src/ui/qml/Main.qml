@@ -134,6 +134,7 @@ ApplicationWindow {
             Card {
                 id: mapCard
                 title: "World map"
+                showTitle: !Theme.dense
                 fillBody: true
                 Layout.fillWidth: true
                 Layout.fillHeight: true

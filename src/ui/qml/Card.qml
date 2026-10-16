@@ -16,6 +16,8 @@ Rectangle {
     property bool chooser: false
     // Content sized by the card (map): its size must not feed back into the card's own.
     property bool fillBody: false
+    // False hides the title row (dense screens, map card): the body gets every pixel.
+    property bool showTitle: true
     signal titleActivated()
 
     radius: Theme.radius
@@ -38,6 +40,7 @@ Rectangle {
         spacing: Theme.gap * 0.6
 
         RowLayout {
+            visible: card.showTitle
             Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             Text {
