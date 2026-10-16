@@ -78,3 +78,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map land fill. Closed coastline rings that do not cross the antimeridian or a regional window edge are filled dark green under the outlines; the rest stay outline-only. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: DX preset (target locator).
+
+## 2026-10-16 (fourth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: map DX preset. New `dxLocator` (iCloud KVS + UserDefaults) with a settings field; Select cycles World -> DE -> DX, skipping views whose locator is unset; DX target drawn as a white ring. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: detail views per card, remaining panes from the design doc.

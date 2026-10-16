@@ -11,9 +11,11 @@ struct MapCard: View {
     let now: Date
     /// Select on the Siri Remote toggles between the whole world and a regional view
     /// centred on the station (the "DE" preset); without a station it stays on the world.
-    @State private var regional = false
+    enum View_: Int { case world, de, dx }
+    @State private var view = View_.world
 
-    /// Visible lon/lat window: (west, east, south, north) in degrees.
+    /// Visible lon/lat window: (west, east, south, north) in degrees, centred on `station`
+    /// (the DE or DX point); nil gives the whole world.
     static func window(regional: Bool, station: (lat: Double, lon: Double)?) -> (w: Double, e: Double, s: Double, n: Double) {
         guard regional, let st = station else { return (-180, 180, -90, 90) }
         let lon = st.lon > 180 ? st.lon - 360 : st.lon
@@ -66,9 +68,10 @@ struct MapCard: View {
         let quakePts = quakeState == .live ? quakes.all : []
         let satPts = sats.fetched.map { now.timeIntervalSince($0) <= 86400 * 2 } == true
             ? sats.subPointsCached(at: now) : []
-        let win = Self.window(regional: regional, station: station.position.map { ($0.lat, $0.lon) })
+        let centre = view == .dx ? station.dxPosition : (view == .de ? station.position : nil)
+        let win = Self.window(regional: centre != nil, station: centre.map { ($0.lat, $0.lon) })
         VStack(alignment: .leading, spacing: 12) {
-            Text(win.e - win.w < 360 ? "Regional map (around your station)" : "World map").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            Text(win.e - win.w < 360 ? (view == .dx ? "Regional map (around DX target)" : "Regional map (around your station)") : "World map").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
             Canvas { ctx, size in
                 func pt(_ p: CGPoint) -> CGPoint {
                     // Wrap longitude into the window so a view straddling +-180 still draws.
@@ -133,16 +136,29 @@ struct MapCard: View {
                     ctx.stroke(Path(ellipseIn: CGRect(x: s.x - 12, y: s.y - 12, width: 24, height: 24)),
                                with: .color(.red), lineWidth: 5)
                 }
+                if let p = station.dxPosition {
+                    let s = pt(CGPoint(x: p.lon > 180 ? p.lon - 360 : p.lon, y: p.lat))
+                    ctx.stroke(Path(ellipseIn: CGRect(x: s.x - 12, y: s.y - 12, width: 24, height: 24)),
+                               with: .color(.white), lineWidth: 5)
+                }
             }
             .aspectRatio(2, contentMode: .fit)
             .background(Color(red: 0.02, green: 0.07, blue: 0.14))
-            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Land fill and coastlines: Natural Earth (public domain). Computed on device. Select toggles world / regional view once a station locator is set.")
+            Text("Yellow: subsolar point. Red: your station. White: DX target. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Land fill and coastlines: Natural Earth (public domain). Computed on device. Select cycles World / DE / DX views (DE and DX need their locators set).")
                 .font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
-        .onTapGesture { if station.position != nil { regional.toggle() } }
+        .onTapGesture {
+            // Cycle World -> DE -> DX, skipping views whose locator is not set.
+            var next = view
+            for _ in 0..<3 {
+                next = View_(rawValue: (next.rawValue + 1) % 3)!
+                if next == .world || (next == .de && station.position != nil) || (next == .dx && station.dxPosition != nil) { break }
+            }
+            view = next
+        }
     }
 }
