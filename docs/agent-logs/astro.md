@@ -215,3 +215,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Launch pad markers (backlog D13): `launches::pad_position()` maps the location text to an approximate position for about 25 spaceports (unknown sites get no marker, nothing guessed); the model publishes a "launches" map layer, one marker per site labelled with the mission, tap detail "name · T-countdown", removed when the list is stale or empty. Tests: Vandenberg/Jiuquan positions, unknown site, layer present with one marker per site, layer removed on stale. Full ctest run; not rendered on a screen; ASan/UBSan left to CI.
 - Not mine: #425 and #73 left alone. Balloons blocked on #314; hams.at key blocked on #400.
 - Next: annular/total contacts, Moon pane EME link.
+
+## 2026-10-16 (UTC), run 41
+- Co-visibility planner, domain slice (backlog D6): `SatellitePropagator::mutual_windows()` finds windows when a satellite is above a minimum elevation at two stations at once (20 s steps, bisected edges). Tests: windows have both stations above the horizon, identical stations give exactly the pass list, zero windows requested. Satellites ctests pass; no UI yet (next: show the next DE+DX window in the detail box); not rendered; ASan/UBSan left to CI.
+- Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400.
+- Next: show the mutual window in the satellite detail box, annular/total contacts.

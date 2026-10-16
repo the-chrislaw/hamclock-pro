@@ -61,6 +61,12 @@ public:
     std::vector<SatPass> passes(const Observer& obs, double from, double horizon_s,
                                 double min_el_deg, int max_passes) const;
 
+    // Windows (start/end unix seconds) when the satellite is at least `min_el_deg`
+    // above the horizon at both observers at once (co-visibility), after `from`.
+    struct MutualWindow { std::int64_t start = 0, end = 0; double max_min_el_deg = 0; };
+    std::vector<MutualWindow> mutual_windows(const Observer& a, const Observer& b, double from,
+                                             double horizon_s, double min_el_deg, int max_windows) const;
+
     // Az/el samples from AOS to LOS inclusive, at most `max_samples` (>= 2) evenly spaced.
     std::vector<PassSample> pass_track(const Observer& obs, const SatPass& pass, int max_samples) const;
 
