@@ -160,3 +160,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine. #396 (not mine) macOS/iPad checks still running so not merged; #73 (docs) left alone. CQ/ITU zones stay blocked on #353 (owner input).
 - G0 slice (PR agent/map-marker-detail): the marker tap popup now also shows "From DE: <km>, <bearing>" via new pure `overlay_path_text` (spherical `geometry`; distance only for same place/antipode; empty without DE) exposed to QML as `MapItem::pathText`. Test: extended `qt-map-overlay-regression`. Full ctest 154/154 locally; 1024x600 dark render loads with no QML errors (popup itself not screenshotted: offscreen has no tap). ASan/UBSan left to CI. Not validated on device.
 - Next: waiting on #353 for CQ/ITU zones.
+
+## 2026-10-16 (UTC, run 24)
+
+- Orient: open `[G]` qa issue #423 (planet labels overprint); no open PRs of mine; #73 (docs, not mine) left alone. CQ/ITU zones stay blocked on #353.
+- #423 (PR agent/map-planet-labels): re-rendered 1920x1080 dark on current main; Venus's label is already dropped and Mercury's kept, no overprint, because the #262 collision work places every label against all marker symbols and earlier labels. Added a regression test (two bodies 40 px apart never overprint) to `qt-map-overlay-regression`. No renderer change needed. Full map ctest passes locally; ASan/UBSan left to CI. Not validated on device.
+- Next: waiting on #353 for CQ/ITU zones.

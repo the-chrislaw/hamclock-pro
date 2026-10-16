@@ -115,5 +115,17 @@ int main(int argc, char** argv) {
             check(diff * 50 < long(a.width()) * a.height() / 4, "base-scaled painter matches direct render (land and overlays share one transform)");
         }
     }
+    {
+        // Issue #423: two bodies ~40 px apart (Venus, Mercury) must never overprint labels.
+        const QRectF view(0, 0, 400, 100);
+        const QSizeF t(36, 12);
+        const QPointF venus(100, 50), mercury(140, 50);
+        std::vector<QRectF> used = {QRectF(venus.x() - 4, venus.y() - 4, 8, 8), QRectF(mercury.x() - 4, mercury.y() - 4, 8, 8)};
+        const auto first = place_label(view, venus, 4, t, used);
+        check(first.has_value() && !first->intersects(used[1]), "first planet label clears the neighbouring marker");
+        if (first) used.push_back(*first);
+        const auto second = place_label(view, mercury, 4, QSizeF(48, 12), used);
+        check(!second || !second->intersects(*first), "second planet label never overprints the first");
+    }
     return failures == 0 ? 0 : 1;
 }
