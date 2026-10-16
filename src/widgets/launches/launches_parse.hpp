@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QString>
+#include <optional>
 #include <vector>
 
 namespace hamclock::launches {
@@ -35,6 +36,12 @@ Feed parse(const QByteArray& body);
 // satellites, ISS visits bring ARISS opportunities. It is a hint, never a
 // claim about payloads; empty when nothing matches.
 QString ham_hint(const Launch& launch);
+
+// Approximate position of the launch site, from the location text only
+// (a small built-in table of the busiest spaceports, good to a few km).
+// nullopt for unknown sites: nothing is guessed.
+struct PadPosition { double lat; double lon; };
+std::optional<PadPosition> pad_position(const Launch& launch);
 
 // "T-2d 3h", "T-5h 12m", "T-12m", "T+0m" once past.
 QString countdown_text(const QDateTime& net, const QDateTime& now);

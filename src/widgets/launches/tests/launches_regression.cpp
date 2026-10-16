@@ -54,6 +54,12 @@ int main(int argc, char** argv) {
     const auto up = launches::upcoming(feed, now, 3);
     check(up.size() == 3 && up.front().net == utc(2026, 10, 15, 23, 44), "past launch dropped, capped");
 
+    const auto vsfb = launches::pad_position(feed.launches[1]);
+    check(vsfb && qAbs(vsfb->lat - 34.73) < 0.1 && vsfb->lon < -120, "Vandenberg pad position");
+    check(launches::pad_position(feed.launches[0]).has_value(), "Jiuquan known");
+    launches::Launch nowhere; nowhere.location = "Somewhere Unlisted";
+    check(!launches::pad_position(nowhere), "unknown site gives no position");
+
     WidgetContext context;
     bool fail_all = false;
     context.transport = [&](const QUrl&, FetchDone done) {
@@ -77,6 +83,12 @@ int main(int argc, char** argv) {
     check(model.nextName().contains("USSF-481") && model.nextCountdown() == "T-27h 44m", "next launch");
     check(model.nextDetail() == "SpaceX · Vandenberg SFB, CA, USA · Go", "detail line");
     check(model.later().size() == 3, "three later rows");
+    {
+        bool found = false;
+        for (const auto& l : MapOverlays::instance().layers())
+            if (l.id == "launches") found = l.markers.size() >= 2;
+        check(found, "launch pads on the map, one per site");
+    }
 
     fail_all = true;
     clock = clock.addSecs(8 * 3600);
@@ -85,6 +97,11 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasNext(), "outage -> stale, last data kept");
 
+    {
+        bool found = false;
+        for (const auto& l : MapOverlays::instance().layers()) if (l.id == "launches") found = true;
+        check(!found, "stale list removes the pad markers");
+    }
     std::cout << "Launches: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

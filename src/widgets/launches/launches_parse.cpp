@@ -44,6 +44,27 @@ QString ham_hint(const Launch& l) {
     return {};
 }
 
+std::optional<PadPosition> pad_position(const Launch& l) {
+    struct Site { const char* key; double lat; double lon; };
+    static const Site sites[] = {
+        {"Cape Canaveral", 28.49, -80.57}, {"Kennedy Space Center", 28.57, -80.65},
+        {"Vandenberg", 34.73, -120.57},    {"Starbase", 25.99, -97.15},
+        {"Boca Chica", 25.99, -97.15},     {"Wallops", 37.94, -75.47},
+        {"Mahia", -39.26, 177.86},         {"Kodiak", 57.44, -152.34},
+        {"Kourou", 5.24, -52.77},          {"Baikonur", 45.96, 63.31},
+        {"Plesetsk", 62.93, 40.58},        {"Vostochny", 51.88, 128.33},
+        {"Jiuquan", 40.96, 100.28},        {"Taiyuan", 38.85, 111.61},
+        {"Xichang", 28.25, 102.03},        {"Wenchang", 19.61, 110.95},
+        {"Tanegashima", 30.40, 130.97},    {"Uchinoura", 31.25, 131.08},
+        {"Satish Dhawan", 13.73, 80.23},   {"Sriharikota", 13.73, 80.23},
+        {"Naro", 34.43, 127.54},           {"Semnan", 35.23, 53.92},
+        {"Andoya", 69.29, 16.02},          {"Esrange", 67.89, 21.10},
+    };
+    for (const auto& s : sites)
+        if (l.location.contains(QLatin1String(s.key), Qt::CaseInsensitive)) return PadPosition{s.lat, s.lon};
+    return std::nullopt;
+}
+
 QString countdown_text(const QDateTime& net, const QDateTime& now) {
     const qint64 secs = now.secsTo(net);
     if (secs <= 0) return "T+0m";
