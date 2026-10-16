@@ -94,3 +94,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none (the run 12 station-path wrap issue is no longer open after #403). Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests (the removed path_text assertions were rewritten with #403). Saved configurations (config_store.hpp) exclude station and credentials and validate names; UDP multicast group is validated IPv4 multicast only. Per-widget code was not read line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 14
+- Last reviewed commit: f13cbb3 (PRs #413 to #422, 23 commits since 7e43bd2).
+- Build and 157/157 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (light and dark, configured test station that took effect): nothing scrolls, panes show honest Live / Stale / Set up states. The Big Clock page, Settings, TLE editor and the new satellite/launch/EME changes were not rendered.
+- Opened: [G] Venus and Mercury map labels overlap. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: no QtWidgets, http:// or password handling in added code; no removed test assertions. A ScrollView was added inside the satellites TLE text editor (field scroll, not page scroll; not filed). User TLE saving is size-limited, validated and written atomically beside options.ini.
+- Health: build and tests are green and layouts stay honest. One cosmetic defect filed; remaining risk is data freshness on the real Pi (#150).
