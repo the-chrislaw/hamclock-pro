@@ -304,6 +304,34 @@ Rectangle {
             }
 
             Card {
+                title: "Text size"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Larger type for TVs viewed from a distance. Panes show less at once."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [100, 115, 130, 150]
+                            AppButton {
+                                text: modelData === 100 ? "Normal" : modelData + " %"
+                                primary: appSettings.textScalePercent === modelData
+                                onClicked: appSettings.saveTextScale(modelData)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {

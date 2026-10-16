@@ -224,3 +224,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 52)
 - Backlog A0 slice (every pixel on 7-inch): unconfigured station card hints shortened ("Set a time zone in Settings", "Add callsign and location to see paths and local time.") so they take fewer wrapped lines at 1024x600. Rendered 1024x600, 800x480, 1920x1080: exit 0, no QML warnings, no truncation. ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-16 (hourly run, 53)
+- Backlog A2 slice (TV large type): Settings > "Text size" (100/115/130/150 %, `display/text_scale` in `options.ini`) multiplies `Theme.scale`. `widget-core-regression` extended (default, rejection, apply, restart). Rendered 1024x600 and 1920x1080 with 130 % and the default: exit 0, no QML warnings; I did not inspect the images (Settings itself is not reachable from `--screenshot`). ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
