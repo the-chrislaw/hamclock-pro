@@ -142,6 +142,9 @@ int main(int argc, char** argv) {
             check(err.isEmpty(), "setAsDx saves");
             check(std::abs(settings.dxLatitude()) <= 90 && std::abs(settings.dxLatitude() - 51.5) > 0.01, "DX moved off the old target");
             check(settings.deLatitude() == de_lat && settings.deLongitude() == de_lon && settings.callsign() == "W1AW", "DE and callsign unchanged");
+            const QString mutual = model.detail()["mutual"].toString();
+            check(mutual.endsWith("to DX, max") == false && (mutual == "none in 48 h" || mutual.contains("(to DX, max")),
+                  "detail carries the DE+DX co-visibility line once DX differs from DE");
         }
         check(toggle_tracked_names({}, "AO-7") == QStringList({"AO-7"}) &&
               toggle_tracked_names({"AO-7", "ISS"}, "iss") == QStringList({"AO-7"}) &&

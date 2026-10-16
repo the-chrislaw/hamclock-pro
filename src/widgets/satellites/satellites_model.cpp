@@ -369,6 +369,23 @@ void SatellitesModel::refresh_detail() {
                 }
             }
             d["transmitters"] = tx;
+            // Next time the satellite is above the horizon at both DE and DX (cached: 10 min buckets).
+            const double dlat = settings_->dxLatitude(), dlon = settings_->dxLongitude();
+            if ((dlat != 0.0 || dlon != 0.0) && (dlat != obs.lat_deg || dlon != obs.lon_deg)) {
+                const qint64 bucket = static_cast<qint64>(t) / 600;
+                const QString key = QString("%1|%2|%3|%4|%5").arg(selected_).arg(bucket).arg(dlat).arg(dlon).arg(l.tle.name.c_str());
+                if (key != mutual_key_) {
+                    mutual_key_ = key;
+                    mutual_text_.clear();
+                    const auto w = p.mutual_windows(obs, Observer{dlat, dlon, 0.0}, t, 2 * 86400.0, 0.0, 1);
+                    if (!w.empty()) {
+                        auto hm = [](qint64 s) { return QDateTime::fromSecsSinceEpoch(s, QTimeZone::utc()).toString("dd HH:mm") + "Z"; };
+                        mutual_text_ = QString("%1 > %2 (to DX, max %3°)").arg(hm(w.front().start), hm(w.front().end))
+                                           .arg(qRound(w.front().max_min_el_deg));
+                    } else mutual_text_ = QStringLiteral("none in 48 h");
+                }
+                d["mutual"] = mutual_text_;
+            }
         }
     }
     if (d != detail_) { detail_ = d; emit detailChanged(); }
