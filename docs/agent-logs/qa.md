@@ -122,3 +122,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: the only src/ changes are two hint strings; the rest is tvOS Swift (map DX view, quake detail) and docs. No QtWidgets, http:// or weakened tests. Swift not reviewed line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-16 (UTC) QA run 18
+- Last reviewed commit: aad0012 (PRs #450 to #453, 7 commits since 02cab7f).
+- Build and 156/156 tests pass on main. Rendered the default layout at 1024x600 and 800x480 (dark, unconfigured station) at text size Normal and 150 %: Normal is clean and nothing scrolls. At 150 % and 800x480 the Space weather title is elided and the footer reasons are cut. Light theme, 1920x1080 and 115/130 % not rendered.
+- Opened: #454 [A] text size 150 % truncates pane chooser title at 800x480. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: text size (#452) is validated to 100/115/130/150 and tested for default, rejection and restart; map zoom test (#450) adds coverage, none removed. No QtWidgets, http:// or password handling. tvOS Swift not reviewed line by line.
+- Health: build and tests are green and layouts stay honest at default settings. One minor opt-in layout defect filed; remaining risk is data freshness on the real Pi (#150).
