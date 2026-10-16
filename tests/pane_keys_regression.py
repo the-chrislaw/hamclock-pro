@@ -17,4 +17,12 @@ for key, call in want.items():
         sys.exit("PaneSlot.qml: missing " + key)
 if "pageDots" not in qml or "Theme.phone" not in qml.split("pageDots", 1)[1][:200]:
     sys.exit("PaneSlot.qml: missing phone page dots")
+root = pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml"
+big = (root / "BigClockPage.qml").read_text()
+main = (root / "Main.qml").read_text()
+timers = (root / "TimersPage.qml").read_text()
+if "closeRequested()" not in big or "TapHandler" not in big:
+    sys.exit("BigClockPage.qml: tap must close")
+if "bigClockRequested" not in timers or "bigClockLayer" not in main or "BigClockPage" not in main:
+    sys.exit("Big Clock is not wired from the Timers page")
 print("ok")

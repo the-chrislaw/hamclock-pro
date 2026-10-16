@@ -194,6 +194,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-15 (hourly run, 44)
 - Backlog A5 slice: retired the standalone `hamclock-pro-editor` (target, `station_editor.cpp`, install entry, README row; Settings > Station in the Qt Quick app covers it). `station_editor_dialog` stays: the legacy dashboard and its tests still use it. Dashboard and map-preview remain until the map card replaces them. Root `CMakeLists.txt` touched only to drop that target (minimal, explained in the PR). Build clean of new warnings, ctest 147/147; ASan/UBSan left to CI; not validated on a device.
 
-## 2026-10-16 (hourly run, 45)
+## 2026-10-15 (hourly run, 45)
+- Backlog A0c/A5 slice: Big Clock page (`BigClockPage.qml`): UTC and local time in the largest type that fits, dates, zone and the auxiliary time line; opened by a "Big Clock" button on the Timers page (long-press the clock), tap anywhere or Escape closes. `pane-keys-regression` extended (source-level wiring check). The page is not reachable from `--screenshot`, so its layout was not checked visually; the dashboard still renders at 1024x600 with no QML warnings. ctest 157/157; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone. Note: local `origin/main` ref was stale at start; fetched before branching.
+
+## 2026-10-16 (hourly run, 46)
 - Merged #417 (Big Clock); its macOS universal job failed on a runner "hdiutil: Resource busy" DMG error, not code, and the Qt checks were green.
 - Backlog A0b slice: Settings station card now suggests the time zone right after Find or grid entry (shared `suggestZone`; the button remains). Settings is not reachable from `--screenshot`, so not checked visually; build/ctest results in the PR. Not validated on a device.
