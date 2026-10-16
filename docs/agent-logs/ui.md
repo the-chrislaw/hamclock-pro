@@ -208,3 +208,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 48)
 - Backlog A0 slice (every pixel on 7-inch): `Card.showTitle`; the map card hides its "World map" title row on dense screens (the in-map "Map" button stays), giving the map about 30 px more height at 1024x600. Rendered 1024x600, 800x480, 1920x1080 light/dark: exit 0, no clipping, no QML warnings. ctest 157/157; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-16 (hourly run, 49)
+- Backlog A14 slice: auxiliary time line gains a "Solar" mode (apparent solar time = UTC + longitude + equation of time, about a minute accurate; uses the DE longitude), last in the tap cycle. `aux-time-text-regression` extended (value range, longitude shift, wrap, cycle). Text-only change; no layout change, no new screenshots. ctest 157/157; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
