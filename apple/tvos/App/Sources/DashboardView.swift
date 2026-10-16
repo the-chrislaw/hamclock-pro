@@ -5,6 +5,7 @@ struct DashboardView: View {
     @EnvironmentObject var quakes: QuakeStore
     @EnvironmentObject var panes: PaneStore
     @State private var showSettings = false
+    @State private var showWeather = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -13,19 +14,19 @@ struct DashboardView: View {
                 if panes.isOn(.map) { MapCard(now: ctx.date) }
                 if panes.isOn(.spaceWeather) {
                 HStack(alignment: .top, spacing: 40) {
-                    Card(title: "Kp index", sample: weather.kp, now: ctx.date,
+                    Card(onSelect: { showWeather = true }, title: "Kp index", sample: weather.kp, now: ctx.date,
                          big: { String(format: "%.1f", $0) },
                          detail: { SpaceWeatherStore.kpDescription($0) })
-                    Card(title: "Solar flux", sample: weather.flux, now: ctx.date,
+                    Card(onSelect: { showWeather = true }, title: "Solar flux", sample: weather.flux, now: ctx.date,
                          big: { String(format: "%.0f sfu", $0) }, detail: { _ in "10.7 cm" })
-                    Card(title: "X-ray", sample: weather.xray, now: ctx.date,
+                    Card(onSelect: { showWeather = true }, title: "X-ray", sample: weather.xray, now: ctx.date,
                          big: { SpaceWeatherStore.xrayClass($0) }, detail: { _ in "GOES 0.1–0.8 nm" })
                 }
                 HStack(alignment: .top, spacing: 40) {
-                    Card(title: "Solar wind", sample: weather.windSpeed, now: ctx.date,
+                    Card(onSelect: { showWeather = true }, title: "Solar wind", sample: weather.windSpeed, now: ctx.date,
                          big: { String(format: "%.0f km/s", $0) },
                          detail: { SpaceWeatherStore.windSpeedDescription($0) })
-                    Card(title: "IMF Bz (GSM)", sample: weather.bz, now: ctx.date,
+                    Card(onSelect: { showWeather = true }, title: "IMF Bz (GSM)", sample: weather.bz, now: ctx.date,
                          big: { String(format: "%+.1f nT", $0) },
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
@@ -46,6 +47,7 @@ struct DashboardView: View {
             .background(Color.black)
         }
         .sheet(isPresented: $showSettings) { PaneSettingsView() }
+        .sheet(isPresented: $showWeather) { SpaceWeatherDetailView() }
     }
 }
 
@@ -79,6 +81,7 @@ private struct ClockBar: View {
 }
 
 private struct Card: View {
+    var onSelect: () -> Void = {}
     let title: String
     let sample: Sample?
     let now: Date
@@ -106,6 +109,7 @@ private struct Card: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
+        .onTapGesture { onSelect() } // Siri Remote Select opens the space weather detail sheet
     }
 }
 
@@ -325,5 +329,38 @@ private struct SatelliteDetailView: View {
                 .font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(90)
+    }
+}
+
+/// All five NOAA SWPC readings in one list: value, observation time, fetch time and age label.
+private struct SpaceWeatherDetailView: View {
+    @EnvironmentObject var weather: SpaceWeatherStore
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Space weather").font(.system(size: 48, weight: .bold))
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        row("Kp index", weather.kp, ctx.date) { String(format: "%.1f  ", $0) + SpaceWeatherStore.kpDescription($0) }
+                        row("Solar flux", weather.flux, ctx.date) { String(format: "%.0f sfu (10.7 cm)", $0) }
+                        row("X-ray", weather.xray, ctx.date) { SpaceWeatherStore.xrayClass($0) + " (GOES 0.1–0.8 nm)" }
+                        row("Solar wind", weather.windSpeed, ctx.date) { String(format: "%.0f km/s  ", $0) + SpaceWeatherStore.windSpeedDescription($0) }
+                        row("IMF Bz (GSM)", weather.bz, ctx.date) { String(format: "%+.1f nT  ", $0) + SpaceWeatherStore.bzDescription($0) }
+                    }
+                }
+                Text("Data: NOAA Space Weather Prediction Center, refreshed every 2 minutes")
+                    .font(.system(size: 29)).foregroundStyle(.secondary)
+            }
+            .padding(90)
+        }
+    }
+
+    private func row(_ title: String, _ s: Sample?, _ now: Date, _ fmt: (Double) -> String) -> some View {
+        let state = SpaceWeatherStore.freshness(s, now: now)
+        let label = s.map { fmt($0.value) + "  observed " + $0.observed.formatted(date: .omitted, time: .shortened)
+            + ", fetched " + $0.fetched.formatted(date: .omitted, time: .shortened) } ?? "No data"
+        return Text(title + ": " + label + (state == .live ? "" : (state == .stale ? "  STALE" : "  OFFLINE")))
+            .font(.system(size: 29)).foregroundStyle(state == .live ? Color.primary : Color.orange)
+            .lineLimit(2).focusable()
     }
 }
