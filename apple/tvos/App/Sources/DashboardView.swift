@@ -178,6 +178,8 @@ private struct StationSunCard: View {
             }
             TextField("Locator, e.g. JN58td", text: $station.locator)
                 .textInputAutocapitalization(.never).autocorrectionDisabled()
+            TextField("DX target locator (map DX view)", text: $station.dxLocator)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
         }
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)

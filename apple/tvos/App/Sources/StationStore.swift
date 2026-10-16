@@ -16,7 +16,18 @@ final class StationStore: ObservableObject {
         }
     }
 
+    /// Optional DX target locator (map "DX" view), stored the same way.
+    @Published var dxLocator: String {
+        didSet {
+            kvs.set(dxLocator, forKey: Self.dxKey)
+            kvs.synchronize()
+            UserDefaults.standard.set(dxLocator, forKey: Self.dxKey)
+        }
+    }
+    private static let dxKey = "station.dxLocator"
+
     init() {
+        dxLocator = kvs.string(forKey: Self.dxKey) ?? UserDefaults.standard.string(forKey: Self.dxKey) ?? ""
         locator = kvs.string(forKey: Self.key) ?? UserDefaults.standard.string(forKey: Self.key) ?? ""
         NotificationCenter.default.addObserver(forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
                                                object: kvs, queue: .main) { [weak self] _ in
@@ -31,5 +42,10 @@ final class StationStore: ObservableObject {
     var position: (lat: Double, lon: Double)? {
         var lat = 0.0, lon = 0.0
         return hcp_locator_center(locator, &lat, &lon) != 0 ? (lat, lon) : nil
+    }
+
+    var dxPosition: (lat: Double, lon: Double)? {
+        var lat = 0.0, lon = 0.0
+        return hcp_locator_center(dxLocator, &lat, &lon) != 0 ? (lat, lon) : nil
     }
 }
