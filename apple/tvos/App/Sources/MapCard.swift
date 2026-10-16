@@ -9,6 +9,18 @@ struct MapCard: View {
     @EnvironmentObject var quakes: QuakeStore
     @EnvironmentObject var sats: SatelliteStore
     let now: Date
+    /// Select on the Siri Remote toggles between the whole world and a regional view
+    /// centred on the station (the "DE" preset); without a station it stays on the world.
+    @State private var regional = false
+
+    /// Visible lon/lat window: (west, east, south, north) in degrees.
+    static func window(regional: Bool, station: (lat: Double, lon: Double)?) -> (w: Double, e: Double, s: Double, n: Double) {
+        guard regional, let st = station else { return (-180, 180, -90, 90) }
+        let lon = st.lon > 180 ? st.lon - 360 : st.lon
+        let halfH = 45.0, halfV = 22.5 // keeps the 2:1 aspect of the world view
+        let cy = min(max(st.lat, -90 + halfV), 90 - halfV)
+        return (lon - halfH, lon + halfH, cy - halfV, cy + halfV)
+    }
 
     private static let coast: [[CGPoint]] = {
         var n = 0
@@ -47,24 +59,41 @@ struct MapCard: View {
         let quakePts = quakeState == .live ? quakes.all : []
         let satPts = sats.fetched.map { now.timeIntervalSince($0) <= 86400 * 2 } == true
             ? sats.subPointsCached(at: now) : []
+        let win = Self.window(regional: regional, station: station.position.map { ($0.lat, $0.lon) })
         VStack(alignment: .leading, spacing: 12) {
-            Text("World map").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            Text(win.e - win.w < 360 ? "Regional map (around your station)" : "World map").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
             Canvas { ctx, size in
                 func pt(_ p: CGPoint) -> CGPoint {
-                    CGPoint(x: (p.x + 180) / 360 * size.width, y: (90 - p.y) / 180 * size.height)
+                    // Wrap longitude into the window so a view straddling +-180 still draws.
+                    var x = p.x
+                    let mid = (win.w + win.e) / 2
+                    while x - mid > 180 { x -= 360 }
+                    while x - mid < -180 { x += 360 }
+                    return CGPoint(x: (x - win.w) / (win.e - win.w) * size.width,
+                                   y: (win.n - p.y) / (win.n - win.s) * size.height)
                 }
                 if let sub {
-                    var night = Path()
-                    let poly = Self.nightPolygon(subLat: sub.lat, subLon: sub.lon).map(pt)
-                    night.addLines(poly)
-                    night.closeSubpath()
-                    ctx.fill(night, with: .color(.black.opacity(0.55)))
+                    // Raw linear mapping (no wrap); draw the polygon at -360/0/+360 so any window is covered.
+                    func lin(_ p: CGPoint, _ off: Double) -> CGPoint {
+                        CGPoint(x: (p.x + off - win.w) / (win.e - win.w) * size.width,
+                                y: (win.n - p.y) / (win.n - win.s) * size.height)
+                    }
+                    let base = Self.nightPolygon(subLat: sub.lat, subLon: sub.lon)
+                    for off in [-360.0, 0, 360] {
+                        var night = Path()
+                        night.addLines(base.map { lin($0, off) })
+                        night.closeSubpath()
+                        ctx.fill(night, with: .color(.black.opacity(0.55)))
+                    }
                 }
                 var land = Path()
                 for part in Self.coast {
                     // Skip segments that wrap across the antimeridian.
                     for (a, b) in zip(part, part.dropFirst()) where abs(a.x - b.x) < 180 {
-                        land.move(to: pt(a)); land.addLine(to: pt(b))
+                        let pa = pt(a), pb = pt(b)
+                        // Drop segments that wrap across the edge of a regional window.
+                        if abs(pa.x - pb.x) > size.width / 2 { continue }
+                        land.move(to: pa); land.addLine(to: pb)
                     }
                 }
                 ctx.stroke(land, with: .color(.green.opacity(0.85)), lineWidth: 2)
@@ -91,12 +120,13 @@ struct MapCard: View {
             }
             .aspectRatio(2, contentMode: .fit)
             .background(Color(red: 0.02, green: 0.07, blue: 0.14))
-            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Coastlines: Natural Earth (public domain). Computed on device.")
+            Text("Yellow: subsolar point. Red: your station. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Coastlines: Natural Earth (public domain). Computed on device. Select toggles world / regional view once a station locator is set.")
                 .font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
         .focusable()
+        .onTapGesture { if station.position != nil { regional.toggle() } }
     }
 }
