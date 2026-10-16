@@ -265,3 +265,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: #411 (ui) and #73 (stale docs) are other areas', left alone. Nothing of mine open; no open `[C]` qa issues.
 - Docs-only slice: the DX cluster, PSKReporter and HamAlert rows still said the map Settings toggle was not wired, but `SettingsPage.qml` ("Show on map": DX, PSK, POTA, HamAlert, APRS, Log) and the models' `mapSourceVisible` hooks already exist. Rows corrected; no code change, no tests affected.
 - Not done: RBN (#399), WSPR by-call, IOTA names, other ONTA programmes (#305). Meshtastic (#311), UDP sets DX (#333) wait on owner input.
+
+## 2026-10-16 (run 48)
+- Step 1: only #73 (stale docs, another area's) open; left alone. No open `[C]` qa issues.
+- Backlog item 15/16 (slice): "On The Air" watch keywords. `OTA` (any reference) and `POTA`/`SOTA`/`IOTA`/`WWFF` in the watch list highlight DX cluster spots whose comment names such a reference (from the existing parser; nothing invented). No AppSettings change; Settings hint updated. Test extended; dx/watch tests pass locally, full ASan/UBSan left to CI. No screenshot (text hint only); not validated on device.
+- Not done: RBN (#399), WSPR by-call, IOTA names. Meshtastic (#311), UDP sets DX (#333), WWFF/GMA (#305) wait on owner input.
