@@ -105,6 +105,8 @@ int main(int argc, char** argv) {
         check(d["name"].toString() == name && d["maxEl"].toInt() == rows.first().toMap()["maxEl"].toInt(), "detail matches the tapped row");
         check(d["az"].toInt() >= 0 && d["az"].toInt() <= 360 && !d["compass"].toString().isEmpty() &&
               d["rangeKm"].toInt() > 300 && d["rangeKm"].toInt() < 20000 && !d["aosAz"].toString().isEmpty(), "detail look angle and pass azimuths sane");
+        check(d["statusUrl"].toString().startsWith("https://db.satnogs.org/satellite/") && d["statusUrl"].toString().back().isDigit(),
+              "detail carries a SatNOGS status link by NORAD id");
         const QVariantList more = d["more"].toList();
         check(more.size() <= 4, "at most four later passes");
         for (const auto& v : more)

@@ -329,6 +329,8 @@ void SatellitesModel::refresh_detail() {
         if (p.valid() && p.look(t, obs, la)) {
             d["name"] = satellite_short_name(QString::fromStdString(l.tle.name));
             d["tracked"] = tracked_names_.contains(d["name"].toString(), Qt::CaseInsensitive);
+            // Opened in the system browser only; the app never fetches it.
+            d["statusUrl"] = QString("https://db.satnogs.org/satellite/%1").arg(tle_norad_id(l.tle));
             d["az"] = qRound(la.az_deg);
             d["compass"] = compass_point(la.az_deg);
             d["el"] = qRound(la.el_deg);

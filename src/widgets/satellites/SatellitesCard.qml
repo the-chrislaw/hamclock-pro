@@ -122,6 +122,16 @@ Card {
             elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text {
+            visible: root.showDetail && !root.compact && root.d.statusUrl
+            text: "Satellite status (SatNOGS DB) ↗"
+            color: Theme.accent; font.pixelSize: Theme.fontCaption
+            MouseArea {
+                anchors.fill: parent
+                anchors.margins: -Theme.gap
+                onClicked: Qt.openUrlExternally(root.d.statusUrl)
+            }
+        }
+        Text {
             text: root.showDetail && root.d.tracked ? "Hide track on map" : "Show track on map"
             color: Theme.accent; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
             Layout.topMargin: Theme.gap * 0.4

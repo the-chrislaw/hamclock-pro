@@ -240,3 +240,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Moon disc tilt (backlog D12, partial): `bright_limb_position_angle()` (Meeus ch. 48) and `moon_bright_limb_tilt_deg()` (adds the parallactic angle); the Sun & Moon phase disc is rotated to the bright-limb direction at DE, which replaces the old north/south mirror. Tests: Meeus example 48.a chi = 285.0 within 0.2 deg, waxing Moon lit on the right from London. Full ctest 156/156 passes; ASan/UBSan left to CI. The Sun & Moon card is not on the default dashboard, so the disc was not rendered at 800x480/1024x600/1920x1080 (screenshots only show the default layout); not on-device.
 - Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
 - Next: annular/total contacts remain blocked on ephemeris accuracy; little unblocked backlog left.
+
+## 2026-10-16 (UTC), run 46
+- Satellite status link (backlog D6, partial): the detail box gains a "Satellite status (SatNOGS DB) ↗" link by NORAD id, opened in the system browser only (no new fetch), roomy slots only. Test: detail carries the link. Satellites ctests pass; full ctest and ASan/UBSan left to CI; not rendered on a screen.
+- Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
+- Next: group schedule / frequency table; little unblocked backlog left.
