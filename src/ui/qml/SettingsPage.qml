@@ -52,6 +52,7 @@ Rectangle {
                 title: "Station"
                 Layout.fillWidth: true
                 ColumnLayout {
+                    id: stationCard
                     width: parent.width
                     spacing: Theme.gap * 0.8
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
@@ -76,6 +77,7 @@ Rectangle {
                             deLon.text = r.longitude.toFixed(4)
                             deGrid.text = locationTools.gridFor(r.latitude, r.longitude)
                             placeStatus.text = "Using: " + r.name
+                            stationCard.suggestZone(r.latitude, r.longitude)
                         }
                     }
                     FormField { id: deGrid; label: "Or grid square (fills the home coordinates)"
@@ -88,6 +90,7 @@ Rectangle {
                                         if (g.latitude === undefined) return
                                         deLat.text = g.latitude.toFixed(4)
                                         deLon.text = g.longitude.toFixed(4)
+                                        stationCard.suggestZone(g.latitude, g.longitude)
                                     }
                                 } }
                     RowLayout {
@@ -110,15 +113,18 @@ Rectangle {
                                     text: appSettings.configured ? appSettings.dxLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
+                    function suggestZone(lat, lon) {
+                        const id = timeZones.suggestZone(lat, lon)
+                        zoneHint.text = id.length ? "Suggested: " + timeZones.labelFor(id) + ". Check it before saving."
+                                                  : "No zone suggestion for these coordinates; pick one above."
+                        if (id.length) zone.zoneId = id
+                    }
                     TimeZonePicker { id: zone; label: "Time zone"
                                      zoneId: appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone() }
                     AppButton { text: "Suggest zone from home coordinates"
                                 onClicked: {
-                                    const id = timeZones.suggestZone(locationTools.parseCoordinate(deLat.text, true),
-                                                                     locationTools.parseCoordinate(deLon.text, false))
-                                    zoneHint.text = id.length ? "Suggested: " + timeZones.labelFor(id) + ". Check it before saving."
-                                                              : "No suggestion for these coordinates; pick a zone above."
-                                    if (id.length) zone.zoneId = id
+                                    stationCard.suggestZone(locationTools.parseCoordinate(deLat.text, true),
+                                                locationTools.parseCoordinate(deLon.text, false))
                                 } }
                     RowLayout {
                         Layout.fillWidth: true
