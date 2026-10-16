@@ -46,6 +46,7 @@ MoonSummary summarize_moon(UtcSeconds now, double lat, double lon) {
     out.phase = phase.name;
     out.elongation_deg = phase.elongation_deg;
     out.southern = lat < 0;
+    out.tilt_deg = moon_bright_limb_tilt_deg(now, lat, lon);
     out.illumination = QString("%1%").arg(qRound(phase.illuminated * 100));
     if (const auto rise = next_moon_event(now, MoonEventKind::Rise, lat, lon)) out.next_rise = hhmm(*rise);
     if (const auto set = next_moon_event(now, MoonEventKind::Set, lat, lon)) out.next_set = hhmm(*set);

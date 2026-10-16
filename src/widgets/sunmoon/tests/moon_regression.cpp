@@ -97,6 +97,16 @@ int main(int argc, char** argv) {
     check(std::fabs(angdiff(s.elongation_deg, 180)) < 5 && !s.southern, "summary elongation and northern flag");
     check(summarize_moon({utc(2025, 3, 14, 12, 0)}, -33.87, 151.21).southern, "southern observer flagged");
 
+    // Bright limb: Meeus example 48.a (1992 Apr 12 0h TD): chi = 285.0 deg.
+    check(std::fabs(angdiff(bright_limb_position_angle(20.6579, 8.6964, 134.6885, 13.7684), 285.0)) < 0.2,
+          "Meeus 48.a bright limb position angle");
+    // First quarter 2025-04-04 ~02:15 UTC: lit side faces up-right-ish for the northern
+    // evening sky and the mirror image (lit left) from the south.
+    const auto q1 = utc(2025, 4, 4, 18, 0);
+    const double tn = moon_bright_limb_tilt_deg({q1}, 51.5, -0.13), ts = moon_bright_limb_tilt_deg({q1}, -33.9, 151.2);
+    check(tn > -150 && tn < -30, "waxing moon lit on the right from London");
+    check(std::fabs(moon_bright_limb_tilt_deg({utc(2025, 4, 12, 20, 0)}, 51.5, -0.13)) > 30, "waning/full tilt defined");
+    check(std::isfinite(ts), "southern tilt finite");
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

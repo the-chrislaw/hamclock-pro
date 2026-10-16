@@ -35,4 +35,12 @@ struct MoonEvent { MoonEventKind kind; UtcSeconds time; };
 std::vector<MoonEvent> moon_events_for_utc_day(std::int64_t day_start_utc, double latitude_deg, double longitude_deg);
 // First event of the kind strictly after `after`, searching three days; empty if none.
 std::optional<UtcSeconds> next_moon_event(UtcSeconds after, MoonEventKind kind, double latitude_deg, double longitude_deg);
+// Meeus ch. 48: position angle of the Moon's bright limb from celestial north,
+// eastward, in degrees [0, 360). Inputs are equatorial coordinates (degrees).
+double bright_limb_position_angle(double sun_ra_deg, double sun_dec_deg, double moon_ra_deg, double moon_dec_deg);
+// Direction of the bright limb as the observer sees it, counter-clockwise from
+// straight up (zenith) in (-180, 180]: about -90 for a waxing Moon seen from
+// the northern mid-latitudes (lit side right), +90 when waning. Accounts for
+// the parallactic angle, so the disc can be drawn tilted as in the sky.
+double moon_bright_limb_tilt_deg(UtcSeconds utc, double latitude_deg, double longitude_deg);
 }
