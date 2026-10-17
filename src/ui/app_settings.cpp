@@ -49,7 +49,7 @@ void AppSettings::setAppearance(const QString& appearance) {
     if (appearance.toStdString() == station_.appearance) return;
     station_.appearance = appearance.toStdString();
     if (configured_) {
-        try { save_settings(station_path_.toStdString(), station_); } catch (const std::exception&) {}
+        try { save_settings(station_path_.toStdString(), persistable()); } catch (const std::exception&) {}
     }
     emit appearanceChanged();
 }
@@ -57,14 +57,22 @@ void AppSettings::setAppearance(const QString& appearance) {
 QString AppSettings::saveStation(const QString& callsign, double de_lat, double de_lon,
                                  double dx_lat, double dx_lon, const QString& de_zone) {
     auto next = station_;
+    // Set-DE passes the displayed (override) DX back; only a different value is an explicit DX edit.
+    const bool kept_override = dx_override_ && dx_lat == station_.dx.latitude && dx_lon == station_.dx.longitude;
     next.callsign = callsign.trimmed().toUpper().toStdString();
     next.de = {de_lat, de_lon};
-    next.dx = {dx_lat, dx_lon};
+    next.dx = kept_override ? saved_dx_ : hamclock::Location{dx_lat, dx_lon};
     next.de_zone = de_zone.trimmed().toStdString();
     try {
         save_settings(station_path_.toStdString(), next);
     } catch (const std::exception& error) {
         return QString::fromUtf8(error.what());
+    }
+    if (kept_override) {
+        saved_dx_ = next.dx;
+        next.dx = station_.dx;
+    } else {
+        dx_override_ = false;
     }
     station_ = std::move(next);
     configured_ = true;
@@ -116,6 +124,7 @@ void AppSettings::loadOptions() {
         udp_group_ = a.setAddress(g) && a.protocol() == QAbstractSocket::IPv4Protocol && a.isMulticast() ? g : QString();
     }
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
+    udp_sets_dx_ = ini.value("udp/sets_dx", false).toBool();
     map_hidden_ = ini.value("map_sources/hidden").toStringList();
     for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "adif"}) {
         const int m = ini.value(QString("map_sources/label_") + k, -1).toInt();
@@ -541,6 +550,41 @@ QString AppSettings::saveUdpScope(bool by_me) {
         emit optionsChanged();
     }
     return {};
+}
+
+QString AppSettings::saveUdpSetsDx(bool on) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("udp/sets_dx", on);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the UDP sets DX option.";
+    if (udp_sets_dx_ != on) {
+        udp_sets_dx_ = on;
+        if (!on) clearDxOverride();
+        emit optionsChanged();
+    }
+    return {};
+}
+
+StationSettings AppSettings::persistable() const {
+    auto out = station_;
+    if (dx_override_) out.dx = saved_dx_;
+    return out;
+}
+
+bool AppSettings::setDxOverride(double lat, double lon) {
+    if (!configured_ || !(lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)) return false;
+    if (!dx_override_) saved_dx_ = station_.dx;
+    dx_override_ = true;
+    station_.dx = {lat, lon};
+    emit stationChanged();
+    return true;
+}
+
+void AppSettings::clearDxOverride() {
+    if (!dx_override_) return;
+    dx_override_ = false;
+    station_.dx = saved_dx_;
+    emit stationChanged();
 }
 
 QString AppSettings::saveMapSourceLabel(const QString& key, int mode) {

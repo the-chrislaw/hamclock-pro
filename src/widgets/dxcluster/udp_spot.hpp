@@ -6,6 +6,7 @@
 #include <QObject>
 #include <QUdpSocket>
 #include <memory>
+#include <utility>
 
 namespace hamclock::dxcluster {
 
@@ -26,6 +27,9 @@ private:
 // foreign spotter named) or whose spotter has the same base call (SSID, /P etc. ignored) as `my_call`.
 // With `by_me` false everything is kept. An empty `my_call` in by-me mode keeps only the local-program spots.
 bool udp_spot_in_scope(const DxSpot& spot, const QString& my_call, bool by_me);
+
+// Centre of a 4- or 6-character Maidenhead locator (not its south-west corner); nothing for anything else.
+std::optional<std::pair<double, double>> locator_centre(const QString& grid);
 
 class UdpSpotListener : public QObject {
     Q_OBJECT

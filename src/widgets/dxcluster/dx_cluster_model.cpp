@@ -201,7 +201,10 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
         if (settings_ && !dxcluster::udp_spot_in_scope(spot, settings_->callsign(), settings_->udpSpotByMe())) return;
         list_.add(spot);
         emit countChanged();
+        applyDxOverride(spot);
     });
+    dx_expiry_.setSingleShot(true);
+    connect(&dx_expiry_, &QTimer::timeout, this, [this] { if (settings_) settings_->clearDxOverride(); });
 }
 
 DxClusterModel::~DxClusterModel() { MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId); }
@@ -219,6 +222,15 @@ void DxClusterModel::publishOverlay() {
         MapOverlays::instance().set_layer(layer);
     } else
         MapOverlays::instance().remove_layer(dxcluster::kOverlayLayerId);
+}
+
+// "UDP sets DX": only a spot from this station's own programs (no foreign spotter) that carries a locator,
+// and only while the opt-in is on. Session-only; it lapses kDxOverrideMs after the last such spot.
+void DxClusterModel::applyDxOverride(const dxcluster::DxSpot& spot) {
+    if (!settings_ || !settings_->udpSetsDx() || !dxcluster::udp_spot_in_scope(spot, settings_->callsign(), true)) return;
+    const auto centre = dxcluster::locator_centre(spot.grid);
+    if (!centre || !settings_->setDxOverride(centre->first, centre->second)) return;
+    dx_expiry_.start(dx_override_ms_);
 }
 
 void DxClusterModel::refreshUdp() {
