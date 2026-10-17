@@ -311,3 +311,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
 - Backlog item 16 (slice): IOTA reference names (#426). `parse_iota_groups` (groups.json from iota-world.org's documented developer download, refno to name), `DxClusterModel` polls it weekly through `PolledSource` once the cluster is configured, new `otaName` role shown next to the IOTA badge on non-compact rows. No AppSettings change. Roadmap Data source policy updated. Test with a trimmed real fixture; compact layout unchanged. No screenshot (needs live spots); not validated on device.
 - Not done: GMA (www.cqgma.org API), neighbour links, Log4OM, RBN port 7001.
+
+## 2026-10-17 (run 57)
+- Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
+- No code change. GMA: www.cqgma.org 301-redirects to www.gma.rocks, which the sandbox proxy blocks (403), so no fixture is possible; asked on #305 to allowlist www.gma.rocks. RBN port 7001 would be a second connection against the "one connection" decision on #399; asked there before doing it. Neighbour links and Log4OM have no real capture or documented fixture available.
