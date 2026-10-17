@@ -161,6 +161,15 @@ Card {
         color: Theme.secondary
         font.pixelSize: Theme.fontCaption
     }
+    Text {
+        visible: !root.showDetail && !root.compact && root.widget && root.widget.schedule !== ""
+        y: passRow.y + passRow.height + Theme.gap
+        x: tleLink.width + Theme.gap * 2
+        width: parent.width - x
+        text: root.widget ? root.widget.schedule : ""
+        color: Theme.secondary; font.pixelSize: Theme.fontCaption
+        elide: Text.ElideRight
+    }
     // Own element sets (pasted two/three-line TLEs, saved to user-tles.txt); roomy slots only.
     Text {
         id: tleLink

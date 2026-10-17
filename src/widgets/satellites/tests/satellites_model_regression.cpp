@@ -41,6 +41,16 @@ int main(int argc, char** argv) {
           pass_alert_text("AO-7", 1000, 1600, 1200) == "AO-7 above horizon" &&
           pass_alert_text("AO-7", 1000, 1600, 1600).isEmpty(),
           "pass alert text");
+    {
+        SatPass a; a.aos = 1000; a.tca = 3600 + 14 * 3600 + 300; a.los = 1600; a.max_el_deg = 41.6;
+        SatPass b = a; b.aos = 5000; b.los = 5600; b.max_el_deg = 77.6;
+        SatPass late = a; late.aos = 100000; late.los = 100600;
+        SatPass gone = a; gone.aos = -2000; gone.los = -1000;
+        const QString s = pass_schedule_summary({{"FO-29", a}, {"AO-7", b}, {"AO-7", late}, {"ISS", gone}}, 0);
+        check(s == "2 passes in 24 h, best AO-7 78° at 15:05Z", qPrintable("schedule: " + s));
+        check(pass_schedule_summary({{"X", a}}, 0) .startsWith("1 pass in"), "singular");
+        check(pass_schedule_summary({{"ISS", gone}}, 0).isEmpty() && pass_schedule_summary({}, 0).isEmpty(), "schedule empty");
+    }
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
           "short names");

@@ -245,3 +245,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite status link (backlog D6, partial): the detail box gains a "Satellite status (SatNOGS DB) ↗" link by NORAD id, opened in the system browser only (no new fetch), roomy slots only. Test: detail carries the link. Satellites ctests pass; full ctest and ASan/UBSan left to CI; not rendered on a screen.
 - Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
 - Next: group schedule / frequency table; little unblocked backlog left.
+
+## 2026-10-17 (UTC), run 47
+- Satellite group schedule (backlog D6, partial): `pass_schedule_summary()` counts every pass in the next 24 h across the listed satellites and names the best one ("7 passes in 24 h, best AO-7 78° at 15:05Z"); shown beside "My TLEs…" in roomy slots only. Counts are a lower bound (at most 5 passes per satellite are searched). Tests: counting, best pick, expired and out-of-horizon passes excluded, singular, empty. Not rendered on a screen (card is not on the default dashboard); not on-device.
+- Not mine: #73 left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
+- Next: frequency table; little unblocked backlog left.

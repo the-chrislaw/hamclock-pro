@@ -34,6 +34,20 @@ QString compass_point(double az_deg) {
     return kNames[i];
 }
 
+QString pass_schedule_summary(const std::vector<std::pair<QString, SatPass>>& passes, qint64 now, qint64 horizon_s) {
+    int count = 0;
+    const std::pair<QString, SatPass>* best = nullptr;
+    for (const auto& p : passes) {
+        if (p.second.los <= now || p.second.aos >= now + horizon_s) continue;
+        ++count;
+        if (!best || p.second.max_el_deg > best->second.max_el_deg) best = &p;
+    }
+    if (!best) return {};
+    return QString("%1 pass%2 in 24 h, best %3 %4° at %5Z").arg(count).arg(count == 1 ? "" : "es").arg(best->first)
+        .arg(qRound(best->second.max_el_deg))
+        .arg(QDateTime::fromSecsSinceEpoch(best->second.tca, QTimeZone::utc()).toString("HH:mm"));
+}
+
 QString satellite_short_name(const QString& tle_name) {
     const QString name = tle_name.trimmed();
     const int open = name.lastIndexOf('(');
@@ -212,6 +226,7 @@ void SatellitesModel::recompute() {
     sky_track_.clear();
     listed_.clear();
     alert_.clear();
+    schedule_.clear();
     const double t = static_cast<double>(now().toSecsSinceEpoch());
     const std::vector<Tle> tles = fresh_tles(tles_, t);
     all_stale_ = !tles_.empty() && tles.empty();
@@ -257,6 +272,15 @@ void SatellitesModel::recompute() {
         constexpr int kSkySamples = 24;
         for (const PassSample& s : SatellitePropagator(found.front().tle).pass_track(obs, found.front().pass, kSkySamples))
             sky_track_.append(QVariantMap{{"az", s.az_deg}, {"el", s.el_deg}});
+    }
+    {
+        std::vector<std::pair<QString, SatPass>> all;
+        for (const Row& r : found) {
+            const QString n = satellite_short_name(QString::fromStdString(r.tle.name));
+            all.push_back({n, r.pass});
+            for (const SatPass& l : r.later) all.push_back({n, l});
+        }
+        schedule_ = pass_schedule_summary(all, static_cast<qint64>(t), static_cast<qint64>(kHorizonSeconds));
     }
     if (found.size() > static_cast<std::size_t>(kMaxRows)) found.resize(kMaxRows);
     for (const Row& r : found) listed_.push_back({r.tle, r.pass, r.later});
