@@ -188,8 +188,10 @@ int main(int argc, char** argv) {
         check(ov2.blankIdleMinutes() == 0 && ov2.blankOffHour() == -1, "blanking off by default");
         check(!ov2.saveBlanking(5, 23, -1).isEmpty() && !ov2.saveBlanking(241, -1, -1).isEmpty() && ov2.blankIdleMinutes() == 0, "bad blanking rejected");
         check(ov2.saveBlanking(15, 23, 7).isEmpty() && ov2.blankIdleMinutes() == 15 && ov2.blankOnHour() == 7, "blanking applied");
+        check(ov2.blankDays() == 0x7F && !ov2.saveBlankDays(128).isEmpty() && ov2.saveBlankDays(0x1F).isEmpty() && ov2.blankDays() == 0x1F, "blanking weekdays applied");
         AppSettings ov3({}, ov_dir.path());
         check(ov3.blankIdleMinutes() == 15 && ov3.blankOffHour() == 23, "blanking survives restart");
+        check(ov3.blankDays() == 0x1F, "blanking weekdays survive restart");
     }
     {
         QTemporaryDir bt_dir;

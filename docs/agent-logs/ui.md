@@ -240,3 +240,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-17 (hourly run, 56)
 - Backlog A17 slice: Settings > "Accent colour" (blue/green/amber/red/purple, `display/accent` in `options.ini`) drives `Theme.accent` with separate light/dark values. `widget-core-regression` extended (default, rejection, apply, restart). Rendered 1024x600 and 800x480 light/dark with amber: exit 0, no truncation report; I did not inspect the images (Settings not reachable from `--screenshot`). ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-17 (hourly run, 57)
+- Backlog A15 slice: the night blanking window gets per-weekday toggles (Mon..Sun, `kiosk/blank_days` bitmask, default all days; a window crossing midnight belongs to the day it starts). `blanking_regression` and `widget-core-regression` extended (weekday edges, mask validation, save/restart). Settings not reachable from `--screenshot`, so not checked visually; 1024x600 sanity render ran. ctest 158/158; ASan/UBSan left to CI. Pre-existing legacy warnings unchanged. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
