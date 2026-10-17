@@ -40,6 +40,18 @@ int hcp_quakes_parse(const char* body, size_t len, HcpQuake* out, size_t cap);
 int hcp_quakes_strongest_index(const char* body, size_t len);
 int hcp_quake_magnitude_class(double magnitude, char* buf, size_t cap);
 
+/* Open-Meteo `current` forecast reply (see weather.hpp). Returns 1 and fills *out, or 0
+ * when the body is rejected (missing or out-of-range fields). */
+typedef struct {
+    double temperature_c, wind_kmh, dew_point_c, pressure_hpa, pressure_change_hpa;
+    int humidity_pct, wind_dir_deg, weather_code, is_day;
+    int has_dew_point, has_pressure, has_pressure_change;
+    char description[32]; /* WMO text, e.g. "Light rain" */
+    char wind_from[4];    /* 16-point compass, direction the wind comes from */
+    char trend[8];        /* Rising / Falling / Steady, empty without a pressure change */
+} HcpWeather;
+int hcp_weather_parse(const char* body, size_t len, HcpWeather* out);
+
 /* Writes a NUL-terminated string into buf (truncated to cap); returns 1 when non-empty. */
 int hcp_swpc_xray_class(double flux_w_m2, char* buf, size_t cap);
 int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
