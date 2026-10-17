@@ -150,3 +150,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: RBN (#468) is opt-in, receive-only, needs a callsign, uses a backoff reconnect and is bounded to 200 reports / 15 min, with regression tests. Vendored Nayuki QR encoder (#470) has a provenance doc and tests. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. tvOS Swift not reviewed line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 22
+- Last reviewed commit: 88af226 (PRs #473 to #481, 16 commits since ef6807c).
+- Build and 160/160 tests pass on main. Rendered the default layout at 800x480 and 1024x600 (dark and light, unconfigured station, empty fixtures): nothing scrolls, titles and footers fit, panes show honest Offline / Set up states. 1920x1080 and the new Meshtastic pane with live data were not rendered.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: the new Meshtastic widget (#476/#478/#480) is opt-in, reads from a user-configured node, reports "live" only after a well-formed frame, drops its map layer when the link is lost, retries with backoff, and has regression tests. WWFF feed (#481) adds a fixture and tests. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. tvOS Swift not reviewed line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
