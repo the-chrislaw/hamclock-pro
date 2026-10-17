@@ -1,4 +1,5 @@
 #include "udp_spot.hpp"
+#include "../../domain/locator_input.hpp"
 #include <QHostAddress>
 #include <QNetworkDatagram>
 #include <QNetworkProxy>
@@ -197,6 +198,18 @@ bool udp_spot_in_scope(const DxSpot& spot, const QString& my_call, bool by_me) {
     if (spot.spotter == "UDP" || spot.spotter == "WSJT-X") return true;
     const QString mine = base_call(my_call);
     return !mine.isEmpty() && base_call(spot.spotter) == mine;
+}
+
+std::optional<std::pair<double, double>> locator_centre(const QString& grid) {
+    const QString g = grid.trimmed();
+    if (g.size() != 4 && g.size() != 6) return std::nullopt;
+    try {
+        const auto sw = location_from_maidenhead(g.toStdString());
+        const bool six = g.size() == 6;
+        return std::make_pair(sw.latitude + (six ? 1.0 / 48 : 0.5), sw.longitude + (six ? 1.0 / 24 : 1.0));
+    } catch (const std::exception&) {
+        return std::nullopt;
+    }
 }
 
 } // namespace hamclock::dxcluster

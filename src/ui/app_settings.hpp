@@ -58,6 +58,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(QString udpSpotGroup READ udpSpotGroup NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
+    Q_PROPERTY(bool udpSetsDx READ udpSetsDx NOTIFY optionsChanged)
     Q_PROPERTY(QString lookupService READ lookupService NOTIFY accountsChanged)
     Q_PROPERTY(QString lookupUser READ lookupUser NOTIFY accountsChanged)
     // Widget id shown in each pane slot of the dashboard ("none" = empty slot).
@@ -105,6 +106,8 @@ public:
     int blankOffHour() const { return blank_off_; }
     int blankOnHour() const { return blank_on_; }
     bool imperialUnits() const { return imperial_; }                   // distances in miles
+    bool udpSetsDx() const { return udp_sets_dx_; }                    // UDP spots may set a session-only DX target
+    bool dxOverrideActive() const { return dx_override_; }
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     QString udpSpotGroup() const { return udp_group_; }               // IPv4 multicast group, empty = unicast
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
@@ -197,6 +200,11 @@ public:
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     Q_INVOKABLE QString saveUdpGroup(const QString& group);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
+    Q_INVOKABLE QString saveUdpSetsDx(bool on);
+    // Session-only DX target (from UDP spots): never written to the station file; a later explicit saveStation
+    // with other DX coordinates replaces it. Invalid coordinates are refused.
+    bool setDxOverride(double lat, double lon);
+    void clearDxOverride();
     // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
     Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
     Q_INVOKABLE QString saveMapSourceVisible(const QString& key, bool visible);
@@ -248,6 +256,10 @@ private:
     bool udp_lan_ = false;
     QString udp_group_;
     bool udp_by_me_ = false;
+    bool udp_sets_dx_ = false;
+    bool dx_override_ = false;
+    hamclock::Location saved_dx_{};  // the persisted DX while an override is active
+    StationSettings persistable() const;
     QStringList map_hidden_;
     QHash<QString, int> map_label_;
     int map_min_label_px_ = 0;

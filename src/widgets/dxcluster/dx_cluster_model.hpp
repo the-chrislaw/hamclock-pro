@@ -5,6 +5,7 @@
 #include "dx_spot_parse.hpp"
 #include "udp_spot.hpp"
 #include <QAbstractListModel>
+#include <QTimer>
 #include <QVariantList>
 #include <functional>
 #include <deque>
@@ -75,7 +76,9 @@ public:
     void setGridNeededResolver(std::function<bool(const QString&)> r) { list_.set_grid_needed_resolver(std::move(r)); }
     void refreshWatchList(); // re-reads the watch list from settings
     void setMapVisible(bool visible); // per-source map on/off (default on)
-    void refreshUdp();       // (re)binds the UDP spot input from settings; off when the port is 0
+    void refreshUdp();
+    void setDxOverrideMs(int ms) { dx_override_ms_ = ms; } // default 10 minutes
+    void applyDxOverride(const dxcluster::DxSpot& spot);       // (re)binds the UDP spot input from settings; off when the port is 0
     dxcluster::UdpSpotListener& udp() { return udp_; }
     QString bandFilter() const { return band_filter_; }
     QString modeFilter() const { return mode_filter_; }
@@ -103,6 +106,8 @@ private:
     DxSpotList list_;
     dxcluster::UdpSpotListener udp_;
     QString udp_key_;
+    QTimer dx_expiry_;
+    int dx_override_ms_ = 10 * 60 * 1000;
     QString band_filter_, mode_filter_;
 };
 

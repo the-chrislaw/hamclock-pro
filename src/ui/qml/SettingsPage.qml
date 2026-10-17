@@ -484,6 +484,9 @@ Rectangle {
                         AppButton { id: udpMe; property bool me: appSettings.udpSpotByMe; checkable: false
                                     text: me ? "UDP spots: by me" : "UDP spots: all"; primary: me
                                     onClicked: me = !me; Layout.preferredWidth: 1 }
+                        AppButton { id: udpSetsDx; property bool on: appSettings.udpSetsDx; checkable: false
+                                    text: on ? "UDP sets DX: on (10 min)" : "UDP sets DX: off"; primary: on
+                                    onClicked: on = !on; Layout.preferredWidth: 1 }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -563,6 +566,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveUdpGroup(udpGroup.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveUdpScope(udpMe.me)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveUdpSetsDx(udpSetsDx.on)
                                     } }
                     }
                 }
