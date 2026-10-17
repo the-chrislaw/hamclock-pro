@@ -675,6 +675,7 @@ QString AppSettings::restoreConfig(const QString& name) {
     if (!err.isEmpty()) return err;
     loadOptions();
     emit optionsChanged();
+    emit panesChanged();
     return {};
 }
 

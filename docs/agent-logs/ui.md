@@ -244,3 +244,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-17 (hourly run, 57)
 - Backlog A15 slice: the night blanking window gets per-weekday toggles (Mon..Sun, `kiosk/blank_days` bitmask, default all days; a window crossing midnight belongs to the day it starts). `blanking_regression` and `widget-core-regression` extended (weekday edges, mask validation, save/restart). Settings not reachable from `--screenshot`, so not checked visually; 1024x600 sanity render ran. ctest 158/158; ASan/UBSan left to CI. Pre-existing legacy warnings unchanged. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-17 (hourly run, 58)
+- Backlog A16 slice: restoring a saved configuration now re-applies pane slots at once (`panesChanged` emitted; blanking already followed `optionsChanged`); only alarms still need a restart. `widget-core-regression` extended. Settings text updated; no layout change, not reachable from `--screenshot`. ctest 160/160; ASan/UBSan left to CI. Pre-existing legacy warnings unchanged. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

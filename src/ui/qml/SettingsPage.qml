@@ -274,7 +274,7 @@ Rectangle {
                     width: parent.width
                     spacing: Theme.gap * 0.6
                     Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.secondary; font.pixelSize: Theme.fontCaption
-                           text: "Snapshots of these options (not the station or passwords). Pane choices, alarms and blanking apply after a restart." }
+                           text: "Snapshots of these options (not the station or passwords). Pane choices and blanking apply at once; alarms after a restart." }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap
@@ -299,7 +299,7 @@ Rectangle {
                         visible: cfgPick.current.length > 0
                         spacing: Theme.gap * 0.6
                         AppButton { text: "Restore " + cfgPick.current
-                                    onClicked: { cfgMsg.text = appSettings.restoreConfig(cfgPick.current); if (!cfgMsg.text.length) cfgMsg.text = "Restored. Restart to apply pane and alarm choices." } }
+                                    onClicked: { cfgMsg.text = appSettings.restoreConfig(cfgPick.current); if (!cfgMsg.text.length) cfgMsg.text = "Restored. Restart to apply alarms." } }
                         AppButton { text: "Delete"; onClicked: { cfgMsg.text = appSettings.deleteConfig(cfgPick.current); if (!cfgMsg.text.length) cfgPick.current = "" } }
                     }
                     Text { id: cfgMsg; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true; visible: text.length > 0 }
