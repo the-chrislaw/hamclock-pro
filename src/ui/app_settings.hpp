@@ -188,8 +188,8 @@ public:
     Q_INVOKABLE QString saveBannerBackground(int style);
     Q_INVOKABLE QString saveBannerTitle(const QString& title);
     /// Saved configurations: named copies of options.ini (never station or credentials). Restoring
-    /// reloads AppSettings at once; pane slots, alarms and blanking read options.ini at start,
-    /// so those need a restart.
+    /// reloads AppSettings and the pane slots at once, and blanking follows optionsChanged;
+    /// alarms read options.ini at start, so those need a restart.
     Q_PROPERTY(QStringList configNames READ configNames NOTIFY configsChanged)
     QStringList configNames() const;
     Q_INVOKABLE QString saveConfig(const QString& name);

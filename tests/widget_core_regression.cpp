@@ -185,6 +185,17 @@ int main(int argc, char** argv) {
         check(!ov2.saveAccentStyle(5).isEmpty() && ov2.accentStyle() == 0, "bad accent rejected");
         check(ov2.saveAccentStyle(3).isEmpty() && ov2.accentStyle() == 3, "accent applied");
         { AppSettings ov4({}, ov_dir.path()); check(ov4.accentStyle() == 3, "accent survives restart"); }
+        {
+            AppSettings cs({}, ov_dir.path());
+            int pane_signals = 0;
+            QObject::connect(&cs, &AppSettings::panesChanged, [&] { ++pane_signals; });
+            check(cs.setPane(1, "bands").isEmpty(), "pane set");
+            check(cs.saveConfig("Panes").isEmpty(), "config saved");
+            cs.setPane(1, "none");
+            pane_signals = 0;
+            check(cs.restoreConfig("Panes").isEmpty() && cs.panes()[1] == "bands" && pane_signals > 0,
+                  "restoring a configuration re-applies panes and notifies");
+        }
         check(ov2.blankIdleMinutes() == 0 && ov2.blankOffHour() == -1, "blanking off by default");
         check(!ov2.saveBlanking(5, 23, -1).isEmpty() && !ov2.saveBlanking(241, -1, -1).isEmpty() && ov2.blankIdleMinutes() == 0, "bad blanking rejected");
         check(ov2.saveBlanking(15, 23, 7).isEmpty() && ov2.blankIdleMinutes() == 15 && ov2.blankOnHour() == 7, "blanking applied");
