@@ -86,6 +86,23 @@ void MeshModel::on_data(const QByteArray& data) {
     for (const QByteArray& frame : mesh::extract_frames(partial_)) {
         failures_ = 0;
         setState("live", "Meshtastic node", now()); // any well-formed frame proves the node is talking
+        if (const auto u = mesh::parse_position_packet(frame)) {
+            // A live position report moves a known node, or adds one we have no name for yet.
+            const qint64 t = u->rx_time > 0 ? u->rx_time : now().toSecsSinceEpoch();
+            auto it = nodes_.find(u->num);
+            if (it == nodes_.end()) {
+                if (int(nodes_.size()) >= kCapacity) continue;
+                mesh::Node fresh;
+                fresh.num = u->num;
+                fresh.id = QString("!%1").arg(u->num, 8, 16, QLatin1Char('0'));
+                it = nodes_.insert(u->num, fresh);
+            }
+            it->latitude = u->latitude;
+            it->longitude = u->longitude;
+            it->last_heard = t;
+            any = true;
+            continue;
+        }
         const auto n = mesh::parse_from_radio(frame);
         if (!n) continue;
         if (n->last_heard > 0 && now().toSecsSinceEpoch() - n->last_heard > kMaxAgeSec) { nodes_.remove(n->num); continue; }
