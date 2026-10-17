@@ -95,7 +95,7 @@ Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed
 13. Cluster login with SSID and native commands after login.
 14. 🟡 (per-source map on/off and per-source label style (auto/none/prefix/call/dot) plus a global minimum label gap in Settings done, options.ini `[map_sources]`; ONTA programme overlays beyond POTA not) Spot labels None/Prefix/Call/Dot, minimum label distance, per-source map on/off; map overlays for ONTA, ADIF and HamAlert.
 15. 🟡 (ADIF map overlay of logged stations at their grid centre done; NADXCC/NABAND/NAPREF/NAGRID watch keywords done; NAGRID needs a locator in the spot comment; OTA/POTA/SOTA/IOTA/WWFF watch keywords match spots whose comment names a reference) ADIF log pane with file watching and not-in-log watch keywords (NADXCC/NAPref/NABand/NAGrid).
-16. 🟡 (xOTA reference parsed from comments and shown as a badge on DX cluster rows; IOTA reference names not done) IOTA reference names and xOTA markers parsed from comments.
+16. 🟡 (xOTA reference parsed from comments and shown as a badge on DX cluster rows; IOTA group names from iota-world.org's groups.json shown next to IOTA badges on wide cards) IOTA reference names and xOTA markers parsed from comments.
 
 ### D. Astronomy, satellites, beacons (owns `src/widgets/moon/`, `satellites/`, `beacons/`, `src/domain/astro*`)
 1. ✅ Sun rise/set at DE and DX, day length, grayline times (offline). Polar day/night handled.

@@ -1,0 +1,62 @@
+[
+ {
+  "refno": "AF-001",
+  "name": "Agalega Islands",
+  "dxcc_num": "4",
+  "latitude_max": "-10.75",
+  "latitude_min": "-10.00",
+  "longitude_max": "57.00",
+  "longitude_min": "56.25",
+  "grp_region": "",
+  "whitelist": "0",
+  "pc_credited": "37.2",
+  "comment": ""
+ },
+ {
+  "refno": "EU-005",
+  "name": "Great Britain",
+  "dxcc_num": "223,294,279",
+  "latitude_max": "58.67",
+  "latitude_min": "49.83",
+  "longitude_max": "1.83",
+  "longitude_min": "-6.25",
+  "grp_region": "BI",
+  "whitelist": "0",
+  "pc_credited": "87.7",
+  "comment": "For each country include other islands not qualifying for other UK groups-"
+ },
+ {
+  "refno": "NA-001",
+  "name": "Great Bahama Bank group",
+  "dxcc_num": "60",
+  "latitude_max": "25.70",
+  "latitude_min": "21.58",
+  "longitude_max": "-78.75",
+  "longitude_min": "-74.25",
+  "grp_region": "WI",
+  "whitelist": "0",
+  "pc_credited": "57.3",
+  "comment": "Not islands qualifying for other groups-"
+ },
+ {
+  "refno": "OC-001",
+  "name": "Australia",
+  "dxcc_num": "150",
+  "latitude_max": "-39.17",
+  "latitude_min": "-10.67",
+  "longitude_max": "153.67",
+  "longitude_min": "113.17",
+  "grp_region": "",
+  "whitelist": "0",
+  "pc_credited": "84.1",
+  "comment": "Continent of Australia and coastal islands not qualifying for other Australian groups-"
+ },
+ {
+  "refno": "bad",
+  "name": "Broken"
+ },
+ {
+  "refno": "EU-999",
+  "name": ""
+ }
+]

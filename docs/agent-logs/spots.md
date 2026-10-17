@@ -306,3 +306,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Found #305 (WWFF, GMA) and #426 (IOTA names) are allowlisted by the owner; spots.wwff.co and www.iota-world.org answer from the sandbox, www.cqgma.org gives a 301.
 - Backlog item 7 (slice): WWFF Spotline. `ota::parse_wwff` (kHz, epoch time, remarks; QRT dropped), third `PolledSource` in `OtaModel` (WWFF alone going down only changes the status label), `merge` takes an optional third feed, map squares, program filter accepts `WWFF` (`AppSettings` validation, minimal and backward compatible). Roadmap Data source policy updated. Test extended with a trimmed real fixture; 160/160 pass locally, ASan/UBSan left to CI. No screenshot (card layout unchanged); not validated on device.
 - Not done: GMA (needs a look at the www.cqgma.org API after the redirect), IOTA reference names (www.iota-world.org), neighbour links, Log4OM, RBN port 7001.
+
+## 2026-10-17 (run 56)
+- Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
+- Backlog item 16 (slice): IOTA reference names (#426). `parse_iota_groups` (groups.json from iota-world.org's documented developer download, refno to name), `DxClusterModel` polls it weekly through `PolledSource` once the cluster is configured, new `otaName` role shown next to the IOTA badge on non-compact rows. No AppSettings change. Roadmap Data source policy updated. Test with a trimmed real fixture; compact layout unchanged. No screenshot (needs live spots); not validated on device.
+- Not done: GMA (www.cqgma.org API), neighbour links, Log4OM, RBN port 7001.

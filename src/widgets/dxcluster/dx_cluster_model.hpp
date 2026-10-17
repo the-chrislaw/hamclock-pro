@@ -4,6 +4,7 @@
 #include "../widget_registry.hpp"
 #include "dx_spot_parse.hpp"
 #include "udp_spot.hpp"
+#include "../../net/polled_source.hpp"
 #include <QAbstractListModel>
 #include <QTimer>
 #include <QVariantList>
@@ -17,7 +18,7 @@ namespace hamclock {
 class DxSpotList : public QAbstractListModel {
     Q_OBJECT
 public:
-    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole, OtaRole, NeededRole };
+    enum Role { DxRole = Qt::UserRole + 1, SpotterRole, FrequencyRole, BandRole, ModeRole, TimeRole, CommentRole, WatchedRole, CountryRole, OtaRole, NeededRole, OtaNameRole };
     using QAbstractListModel::QAbstractListModel;
     int rowCount(const QModelIndex& parent = {}) const override { return parent.isValid() ? 0 : int(shown_.size()); }
     int totalCount() const { return int(spots_.size()); }
@@ -26,6 +27,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     void add(const dxcluster::DxSpot& spot);
     const std::deque<dxcluster::DxSpot>& spots() const { return spots_; }
+    // IOTA reference -> group name for the OtaNameRole; unset = no names.
+    void set_iota_names(QHash<QString, QString> names) { iota_names_ = std::move(names); if (!spots_.empty()) emit dataChanged(index(0), index(rowCount() - 1), {OtaNameRole}); }
     void set_watch(const QStringList& entries); // re-evaluates every stored spot
     // Call -> DXCC primary prefix for "@PREFIX" watch entries; default is the bundled table (a qrc resource, so tests inject one).
     void set_entity_resolver(std::function<QString(const QString&)> r) { entity_of_ = std::move(r); }
@@ -50,6 +53,7 @@ private:
     std::function<QString(const QString&)> entity_of_;
     std::function<QString(const QString&, const QString&)> needed_;
     std::function<bool(const QString&)> grid_needed_;
+    QHash<QString, QString> iota_names_;
     QStringList watch_;
     std::vector<char> is_watched_; // parallel to spots_
     int watched_ = 0;
@@ -103,6 +107,8 @@ private:
     void on_state(TelnetClient::State state);
     AppSettings* settings_;
     TelnetClient client_;
+    bool iota_started_ = false;
+    PolledSource* iota_ = nullptr; // IOTA group names, weekly, only polled once the cluster is configured
     DxSpotList list_;
     dxcluster::UdpSpotListener udp_;
     QString udp_key_;

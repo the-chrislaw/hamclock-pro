@@ -62,7 +62,7 @@ Card {
                 }
                 Text {
                     visible: model.ota !== ""
-                    text: model.ota; color: Theme.accent; font.pixelSize: Theme.fontBody; font.bold: true
+                    text: model.ota + (!root.compact && model.otaName !== "" ? " " + model.otaName : ""); color: Theme.accent; font.pixelSize: Theme.fontBody; font.bold: true
                 }
                 Text {
                     text: root.compact ? (model.country || model.comment)

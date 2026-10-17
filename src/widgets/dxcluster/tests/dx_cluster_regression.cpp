@@ -230,5 +230,26 @@ int main(int argc, char** argv) {
     client.stop();
 
     std::cout << checks << " checks, " << failures << " failures\n";
+    // IOTA group names: parsed from the trimmed real groups.json, shown for IOTA spots only.
+    {
+        QFile jf(QDir(argv[1]).filePath("iota-groups.json"));
+        check(jf.open(QIODevice::ReadOnly), "iota fixture opens");
+        const auto names = parse_iota_groups(jf.readAll());
+        check(names.size() == 4 && names.value("EU-005") == "Great Britain" && names.value("AF-001") == "Agalega Islands", "iota names parsed, bad rows dropped");
+        check(parse_iota_groups("not json").isEmpty() && parse_iota_groups("{}").isEmpty(), "malformed iota json gives nothing");
+        DxSpotList list;
+        const auto iota = parse_spot_line("DX de W3LPL:     14025.0  GB5XX       IOTA EU-005                    1234Z FN20", now);
+        const auto pota = parse_spot_line("DX de W3LPL:     14026.0  K1ABC       POTA K-1234                    1234Z FN20", now);
+        check(iota && pota, "iota and pota spots parse");
+        if (iota && pota) {
+            list.add(*iota);
+            list.add(*pota);
+            check(list.data(list.index(1), DxSpotList::OtaNameRole).toString().isEmpty(), "no name before the list loads");
+            list.set_iota_names(names);
+            check(list.data(list.index(1), DxSpotList::OtaNameRole).toString() == "Great Britain", "IOTA row shows its group name");
+            check(list.data(list.index(0), DxSpotList::OtaNameRole).toString().isEmpty(), "POTA row has no group name");
+        }
+    }
+
     return failures ? 1 : 0;
 }

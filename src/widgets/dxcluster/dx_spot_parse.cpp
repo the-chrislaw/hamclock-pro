@@ -1,3 +1,6 @@
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 #include "dx_spot_parse.hpp"
 #include <QRegularExpression>
 #include <QTimeZone>
@@ -57,6 +60,20 @@ std::optional<DxSpot> parse_spot_line(const QString& line, const QDateTime& now_
     spot.ota_program = ota.program;
     spot.ota_ref = ota.ref;
     return spot;
+}
+
+QHash<QString, QString> parse_iota_groups(const QByteArray& json) {
+    QHash<QString, QString> out;
+    const auto doc = QJsonDocument::fromJson(json);
+    if (!doc.isArray()) return out;
+    static const QRegularExpression ref_re(R"(^(?:AF|AN|AS|EU|NA|OC|SA)-\d{3}$)");
+    for (const auto& v : doc.array()) {
+        const auto o = v.toObject();
+        const QString ref = o.value("refno").toString().trimmed().toUpper();
+        const QString name = o.value("name").toString().trimmed().left(60);
+        if (ref_re.match(ref).hasMatch() && !name.isEmpty()) out.insert(ref, name);
+    }
+    return out;
 }
 
 } // namespace hamclock::dxcluster
