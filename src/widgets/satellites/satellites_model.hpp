@@ -101,6 +101,9 @@ QString pass_schedule_summary(const std::vector<std::pair<QString, SatPass>>& pa
 
 // Frequency as "145.8000 MHz" (100 Hz resolution).
 QString format_mhz(double hz);
+// Row frequency text for the first active transmitter with a downlink: "145.9200 MHz FM", or
+// "145.9000-146.0000 MHz SSB" for a transponder; empty when none (inactive ones are ignored).
+QString primary_downlink_text(const std::vector<Transmitter>& txs);
 // 16-point compass letters for an azimuth in degrees.
 QString compass_point(double az_deg);
 
