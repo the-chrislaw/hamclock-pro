@@ -332,6 +332,23 @@ Rectangle {
             }
 
             Card {
+                title: "Accent colour"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: ["Blue", "Green", "Amber", "Red", "Purple"]
+                        AppButton {
+                            text: modelData
+                            primary: appSettings.accentStyle === index
+                            onClicked: appSettings.saveAccentStyle(index)
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {

@@ -9,6 +9,8 @@ QtObject {
     property real scale: 1
     // Small panel (7-inch Pi, 800x480 to 1280x720): no header, tight spacing.
     property bool dense: false
+    // Accent choice from Settings: 0 blue, 1 green, 2 amber, 3 red, 4 purple.
+    property int accentStyle: 0
     property bool phone: false   // portrait phone: one column, one pane
 
     readonly property color canvas: dark ? "#22282c" : "#eeede9"
@@ -17,7 +19,8 @@ QtObject {
     readonly property color ink: dark ? "#e2e7e6" : "#303a42"
     readonly property color secondary: dark ? "#97a4a8" : "#637074"
     readonly property color divider: dark ? "#41494b" : "#e0e3df"
-    readonly property color accent: dark ? "#9cb6c5" : "#487991"
+    readonly property color accent: dark ? ["#9cb6c5", "#8fc79a", "#e6c06b", "#ec8f86", "#b9a8dc"][accentStyle]
+                                         : ["#487991", "#2f7d3f", "#8a5f00", "#b3362b", "#6c4fa0"][accentStyle]
     readonly property color accentInk: dark ? "#1d2427" : "#ffffff"
     readonly property color focus: dark ? "#c7dbe6" : "#2f6077"
     // Status colours always appear next to text, never as the only signal.

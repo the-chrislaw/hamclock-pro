@@ -136,6 +136,8 @@ void AppSettings::loadOptions() {
     if (!dx_zone_override_.isEmpty() && !QTimeZone(dx_zone_override_.toUtf8()).isValid()) dx_zone_override_.clear();
     overscan_ = ini.value("display/overscan", 0).toInt();
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
+    accent_style_ = ini.value("display/accent", 0).toInt();
+    if (accent_style_ < 0 || accent_style_ > 4) accent_style_ = 0;
     text_scale_ = ini.value("display/text_scale", 100).toInt();
     if (text_scale_ != 100 && text_scale_ != 115 && text_scale_ != 130 && text_scale_ != 150) text_scale_ = 100;
     {
@@ -676,6 +678,17 @@ QString AppSettings::saveTextScale(int percent) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the text size.";
     text_scale_ = percent;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveAccentStyle(int style) {
+    if (style < 0 || style > 4) return "The accent colour must be 0..4.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/accent", style);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the accent colour.";
+    accent_style_ = style;
     emit optionsChanged();
     return {};
 }
