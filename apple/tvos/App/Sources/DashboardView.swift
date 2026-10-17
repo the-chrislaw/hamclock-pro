@@ -39,9 +39,10 @@ struct DashboardView: View {
                 if panes.isOn(.satellites) { SatelliteCard(now: ctx.date) }
                 if panes.isOn(.quakes) { QuakeCard(now: ctx.date) }
                 if panes.isOn(.weather) { LocalWeatherCard(now: ctx.date) }
+                if panes.isOn(.storms) { StormCard(now: ctx.date) }
                 Spacer()
                 Button("Panes…") { showSettings = true }
-                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; Open-Meteo; CelesTrak; Natural Earth")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; NOAA National Hurricane Center; Open-Meteo; CelesTrak; Natural Earth")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
@@ -193,6 +194,42 @@ private struct LocalWeatherCard: View {
                 Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
             }
             if station.position != nil, state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
+    }
+}
+
+/// NHC active tropical cyclones, strongest first. "No active storms" is shown only after a
+/// successful fetch; with no data the card says so, and Stale/Offline follows the fetch age.
+private struct StormCard: View {
+    @EnvironmentObject var store: StormStore
+    let now: Date
+    var body: some View {
+        let state = SpaceWeatherStore.freshness(store.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Tropical storms (Atlantic, E/C Pacific)").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if store.fetched == nil || state == .offline {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+            } else if store.storms.isEmpty {
+                Text("No active storms").font(.system(size: 48, weight: .bold, design: .rounded))
+            } else {
+                ForEach(store.storms.prefix(4)) { s in
+                    let cat = s.category > 0 ? " cat \(s.category)" : ""
+                    Text("\(s.name)  \(s.classification)\(cat), \(s.windKt) kt")
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                    Text(String(format: "%.1f° %@, %.1f° %@", abs(s.lat), s.lat < 0 ? "S" : "N", abs(s.lon), s.lon < 0 ? "W" : "E")
+                         + (s.pressureMb > 0 ? ", \(s.pressureMb) mb" : "")
+                         + (s.speedKt >= 0 && !s.heading.isEmpty ? ", moving \(s.heading) at \(s.speedKt) kt" : ""))
+                        .font(.system(size: 29)).foregroundStyle(.secondary)
+                }
+            }
+            if state != .live {
                 Text(state == .stale ? "STALE" : "OFFLINE")
                     .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
             }

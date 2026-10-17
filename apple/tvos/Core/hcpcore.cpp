@@ -1,6 +1,7 @@
 #include "hcpcore.h"
 #include "bands.hpp"
 #include "quakes.hpp"
+#include "storms.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
 #include "weather.hpp"
@@ -209,5 +210,28 @@ int hcp_weather_parse(const char* b, size_t n, HcpWeather* out) {
     copy(hcp::weather::wmo_description(c->weather_code), out->description, sizeof out->description);
     copy(hcp::weather::compass_point(c->wind_dir_deg), out->wind_from, sizeof out->wind_from);
     return 1;
+}
+}
+
+extern "C" {
+int hcp_storms_parse(const char* b, size_t n, HcpStorm* out, size_t cap) {
+    const auto list = hcp::storms::parse(view(b, n));
+    if (!list) return -1;
+    size_t i = 0;
+    for (; i < list->size() && i < cap && out; ++i) {
+        const auto& s = (*list)[i];
+        out[i] = HcpStorm{};
+        copy(s.name, out[i].name, sizeof out[i].name);
+        copy(hcp::storms::classification_text(s.classification), out[i].classification, sizeof out[i].classification);
+        copy(hcp::storms::compass(s.heading_deg), out[i].heading, sizeof out[i].heading);
+        out[i].wind_kt = s.wind_kt;
+        out[i].pressure_mb = s.pressure_mb;
+        out[i].category = hcp::storms::category(s.wind_kt);
+        out[i].speed_kt = s.speed_kt;
+        out[i].latitude = s.latitude;
+        out[i].longitude = s.longitude;
+        out[i].issued_ms = s.issued_ms;
+    }
+    return static_cast<int>(i);
 }
 }

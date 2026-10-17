@@ -2,7 +2,7 @@ import Foundation
 
 /// Dashboard panes the operator can switch on or off.
 enum Pane: String, CaseIterable, Identifiable {
-    case map, spaceWeather, bands, sun, station, satellites, quakes, weather
+    case map, spaceWeather, bands, sun, station, satellites, quakes, weather, storms
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -14,6 +14,7 @@ enum Pane: String, CaseIterable, Identifiable {
         case .satellites: return "Amateur satellites"
         case .quakes: return "Earthquakes"
         case .weather: return "Weather at your station"
+        case .storms: return "Tropical storms"
         }
     }
 }
