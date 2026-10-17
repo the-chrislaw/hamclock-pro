@@ -100,9 +100,36 @@ Feed parse_sota(const QByteArray& body) {
     return feed;
 }
 
-std::vector<Spot> merge(const Feed& pota, const Feed& sota) {
+Feed parse_wwff(const QByteArray& body) {
+    Feed feed;
+    const auto doc = QJsonDocument::fromJson(body);
+    if (!doc.isArray()) return feed;
+    feed.ok = true;
+    for (const auto& item : doc.array()) {
+        const auto o = item.toObject();
+        Spot s;
+        s.program = "WWFF";
+        s.call = o.value("activator").toString().trimmed().toUpper();
+        s.reference = o.value("reference").toString().trimmed();
+        s.name = o.value("reference_name").toString();
+        s.freq_khz = number(o.value("frequency_khz"));
+        s.mode = o.value("mode").toString().toUpper();
+        const double epoch = number(o.value("spot_time"));
+        if (epoch > 0) s.time = QDateTime::fromSecsSinceEpoch(qint64(epoch), QTimeZone::utc());
+        s.comment = o.value("remarks").toString();
+        set_position(s, o);
+        if (s.call.isEmpty() || s.reference.isEmpty() || s.freq_khz <= 0 || !s.time.isValid() || is_qrt(s.comment))
+            continue;
+        feed.spots.push_back(s);
+    }
+    sort_newest(feed.spots);
+    return feed;
+}
+
+std::vector<Spot> merge(const Feed& pota, const Feed& sota, const Feed& wwff) {
     std::vector<Spot> all = pota.spots;
     all.insert(all.end(), sota.spots.begin(), sota.spots.end());
+    all.insert(all.end(), wwff.spots.begin(), wwff.spots.end());
     sort_newest(all);
     std::vector<Spot> out;
     QSet<QString> seen;

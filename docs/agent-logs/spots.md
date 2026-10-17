@@ -300,3 +300,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: merged #479 (ui, green and clean). #73 (docs, conflicting, another area's) left alone. No open `[C]` qa issues.
 - Backlog item 10 (slice): Meshtastic NODEINFO_APP name updates. `mesh::parse_nodeinfo_packet` (FromRadio.packet, port 4, User long/short name, clipped to 40 chars); `MeshModel` renames known nodes only (nodes without a position are not added). No AppSettings change. Test extended with hand-encoded packets (no real capture reachable); mesh tests pass locally, ASan/UBSan left to CI. No screenshot (needs a live node); not validated on device.
 - Not done: neighbour links, Log4OM, RBN port 7001.
+
+## 2026-10-17 (run 55)
+- Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
+- Found #305 (WWFF, GMA) and #426 (IOTA names) are allowlisted by the owner; spots.wwff.co and www.iota-world.org answer from the sandbox, www.cqgma.org gives a 301.
+- Backlog item 7 (slice): WWFF Spotline. `ota::parse_wwff` (kHz, epoch time, remarks; QRT dropped), third `PolledSource` in `OtaModel` (WWFF alone going down only changes the status label), `merge` takes an optional third feed, map squares, program filter accepts `WWFF` (`AppSettings` validation, minimal and backward compatible). Roadmap Data source policy updated. Test extended with a trimmed real fixture; 160/160 pass locally, ASan/UBSan left to CI. No screenshot (card layout unchanged); not validated on device.
+- Not done: GMA (needs a look at the www.cqgma.org API after the redirect), IOTA reference names (www.iota-world.org), neighbour links, Log4OM, RBN port 7001.
