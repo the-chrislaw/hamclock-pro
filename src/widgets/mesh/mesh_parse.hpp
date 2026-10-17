@@ -23,6 +23,14 @@ inline constexpr int kMaxFrame = 512;
 QByteArray want_config_frame(quint32 config_id);
 // Removes complete frames from `buffer` and returns their payloads; resynchronises past garbage.
 std::vector<QByteArray> extract_frames(QByteArray& buffer);
+// A live position report relayed by the node (FromRadio.packet carrying POSITION_APP); `rx_time` 0 = unknown.
+struct PositionUpdate {
+    quint32 num = 0;
+    double latitude = 0, longitude = 0;
+    qint64 rx_time = 0;
+};
+// Valid position packets only; anything else (other ports, no or out-of-range position) is nullopt.
+std::optional<PositionUpdate> parse_position_packet(const QByteArray& payload);
 // A node with a valid position; anything else (no position, out of range, other message types) is nullopt.
 std::optional<Node> parse_from_radio(const QByteArray& payload);
 

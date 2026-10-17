@@ -40,6 +40,12 @@ QByteArray node_info(quint32 num, const QString& id, const QString& lng, const Q
     QByteArray ni = varint(1 << 3) + varint(num) + len_field(2, user) + len_field(3, pos) + fixed32(5, heard);
     return varint(1 << 3) + varint(7) + len_field(4, ni); // FromRadio.id + node_info
 }
+QByteArray position_packet(quint32 from, int port, double lat, double lon, quint32 rx) {
+    QByteArray pos = fixed32(1, quint32(qint32(std::lround(lat * 1e7)))) + fixed32(2, quint32(qint32(std::lround(lon * 1e7))));
+    QByteArray data = varint(1 << 3) + varint(port) + len_field(2, pos);
+    QByteArray pkt = varint(1 << 3) + varint(from) + len_field(4, data) + fixed32(7, rx);
+    return len_field(2, pkt); // FromRadio.packet
+}
 QByteArray frame(const QByteArray& body) {
     QByteArray f;
     f.append(char(0x94)).append(char(0xc3)).append(char(body.size() >> 8)).append(char(body.size() & 0xff));
@@ -92,6 +98,17 @@ int main(int argc, char** argv) {
     {
         const auto& layers = MapOverlays::instance().layers();
         check(layers.size() == 1 && layers[0].id == "mesh" && layers[0].markers.size() == 2, "live nodes published on the map");
+    }
+    {
+        const auto up = mesh::parse_position_packet(position_packet(1, 3, 50.0, -71.0, 1760000500));
+        check(up && up->num == 1 && std::fabs(up->latitude - 50.0) < 1e-6 && up->rx_time == 1760000500, "position packet decoded");
+        check(!mesh::parse_position_packet(position_packet(1, 1, 50.0, -71.0, 1)), "text port ignored");
+        check(!mesh::parse_position_packet(position_packet(1, 3, 0, 0, 1)) && !mesh::parse_position_packet(position_packet(1, 3, 95, 0, 1)), "no/invalid position ignored");
+        check(!mesh::parse_position_packet(position_packet(0, 3, 50, -71, 1)) && !mesh::parse_position_packet(QByteArray::fromHex("1204")), "unknown sender/truncated ignored");
+        emit sock->dataReceived(frame(position_packet(2, 3, 52.5, -72.0, quint32(t0))) + frame(position_packet(9, 3, 10.0, 10.0, quint32(t0))));
+        const auto moved = model.nearest();
+        check(model.count() == 3 && moved.size() == 3, "live position moves a known node and adds an unnamed one");
+        check(moved.last().toMap().value("km").toInt() > near.last().toMap().value("km").toInt() - 1 && moved.last().toMap().value("name").toString() == "!00000009", "unnamed node shown by id");
     }
     model.setMapVisible(false);
     check(MapOverlays::instance().layers().empty(), "per-source map off removes the layer");
