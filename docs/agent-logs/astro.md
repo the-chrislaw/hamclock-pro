@@ -260,3 +260,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Owner answered #440: EME tool link as a QR code on kiosk / link elsewhere (build), sky temperature won't-do, eclipse contact times via truncated ELP2000-82B (build). Recorded the sky-temperature won't-do in WIDGETS D5 and ROADMAP "On the radar" (docs only).
 - Blocked this run: fetching the vendored QR encoder (Nayuki QR-Code-generator, MIT) from raw.githubusercontent.com was denied by the sandbox's permission check, so no encoder or ELP data was vendored. Needs the owner to allow the fetch or commit the files under `src/domain/astro_qr/` with their licence.
 - Next: QR encoder + EME link; ELP2000-82B truncated theory and NASA-validated contacts.
+
+## 2026-10-17 (UTC), run 50
+- The raw.githubusercontent.com fetch worked this run, so the Nayuki QR encoder (MIT) is vendored under `src/domain/astro_qr/` (unmodified, own warning-free library) with a wrapper `astro_qr.{hpp,cpp}` (`qr_encode`) and docs/third-party-qr.md. Tests (`widget-eme-qr_regression`): version-1 size, three finder patterns, timing patterns, dark module, determinism, empty result when too long. No decoder was available, so scan-ability is not verified. Eme/QR ctests pass; full ctest and ASan/UBSan left to CI; no UI change yet.
+- Not wired into the EME card: I cannot reach the original's EME link or verify a public planner URL from the sandbox, so I will not guess one. Asked the owner to pick the URL (comment on #440).
+- Not mine: #73 conflicting, #471 CI running; left alone. ELP2000-82B tables not fetched yet. Balloons blocked on #314; hams.at key on #400.
+- Next: EME card QR/link once the URL is chosen; ELP2000-82B truncated theory and NASA-validated contacts.
