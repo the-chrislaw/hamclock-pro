@@ -51,14 +51,32 @@ struct DashboardView: View {
                 Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; NOAA National Hurricane Center; Open-Meteo; CelesTrak; Natural Earth")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
+            .offset(BurnInShift.offset(at: ctx.date)) // slow pixel shift of static chrome
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.black)
         }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true } // dashboard is meant to stay on
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .onPlayPauseCommand { page = panes.next(after: page) }
         .onReceive(rotation) { _ in if panes.autoRotate { page = panes.next(after: page) } }
         .sheet(isPresented: $showSettings) { PaneSettingsView() }
         .sheet(isPresented: $showWeather) { SpaceWeatherDetailView() }
+    }
+}
+
+/// Burn-in protection: the whole layout drifts one point per minute around a 9-point square
+/// ring (max 4 pt from centre, well inside the 60/90 pt title-safe margins).
+enum BurnInShift {
+    static func offset(at date: Date) -> CGSize {
+        let ring: [(CGFloat, CGFloat)] = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3), (4, 4),
+                                          (3, 4), (2, 4), (1, 4), (0, 4), (-1, 4), (-2, 4), (-3, 4), (-4, 4),
+                                          (-4, 3), (-4, 2), (-4, 1), (-4, 0), (-4, -1), (-4, -2), (-4, -3), (-4, -4),
+                                          (-3, -4), (-2, -4), (-1, -4), (0, -4), (1, -4), (2, -4), (3, -4), (4, -4),
+                                          (4, -3), (4, -2), (4, -1)]
+        let minute = Int(date.timeIntervalSince1970 / 60)
+        let p = ring[((minute % ring.count) + ring.count) % ring.count]
+        return CGSize(width: p.0, height: p.1)
     }
 }
 
