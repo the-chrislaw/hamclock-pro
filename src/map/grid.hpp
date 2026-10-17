@@ -27,6 +27,17 @@ inline std::vector<GridLine> grid_lines(MapGrid g) {
     }
     return out;
 }
+// Maidenhead square boundaries (2 deg x 1 deg), without the field boundaries already
+// drawn by grid_lines(Maidenhead). Shown only when zoomed in (see maidenhead_squares_min_zoom).
+inline constexpr double maidenhead_squares_min_zoom = 3.0;
+inline std::vector<GridLine> maidenhead_square_lines() {
+    std::vector<GridLine> out;
+    for (int lat = -89; lat <= 89; ++lat)
+        if (lat % 10 != 0) out.push_back({double(lat), -180, double(lat), 180});
+    for (int lon = -178; lon <= 178; lon += 2)
+        if ((lon + 180) % 20 != 0) out.push_back({-90, double(lon), 90, double(lon)});
+    return out;
+}
 // Azimuth rings: great-circle distance rings (degrees of arc, 30 deg = 3336 km)
 // around the DE point. Pure; the renderer seam-splits consecutive points.
 inline constexpr double azimuth_ring_step_deg = 30.0;

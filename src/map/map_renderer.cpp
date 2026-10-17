@@ -488,6 +488,15 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                     pa.drawLine(px(split.segments[j].first.x, split.segments[j].first.y),
                                 px(split.segments[j].second.x, split.segments[j].second.y));
             }};
+        if (scene.grid == MapGrid::Maidenhead && scene.zoom >= maidenhead_squares_min_zoom) {
+            QPen sq(dark ? QColor(230, 238, 240, 45) : QColor(27, 42, 48, 40)); sq.setWidthF(1); sq.setCosmetic(true);
+            painter.save();
+            painter.setClipRect(QRectF(QPointF(), size));
+            painter.setPen(sq);
+            for (const auto& l : maidenhead_square_lines())
+                painter.drawLine(*geo.at(Location{l.lat1, l.lon1}), *geo.at(Location{l.lat2, l.lon2}));
+            painter.restore();
+        }
         paint_geo_layers(painter, size, scene, geo, sea, route);
     }
     if (scene.style) paint_legend(painter, size, *scene.style, dark);

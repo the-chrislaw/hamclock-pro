@@ -172,3 +172,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine; #73 (docs, not mine, conflicting) left alone. CQ/ITU zones stay blocked on #353.
 - G0 gestures slice: pinch, wheel and double-tap zoom already exist. Added the missing zoom-about-point test to `qt-map-viewport-regression` (the location under the gesture stays under it at 800x480, 1024x600, 1920x1080 and zooms 1.5/2/4; scale multiplies by zoom). Tried two-finger tap to zoom out via `TapHandler.minimumPointCount`, but Qt 6.4.2 has no such property (QML failed to load), so it was dropped; recorded in WIDGETS.md. Map ctest passes locally. ASan/UBSan left to CI. Not validated on device.
 - Next: two-finger tap needs Qt 6.5+ or a MapItem touch-event path; otherwise waiting on #353.
+
+## 2026-10-17 (UTC, run 26)
+
+- Orient: no open `[G]` qa issues besides #247 (delivered); no open PRs of mine; #73 (docs, not mine) left alone. CQ/ITU zones stay blocked on #353.
+- G5 slice (PR agent/map-maidenhead-squares): the Maidenhead grid now also draws the 2x1 degree square boundaries on the flat map once zoom is 3x or more (`maidenhead_square_lines`, `maidenhead_squares_min_zoom`), drawn clipped to the card through the same viewport transform as the overlays. Test: extended `qt-map-view-options-regression` (line counts exclude field boundaries, render differs at zoom 3 vs 1). Map ctest passes locally; no screenshots taken this run; ASan/UBSan left to CI. Not validated on device.
+- Next: waiting on #353 for CQ/ITU zones.
