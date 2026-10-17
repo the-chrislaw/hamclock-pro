@@ -68,6 +68,14 @@ final class PaneStore: ObservableObject {
         return p[(i + 1) % p.count]
     }
 
+    /// Hours without remote input before the dashboard dims; 0 = never (default).
+    @Published private(set) var dimAfterHours: Int = UserDefaults.standard.integer(forKey: "panes.dimAfterHours")
+
+    func setDimAfterHours(_ hours: Int) {
+        dimAfterHours = hours
+        UserDefaults.standard.set(hours, forKey: "panes.dimAfterHours")
+    }
+
     func setAutoRotate(_ on: Bool) {
         autoRotate = on
         UserDefaults.standard.set(on, forKey: "panes.autoRotate")
