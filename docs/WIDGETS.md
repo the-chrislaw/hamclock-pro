@@ -193,7 +193,7 @@ Takes over E8 and E13. Each feed: check terms first and record them in the roadm
 
 ### I. Apple TV (owns `apple/tvos/`, `cmake/TvOS*.cmake`, `docs/apple-tv*.md`, `.github/workflows/tvos.yml`, `docs/agent-logs/tvos.md`)
 Native SwiftUI tvOS app over the shared C++ core (Qt has no tvOS support); design in [docs/apple-tv.md](apple-tv.md). Unsigned Simulator builds only until the owner approves signing (#58).
-1. 🟡 Design doc for owner review (written; awaiting owner comments).
+1. ✅ Design doc (owner approved all four recommendations, #157).
 2. ✅ `tvos.yml`: build the C++ core for the tvOS Simulator and run its unit tests on macOS.
 3. 🟡 Minimal SwiftUI app: clock + live NOAA SWPC space weather (C ABI `hcpcore.h`, XcodeGen project), Simulator screenshot artifact (first CI run pending).
 4. Dashboard panes: space weather, sun, station sun/moon, satellites, quakes done; pane on/off settings (iCloud KVS); world map (shared coastline, terminator, station) done. Map overlays (quakes while live, satellite sub-points) done. Land fill (closed rings only) done. DX preset view done. Quake, satellite and space weather detail views (Select) done. HF band outlook card (shared heuristic, live SFI and Kp, no A index) done. Weather at the station (Open-Meteo) and tropical storms (NHC index) cards done. Page navigation (Play/Pause, opt-in auto-rotate) done. Remaining: panes from the design doc.

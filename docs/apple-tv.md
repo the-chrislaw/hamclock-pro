@@ -1,6 +1,6 @@
 # Apple TV (tvOS) app: design for owner review
 
-Status: **proposal, awaiting owner review** (area I). Nothing here is built yet. Backlog item 2 (CI that builds the C++ core for the tvOS Simulator) does not depend on the decisions below and proceeds in parallel.
+Status: **approved by the owner on 2026-10-14** (issue #157: shim approach A, the pane list in section 9, on-screen settings plus iCloud KVS sync, and the `HCP_CORE_WITHOUT_QT` option). Implementation is under way in `apple/tvos/`; see `docs/agent-logs/tvos.md` for progress.
 
 ## 1. Goal and constraints
 
