@@ -6,13 +6,19 @@ struct DashboardView: View {
     @EnvironmentObject var panes: PaneStore
     @State private var showSettings = false
     @State private var showWeather = false
+    @State private var page: Page = .overview
+    private let rotation = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
+
+    private func show(_ pane: Pane) -> Bool {
+        panes.isOn(pane) && (panes.pages.contains(page) ? page : panes.pages[0]).panes.contains(pane)
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
             VStack(alignment: .leading, spacing: 40) {
                 ClockBar(now: ctx.date)
-                if panes.isOn(.map) { MapCard(now: ctx.date) }
-                if panes.isOn(.spaceWeather) {
+                if show(.map) { MapCard(now: ctx.date) }
+                if show(.spaceWeather) {
                 HStack(alignment: .top, spacing: 40) {
                     Card(onSelect: { showWeather = true }, title: "Kp index", sample: weather.kp, now: ctx.date,
                          big: { String(format: "%.1f", $0) },
@@ -31,15 +37,15 @@ struct DashboardView: View {
                          detail: { SpaceWeatherStore.bzDescription($0) })
                 }
                 }
-                if panes.isOn(.bands) { BandsCard(now: ctx.date) }
+                if show(.bands) { BandsCard(now: ctx.date) }
                 HStack(alignment: .top, spacing: 40) {
-                    if panes.isOn(.sun) { SunCard(now: ctx.date) }
-                    if panes.isOn(.station) { StationSunCard(now: ctx.date) }
+                    if show(.sun) { SunCard(now: ctx.date) }
+                    if show(.station) { StationSunCard(now: ctx.date) }
                 }
-                if panes.isOn(.satellites) { SatelliteCard(now: ctx.date) }
-                if panes.isOn(.quakes) { QuakeCard(now: ctx.date) }
-                if panes.isOn(.weather) { LocalWeatherCard(now: ctx.date) }
-                if panes.isOn(.storms) { StormCard(now: ctx.date) }
+                if show(.satellites) { SatelliteCard(now: ctx.date) }
+                if show(.quakes) { QuakeCard(now: ctx.date) }
+                if show(.weather) { LocalWeatherCard(now: ctx.date) }
+                if show(.storms) { StormCard(now: ctx.date) }
                 Spacer()
                 Button("Panes…") { showSettings = true }
                 Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; NOAA National Hurricane Center; Open-Meteo; CelesTrak; Natural Earth")
@@ -49,6 +55,8 @@ struct DashboardView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.black)
         }
+        .onPlayPauseCommand { page = panes.next(after: page) }
+        .onReceive(rotation) { _ in if panes.autoRotate { page = panes.next(after: page) } }
         .sheet(isPresented: $showSettings) { PaneSettingsView() }
         .sheet(isPresented: $showWeather) { SpaceWeatherDetailView() }
     }
@@ -63,6 +71,9 @@ private struct PaneSettingsView: View {
                 Toggle(pane.title, isOn: Binding(get: { panes.isOn(pane) },
                                                  set: { panes.set(pane, on: $0) }))
             }
+            Toggle("Auto-rotate pages every 20 s", isOn: Binding(get: { panes.autoRotate },
+                                                                 set: { panes.setAutoRotate($0) }))
+            Text("Play/Pause on the remote steps to the next page.").font(.system(size: 29)).foregroundStyle(.secondary)
             Text("Saved to iCloud when available.").font(.system(size: 29)).foregroundStyle(.secondary)
         }
         .padding(90)

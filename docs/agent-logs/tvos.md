@@ -113,3 +113,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: tropical storms (NHC). Qt-free port of the `CurrentStorms.json` index parser (`Core/storms.cpp`, C ABI `hcp_storms_parse`) with the Qt fixtures as the oracle; `StormStore` polls every 30 min; the card lists up to four storms strongest first, says "No active storms" only after a successful fetch, else No data / Stale / Offline. Forecast tracks (TCM text) are not ported. New pane toggle, NHC attribution.
 - Host core tests pass on Linux; Swift verified only by the tvos.yml run on the PR.
 - Next: remaining panes from the design doc, any owner feedback on the design review.
+
+## 2026-10-17 (third run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: page navigation. Panes were one tall column that cannot fit 1080p, so they are grouped into four pages (map / solar / sky / hazards); Play/Pause steps to the next page that still has a visible pane, and an opt-in "auto-rotate every 20 s" setting (off by default, per the design doc) is saved locally. Swift only; Linux build unaffected.
+- Swift verified only by the tvos.yml run on the PR.
+- Next: remaining panes from the design doc, any owner feedback on the design review.
