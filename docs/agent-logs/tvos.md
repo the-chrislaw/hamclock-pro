@@ -118,3 +118,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: page navigation. Panes were one tall column that cannot fit 1080p, so they are grouped into four pages (map / solar / sky / hazards); Play/Pause steps to the next page that still has a visible pane, and an opt-in "auto-rotate every 20 s" setting (off by default, per the design doc) is saved locally. Swift only; Linux build unaffected.
 - Swift verified only by the tvos.yml run on the PR.
 - Next: remaining panes from the design doc, any owner feedback on the design review.
+
+## 2026-10-17 (fourth run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: burn-in and idle protection from the design doc. The dashboard disables the idle timer while shown and drifts the layout 1 pt per minute around a ±4 pt ring (inside the title-safe margins). The dim-after-N-hours option is not done.
+- Swift only; Linux build unaffected. Swift verified only by the tvos.yml run on the PR.
+- Next: dim-after-N-hours option, any owner feedback on the design review.
