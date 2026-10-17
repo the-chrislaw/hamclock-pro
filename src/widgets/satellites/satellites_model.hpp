@@ -25,6 +25,7 @@ class SatellitesModel : public WidgetModel {
     Q_PROPERTY(QVariantMap detail READ detail NOTIFY detailChanged)
     // One-line rise alert ("AO-7 rises in 4 min" / "AO-7 above horizon"); empty when no pass is imminent.
     Q_PROPERTY(QString alert READ alert NOTIFY changed)
+    Q_PROPERTY(QString schedule READ schedule NOTIFY changed)
 public:
     explicit SatellitesModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
@@ -41,6 +42,8 @@ public:
     PolledSource& transmitterSource() { return *tx_source_; }
     QVariantMap detail() const { return detail_; }
     QString alert() const { return alert_; }
+    // Schedule line for all passes in the next 24 h (empty when none); roomy slots show it.
+    QString schedule() const { return schedule_; }
     // Opens the detail box for listed row `index` (toggles off when already open; -1 closes).
     Q_INVOKABLE void selectRow(int index);
     // Opens (never toggles) the detail box for the listed satellite whose short name matches the
@@ -81,7 +84,7 @@ private:
     std::map<int, std::vector<Transmitter>> transmitters_;
     int selected_ = -1;
     QVariantMap detail_;
-    QString alert_;
+    QString alert_, schedule_;
     QStringList tracked_names_;   // short names currently drawn on the map
     QTimer detail_timer_;
     QString mutual_key_, mutual_text_;   // cached DE+DX co-visibility line for the open detail
@@ -90,6 +93,11 @@ private:
 // Alert text for a pass: "NAME rises in N min" within lead_s before AOS, "NAME above horizon"
 // while it is in progress, empty otherwise.
 QString pass_alert_text(const QString& name, qint64 aos, qint64 los, qint64 now, int lead_s = 300);
+
+// One-line schedule of every listed pass: "7 passes in 24 h, best AO-7 78° at 14:05Z"; empty when
+// there are none. `passes` holds {short name, pass}; only those ending after `now` and starting
+// within `horizon_s` count.
+QString pass_schedule_summary(const std::vector<std::pair<QString, SatPass>>& passes, qint64 now, qint64 horizon_s = 24 * 3600);
 
 // Frequency as "145.8000 MHz" (100 Hz resolution).
 QString format_mhz(double hz);
