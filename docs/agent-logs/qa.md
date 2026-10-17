@@ -136,3 +136,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: no QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. Moon bright-limb tilt (#457) uses the Meeus ch. 48 position angle minus the parallactic angle and has new regression checks; the visual orientation was not compared against a real sky chart. tvOS Swift not reviewed line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 20
+- Last reviewed commit: 6895136 (PRs #460 to #463, 7 commits since 2c000a4).
+- Build and 156/156 tests pass on main. The only non-tvOS change is a test (pane chooser must categorise every registered widget, #461); no Qt source changed, so no screenshots were re-rendered this run.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: tvOS Open-Meteo weather (#463) and HF band card (#462) are Qt-free C++ cores with new regression tests; no http://, secrets or personal data in added code. Swift not reviewed line by line.
+- Health: build and tests are green. No new defects; remaining risk is data freshness on the real Pi (#150).
