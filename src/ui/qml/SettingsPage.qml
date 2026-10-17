@@ -229,6 +229,9 @@ Rectangle {
                     AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
                                 text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
                                 onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
+                    AppButton { id: pskRbn; property bool on: appSettings.pskRbn; checkable: false
+                                text: on ? "PSKReporter card: include RBN skimmers (telnet) on" : "PSKReporter card: include RBN skimmers (telnet) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskRbn(on) } }
                     FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true

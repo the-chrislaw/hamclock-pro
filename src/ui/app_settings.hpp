@@ -38,6 +38,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
     Q_PROPERTY(QString pskMatch READ pskMatch NOTIFY optionsChanged)
     Q_PROPERTY(bool pskWspr READ pskWspr NOTIFY optionsChanged)
+    Q_PROPERTY(bool pskRbn READ pskRbn NOTIFY optionsChanged)
     Q_PROPERTY(int aprsRadiusKm READ aprsRadiusKm NOTIFY optionsChanged)
     Q_PROPERTY(int udpSpotPort READ udpSpotPort NOTIFY optionsChanged)
     Q_PROPERTY(bool imperialUnits READ imperialUnits NOTIFY optionsChanged)
@@ -118,6 +119,7 @@ public:
     int aprsPort() const { return aprs_port_; }
     int pskMaxKm() const { return psk_max_km_; }
     QString pskMatch() const { return psk_match_; }
+    bool pskRbn() const { return psk_rbn_; }  // also listen to the Reverse Beacon Network telnet feed (off by default)
     bool pskWspr() const { return psk_wspr_; }  // also query wspr.live (off by default)
     int aprsRadiusKm() const { return aprs_radius_km_; }
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
@@ -166,6 +168,7 @@ public:
     // Receiver call/grid prefixes to keep ("VK, JA, PM95"); empty = all. Max 8 tokens.
     Q_INVOKABLE QString savePskMatch(const QString& filter);
     Q_INVOKABLE QString savePskWspr(bool on);
+    Q_INVOKABLE QString savePskRbn(bool on);
     Q_INVOKABLE QString saveImperialUnits(bool imperial);
     Q_INVOKABLE QString saveClockFormat(int date_order, bool h12);
     Q_INVOKABLE QString saveWeekStart(bool sunday);
@@ -239,6 +242,7 @@ private:
     int psk_max_km_ = 0;
     QString psk_match_;
     bool psk_wspr_ = false;
+    bool psk_rbn_ = false;
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     int udp_port_ = 0;
     bool udp_lan_ = false;

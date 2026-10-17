@@ -19,6 +19,14 @@ void check(bool ok, const char* label) {
     ++checks;
     if (!ok) { ++failures; std::cerr << "FAIL: " << label << '\n'; }
 }
+class FakeSocket : public hamclock::TelnetSocket {
+public:
+    using TelnetSocket::TelnetSocket;
+    void connectToHost(const QString& h, int p) override { host = h; port = p; }
+    void write(const QByteArray& d) override { written.append(d); }
+    void close() override {}
+    QString host; int port = 0; QByteArray written;
+};
 } // namespace
 
 int main(int argc, char** argv) {
@@ -156,7 +164,8 @@ int main(int argc, char** argv) {
     QTemporaryDir tmp;
     AppSettings settings(tmp.filePath("station.json"), tmp.path());
     context.settings = &settings;
-    PskModel model(context);
+    std::vector<FakeSocket*> sockets;
+    PskModel model(context, [&](QObject* parent) -> TelnetSocket* { auto* s = new FakeSocket(parent); sockets.push_back(s); return s; });
     auto now = QDateTime::fromSecsSinceEpoch(1791913300, QTimeZone::utc());
     model.setClock([&] { return now; });
     model.start();
@@ -191,6 +200,30 @@ int main(int argc, char** argv) {
     check(settings.savePskWspr(false).isEmpty(), "WSPR opt-out saved");
     check(model.heard().isEmpty(), "heard line cleared with WSPR off");
     check(model.count() == 1 && model.modes() == "CW 1", "WSPR off drops its spots");
+
+    // RBN: opt-in telnet feed, by DE only.
+    {
+        const auto t0 = QDateTime::fromSecsSinceEpoch(1791913300, QTimeZone::utc());
+        const QString hhmm = t0.addSecs(-120).toString("HHmm") + "Z";
+        const auto r = psk::parse_rbn_line("DX de KM3T-#:    14025.0  W1AW          CW    24 dB  23 WPM  CQ      " + hhmm, t0, "W1AW");
+        check(r && r->receiver == "KM3T" && r->sender == "W1AW" && r->mode == "CW" && r->snr_db == 24 && r->band == "20m",
+              "rbn: skimmer line parsed");
+        check(!psk::parse_rbn_line("DX de KM3T-#:    14025.0  K1ABC         CW    24 dB  23 WPM  CQ      " + hhmm, t0, "W1AW"),
+              "rbn: other stations dropped");
+        check(!psk::parse_rbn_line("DX de W3LPL: 14025.0 W1AW CQ " + hhmm, t0, "W1AW"), "rbn: human spot without dB dropped");
+        check(!psk::parse_rbn_line("Welcome to RBN", t0, "W1AW"), "rbn: junk dropped");
+        check(!settings.pskRbn() && sockets.empty(), "RBN is off by default and never connects");
+        check(settings.savePskRbn(true).isEmpty() && settings.pskRbn(), "RBN opt-in saved");
+        check(model.rbnClient() && sockets.size() == 1 && sockets[0]->host == "telnet.reversebeacon.net" && sockets[0]->port == 7000,
+              "RBN opt-in opens one connection");
+        emit sockets[0]->connected();
+        emit sockets[0]->dataReceived("Please enter your call: ");
+        check(sockets[0]->written == "W1AW\r\n", "RBN logs in with the callsign");
+        emit sockets[0]->dataReceived(("DX de KM3T-#:    14025.0  W1AW          CW    24 dB  23 WPM  CQ      " + hhmm + "\r\n").toLatin1());
+        emit sockets[0]->dataReceived(("DX de DK3WW-#:   14030.0  K1ABC         CW    10 dB  23 WPM  CQ      " + hhmm + "\r\n").toLatin1());
+        check(model.count() == 2 && model.modes().contains("CW 2"), "RBN report merged, other station ignored");
+        check(settings.savePskRbn(false).isEmpty() && !model.rbnClient() && model.count() == 1, "RBN off drops client and spots");
+    }
 
     check(MapOverlays::instance().layers().size() == 1 && MapOverlays::instance().layers()[0].id == "psk",
           "live feed publishes the overlay layer");

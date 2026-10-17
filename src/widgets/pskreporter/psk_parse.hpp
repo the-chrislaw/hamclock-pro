@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QString>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -53,6 +54,11 @@ QString wspr_heard_url(const QString& callsign);
 // Swaps sender and receiver so a "heard by DE" feed reads like a "hears DE"
 // one: `receiver` becomes the station DE heard (reuses distance helpers).
 std::vector<Report> heard_as_reports(const std::vector<Report>& heard);
+
+// Reverse Beacon Network telnet line ("DX de KM3T-#: 14025.0 W1AW CW 24 dB 23 WPM CQ 1234Z") as a report
+// of `de_call` being heard by a skimmer. Lines about other stations, not spots, or without a dB value
+// yield nothing. The skimmer's "-#" suffix is dropped; its grid is not in the line, so it stays empty.
+std::optional<Report> parse_rbn_line(const QString& line, const QDateTime& now_utc, const QString& de_call);
 
 // Query URL for "who heard this callsign", or an empty string when the call
 // has characters outside [A-Z0-9/] (nothing is sent for it).

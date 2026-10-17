@@ -140,4 +140,23 @@ QString band_summary(const std::vector<std::pair<QString, int>>& stats, int max_
     return parts.join(QString::fromUtf8(" · "));
 }
 
+std::optional<Report> parse_rbn_line(const QString& line, const QDateTime& now_utc, const QString& de_call) {
+    const auto spot = dxcluster::parse_spot_line(line, now_utc);
+    if (!spot || de_call.isEmpty() || spot->dx.compare(de_call, Qt::CaseInsensitive) != 0) return std::nullopt;
+    static const QRegularExpression re(R"(^(\S+)\s+(-?\d+)\s*dB\b)");
+    const auto m = re.match(spot->comment.trimmed());
+    if (!m.hasMatch()) return std::nullopt;
+    Report r;
+    r.receiver = spot->spotter.toUpper();
+    if (r.receiver.endsWith("-#")) r.receiver.chop(2);
+    r.sender = spot->dx.toUpper();
+    r.freq_khz = spot->frequency_khz;
+    r.band = spot->band;
+    r.mode = m.captured(1).toUpper();
+    r.snr_db = m.captured(2).toInt();
+    r.has_snr = true;
+    r.time = spot->time;
+    return r;
+}
+
 } // namespace hamclock::psk
