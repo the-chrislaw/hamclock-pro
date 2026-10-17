@@ -103,6 +103,15 @@ void MeshModel::on_data(const QByteArray& data) {
             any = true;
             continue;
         }
+        if (const auto nm = mesh::parse_nodeinfo_packet(frame)) {
+            // A renamed node keeps its position; names for nodes we have no position for are not kept.
+            auto it = nodes_.find(nm->num);
+            if (it == nodes_.end()) continue;
+            if (!nm->long_name.isEmpty()) it->long_name = nm->long_name;
+            if (!nm->short_name.isEmpty()) it->short_name = nm->short_name;
+            any = true;
+            continue;
+        }
         const auto n = mesh::parse_from_radio(frame);
         if (!n) continue;
         if (n->last_heard > 0 && now().toSecsSinceEpoch() - n->last_heard > kMaxAgeSec) { nodes_.remove(n->num); continue; }

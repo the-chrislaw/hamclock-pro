@@ -31,6 +31,13 @@ struct PositionUpdate {
 };
 // Valid position packets only; anything else (other ports, no or out-of-range position) is nullopt.
 std::optional<PositionUpdate> parse_position_packet(const QByteArray& payload);
+// A node's name update (FromRadio.packet carrying NODEINFO_APP, a User message); names are clipped to 40 chars.
+struct NameUpdate {
+    quint32 num = 0;
+    QString id, long_name, short_name;
+};
+// Valid NODEINFO packets with at least one name; anything else is nullopt.
+std::optional<NameUpdate> parse_nodeinfo_packet(const QByteArray& payload);
 // A node with a valid position; anything else (no position, out of range, other message types) is nullopt.
 std::optional<Node> parse_from_radio(const QByteArray& payload);
 

@@ -138,6 +138,52 @@ std::optional<PositionUpdate> parse_position_packet(const QByteArray& payload) {
     return std::nullopt;
 }
 
+std::optional<NameUpdate> parse_nodeinfo_packet(const QByteArray& payload) {
+    Reader r = reader(payload);
+    while (!r.done()) {
+        const quint64 tag = r.varint();
+        if (!r.ok) break;
+        if ((tag >> 3) != 2 || (tag & 7) != 2) { r.skip(int(tag & 7)); continue; } // FromRadio.packet
+        const QByteArray packet = r.bytes();
+        if (!r.ok) return std::nullopt;
+        NameUpdate u;
+        QByteArray data;
+        Reader pk = reader(packet);
+        while (!pk.done()) {
+            const quint64 t = pk.varint();
+            if (!pk.ok) break;
+            if ((t >> 3) == 1 && (t & 7) == 0) u.num = quint32(pk.varint());     // MeshPacket.from
+            else if ((t >> 3) == 4 && (t & 7) == 2) data = pk.bytes();           // MeshPacket.decoded
+            else pk.skip(int(t & 7));
+        }
+        if (!pk.ok || u.num == 0 || data.isEmpty()) return std::nullopt;
+        quint64 port = 0;
+        QByteArray body;
+        Reader d = reader(data);
+        while (!d.done()) {
+            const quint64 t = d.varint();
+            if (!d.ok) break;
+            if ((t >> 3) == 1 && (t & 7) == 0) port = d.varint();                // Data.portnum
+            else if ((t >> 3) == 2 && (t & 7) == 2) body = d.bytes();            // Data.payload
+            else d.skip(int(t & 7));
+        }
+        if (!d.ok || port != 4) return std::nullopt;                             // NODEINFO_APP
+        Reader ur = reader(body);
+        while (!ur.done()) {
+            const quint64 t = ur.varint();
+            if (!ur.ok) break;
+            const int w = int(t & 7);
+            if (w == 2 && (t >> 3) >= 1 && (t >> 3) <= 3) {
+                const QString s = QString::fromUtf8(ur.bytes()).left(40);
+                if ((t >> 3) == 1) u.id = s; else if ((t >> 3) == 2) u.long_name = s; else u.short_name = s;
+            } else ur.skip(w);
+        }
+        if (!ur.ok || (u.long_name.isEmpty() && u.short_name.isEmpty())) return std::nullopt;
+        return u;
+    }
+    return std::nullopt;
+}
+
 std::optional<Node> parse_from_radio(const QByteArray& payload) {
     Reader r = reader(payload);
     while (!r.done()) {
