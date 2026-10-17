@@ -274,3 +274,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (run 49)
 - Step 1: only #73 (stale docs, another area's) open; left alone. No open `[C]` qa issues.
 - Remaining C items are blocked (RBN #399, Meshtastic #311, UDP sets DX #333, WWFF/GMA #305, IOTA names #426) or need a real HamAlert/ONTA fixture that does not exist, so nothing invented. Docs-only slice: backlog item 9 still said APRS settings and map overlay were "later"; both are done (see settings parity row). No code change.
+
+## 2026-10-17 (run 50)
+- Step 1: only #73 (stale docs, another area's) open; left alone. No open `[C]` qa issues.
+- Found that #399 (RBN), #333 (UDP sets DX) and #311 (Meshtastic) already carry owner decisions from Oct 15; earlier runs logged them as waiting. Next runs: #333 and #311 are unblocked.
+- Backlog item 6 (slice): RBN "by DE". `psk::parse_rbn_line` (reuses the DX parser; skimmer `-#` dropped, mode and dB from the comment), `PskModel` opens one receive-only telnet connection to telnet.reversebeacon.net:7000 only when the new opt-in `AppSettings::pskRbn/savePskRbn` (`[psk] rbn`, default off, backward compatible) is on and a callsign is set; reports kept 15 min, max 200, merged into the PSKReporter card. Settings button added. Tests extended (fake socket, inline lines because raw TCP is unreachable from the sandbox, so no real capture); 156/156 pass locally; ASan/UBSan left to CI. No screenshot (card needs a callsign and a live link); not validated on device.
+- Not done: RBN port 7001 (FT8/FT4, would be a second connection), UDP sets DX (#333), Meshtastic (#311).

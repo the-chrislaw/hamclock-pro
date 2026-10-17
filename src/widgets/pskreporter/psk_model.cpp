@@ -11,10 +11,14 @@ namespace {
 using namespace std::chrono_literals;
 constexpr PollPolicy kPolicy{5min, 20min, 30min};  // PSKReporter: at most every 5 minutes
 constexpr int kRecentRows = 6;
+constexpr int kRbnMaxReports = 200;
+constexpr int kRbnWindowSecs = 15 * 60;  // same window as the PSKReporter query
+constexpr int kRbnPort = 7000;           // CW/RTTY skimmers; 7001 (FT8/FT4) would be a second connection
 } // namespace
 
-PskModel::PskModel(const WidgetContext& context, QObject* parent)
-    : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport) {
+PskModel::PskModel(const WidgetContext& context, TelnetSocketFactory socket_factory, QObject* parent)
+    : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport),
+      socket_factory_(std::move(socket_factory)) {
     if (settings_) {
         map_visible_ = settings_->mapSourceVisible("psk");
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
@@ -27,6 +31,7 @@ PskModel::PskModel(const WidgetContext& context, QObject* parent)
         connect(settings_, &AppSettings::stationChanged, this, &PskModel::start);
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
             syncWspr();
+            syncRbn();
             if (!raw_.ok) return;
             applyFilter();
             emit reportsChanged();
@@ -69,9 +74,10 @@ void PskModel::applyFilter() {
 // Combines the PSKReporter and (optional) WSPR feeds, newest first.
 void PskModel::mergeRaw() {
     raw_ = psk_raw_;
-    if (wspr_raw_.ok) {
+    if (wspr_raw_.ok || rbn_raw_.ok) {
         raw_.ok = true;
         raw_.reports.insert(raw_.reports.end(), wspr_raw_.reports.begin(), wspr_raw_.reports.end());
+        raw_.reports.insert(raw_.reports.end(), rbn_raw_.reports.begin(), rbn_raw_.reports.end());
         std::stable_sort(raw_.reports.begin(), raw_.reports.end(),
                          [](const psk::Report& a, const psk::Report& b) { return a.time > b.time; });
     }
@@ -117,6 +123,41 @@ void PskModel::syncWspr() {
     heard_source_->start();
 }
 
+// RBN (telnet, receive-only, by DE) only when the user turns it on and a callsign is set. The client logs in
+// with the callsign and reconnects with backoff; spots about other stations are dropped by the parser.
+void PskModel::syncRbn() {
+    const bool want = settings_ && settings_->pskRbn() && source_ && socket_factory_ && !call_.isEmpty();
+    if (!want) {
+        if (!rbn_ && !rbn_raw_.ok) return;
+        rbn_.reset();
+        rbn_raw_ = {};
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+        publishOverlay();
+        return;
+    }
+    if (rbn_) return;
+    rbn_ = std::make_unique<TelnetClient>(socket_factory_);
+    connect(rbn_.get(), &TelnetClient::lineReceived, this, &PskModel::onRbnLine);
+    rbn_->start("telnet.reversebeacon.net", kRbnPort, call_);
+}
+
+void PskModel::onRbnLine(const QString& line) {
+    const auto report = psk::parse_rbn_line(line, now(), call_);
+    if (!report) return;
+    rbn_raw_.ok = true;
+    const QDateTime cutoff = now().addSecs(-kRbnWindowSecs);
+    auto& v = rbn_raw_.reports;
+    v.insert(v.begin(), *report);
+    v.erase(std::remove_if(v.begin(), v.end(), [&](const psk::Report& r) { return r.time < cutoff; }), v.end());
+    if (static_cast<int>(v.size()) > kRbnMaxReports) v.resize(kRbnMaxReports);
+    mergeRaw();
+    applyFilter();
+    emit reportsChanged();
+    refreshState();
+}
+
 void PskModel::start() {
     const QString call = settings_ ? settings_->callsign().trimmed().toUpper() : QString();
     if (source_ && call == call_) return;
@@ -127,6 +168,8 @@ void PskModel::start() {
     delete heard_source_;
     heard_source_ = nullptr;
     heard_raw_ = {};
+    rbn_.reset();
+    rbn_raw_ = {};
     feed_ = {};
     raw_ = {};
     psk_raw_ = {};
@@ -155,6 +198,7 @@ void PskModel::start() {
     setState("loading", "Contacting PSKReporter…");
     source_->start();
     syncWspr();
+    syncRbn();
 }
 
 QString PskModel::bestSnr() const {
@@ -206,6 +250,16 @@ QVariantList PskModel::recent() const {
 }
 
 void PskModel::refreshState() {
+    // Skimmer reports age out even when no new line arrives.
+    const QDateTime cutoff = now().addSecs(-kRbnWindowSecs);
+    auto& rv = rbn_raw_.reports;
+    const auto expired = std::remove_if(rv.begin(), rv.end(), [&](const psk::Report& r) { return r.time < cutoff; });
+    if (expired != rv.end()) {
+        rv.erase(expired, rv.end());
+        mergeRaw();
+        applyFilter();
+        emit reportsChanged();
+    }
     refreshStateImpl();
     publishOverlay();
 }
@@ -222,7 +276,7 @@ void PskModel::refreshStateImpl() {
 }
 
 void register_widget_pskreporter(WidgetRegistry& registry, const WidgetContext& context) {
-    auto* model = new PskModel(context);
+    auto* model = new PskModel(context, make_tcp_socket_factory());
     registry.add({"pskreporter", "PSKReporter", QUrl("qrc:/widgets/pskreporter/PskCard.qml"), "strip", 70}, model);
     QTimer::singleShot(0, model, &PskModel::start);
 }

@@ -3,7 +3,9 @@
 #include "../widget_registry.hpp"
 #include "psk_parse.hpp"
 #include "../../net/polled_source.hpp"
+#include "../../net/telnet_client.hpp"
 #include <QVariantList>
+#include <memory>
 
 namespace hamclock {
 
@@ -20,7 +22,8 @@ class PskModel : public WidgetModel {
     Q_PROPERTY(QString heard READ heard NOTIFY reportsChanged)
     Q_PROPERTY(QVariantList recent READ recent NOTIFY reportsChanged)
 public:
-    explicit PskModel(const WidgetContext& context, QObject* parent = nullptr);
+    // `socket_factory` enables the opt-in RBN telnet feed; without one RBN is never contacted.
+    explicit PskModel(const WidgetContext& context, TelnetSocketFactory socket_factory = {}, QObject* parent = nullptr);
     ~PskModel() override;
     void setMapVisible(bool visible);  // per-source map on/off (default on)
     void start();  // (re)reads the callsign from settings
@@ -34,6 +37,7 @@ public:
     QString heard() const;  // WSPR heard by DE: "I heard 12 · farthest JA1XYZ 9,876 km 20m" (opt-in), empty if none
     QVariantList recent() const;  // newest first: {call, grid, band, mode, snr, age}
     PolledSource* source() { return source_; }
+    TelnetClient* rbnClient() { return rbn_.get(); }
 
 signals:
     void reportsChanged();
@@ -41,6 +45,8 @@ signals:
 private:
     void applyFilter();
     void syncWspr();
+    void syncRbn();
+    void onRbnLine(const QString& line);
     void mergeRaw();
     void refreshState();
     void refreshStateImpl();
@@ -52,7 +58,9 @@ private:
     QString call_;
     PolledSource* wspr_source_ = nullptr;
     PolledSource* heard_source_ = nullptr;
-    psk::Feed psk_raw_, wspr_raw_, heard_raw_;
+    TelnetSocketFactory socket_factory_;
+    std::unique_ptr<TelnetClient> rbn_;  // one connection, receive-only, opt-in
+    psk::Feed psk_raw_, wspr_raw_, heard_raw_, rbn_raw_;
     psk::Feed feed_, raw_;  // feed_ = raw_ limited to the max distance setting
     bool map_visible_ = true;
 };

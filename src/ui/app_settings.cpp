@@ -106,6 +106,7 @@ void AppSettings::loadOptions() {
     psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
     psk_match_ = ini.value("psk/match").toString().left(120);
     psk_wspr_ = ini.value("psk/wspr", false).toBool();
+    psk_rbn_ = ini.value("psk/rbn", false).toBool();
     const int udp = ini.value("udp/port", 0).toInt();
     udp_port_ = udp >= 1024 && udp < 65536 ? udp : 0;
     udp_lan_ = ini.value("udp/lan", false).toBool();
@@ -453,6 +454,16 @@ QString AppSettings::savePskWspr(bool on) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the WSPR setting.";
     psk_wspr_ = on;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::savePskRbn(bool on) {
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("psk/rbn", on);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the RBN setting.";
+    psk_rbn_ = on;
     emit optionsChanged();
     return {};
 }
