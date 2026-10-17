@@ -110,6 +110,10 @@ void AppSettings::loadOptions() {
     aprs_port_ = ap > 0 && ap < 65536 ? ap : 14580;
     const int ar = ini.value("aprs/radius_km", 100).toInt();
     aprs_radius_km_ = ar >= 1 && ar <= 500 ? ar : 100;
+    const QString mh = ini.value("mesh/host").toString().trimmed();
+    if (aprs_host_re.match(mh).hasMatch()) mesh_host_ = mh;
+    const int mp = ini.value("mesh/port", 4403).toInt();
+    mesh_port_ = mp > 0 && mp < 65536 ? mp : 4403;
     const int pk = ini.value("psk/max_km", 0).toInt();
     psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
     psk_match_ = ini.value("psk/match").toString().left(120);
@@ -126,7 +130,7 @@ void AppSettings::loadOptions() {
     udp_by_me_ = ini.value("udp/scope", "all").toString() == "me";
     udp_sets_dx_ = ini.value("udp/sets_dx", false).toBool();
     map_hidden_ = ini.value("map_sources/hidden").toStringList();
-    for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "adif"}) {
+    for (const char* k : {"dx", "psk", "ota", "hamalert", "aprs", "mesh", "adif"}) {
         const int m = ini.value(QString("map_sources/label_") + k, -1).toInt();
         if (m >= 0 && m <= 3) map_label_.insert(k, m);
     }
@@ -444,6 +448,24 @@ QString AppSettings::saveAprs(const QString& host, int port, int radius_km) {
     return {};
 }
 
+QString AppSettings::saveMesh(const QString& host, int port) {
+    static const QRegularExpression host_re("^[A-Za-z0-9.-]{1,253}$");
+    const QString h = host.trimmed();
+    if (!h.isEmpty() && !host_re.match(h).hasMatch()) return "Meshtastic node may contain only letters, digits, dots and hyphens.";
+    if (port <= 0 || port >= 65536) return "Meshtastic port must be 1-65535.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("mesh/host", h);
+    ini.setValue("mesh/port", port);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the Meshtastic settings.";
+    const bool changed = h != mesh_host_ || port != mesh_port_;
+    mesh_host_ = h;
+    mesh_port_ = port;
+    emit optionsChanged();
+    if (changed) emit meshChanged();
+    return {};
+}
+
 QString AppSettings::savePskMatch(const QString& filter) {
     const QStringList tokens = psk::match_tokens(filter);
     const QString norm = tokens.join(", ");
@@ -588,7 +610,7 @@ void AppSettings::clearDxOverride() {
 }
 
 QString AppSettings::saveMapSourceLabel(const QString& key, int mode) {
-    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "mesh", "adif"};
     if (!kKeys.contains(key)) return "Unknown map source.";
     if (mode < -1 || mode > 3) return "Unknown label style.";
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
@@ -613,7 +635,7 @@ QString AppSettings::saveMapMinLabelPx(int px) {
 }
 
 QString AppSettings::saveMapSourceVisible(const QString& key, bool visible) {
-    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "adif"};
+    static const QStringList kKeys{"dx", "psk", "ota", "hamalert", "aprs", "mesh", "adif"};
     if (!kKeys.contains(key)) return "Unknown map source.";
     QStringList hidden = map_hidden_;
     hidden.removeAll(key);
