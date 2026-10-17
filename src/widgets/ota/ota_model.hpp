@@ -19,7 +19,7 @@ public:
     explicit OtaModel(const WidgetContext& context, QObject* parent = nullptr);
     void start();
 
-    bool hasData() const { return pota_feed_.ok || sota_feed_.ok; }
+    bool hasData() const { return pota_feed_.ok || sota_feed_.ok || wwff_feed_.ok; }
     int count() const { return static_cast<int>(spots_.size()); }
     QVariantList recent() const;  // newest first: {call, ref, freq, mode, program, age}
 
@@ -33,6 +33,7 @@ public:
 
     PolledSource& potaSource() { return *pota_; }
     PolledSource& sotaSource() { return *sota_; }
+    PolledSource& wwffSource() { return *wwff_; }
 
 signals:
     void spotsChanged();
@@ -47,7 +48,8 @@ private:
 
     PolledSource* pota_;
     PolledSource* sota_;
-    ota::Feed pota_feed_, sota_feed_;
+    PolledSource* wwff_;
+    ota::Feed pota_feed_, sota_feed_, wwff_feed_;
     std::vector<ota::Spot> all_spots_;
     std::vector<ota::Spot> spots_;  // after the display filter
     ota::Filter filter_;

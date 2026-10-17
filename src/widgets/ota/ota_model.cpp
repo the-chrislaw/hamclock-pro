@@ -13,13 +13,15 @@ using namespace std::chrono_literals;
 constexpr PollPolicy kPolicy{2min, 15min, 30min};
 constexpr char kPotaUrl[] = "https://api.pota.app/spot/activator";
 constexpr char kSotaUrl[] = "https://api-db2.sota.org.uk/api/spots/50/all/all";
+constexpr char kWwffUrl[] = "https://spots.wwff.co/static/spots.json";
 constexpr int kRecentRows = 6;
 } // namespace
 
 OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("ota", "On the air", parent),
       pota_(new PolledSource("pota-activator-spots", QUrl(kPotaUrl), kPolicy, context.transport, this)),
-      sota_(new PolledSource("sota-spots", QUrl(kSotaUrl), kPolicy, context.transport, this)) {
+      sota_(new PolledSource("sota-spots", QUrl(kSotaUrl), kPolicy, context.transport, this)),
+      wwff_(new PolledSource("wwff-spots", QUrl(kWwffUrl), kPolicy, context.transport, this)) {
     connect(pota_, &PolledSource::updated, this, [this] {
         pota_feed_ = ota::parse_pota(pota_->body());
         reparse();
@@ -28,6 +30,11 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
         sota_feed_ = ota::parse_sota(sota_->body());
         reparse();
     });
+    connect(wwff_, &PolledSource::updated, this, [this] {
+        wwff_feed_ = ota::parse_wwff(wwff_->body());
+        reparse();
+    });
+    connect(wwff_, &PolledSource::failed, this, &OtaModel::refreshState);
     connect(pota_, &PolledSource::failed, this, &OtaModel::refreshState);
     connect(sota_, &PolledSource::failed, this, &OtaModel::refreshState);
     connect(this, &WidgetModel::ageChanged, this, &OtaModel::refreshState);
@@ -63,10 +70,11 @@ void OtaModel::loadSettingsFilter() {
 void OtaModel::start() {
     pota_->start();
     sota_->start();
+    wwff_->start();
 }
 
 void OtaModel::reparse() {
-    all_spots_ = ota::merge(pota_feed_, sota_feed_);
+    all_spots_ = ota::merge(pota_feed_, sota_feed_, wwff_feed_);
     applyFilter();
 }
 
@@ -118,25 +126,29 @@ void OtaModel::refreshState() {
 
 void OtaModel::refreshStateImpl() {
     if (!hasData()) {
-        const auto err = !pota_->lastError().isEmpty() ? pota_->lastError() : sota_->lastError();
-        if (!err.isEmpty()) setState("offline", "POTA/SOTA unreachable: " + err);
-        else if (pota_->fetchedAt().isValid() || sota_->fetchedAt().isValid())
-            setState("stale", "POTA/SOTA returned no usable spots");
-        else setState("loading", "Contacting POTA and SOTA…");
+        const auto err = !pota_->lastError().isEmpty() ? pota_->lastError()
+                         : !sota_->lastError().isEmpty() ? sota_->lastError() : wwff_->lastError();
+        if (!err.isEmpty()) setState("offline", "POTA/SOTA/WWFF unreachable: " + err);
+        else if (pota_->fetchedAt().isValid() || sota_->fetchedAt().isValid() || wwff_->fetchedAt().isValid())
+            setState("stale", "POTA/SOTA/WWFF returned no usable spots");
+        else setState("loading", "Contacting POTA, SOTA and WWFF…");
         return;
     }
     // Age of the newest download of any feed that parsed.
     QDateTime fetched;
     bool fresh = false;
-    const std::pair<PolledSource*, const ota::Feed*> pairs[] = {{pota_, &pota_feed_}, {sota_, &sota_feed_}};
+    const std::pair<PolledSource*, const ota::Feed*> pairs[] = {{pota_, &pota_feed_}, {sota_, &sota_feed_}, {wwff_, &wwff_feed_}};
     for (const auto& pair : pairs) {
         if (!pair.second->ok) continue;
         if (!fetched.isValid() || pair.first->fetchedAt() > fetched) fetched = pair.first->fetchedAt();
         if (!pair.first->isStale(now())) fresh = true;
     }
-    QString label = "POTA + SOTA";
-    if (!pota_feed_.ok) label = "SOTA only (POTA unavailable)";
-    else if (!sota_feed_.ok) label = "POTA only (SOTA unavailable)";
+    QStringList up, down;
+    (pota_feed_.ok ? up : down) << "POTA";
+    (sota_feed_.ok ? up : down) << "SOTA";
+    (wwff_feed_.ok ? up : down) << "WWFF";
+    QString label = up.join(" + ");
+    if (!down.isEmpty()) label += QString(" (%1 unavailable)").arg(down.join("/"));
     if (!fresh) setState("stale", label + " (out of date)", fetched);
     else setState("live", label, fetched);
 }

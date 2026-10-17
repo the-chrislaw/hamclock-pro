@@ -55,6 +55,25 @@ int main(int argc, char** argv) {
     for (size_t i = 1; i < merged.size(); ++i) newest_first = newest_first && merged[i - 1].time >= merged[i].time;
     check(newest_first, "merged newest first");
 
+    const auto wwff = ota::parse_wwff(fixture(dir, "wwff.json"));
+    check(wwff.ok && wwff.spots.size() == 7, "WWFF: 7 spots (QRT dropped)");
+    check(wwff.spots.front().call == "VK3PF" && wwff.spots.front().reference == "VKFF-0753" &&
+              wwff.spots.front().program == "WWFF" && wwff.spots.front().freq_khz == 7165.0 &&
+              wwff.spots.front().name == "Bunyip State Park" && wwff.spots.front().has_position,
+          "WWFF fields");
+    check(wwff.spots.front().time == QDateTime(QDate(2026, 10, 17), QTime(8, 17, 1), QTimeZone::utc()), "WWFF epoch is UTC");
+    check(!ota::parse_wwff("{}").ok && ota::parse_wwff("[{\"activator\":\"A1B\",\"reference\":\"KFF-1\"}]").spots.empty(),
+          "WWFF malformed rows skipped");
+    const auto all3 = ota::merge(pota, sota, wwff);
+    check(all3.size() == merged.size() + wwff.spots.size(), "three feeds merged");
+    {
+        ota::Filter wf;
+        wf.program = "WWFF";
+        check(ota::filter(all3, wf, all3.front().time).size() == wwff.spots.size(), "WWFF program filter");
+        const auto layer = ota::overlay_layer(wwff.spots);
+        check(!layer.markers.empty() && layer.markers.front().shape == OverlayShape::Square, "WWFF drawn as squares");
+    }
+
     {
         const QDateTime at = merged.front().time.addSecs(600);
         ota::Filter f;
@@ -96,7 +115,11 @@ int main(int argc, char** argv) {
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
         if (fail_all || (fail_pota && url.host() == "api.pota.app")) result.error = "Host unreachable";
-        else { result.http_status = 200; result.body = fixture(dir, (QFileInfo(url.path()).fileName() + ".json").toUtf8().constData()); }
+        else {
+            result.http_status = 200;
+            const QString name = url.host() == "spots.wwff.co" ? QString("wwff.json") : QFileInfo(url.path()).fileName() + ".json";
+            result.body = fixture(dir, name.toUtf8().constData());
+        }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     OtaModel model(context);
@@ -105,23 +128,25 @@ int main(int argc, char** argv) {
         model.setClock([&] { return now; });
         model.potaSource().setClock([&] { return now; });
         model.sotaSource().setClock([&] { return now; });
+        model.wwffSource().setClock([&] { return now; });
     };
     set_clock();
     QFile::remove(model.potaSource().cachePath());
     QFile::remove(model.sotaSource().cachePath());
+    QFile::remove(model.wwffSource().cachePath());
     check(!model.hasData() && model.state() == "loading", "loading before data");
     model.start();
     for (int i = 0; i < 20; ++i) app.processEvents();
-    check(model.state() == "live" && model.hasData() && model.count() == static_cast<int>(merged.size()), "fresh -> live");
-    check(model.statusText() == "POTA + SOTA", "both sources named");
+    check(model.state() == "live" && model.hasData() && model.count() == static_cast<int>(all3.size()), "fresh -> live");
+    check(model.statusText() == "POTA + SOTA + WWFF", "all sources named");
     check(model.recent().size() == 6, "recent capped at 6");
     {
         size_t positioned = 0;
-        for (const auto& sp : merged) positioned += sp.has_position ? 1 : 0;
+        for (const auto& sp : all3) positioned += sp.has_position ? 1 : 0;
         check(positioned > 0, "fixture has positioned spots");
         const auto& layers = MapOverlays::instance().layers();
         check(layers.size() == 1 && layers[0].id == "ota" && layers[0].markers.size() == positioned, "live -> POTA spots on the map");
-        const auto direct = ota::overlay_layer(merged, 3);
+        const auto direct = ota::overlay_layer(merged, 3);  // POTA/SOTA only
         check(direct.markers.size() == 3, "marker cap");
         bool all_pota = true;
         for (const auto& m : direct.markers) all_pota = all_pota && m.shape == OverlayShape::Dot;
@@ -137,6 +162,7 @@ int main(int argc, char** argv) {
     set_clock();
     model.potaSource().refreshNow();
     model.sotaSource().refreshNow();
+    model.wwffSource().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "live" && model.hasData(), "POTA down, SOTA still live");
 
@@ -145,6 +171,7 @@ int main(int argc, char** argv) {
     set_clock();
     model.potaSource().refreshNow();
     model.sotaSource().refreshNow();
+    model.wwffSource().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasData(), "outage -> stale, last data kept");
     check(MapOverlays::instance().layers().empty(), "stale -> markers removed from the map");

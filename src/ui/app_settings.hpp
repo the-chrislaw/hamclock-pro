@@ -116,7 +116,7 @@ public:
     QString udpSpotGroup() const { return udp_group_; }               // IPv4 multicast group, empty = unicast
     bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
     // On-the-air display filter; empty / 0 = no restriction.
-    QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA" or empty
+    QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA", "WWFF" or empty
     QString otaBand() const { return ota_band_; }        // e.g. "20m"
     QString otaMode() const { return ota_mode_; }        // e.g. "CW"
     int otaMaxAgeMin() const { return ota_max_age_min_; }
@@ -168,7 +168,7 @@ public:
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
-    // program: POTA, SOTA or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
+    // program: POTA, SOTA, WWFF or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
     Q_INVOKABLE QString saveOtaSort(const QString& sort);
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
     // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.

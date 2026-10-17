@@ -92,7 +92,7 @@ void AppSettings::loadOptions() {
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
     ota_program_ = ini.value("ota/program").toString();
-    if (ota_program_ != "POTA" && ota_program_ != "SOTA") ota_program_.clear();
+    if (ota_program_ != "POTA" && ota_program_ != "SOTA" && ota_program_ != "WWFF") ota_program_.clear();
     static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
     static const QRegularExpression mode_re("^[A-Za-z0-9-]{1,10}$");
     ota_band_ = ini.value("ota/band").toString();
@@ -408,7 +408,7 @@ QString AppSettings::saveOtaFilter(const QString& program, const QString& band, 
     const auto m = mode.trimmed().toUpper();
     static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
     static const QRegularExpression mode_re("^[A-Z0-9-]{1,10}$");
-    if (!prog.isEmpty() && prog != "POTA" && prog != "SOTA") return "Program must be POTA, SOTA or empty.";
+    if (!prog.isEmpty() && prog != "POTA" && prog != "SOTA" && prog != "WWFF") return "Program must be POTA, SOTA, WWFF or empty.";
     if (!b.isEmpty() && !band_re.match(b).hasMatch()) return "Band looks like 20m or 70cm.";
     if (!m.isEmpty() && !mode_re.match(m).hasMatch()) return "Mode: letters and digits only (CW, SSB, FT8).";
     if (max_age_min < 0 || max_age_min > 1440) return "Maximum age is 0-1440 minutes (0 = any).";

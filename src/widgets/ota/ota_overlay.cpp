@@ -15,9 +15,9 @@ OverlayLayer overlay_layer(const std::vector<Spot>& spots, int max_markers) {
         m.where = {s.latitude, s.longitude};
         m.call = s.call;
         m.prefix = s.reference;
-        const bool sota = s.program == "SOTA";
-        m.color = QColor(sota ? "#e08a1e" : "#2e9e5b");
-        m.shape = sota ? OverlayShape::Triangle : OverlayShape::Dot;
+        const bool sota = s.program == "SOTA", wwff = s.program == "WWFF";
+        m.color = QColor(sota ? "#e08a1e" : wwff ? "#2a8fbd" : "#2e9e5b");
+        m.shape = sota ? OverlayShape::Triangle : wwff ? OverlayShape::Square : OverlayShape::Dot;
         m.size_px = 5;
         layer.markers.push_back(m);
     }

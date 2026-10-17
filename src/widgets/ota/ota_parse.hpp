@@ -10,7 +10,7 @@
 namespace hamclock::ota {
 
 struct Spot {
-    QString program;     // "POTA" or "SOTA"
+    QString program;     // "POTA", "SOTA" or "WWFF"
     QString call;        // activator, upper case
     QString reference;   // "US-1892" or "W4C/CM-009"
     QString name;        // park or summit name, may be empty
@@ -32,17 +32,19 @@ struct Feed {
 // a JSON array yields ok == false.
 Feed parse_pota(const QByteArray& body);
 Feed parse_sota(const QByteArray& body);  // SOTA frequencies are MHz on the wire
+// WWFF Spotline (spots.wwff.co/static/spots.json): kHz, epoch spot_time, remarks.
+Feed parse_wwff(const QByteArray& body);
 
-// Both feeds merged, newest first, duplicates (same program, call, reference)
+// The feeds merged, newest first, duplicates (same program, call, reference)
 // reduced to the newest spot.
-std::vector<Spot> merge(const Feed& pota, const Feed& sota);
+std::vector<Spot> merge(const Feed& pota, const Feed& sota, const Feed& wwff = {});
 
 // Display filter. Empty band/mode and max_age_min <= 0 mean "no restriction".
 struct Filter {
     QString band;          // "20m"; compared with the DX cluster band names
     QString mode;          // "CW", "SSB", ... case-insensitive
     int max_age_min = 0;
-    QString program;       // "POTA" or "SOTA", empty for both
+    QString program;       // "POTA", "SOTA" or "WWFF", empty for all
     // List order: "time" (newest first, default), "freq" (ascending) or "dist"
     // (nearest to DE first; spots without a position last). Unknown = "time".
     QString sort;
