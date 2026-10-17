@@ -30,6 +30,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
     ${HCP_ROOT}/apple/tvos/Core/bands.cpp
     ${HCP_ROOT}/apple/tvos/Core/weather.cpp
+    ${HCP_ROOT}/apple/tvos/Core/storms.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
 # Vendored Vallado SGP4: third-party code, not ours to reformat; silence its warnings only.
 set_source_files_properties(${D}/astro_sgp4/SGP4.cpp PROPERTIES COMPILE_OPTIONS "-w")
@@ -88,3 +89,11 @@ target_compile_definitions(core-quakes-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/quakes/tests/fixtures")
 set_target_properties(core-quakes-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-quakes-regression COMMAND core-quakes-regression)
+
+# Qt-free NHC storms parser; the Qt parser's fixtures are the oracle.
+add_executable(core-storms-regression ${HCP_ROOT}/apple/tvos/Core/tests/storms_regression.cpp)
+target_link_libraries(core-storms-regression PRIVATE hamclock-core)
+target_compile_definitions(core-storms-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/storms/tests/fixtures")
+set_target_properties(core-storms-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-storms-regression COMMAND core-storms-regression)

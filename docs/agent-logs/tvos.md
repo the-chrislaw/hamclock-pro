@@ -108,3 +108,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: weather at the station. Qt-free port of the Open-Meteo `current` parser (`Core/weather.cpp`, C ABI `hcp_weather_parse`) with the Qt fixture and cases as the oracle; `LocalWeatherStore` fetches for the operator's locator every 15 min, drops another place's reading when the locator changes, and the card shows Stale/Offline or "Set your locator" instead of guessing. New pane toggle, Open-Meteo attribution.
 - Host core tests pass on Linux; Swift verified only by the tvos.yml run on the PR.
 - Next: tropical storms (NHC) pane.
+
+## 2026-10-17 (second run)
+- Main's tvOS CI green; no open PR of mine, no [I] qa issues. Backlog 4 slice: tropical storms (NHC). Qt-free port of the `CurrentStorms.json` index parser (`Core/storms.cpp`, C ABI `hcp_storms_parse`) with the Qt fixtures as the oracle; `StormStore` polls every 30 min; the card lists up to four storms strongest first, says "No active storms" only after a successful fetch, else No data / Stale / Offline. Forecast tracks (TCM text) are not ported. New pane toggle, NHC attribution.
+- Host core tests pass on Linux; Swift verified only by the tvos.yml run on the PR.
+- Next: remaining panes from the design doc, any owner feedback on the design review.

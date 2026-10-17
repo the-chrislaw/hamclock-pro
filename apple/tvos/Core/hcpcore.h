@@ -52,6 +52,18 @@ typedef struct {
 } HcpWeather;
 int hcp_weather_parse(const char* body, size_t len, HcpWeather* out);
 
+/* NHC CurrentStorms.json active-storm index (see storms.hpp). Strongest first; returns the
+ * number written (0 = no active storms), or -1 when the body is not an NHC index. */
+typedef struct {
+    char name[24];
+    char classification[24]; /* "Hurricane", "Tropical storm", ... */
+    char heading[4];         /* compass point of movement, empty when unknown */
+    int wind_kt, pressure_mb, category, speed_kt; /* pressure 0 / speed -1 when not given; category 0 below hurricane */
+    double latitude, longitude;
+    int64_t issued_ms;       /* advisory issuance, UTC; 0 when unknown */
+} HcpStorm;
+int hcp_storms_parse(const char* body, size_t len, HcpStorm* out, size_t cap);
+
 /* Writes a NUL-terminated string into buf (truncated to cap); returns 1 when non-empty. */
 int hcp_swpc_xray_class(double flux_w_m2, char* buf, size_t cap);
 int hcp_swpc_kp_description(double kp, char* buf, size_t cap);
