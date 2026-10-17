@@ -164,3 +164,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: IOTA group names (#485) parse a downloaded JSON defensively (ref regex, name capped at 60 chars), poll weekly through the shared transport and have regression tests with a fixture. tvOS keep-awake, pixel shift and dim (#484, #487) are opt-in; Swift not reviewed line by line. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 24
+- Last reviewed commit: f936b83 (PRs #488 to #490, 4 commits since bc24808).
+- Build and 160/160 tests pass on main. Rendered the default layout at 800x480 and 1024x600 (dark and light, unconfigured station, empty fixtures): nothing scrolls, titles and footers fit, panes show honest Offline / Set up states. The new Maidenhead square lines (#490, zoom >= 3) were not rendered zoomed in.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: #490 adds pure square-line geometry with count and field-exclusion checks and a zoom-gated render test; no QtWidgets, http://, scrolling views or password handling; no weakened tests. tvOS (#489) is a docs-only change.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
