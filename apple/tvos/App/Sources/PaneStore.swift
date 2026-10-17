@@ -19,6 +19,20 @@ enum Pane: String, CaseIterable, Identifiable {
     }
 }
 
+/// Dashboard pages: the panes do not fit one 1080p screen, so Play/Pause (or auto-rotate)
+/// steps through the pages that still have at least one visible pane.
+enum Page: Int, CaseIterable {
+    case overview, solar, sky, hazards
+    var panes: [Pane] {
+        switch self {
+        case .overview: return [.map]
+        case .solar: return [.spaceWeather, .bands]
+        case .sky: return [.sun, .station, .satellites]
+        case .hazards: return [.quakes, .weather, .storms]
+        }
+    }
+}
+
 /// Which panes are hidden. Same storage rule as StationStore: iCloud key-value store
 /// (tvOS has no guaranteed local storage) mirrored to UserDefaults. Default is all visible.
 @MainActor
@@ -38,6 +52,25 @@ final class PaneStore: ObservableObject {
                 if let v = self?.kvs.array(forKey: Self.key) as? [String] { self?.hidden = Set(v) }
             }
         }
+    }
+
+    @Published private(set) var autoRotate: Bool = UserDefaults.standard.bool(forKey: "panes.autoRotate")
+
+    /// Pages with at least one visible pane, in order. Never empty (falls back to the overview).
+    var pages: [Page] {
+        let p = Page.allCases.filter { page in page.panes.contains { isOn($0) } }
+        return p.isEmpty ? [.overview] : p
+    }
+
+    func next(after page: Page) -> Page {
+        let p = pages
+        guard let i = p.firstIndex(of: page) else { return p[0] }
+        return p[(i + 1) % p.count]
+    }
+
+    func setAutoRotate(_ on: Bool) {
+        autoRotate = on
+        UserDefaults.standard.set(on, forKey: "panes.autoRotate")
     }
 
     func isOn(_ pane: Pane) -> Bool { !hidden.contains(pane.rawValue) }
