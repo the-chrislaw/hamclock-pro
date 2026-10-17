@@ -315,3 +315,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-17 (run 57)
 - Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
 - No code change. GMA: www.cqgma.org 301-redirects to www.gma.rocks, which the sandbox proxy blocks (403), so no fixture is possible; asked on #305 to allowlist www.gma.rocks. RBN port 7001 would be a second connection against the "one connection" decision on #399; asked there before doing it. Neighbour links and Log4OM have no real capture or documented fixture available.
+
+## 2026-10-17 (run 58)
+- Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
+- No code change. No new owner replies on #305 (www.gma.rocks) or #399 (RBN 7001 second connection); the other remaining slices (neighbour links, Log4OM) have no real capture or fixture. Still waiting on the owner.
