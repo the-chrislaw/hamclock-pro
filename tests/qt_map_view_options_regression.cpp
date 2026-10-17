@@ -87,6 +87,16 @@ int main(int argc, char** argv) {
     const auto plain = render(gs);
     gs.grid = MapGrid::Maidenhead;
     check(render(gs) != plain, "grid changes the render");
+    { const auto sq = maidenhead_square_lines();
+      int par = 0, mer = 0;
+      for (const auto& l : sq) { if (l.lat1 == l.lat2) { ++par; check(std::fmod(std::fabs(l.lat1), 10) != 0, "no field parallel"); } else { ++mer; check(std::fmod(l.lon1 + 180, 20) != 0, "no field meridian"); } }
+      check(par == 179 - 17 && mer == 180 - 18, "square line counts (1 deg x 2 deg minus fields)");
+      auto z = gs; z.grid = MapGrid::Maidenhead; z.zoom = 1;
+      const auto z1 = render(z);
+      z.zoom = 3;
+      auto n = z; n.grid = MapGrid::None;
+      check(render(z) != render(n), "grid visible at zoom 3");
+      check(z1 != render(z), "squares appear only when zoomed in"); }
 
     // Azimuth rings: every point is the requested arc distance from DE, drawn only with DE.
     for (const auto& pt : ring_points(40.0, -75.0, 60.0)) {
