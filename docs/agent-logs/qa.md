@@ -143,3 +143,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: tvOS Open-Meteo weather (#463) and HF band card (#462) are Qt-free C++ cores with new regression tests; no http://, secrets or personal data in added code. Swift not reviewed line by line.
 - Health: build and tests are green. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 21
+- Last reviewed commit: ef6807c (PRs #464 to #472, 18 commits since 6895136).
+- Build and 158/158 tests pass on main. Rendered the default layout at 800x480, 1024x600 and 1920x1080 (dark and light, unconfigured station): nothing scrolls, titles and footers fit, panes show honest Live / Set up states. New opt-in features (RBN spots, UDP sets DX, accent colour, satellite frequency column, EME QR) were not rendered. Startup prints one `qt.core.qobject.connect: invalid nullptr parameter` warning in offscreen mode; not traced, not filed.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: RBN (#468) is opt-in, receive-only, needs a callsign, uses a backoff reconnect and is bounded to 200 reports / 15 min, with regression tests. Vendored Nayuki QR encoder (#470) has a provenance doc and tests. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. tvOS Swift not reviewed line by line.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
