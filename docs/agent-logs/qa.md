@@ -171,3 +171,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: #490 adds pure square-line geometry with count and field-exclusion checks and a zoom-gated render test; no QtWidgets, http://, scrolling views or password handling; no weakened tests. tvOS (#489) is a docs-only change.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 25
+- Last reviewed commit: 878763c (PR #492 only, a docs-only agent log, plus my own run 24 log since f936b83).
+- No source, test or workflow changes since run 24, so the build, tests and screenshots from run 24 still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 24. Remaining risk is data freshness on the real Pi (#150).
