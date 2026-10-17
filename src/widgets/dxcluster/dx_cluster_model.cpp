@@ -11,6 +11,7 @@
 namespace hamclock {
 
 namespace {
+constexpr char kIotaGroupsUrl[] = "https://www.iota-world.org/islands-on-the-air/downloads/download-file.html?path=groups.json";
 QString entity_of(const QString& call) {
     const auto* e = dxcluster::DxccTable::bundled().lookup(call);
     return e ? e->primary_prefix : QString();
@@ -35,13 +36,14 @@ QVariant DxSpotList::data(const QModelIndex& index, int role) const {
     }
     case NeededRole: return needed_ ? needed_(s.dx, s.band) : QString();
     case OtaRole: return s.ota_ref.isEmpty() ? QString() : s.ota_program + " " + s.ota_ref;
+    case OtaNameRole: return s.ota_program == "IOTA" ? iota_names_.value(s.ota_ref.toUpper()) : QString();
     }
     return {};
 }
 
 QHash<int, QByteArray> DxSpotList::roleNames() const {
     return {{DxRole, "dx"}, {SpotterRole, "spotter"}, {FrequencyRole, "frequency"}, {BandRole, "band"},
-            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}, {OtaRole, "ota"}, {NeededRole, "needed"}};
+            {ModeRole, "mode"}, {TimeRole, "time"}, {CommentRole, "comment"}, {WatchedRole, "watched"}, {CountryRole, "country"}, {OtaRole, "ota"}, {NeededRole, "needed"}, {OtaNameRole, "otaName"}};
 }
 
 void DxSpotList::rebuild() {
@@ -181,7 +183,15 @@ void DxClusterModel::cycleModeFilter() {
 
 DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("dxcluster", "DX cluster", parent), settings_(context.settings),
-      client_(std::move(factory), this), list_(this), udp_(this) {
+      client_(std::move(factory), this),
+      iota_(context.transport
+                ? new PolledSource("iota-groups", QUrl(kIotaGroupsUrl),
+                                   {std::chrono::hours(24 * 7), std::chrono::hours(24 * 30), std::chrono::hours(24)},
+                                   context.transport, this)
+                : nullptr),
+      list_(this), udp_(this) {
+    if (iota_)
+        connect(iota_, &PolledSource::updated, this, [this] { list_.set_iota_names(dxcluster::parse_iota_groups(iota_->body())); });
     if (settings_) {
         map_visible_ = settings_->mapSourceVisible("dx");
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
@@ -255,6 +265,7 @@ void DxClusterModel::start() {
     const QString call = cluster_login(settings_ ? settings_->callsign() : QString(), settings_ ? settings_->clusterSsid() : 0);
     client_.start(host, settings_ ? settings_->clusterPort() : 0, call,
                   settings_ ? settings_->clusterCommands() : QStringList());
+    if (iota_ && !iota_started_ && client_.state() != TelnetClient::State::Idle) { iota_started_ = true; iota_->start(); }
     if (client_.state() == TelnetClient::State::Idle)
         setState("unconfigured", host.isEmpty() ? "Not configured: set a cluster host in Settings"
                                                 : "Not configured: set your callsign in Settings");

@@ -1,4 +1,6 @@
 #pragma once
+#include <QHash>
+#include <QByteArray>
 // Parser for "DX de" spot lines as sent by DXSpider, AR-Cluster and CC-Cluster.
 #include <QDateTime>
 #include <QString>
@@ -26,5 +28,9 @@ QString band_for_khz(double khz);
 struct OtaRef { QString program, ref; };
 // First on-the-air reference named in a spot comment (WWFF, SOTA, IOTA, POTA, in that order); empty when none.
 OtaRef parse_ota_ref(const QString& comment);
+
+// IOTA "groups.json" (iota-world.org developer download) -> reference number to group name, e.g. "EU-005" -> "British Isles".
+// Entries without a well-formed refno or a name are dropped; names are clipped to 60 characters. Empty on malformed input.
+QHash<QString, QString> parse_iota_groups(const QByteArray& json);
 
 } // namespace hamclock::dxcluster
