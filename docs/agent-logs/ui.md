@@ -236,3 +236,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 55)
 - Backlog A8 guard: `pane-keys-regression` now fails when a widget registered with `registry.add({"id", ...` has no category in `PaneChooser.qml` (it would silently fall under "Other"). Checked it passes today (41 widgets, all covered) and fails when a category entry is removed. Test-only change; no UI change, no screenshots. Not validated on a device.
 - Only #460 (QA log, still in CI) and #73 (stale docs, not mine) were open; left alone.
+
+## 2026-10-17 (hourly run, 56)
+- Backlog A17 slice: Settings > "Accent colour" (blue/green/amber/red/purple, `display/accent` in `options.ini`) drives `Theme.accent` with separate light/dark values. `widget-core-regression` extended (default, rejection, apply, restart). Rendered 1024x600 and 800x480 light/dark with amber: exit 0, no truncation report; I did not inspect the images (Settings not reachable from `--screenshot`). ctest 156/156; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
