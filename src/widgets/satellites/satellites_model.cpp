@@ -27,6 +27,18 @@ const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "FO-29", "AO-73", "RS-
 
 QString format_mhz(double hz) { return QString::number(hz / 1e6, 'f', 4) + " MHz"; }
 
+QString primary_downlink_text(const std::vector<Transmitter>& txs) {
+    for (const Transmitter& x : txs) {
+        if (!x.active || x.downlink_low_hz <= 0) continue;
+        QString f = QString::number(x.downlink_low_hz / 1e6, 'f', 4);
+        if (x.downlink_high_hz > x.downlink_low_hz) f += "-" + QString::number(x.downlink_high_hz / 1e6, 'f', 4);
+        f += " MHz";
+        if (!x.mode.empty()) f += " " + QString::fromStdString(x.mode);
+        return f;
+    }
+    return {};
+}
+
 QString compass_point(double az_deg) {
     static const char* const kNames[] = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
                                          "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
@@ -293,8 +305,10 @@ void SatellitesModel::recompute() {
         const QString short_name = satellite_short_name(QString::fromStdString(r.tle.name));
         const QString alert = pass_alert_text(short_name, r.pass.aos, r.pass.los, static_cast<qint64>(t));
         if (alert_.isEmpty()) alert_ = alert;
+        const auto tx = transmitters_.find(tle_norad_id(r.tle));
         rows_.append(QVariantMap{{"name", short_name}, {"when", when}, {"maxEl", qRound(r.pass.max_el_deg)},
-                                 {"live", until <= 0}, {"soon", !alert.isEmpty()}});
+                                 {"live", until <= 0}, {"soon", !alert.isEmpty()},
+                                 {"freq", tx == transmitters_.end() ? QString() : primary_downlink_text(tx->second)}});
     }
     refresh_detail();
     emit changed();

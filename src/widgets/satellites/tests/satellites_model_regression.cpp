@@ -51,6 +51,14 @@ int main(int argc, char** argv) {
         check(pass_schedule_summary({{"X", a}}, 0) .startsWith("1 pass in"), "singular");
         check(pass_schedule_summary({{"ISS", gone}}, 0).isEmpty() && pass_schedule_summary({}, 0).isEmpty(), "schedule empty");
     }
+    {
+        Transmitter off; off.active = false; off.downlink_low_hz = 1e6; off.mode = "FM";
+        Transmitter fm; fm.active = true; fm.downlink_low_hz = 145.92e6; fm.mode = "FM";
+        Transmitter tp; tp.active = true; tp.downlink_low_hz = 145.9e6; tp.downlink_high_hz = 146.0e6; tp.mode = "SSB";
+        check(primary_downlink_text({off, fm}) == "145.9200 MHz FM", "primary skips inactive");
+        check(primary_downlink_text({tp}) == "145.9000-146.0000 MHz SSB", "primary transponder range");
+        check(primary_downlink_text({off}).isEmpty() && primary_downlink_text({}).isEmpty(), "primary none");
+    }
     check(satellite_short_name("OSCAR 7 (AO-7)   ") == "AO-7" && satellite_short_name("ISS (ZARYA)") == "ISS" &&
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
           "short names");

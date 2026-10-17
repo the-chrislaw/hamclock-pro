@@ -27,17 +27,17 @@ Card {
         GridLayout {
             Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            columns: root.compact ? 2 : 3
+            columns: root.compact ? 2 : 4
             columnSpacing: Theme.gap * 1.5
             rowSpacing: root.compact ? Theme.gap * 0.4 : Theme.gap
             Repeater {
-                model: root.widget ? root.widget.rows.length * (root.compact ? 2 : 3) : 0
+                model: root.widget ? root.widget.rows.length * (root.compact ? 2 : 4) : 0
                 Text {
                     required property int index
-                    readonly property int cols: root.compact ? 2 : 3
+                    readonly property int cols: root.compact ? 2 : 4
                     readonly property var row: root.widget.rows[Math.floor(index / cols)]
                     readonly property int col: index % cols
-                    text: col === 0 ? row.name : col === 1 ? row.when : "max " + row.maxEl + "°"
+                    text: col === 0 ? row.name : col === 1 ? row.when : col === 2 ? "max " + row.maxEl + "°" : row.freq
                     color: row.soon ? Theme.accent : col === 0 ? Theme.ink : Theme.secondary
                     font.pixelSize: Theme.fontCaption * (col === 0 ? 1.3 : 1)
                     font.weight: col === 0 || row.live ? Font.DemiBold : Font.Normal
