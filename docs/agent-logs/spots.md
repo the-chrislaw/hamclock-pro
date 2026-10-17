@@ -295,3 +295,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Step 1: only #73 (docs, another area's) open; left alone. No open `[C]` qa issues.
 - Backlog item 10 (slice): Meshtastic live positions. `mesh::parse_position_packet` decodes FromRadio.packet / POSITION_APP (sender, lat/lon, rx_time; other ports, empty or out-of-range positions dropped). `MeshModel` moves a known node or adds an unnamed one (shown by `!id`) and refreshes its last-heard time. Still receive-only, no AppSettings change. Test extended with hand-encoded packets (no real capture reachable); mesh tests pass locally, ASan/UBSan left to CI. No screenshot (needs a live node); not validated on device.
 - Not done: neighbour links, NODEINFO_APP name updates, Log4OM, RBN port 7001.
+
+## 2026-10-17 (run 54)
+- Step 1: merged #479 (ui, green and clean). #73 (docs, conflicting, another area's) left alone. No open `[C]` qa issues.
+- Backlog item 10 (slice): Meshtastic NODEINFO_APP name updates. `mesh::parse_nodeinfo_packet` (FromRadio.packet, port 4, User long/short name, clipped to 40 chars); `MeshModel` renames known nodes only (nodes without a position are not added). No AppSettings change. Test extended with hand-encoded packets (no real capture reachable); mesh tests pass locally, ASan/UBSan left to CI. No screenshot (needs a live node); not validated on device.
+- Not done: neighbour links, Log4OM, RBN port 7001.

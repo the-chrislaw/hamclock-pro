@@ -46,6 +46,11 @@ QByteArray position_packet(quint32 from, int port, double lat, double lon, quint
     QByteArray pkt = varint(1 << 3) + varint(from) + len_field(4, data) + fixed32(7, rx);
     return len_field(2, pkt); // FromRadio.packet
 }
+QByteArray nodeinfo_packet(quint32 from, int port, const QString& lng, const QString& shrt) {
+    QByteArray user = len_field(2, lng.toUtf8()) + len_field(3, shrt.toUtf8());
+    QByteArray data = varint(1 << 3) + varint(port) + len_field(2, user);
+    return len_field(2, varint(1 << 3) + varint(from) + len_field(4, data));
+}
 QByteArray frame(const QByteArray& body) {
     QByteArray f;
     f.append(char(0x94)).append(char(0xc3)).append(char(body.size() >> 8)).append(char(body.size() & 0xff));
@@ -109,6 +114,17 @@ int main(int argc, char** argv) {
         const auto moved = model.nearest();
         check(model.count() == 3 && moved.size() == 3, "live position moves a known node and adds an unnamed one");
         check(moved.last().toMap().value("km").toInt() > near.last().toMap().value("km").toInt() - 1 && moved.last().toMap().value("name").toString() == "!00000009", "unnamed node shown by id");
+    }
+    {
+        const auto nm = mesh::parse_nodeinfo_packet(nodeinfo_packet(9, 4, "Ridge Node", "RDG"));
+        check(nm && nm->num == 9 && nm->long_name == "Ridge Node" && nm->short_name == "RDG", "nodeinfo packet decoded");
+        check(!mesh::parse_nodeinfo_packet(nodeinfo_packet(9, 3, "x", "y")) && !mesh::parse_nodeinfo_packet(nodeinfo_packet(0, 4, "x", "y")), "other port/unknown sender ignored");
+        check(!mesh::parse_nodeinfo_packet(nodeinfo_packet(9, 4, "", "")), "no names ignored");
+        emit sock->dataReceived(frame(nodeinfo_packet(9, 4, "Ridge Node", "RDG")) + frame(nodeinfo_packet(77, 4, "Ghost", "GST")));
+        const auto named = model.nearest();
+        bool found = false, ghost = false;
+        for (const auto& v : named) { if (v.toMap().value("name").toString() == "RDG") found = true; if (v.toMap().value("name").toString() == "GST") ghost = true; }
+        check(found && !ghost && model.count() == 3, "known node renamed; node without a position not added");
     }
     model.setMapVisible(false);
     check(MapOverlays::instance().layers().empty(), "per-source map off removes the layer");
