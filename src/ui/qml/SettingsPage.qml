@@ -510,6 +510,13 @@ Rectangle {
                         FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                     }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: meshHost; label: "Meshtastic node on your LAN (receive-only; empty = off)"; text: appSettings.meshHost; Layout.preferredWidth: 3 }
+                        FormField { id: meshPort; label: "Port"; text: appSettings.meshPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
                     FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
                                 field.inputMethodHints: Qt.ImhDigitsOnly }
                     Flow {
@@ -517,7 +524,7 @@ Rectangle {
                         spacing: Theme.gap
                         Text { text: "Show on map:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
                         Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"], ["adif", "Log"]]
                             AppButton { property bool on: appSettings.mapSourceVisible(modelData[0]); checkable: false
                                         text: modelData[1] + (on ? ": on" : ": off"); primary: on
                                         Connections { target: appSettings; function onOptionsChanged() { on = appSettings.mapSourceVisible(modelData[0]) } }
@@ -529,7 +536,7 @@ Rectangle {
                         spacing: Theme.gap
                         Text { text: "Map labels:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
                         Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["adif", "Log"]]
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"], ["adif", "Log"]]
                             AppButton { property int mode: appSettings.mapSourceLabel(modelData[0]); checkable: false
                                         text: modelData[1] + ": " + ["auto", "none", "prefix", "call", "dot"][mode + 1]
                                         Connections { target: appSettings; function onOptionsChanged() { mode = appSettings.mapSourceLabel(modelData[0]) } }
@@ -569,6 +576,8 @@ Rectangle {
                                             clusterError.text = appSettings.saveOtaSort(otaSort.text)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
+                                        if (clusterError.text === "")
+                                            clusterError.text = appSettings.saveMesh(meshHost.text, parseInt(meshPort.text) || 0)
                                         if (clusterError.text === "")
                                             clusterError.text = appSettings.savePskMaxKm(parseInt(pskMax.text) || 0)
                                         if (clusterError.text === "")

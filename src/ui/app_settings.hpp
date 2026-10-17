@@ -35,6 +35,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString otaSort READ otaSort NOTIFY optionsChanged)
     Q_PROPERTY(QString aprsHost READ aprsHost NOTIFY optionsChanged)
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString meshHost READ meshHost NOTIFY optionsChanged)
+    Q_PROPERTY(int meshPort READ meshPort NOTIFY optionsChanged)
     Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
     Q_PROPERTY(QString pskMatch READ pskMatch NOTIFY optionsChanged)
     Q_PROPERTY(bool pskWspr READ pskWspr NOTIFY optionsChanged)
@@ -122,6 +124,9 @@ public:
     // APRS-IS server (receive-only) and search radius around DE.
     QString aprsHost() const { return aprs_host_; }
     int aprsPort() const { return aprs_port_; }
+    // Local Meshtastic node (TCP API, receive-only). Empty host = off (opt-in, nothing is contacted).
+    QString meshHost() const { return mesh_host_; }
+    int meshPort() const { return mesh_port_; }
     int pskMaxKm() const { return psk_max_km_; }
     QString pskMatch() const { return psk_match_; }
     bool pskRbn() const { return psk_rbn_; }  // also listen to the Reverse Beacon Network telnet feed (off by default)
@@ -168,6 +173,8 @@ public:
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
     // host letters/digits/dots/hyphens (empty = rotate.aprs2.net); port 1-65535; radius 1-500 km.
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
+    // host letters/digits/dots/hyphens, empty = off; port 1-65535 (node default 4403).
+    Q_INVOKABLE QString saveMesh(const QString& host, int port);
     // PSKReporter display limit: only receivers within max_km of DE (0-20000, 0 = any).
     Q_INVOKABLE QString savePskMaxKm(int max_km);
     // Receiver call/grid prefixes to keep ("VK, JA, PM95"); empty = all. Max 8 tokens.
@@ -208,7 +215,7 @@ public:
     // with other DX coordinates replaces it. Invalid coordinates are refused.
     bool setDxOverride(double lat, double lon);
     void clearDxOverride();
-    // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs adif); default on.
+    // Per-source map on/off for spot layers (keys dx psk ota hamalert aprs mesh adif); default on.
     Q_INVOKABLE bool mapSourceVisible(const QString& key) const { return !map_hidden_.contains(key); }
     Q_INVOKABLE QString saveMapSourceVisible(const QString& key, bool visible);
     // Spot label style per source: -1 = the layer's own, else 0 None, 1 Prefix, 2 Call, 3 Dot.
@@ -225,6 +232,7 @@ public:
 
 signals:
     void stationChanged();
+    void meshChanged(); // only when the Meshtastic node host or port actually changed
     void aprsChanged(); // only when the APRS-IS server, port or radius actually changed
     void appearanceChanged();
     void optionsChanged();
@@ -255,6 +263,8 @@ private:
     bool psk_wspr_ = false;
     bool psk_rbn_ = false;
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
+    QString mesh_host_;
+    int mesh_port_ = 4403;
     int udp_port_ = 0;
     bool udp_lan_ = false;
     QString udp_group_;
