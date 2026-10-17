@@ -3,6 +3,7 @@
 #include "quakes.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "weather.hpp"
 #include "map/coastline.hpp"
 #include "domain/locator_input.hpp"
 #include "domain/astro_moon.hpp"
@@ -180,5 +181,33 @@ const float* hcp_coast_points(size_t* point_count) {
     static_assert(sizeof(hamclock::CoastPoint) == 2 * sizeof(float), "CoastPoint must be two packed floats");
     if (point_count) *point_count = hamclock::coastline_point_count;
     return &hamclock::coastline_points[0].longitude;
+}
+}
+
+extern "C" {
+int hcp_weather_parse(const char* b, size_t n, HcpWeather* out) {
+    if (!out) return 0;
+    const auto c = hcp::weather::parse_current(view(b, n));
+    if (!c) return 0;
+    *out = HcpWeather{};
+    out->temperature_c = c->temperature_c;
+    out->wind_kmh = c->wind_kmh;
+    out->humidity_pct = c->humidity_pct;
+    out->wind_dir_deg = c->wind_dir_deg;
+    out->weather_code = c->weather_code;
+    out->is_day = c->is_day ? 1 : 0;
+    if (const auto dew = hcp::weather::dew_point_c(c->temperature_c, c->humidity_pct)) {
+        out->dew_point_c = *dew;
+        out->has_dew_point = 1;
+    }
+    if (c->pressure_hpa) { out->pressure_hpa = *c->pressure_hpa; out->has_pressure = 1; }
+    if (c->pressure_change_hpa) {
+        out->pressure_change_hpa = *c->pressure_change_hpa;
+        out->has_pressure_change = 1;
+        copy(hcp::weather::pressure_trend_word(*c->pressure_change_hpa), out->trend, sizeof out->trend);
+    }
+    copy(hcp::weather::wmo_description(c->weather_code), out->description, sizeof out->description);
+    copy(hcp::weather::compass_point(c->wind_dir_deg), out->wind_from, sizeof out->wind_from);
+    return 1;
 }
 }

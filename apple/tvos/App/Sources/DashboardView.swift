@@ -38,9 +38,10 @@ struct DashboardView: View {
                 }
                 if panes.isOn(.satellites) { SatelliteCard(now: ctx.date) }
                 if panes.isOn(.quakes) { QuakeCard(now: ctx.date) }
+                if panes.isOn(.weather) { LocalWeatherCard(now: ctx.date) }
                 Spacer()
                 Button("Panes…") { showSettings = true }
-                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; CelesTrak; Natural Earth")
+                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; Open-Meteo; CelesTrak; Natural Earth")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
@@ -154,6 +155,44 @@ private struct BandsCard: View {
                 Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
             }
             if state != .live {
+                Text(state == .stale ? "STALE" : "OFFLINE")
+                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
+            }
+        }
+        .padding(32)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
+        .focusable()
+    }
+}
+
+/// Open-Meteo conditions at the operator's locator, same Stale/Offline rule as the other fetched cards.
+/// Without a valid locator there is nothing to show, and the card says so.
+private struct LocalWeatherCard: View {
+    @EnvironmentObject var wx: LocalWeatherStore
+    @EnvironmentObject var station: StationStore
+    let now: Date
+
+    var body: some View {
+        let state = SpaceWeatherStore.freshness(wx.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Weather at your station").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
+            if station.position == nil {
+                Text("Set your locator in Panes").font(.system(size: 48)).foregroundStyle(.secondary)
+            } else if let c = wx.current, state != .offline {
+                Text(String(format: "%.1f °C  %@", c.temperatureC, c.description))
+                    .font(.system(size: 64, weight: .bold, design: .rounded))
+                Text(String(format: "Wind %.0f km/h from %@, humidity %d%%", c.windKmh, c.windFrom, c.humidity)
+                     + (c.dewPointC.map { String(format: ", dew point %.1f °C", $0) } ?? ""))
+                    .font(.system(size: 29)).foregroundStyle(.secondary)
+                if let p = c.pressureHpa {
+                    Text(String(format: "Pressure %.0f hPa", p) + (c.trend.map { ", " + $0.lowercased() } ?? ""))
+                        .font(.system(size: 29)).foregroundStyle(.secondary)
+                }
+            } else {
+                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
+            }
+            if station.position != nil, state != .live {
                 Text(state == .stale ? "STALE" : "OFFLINE")
                     .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
             }

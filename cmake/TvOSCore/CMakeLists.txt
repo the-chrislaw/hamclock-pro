@@ -29,6 +29,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
     ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
     ${HCP_ROOT}/apple/tvos/Core/bands.cpp
+    ${HCP_ROOT}/apple/tvos/Core/weather.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
 # Vendored Vallado SGP4: third-party code, not ours to reformat; silence its warnings only.
 set_source_files_properties(${D}/astro_sgp4/SGP4.cpp PROPERTIES COMPILE_OPTIONS "-w")
@@ -71,6 +72,14 @@ target_compile_definitions(core-solarwind-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/solarwind/tests/fixtures")
 set_target_properties(core-solarwind-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-solarwind-regression COMMAND core-solarwind-regression)
+
+# Qt-free Open-Meteo parser; the Qt parser's fixture is the oracle.
+add_executable(core-weather-regression ${HCP_ROOT}/apple/tvos/Core/tests/weather_regression.cpp)
+target_link_libraries(core-weather-regression PRIVATE hamclock-core)
+target_compile_definitions(core-weather-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/weather/tests/fixtures")
+set_target_properties(core-weather-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-weather-regression COMMAND core-weather-regression)
 
 # Qt-free USGS quakes parser; the Qt parser's fixture is the oracle.
 add_executable(core-quakes-regression ${HCP_ROOT}/apple/tvos/Core/tests/quakes_regression.cpp)
