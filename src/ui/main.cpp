@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
     const auto apply_blanking = [&] {
-        blanking.setConfig({settings.blankIdleMinutes(), settings.blankOffHour(), settings.blankOnHour()});
+        blanking.setConfig({settings.blankIdleMinutes(), settings.blankOffHour(), settings.blankOnHour(), settings.blankDays()});
     };
     apply_blanking();
     QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &blanking, apply_blanking);

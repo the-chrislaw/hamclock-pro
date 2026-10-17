@@ -55,6 +55,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
     Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
+    Q_PROPERTY(int blankDays READ blankDays NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotLan READ udpSpotLan NOTIFY optionsChanged)
     Q_PROPERTY(QString udpSpotGroup READ udpSpotGroup NOTIFY optionsChanged)
     Q_PROPERTY(bool udpSpotByMe READ udpSpotByMe NOTIFY optionsChanged)
@@ -105,6 +106,7 @@ public:
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
     int blankOnHour() const { return blank_on_; }
+    int blankDays() const { return blank_days_; }                      // bit 0 = Monday .. bit 6 = Sunday
     bool imperialUnits() const { return imperial_; }                   // distances in miles
     bool udpSetsDx() const { return udp_sets_dx_; }                    // UDP spots may set a session-only DX target
     bool dxOverrideActive() const { return dx_override_; }
@@ -197,6 +199,7 @@ public:
     // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
     // (local, 0..23; -1 and -1 = none). Software overlay only.
     Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
+    Q_INVOKABLE QString saveBlankDays(int days);
     Q_INVOKABLE QString saveUdpSpots(int port, bool lan);
     Q_INVOKABLE QString saveUdpGroup(const QString& group);
     Q_INVOKABLE QString saveUdpScope(bool by_me);
@@ -277,6 +280,7 @@ private:
     int blank_idle_ = 0;
     int blank_off_ = -1;
     int blank_on_ = -1;
+    int blank_days_ = 0x7F;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot

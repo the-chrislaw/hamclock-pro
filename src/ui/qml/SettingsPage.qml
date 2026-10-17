@@ -416,6 +416,19 @@ Rectangle {
                             }
                         }
                     }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        visible: appSettings.blankOffHour >= 0
+                        Repeater {
+                            model: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                            AppButton {
+                                text: modelData
+                                primary: (appSettings.blankDays >> index) & 1
+                                onClicked: appSettings.saveBlankDays(appSettings.blankDays ^ (1 << index))
+                            }
+                        }
+                    }
                 }
             }
 

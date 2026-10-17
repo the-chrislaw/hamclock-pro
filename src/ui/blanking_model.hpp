@@ -18,6 +18,7 @@ public:
     Q_INVOKABLE void touch();
     // Test hook: evaluate with an explicit local time and idle time.
     void evaluate(const QTime& local, qint64 idle_secs);
+    void evaluate(const QDateTime& local, qint64 idle_secs);
 signals:
     void blankedChanged();
 private:

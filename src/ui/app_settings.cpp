@@ -154,7 +154,8 @@ void AppSettings::loadOptions() {
         const int idle = ini.value("kiosk/blank_idle", 0).toInt();
         const int off = ini.value("kiosk/blank_off", -1).toInt();
         const int on = ini.value("kiosk/blank_on", -1).toInt();
-        if (blanking_config_valid({idle, off, on})) { blank_idle_ = idle; blank_off_ = off; blank_on_ = on; }
+        const int days = ini.value("kiosk/blank_days", 0x7F).toInt();
+        if (blanking_config_valid({idle, off, on, days})) { blank_idle_ = idle; blank_off_ = off; blank_on_ = on; blank_days_ = days; }
     }
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     panes_ = QStringList();
@@ -760,6 +761,17 @@ QString AppSettings::saveBlanking(int idle_minutes, int off_hour, int on_hour) {
     blank_idle_ = idle_minutes;
     blank_off_ = off_hour;
     blank_on_ = on_hour;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBlankDays(int days) {
+    if (!blanking_config_valid({blank_idle_, blank_off_, blank_on_, days})) return "Weekdays must be a 7-bit mask.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("kiosk/blank_days", days);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the screen blanking weekdays.";
+    blank_days_ = days;
     emit optionsChanged();
     return {};
 }
