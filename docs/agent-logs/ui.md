@@ -248,3 +248,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-17 (hourly run, 58)
 - Backlog A16 slice: restoring a saved configuration now re-applies pane slots at once (`panesChanged` emitted; blanking already followed `optionsChanged`); only alarms still need a restart. `widget-core-regression` extended. Settings text updated; no layout change, not reachable from `--screenshot`. ctest 160/160; ASan/UBSan left to CI. Pre-existing legacy warnings unchanged. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-17 (hourly run, 59)
+- Layout audit only, no code change: rendered 1024x600 and 800x480 (dark) with `--fixtures tests/fixtures/sources`: exit 0, no QML warnings, no truncation report, no header bar, map fills its card. With that fixture directory the data panes show their offline/unconfigured states ("No fixture for /..."), so live-data pane density was not checked visually this run; the fixture file names do not match what the widgets request. Light theme and 1920x1080 not rendered. No backlog slice started (the remaining A items need hardware, side panes, or per-widget compact layouts owned by other areas). Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
