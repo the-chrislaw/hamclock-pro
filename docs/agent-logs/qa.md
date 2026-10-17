@@ -157,3 +157,10 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Diff scan: the new Meshtastic widget (#476/#478/#480) is opt-in, reads from a user-configured node, reports "live" only after a well-formed frame, drops its map layer when the link is lost, retries with backoff, and has regression tests. WWFF feed (#481) adds a fixture and tests. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests. tvOS Swift not reviewed line by line.
 - Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-17 (UTC) QA run 23
+- Last reviewed commit: bc24808 (PRs #482 to #487, 11 commits since 88af226).
+- Build and 160/160 tests pass on main. Rendered the default layout at 800x480 and 1024x600 (dark and light, unconfigured station, empty fixtures): nothing scrolls, titles and footers fit, panes show honest Offline / Set up states. The new IOTA group name on DX cluster rows (#485) was not rendered with live spots; it is hidden in compact mode.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Diff scan: IOTA group names (#485) parse a downloaded JSON defensively (ref regex, name capped at 60 chars), poll weekly through the shared transport and have regression tests with a fixture. tvOS keep-awake, pixel shift and dim (#484, #487) are opt-in; Swift not reviewed line by line. No QtWidgets, http://, scrolling views or password handling in added code; no weakened tests.
+- Health: build and tests are green and layouts stay honest. No new defects; remaining risk is data freshness on the real Pi (#150).
