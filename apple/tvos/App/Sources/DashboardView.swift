@@ -7,6 +7,7 @@ struct DashboardView: View {
     @State private var showSettings = false
     @State private var showWeather = false
     @State private var page: Page = .overview
+    @State private var lastInput = Date()
     private let rotation = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     private func show(_ pane: Pane) -> Bool {
@@ -55,10 +56,13 @@ struct DashboardView: View {
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(Color.black)
+            .opacity(DimPolicy.opacity(idle: ctx.date.timeIntervalSince(lastInput), afterHours: panes.dimAfterHours))
         }
         .onAppear { UIApplication.shared.isIdleTimerDisabled = true } // dashboard is meant to stay on
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-        .onPlayPauseCommand { page = panes.next(after: page) }
+        .onPlayPauseCommand { lastInput = Date(); page = panes.next(after: page) }
+        .onMoveCommand { _ in lastInput = Date() }
+        .onExitCommand { lastInput = Date() }
         .onReceive(rotation) { _ in if panes.autoRotate { page = panes.next(after: page) } }
         .sheet(isPresented: $showSettings) { PaneSettingsView() }
         .sheet(isPresented: $showWeather) { SpaceWeatherDetailView() }
@@ -80,6 +84,15 @@ enum BurnInShift {
     }
 }
 
+/// Optional night dimming: after `afterHours` without remote input the whole dashboard drops to
+/// 25 % brightness; any remote press restores it. 0 disables it.
+enum DimPolicy {
+    static let dimmedOpacity = 0.25
+    static func opacity(idle: TimeInterval, afterHours: Int) -> Double {
+        afterHours > 0 && idle >= Double(afterHours) * 3600 ? dimmedOpacity : 1
+    }
+}
+
 private struct PaneSettingsView: View {
     @EnvironmentObject var panes: PaneStore
     var body: some View {
@@ -91,6 +104,13 @@ private struct PaneSettingsView: View {
             }
             Toggle("Auto-rotate pages every 20 s", isOn: Binding(get: { panes.autoRotate },
                                                                  set: { panes.setAutoRotate($0) }))
+            Picker("Dim after no remote input", selection: Binding(get: { panes.dimAfterHours },
+                                                                   set: { panes.setDimAfterHours($0) })) {
+                Text("Never").tag(0)
+                Text("2 hours").tag(2)
+                Text("4 hours").tag(4)
+                Text("8 hours").tag(8)
+            }
             Text("Play/Pause on the remote steps to the next page.").font(.system(size: 29)).foregroundStyle(.secondary)
             Text("Saved to iCloud when available.").font(.system(size: 29)).foregroundStyle(.secondary)
         }
