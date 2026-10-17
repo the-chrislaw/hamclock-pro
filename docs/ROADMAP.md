@@ -231,6 +231,7 @@ Parked features, not planned now. Revisit if users ask; the issues keep the rese
 | MUF map style (KC2G) | No documented feed or reuse terms | Ask KC2G for a supported endpoint and attribution | #206 |
 | VOACAP-style reliability matrix | Needs a bundled engine (licence review, large) or a hosted API | Evaluate ITURHFProp/VOACAP licences | #206 |
 | Tropo forecast map | Owner decision (#281, Oct 15): won't do for now. Needs weather-model data; the usual source has no confirmed reuse terms | GFS/NOMADS refractivity gradient (public domain; needs `nomads.ncep.noaa.gov` allowlisted and a GRIB2 subsetting route light enough for a Pi) | #206, #281 |
+| Per-band EME sky temperature | Not in the original; needs a galactic background map that cannot be validated offline (won't-do, owner decision) | Vendor a coarse 408 MHz Haslam map scaled by a spectral index | #440 |
 | Lightning with range rings | Blitzortung terms are restrictive and it is not allowlisted; NOAA GLM (NCEI NetCDF) is too heavy for a Pi and has no small real sample | Find a light, openly licensed strike feed | #142 |
 | NetLogger active nets pane | `api.netlogger.org` fails TLS verification (certificate host mismatch); verification is never disabled | Revisit if NetLogger fixes its certificate; check terms then | #142 |
 | IP geolocation (E12) | Owner decision (#342, Oct 15): won't do. It would send the user's IP address to a third party; location comes from Settings address/grid search and the Apple location service | Revisit only if users ask and a privacy-respecting source is agreed | #342 |

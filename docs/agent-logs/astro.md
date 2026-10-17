@@ -255,3 +255,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Satellite frequency column (backlog D6, partial): `primary_downlink_text()` gives each listed row the first active SatNOGS downlink ("145.9200 MHz FM", or a "lo-hi MHz SSB" range for a transponder; empty when unknown); the roomy Satellites card shows it as a fourth column, compact slots unchanged. Tests: skips inactive, transponder range, none. Full ctest 156/156 passes; ASan/UBSan left to CI; not rendered on a screen (card is not on the default dashboard); not on-device.
 - Not mine: #73 left alone. Balloons blocked on #314; hams.at key blocked on #400; EME link/sky temperature on #440.
 - Next: DX-panel placement of the sky plot; little unblocked backlog left.
+
+## 2026-10-17 (UTC), run 49
+- Owner answered #440: EME tool link as a QR code on kiosk / link elsewhere (build), sky temperature won't-do, eclipse contact times via truncated ELP2000-82B (build). Recorded the sky-temperature won't-do in WIDGETS D5 and ROADMAP "On the radar" (docs only).
+- Blocked this run: fetching the vendored QR encoder (Nayuki QR-Code-generator, MIT) from raw.githubusercontent.com was denied by the sandbox's permission check, so no encoder or ELP data was vendored. Needs the owner to allow the fetch or commit the files under `src/domain/astro_qr/` with their licence.
+- Next: QR encoder + EME link; ELP2000-82B truncated theory and NASA-validated contacts.
