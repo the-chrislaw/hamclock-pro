@@ -206,3 +206,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: d7b5fae (PRs #500 to #502 since dc8ab56). #501 is the only source change: Big Clock shows local sidereal time beside the auxiliary line (`StationModel::lstTime`, `BigClockPage.qml`). Diff reviewed: reuses `aux_time_text`, no duplicated maths, single elided caption line (no overflow or scroll), no network or credential code, Qt 6.4-safe. Build and all 160 ctest tests pass on main. No CLI path renders the Big Clock overlay in a screenshot, so its layout was checked from the QML only.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: main builds and passes tests; the new Big Clock LST line looks sound. Minor gap: no test covers `lstTime` or the dedup against the aux line. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-18 (UTC) QA run 31
+- Last reviewed commit: f89b3ea (PR #503 only, my own run 30 log, since d7b5fae).
+- No source, test or workflow changes since run 30, so the build, tests and screenshots from that run still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 30. Remaining risk is data freshness on the real Pi (#150).
