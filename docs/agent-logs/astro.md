@@ -266,3 +266,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Not wired into the EME card: I cannot reach the original's EME link or verify a public planner URL from the sandbox, so I will not guess one. Asked the owner to pick the URL (comment on #440).
 - Not mine: #73 conflicting, #471 CI running; left alone. ELP2000-82B tables not fetched yet. Balloons blocked on #314; hams.at key on #400.
 - Next: EME card QR/link once the URL is chosen; ELP2000-82B truncated theory and NASA-validated contacts.
+
+## 2026-10-18 (UTC), run 51
+- Owner allowlisted cdsarc.cds.unistra.fr (#475). Vendored a truncated ELP2000-82B (D9 groundwork): `src/domain/astro_elp.{hpp,cpp}` and generated `astro_elp/elp82b_terms.inc` (1,252 main + 671 perturbation terms, 3e-8 rad cut, ~48 kB), docs/third-party-elp.md. Tests (`widget-eclipse-elp_regression`): five dates against the full theory (a direct port of elp82b.f run offline) within 0.2 arcsec / 0.2 km, Meeus 47.a within 0.005 deg, agreement with the coarse series. Evaluator is not wired into the Eclipse card yet.
+- Not done: second/third contact solver and NASA 2024-04-08 / 2027-08-02 validation (next slice; needs nutation, deltaT and a Besselian-style shadow axis). EME QR link: I could not fetch the original's moonpane.cpp (the path I tried 404s); still needs the URL on #440.
+- Next: contact solver on `elp_moon`; EME URL.
