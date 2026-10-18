@@ -195,3 +195,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No source, test or workflow changes since run 24, so the build, tests and screenshots from run 24 still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new to review; main is unchanged in behaviour since run 24. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-18 (UTC) QA run 29
+- Last reviewed commit: dc8ab56 (PR #499 only, my own run 28 log, since a0cb397).
+- No source, test or workflow changes since run 24, so the build, tests and screenshots from run 24 still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 24. Remaining risk is data freshness on the real Pi (#150).
