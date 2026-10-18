@@ -236,3 +236,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (hourly run, 55)
 - Backlog A8 guard: `pane-keys-regression` now fails when a widget registered with `registry.add({"id", ...` has no category in `PaneChooser.qml` (it would silently fall under "Other"). Checked it passes today (41 widgets, all covered) and fails when a category entry is removed. Test-only change; no UI change, no screenshots. Not validated on a device.
 - Only #460 (QA log, still in CI) and #73 (stale docs, not mine) were open; left alone.
+
+## 2026-10-18 (hourly run, 60)
+- Layout audit with real data: merged every `src/widgets/*/tests/fixtures` file into one directory (the fixture server matches on the URL's file name) and rendered 1024x600 and 800x480 dark: exit 0, no truncation report, no header bar, map fills its card, three panes and the station column fit without scrolling. The default DX cluster pane shows only "Set up" until a host is saved, so that slot is mostly empty on a fresh install (content is area C's; a compact "not configured" layout is the only fix). Light theme and 1920x1080 not rendered. No code change; the remaining A items need hardware, side panes, or per-widget compact layouts owned by other areas. Not validated on a device.
+- Only #73 (stale, conflicting docs PR, not mine) was open; left alone. Open `[A]` qa issues #150-152 are already addressed in earlier entries.
