@@ -72,6 +72,10 @@ bool StationModel::bannerIsCallsign() const { return banner_is_callsign(banner_m
 
 QString StationModel::bannerText() const { return banner_text(banner_mode_, callsign_, settings_.bannerTitle()); }
 
+QString StationModel::lstTime() const {
+    return aux_time_text(3, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0);
+}
+
 QString StationModel::auxTime() const {
     return aux_time_text(aux_time_mode_, QDateTime::currentSecsSinceEpoch(), configured() ? de_lon_ : 0.0,
                          settings_.weekStartsSunday());
