@@ -58,7 +58,7 @@ Item {
         Text {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
-            text: station.auxTime
+            text: station.auxTime === station.lstTime ? station.auxTime : station.lstTime + "  ·  " + station.auxTime
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
             elide: Text.ElideRight

@@ -30,6 +30,7 @@ class StationModel : public QObject {
     Q_PROPERTY(QString bannerText READ bannerText NOTIFY stationChanged)
     Q_PROPERTY(bool bannerIsCallsign READ bannerIsCallsign NOTIFY stationChanged)
     Q_PROPERTY(QString auxTime READ auxTime NOTIFY tick)
+    Q_PROPERTY(QString lstTime READ lstTime NOTIFY tick)
     Q_PROPERTY(bool longPath READ longPath NOTIFY stationChanged)
     Q_PROPERTY(QString bearingText READ bearingText NOTIFY stationChanged)
     Q_PROPERTY(QString deSun READ deSun NOTIFY tick)
@@ -62,6 +63,7 @@ public:
     QString bannerText() const;
     bool bannerIsCallsign() const;
     Q_INVOKABLE void cycleAuxTime();  // day of year -> JD -> MJD -> LST -> UNIX (per session)
+    QString lstTime() const;          // local sidereal time at DE (Greenwich when unset), for the Big Clock
     QString auxTime() const;          // LST uses the DE longitude, Greenwich when unset
     QString deSun() const;       // next sunrise/sunset at DE, empty when unconfigured
     QString dxSun() const;

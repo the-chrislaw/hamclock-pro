@@ -256,3 +256,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-18 (hourly run, 60)
 - Layout audit on current main with real data: merged every `src/widgets/*/tests/fixtures` file into one directory (the fixture server matches on the URL's file name) and rendered 1024x600 and 800x480 (light, plus an earlier dark pass): exit 0, no truncation report, no header bar, map fills its card, station column and three panes fit without scrolling. The default DX cluster pane shows only "Set up" until a host is saved, so that slot is mostly empty on a fresh install (content is area C's; a compact "not configured" layout is the fix). 1920x1080 not rendered. No code change; remaining A items need hardware, side panes, or per-widget compact layouts owned by other areas. Not validated on a device.
 - Only #73 (stale, conflicting docs PR, not mine) was open; left alone. Open `[A]` qa issues #150-152 are addressed in earlier entries.
+
+## 2026-10-18 (hourly run, 61)
+- Backlog A14 slice (Big Clock option parity): the Big Clock page shows local sidereal time at DE beside the auxiliary line (`StationModel::lstTime`, same `aux_time_text` maths already covered by `aux-time-text-regression`; not repeated when the aux line is already LST). Full build, ctest 160/160, pre-existing legacy warnings unchanged. The Big Clock page is not reachable from `--screenshot`, so not checked visually; ASan/UBSan left to CI. Not validated on a device.
+- Open: #500 (QA log, still in CI, not mine) and #73 (stale docs, not mine); left alone.
