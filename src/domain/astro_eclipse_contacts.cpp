@@ -1,5 +1,6 @@
 #include "astro_eclipse.hpp"
 #include "astro_elp.hpp"
+#include "astro_vsop.hpp"
 #include <array>
 #include <cmath>
 #include <stdexcept>
@@ -28,7 +29,7 @@ Vec equatorial(double lon, double lat, double dist, double eps) {
 }
 
 // Topocentric Sun and Moon at a UTC unix time for an observer; apparent places
-// (nutation, Sun aberration). Sun is Meeus ch. 25 (about 0.01 degree).
+// (nutation, Sun aberration). Sun is truncated VSOP87D.
 Geometry geometry_at(double unix_utc, double lat_deg, double lon_deg) {
     const double jd_utc = unix_utc / 86400.0 + 2440587.5;
     const double jde = jd_utc + kDeltaT / 86400.0;
@@ -39,16 +40,15 @@ Geometry geometry_at(double unix_utc, double lat_deg, double lon_deg) {
     const double deps = rad((9.20 * std::cos(om) + 0.57 * std::cos(2 * ls) + 0.10 * std::cos(2 * lm) - 0.09 * std::cos(2 * om)) / 3600.0);
     const double eps0 = rad(23.439291 - 0.0130042 * t - 1.64e-7 * t * t);
     const double eps = eps0 + deps;
-    // Sun
-    const double l0 = rad(280.46646 + 36000.76983 * t + 0.0003032 * t * t);
-    const double m = rad(357.52911 + 35999.05029 * t - 0.0001537 * t * t);
-    const double e = 0.016708634 - 0.000042037 * t;
-    const double c = rad((1.914602 - 0.004817 * t) * std::sin(m) + 0.019993 * std::sin(2 * m) + 0.000289 * std::sin(3 * m));
-    const double nu = m + c;
-    const double r_au = 1.000001018 * (1 - e * e) / (1 + e * std::cos(nu));
-    const double sun_lon = l0 + c + dpsi - rad(20.4898 / 3600.0) / r_au;
-    const double sun_dist = r_au * kAuKm;
-    const Vec sun = equatorial(sun_lon, 0.0, sun_dist, eps);
+    // Sun: VSOP87D Earth reversed, FK5 correction (Meeus ch. 25), nutation, aberration
+    const EarthHelio ea = vsop87d_earth(jde);
+    const double as_ = kPi / 180.0 / 3600.0;
+    const double lp = ea.longitude_rad - rad(1.397) * t - rad(0.00031) * t * t;
+    const double hel_lon = ea.longitude_rad - 0.09033 * as_;
+    const double hel_lat = ea.latitude_rad + 0.03916 * as_ * (std::cos(lp) - std::sin(lp));
+    const double sun_lon = hel_lon + kPi + dpsi - 20.4898 * as_ / ea.radius_au;
+    const double sun_lat = -hel_lat;
+    const Vec sun = equatorial(sun_lon, sun_lat, ea.radius_au * kAuKm, eps);
     // Moon
     // J2000 ecliptic to the mean ecliptic of date (Meeus ch. 21: rotation by eta about the node Pi, plus p)
     const ElpPosition mp = elp_moon(jde);
