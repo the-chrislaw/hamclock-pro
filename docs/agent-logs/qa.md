@@ -228,3 +228,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No source, test or workflow changes since run 33, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new to review; main is unchanged in behaviour since run 33. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-19 (UTC) QA run 35
+- Last reviewed commit: 2313a2a (PRs #509 to #511 since f0a4d4b). Source changes: #510 truncated VSOP87D Sun (`astro_vsop.cpp`, generated `.inc`, generator script, `vsop_regression` vs Meeus 25.b, third-party note) now used by the eclipse contact solver, and #511 `AlarmsModel::reload()` wired to `optionsChanged` so restored configurations apply alarms at once (test added, Settings caption updated). Diffs reviewed: domain/UI-model only, no network, credential or QtWidgets code, tests not weakened, Qt 6.4-safe. The only QML change is one caption string, so earlier screenshots still apply. Build and all 163 ctest tests pass on main.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: main builds and passes tests; both changes look sound. Remaining risk is data freshness on the real Pi (#150).
