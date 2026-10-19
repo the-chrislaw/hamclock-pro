@@ -238,3 +238,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: da566cd (PRs #512 to #515 since 2313a2a). Only non-doc change is #514: `apple.yml` now passes `-qmldir=src` to `macdeployqt` and smoke-tests the packaged app (checks `Resources/qml/QtQuick`, renders a 1024x600 `--offline` screenshot) in both the arm64 and universal jobs. Diff reviewed: workflow only, no secrets, sound. #515 is docs (eclipse residual notes, honest "not wired" wording kept). No source or QML changes, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new in behaviour; the Mac bundle fix closes a real packaging gap and now has a smoke test. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-19 (UTC) QA run 37
+- Last reviewed commit: 4e4c4e4 (PRs #516 and #517 since da566cd). #517 is the only source change: `TextEntryHint` (`src/platform/apple_textentry.*`, iOS-only `.mm` using GameController) shows a warning under `FormField` text fields only when the iPad app runs on a Mac (#513); the message is empty everywhere else, so layouts are unchanged. Diff reviewed: no network, credential or QtWidgets code, tests added (`text-entry-hint-regression`), Qt 6.4-safe. Build and all 164 ctest tests pass on main; a 1024x600 dark `--offline` screenshot is unchanged and clean.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: main builds and passes tests; the new hint is inert off iOS. Remaining risk is data freshness on the real Pi (#150).
