@@ -282,3 +282,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Honest result: the NASA comparison did not tighten. 2024 still 269 s vs 268 (max -2 s); 2027 max -59 s, 382 vs 383 s; 2017 duration 74 s vs 160 s. So the Sun was not the main limit; the remaining error is elsewhere (nutation series, fixed delta-T, lunar radius/limb or ELP frame). Card still not wired to it. Not on-device, no UI change.
 - Not mine: #73 conflicting, left alone. Balloons blocked on #314; hams.at key on #400; EME QR link waiting on URL in #440.
 - Next: find the 2017/2027 residual (full IAU nutation, delta-T per date), then wire contacts into the Eclipse card.
+
+## 2026-10-19 (UTC), run 54
+- Merged #514 (Mac bundle QML, green, other area's). No own PR was open.
+- Eclipse residual (D9) investigated, no code change. Experiment in `astro_eclipse_contacts.cpp`: the Sun gets annual aberration (-20.49 arcsec) but the Moon gets none, which is inconsistent for separation at conjunction. Adding the Moon's aberration plus light time shifted every maximum by +50 s (2024 -2 to +48 s, 2027 -59 to -8 s, 2017 -49 to +10 s) and totality 263/384/58 s vs NASA 268/383/160. It improves 2027 but worsens 2024, and the NASA greatest-point maximum time is itself only good to tens of seconds at a rounded station, so the test cannot decide. The 2017 cross-track offset (min separation 27 arcsec) is unchanged either way, so the cause is elsewhere (lunar latitude / ELP-vs-DE offset or nutation). Not adopted; recorded in WIDGETS D9.
+- Not mine: #73 left alone. Balloons blocked on #314; hams.at key on #400; EME QR link waiting on URL in #440.
+- Next: ELP-vs-DE lunar latitude check against an offline almanac value (Meeus 47.a is too loose); otherwise little unblocked backlog left.
