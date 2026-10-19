@@ -31,4 +31,13 @@ ColumnLayout {
             border.width: field.activeFocus ? 2 : 1
         }
     }
+    // Non-empty only in the iPad app running on a Mac, where keys never reach Qt (#513).
+    Text {
+        visible: textEntryHint.message !== ""
+        text: textEntryHint.message
+        color: Theme.warn
+        wrapMode: Text.WordWrap
+        Layout.fillWidth: true
+        font.pixelSize: Theme.fontCaption
+    }
 }
