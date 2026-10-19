@@ -38,4 +38,21 @@ struct EclipseLocal {
 };
 // Latitude in [-90, 90] and longitude (east positive) in [-180, 180], else std::invalid_argument.
 EclipseLocal eclipse_visibility(const SolarEclipse& e, double latitude_deg, double longitude_deg);
+
+// Contact times at a station from the truncated ELP2000-82B Moon (astro_elp.hpp),
+// the Meeus ch. 25 Sun (about 0.01 degree, which limits contact times to tens of
+// seconds) and a fixed 69 s delta-T. C1/C4 are the outer contacts (Moon 1737.4 km),
+// C2/C3 the inner ones (umbral radius 1736.5 km, as NASA uses). The horizon is
+// not applied: check `sun_up_at_maximum` and the contact elevations yourself.
+struct EclipseContacts {
+    bool partial = false;          // discs overlap at all
+    bool central = false;          // station inside the umbra/antumbra
+    bool total = false;            // central and the Moon is the larger disc
+    bool sun_up_at_maximum = false;
+    UtcSeconds first{0}, second{0}, third{0}, last{0}; // C1..C4 (second/third only when central)
+    UtcSeconds maximum{0};
+    double min_separation_deg = 180.0;
+    double magnitude = 0;          // fraction of the Sun's diameter covered at maximum
+};
+EclipseContacts eclipse_contacts(const SolarEclipse& e, double latitude_deg, double longitude_deg);
 }
