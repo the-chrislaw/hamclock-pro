@@ -53,11 +53,16 @@ jobs:
           # so retry on a missing dmg rather than on the exit status.
           for attempt in 1 2 3; do
             rm -f build-mac/hamclock-pro.dmg
-            macdeployqt build-mac/hamclock-pro.app -dmg || true
+            macdeployqt build-mac/hamclock-pro.app -qmldir="$GITHUB_WORKSPACE/src" -dmg || true
             [ -f build-mac/hamclock-pro.dmg ] && break
             [ "$attempt" = 3 ] && exit 1
             sleep 15
           done
+          # The QML is loaded from resources, so macdeployqt must scan src/ (-qmldir)
+          # to bundle QtQuick, Controls, Layouts, ... Prove the packaged app starts.
+          test -d build-mac/hamclock-pro.app/Contents/Resources/qml/QtQuick
+          build-mac/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-mac" --offline --size 1024x600 --screenshot "$RUNNER_TEMP/smoke-mac.png"
+          test -s "$RUNNER_TEMP/smoke-mac.png"
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
       - uses: actions/upload-artifact@v4
         with:
@@ -103,11 +108,16 @@ jobs:
           # hdiutil occasionally fails with "Resource busy" on hosted runners; retry.
           for attempt in 1 2 3; do
             rm -f build-universal/hamclock-pro.dmg
-            macdeployqt build-universal/hamclock-pro.app -dmg || true
+            macdeployqt build-universal/hamclock-pro.app -qmldir="$GITHUB_WORKSPACE/src" -dmg || true
             [ -f build-universal/hamclock-pro.dmg ] && break
             [ "$attempt" = 3 ] && exit 1
             sleep 15
           done
+          # The QML is loaded from resources, so macdeployqt must scan src/ (-qmldir)
+          # to bundle QtQuick, Controls, Layouts, ... Prove the packaged app starts.
+          test -d build-universal/hamclock-pro.app/Contents/Resources/qml/QtQuick
+          build-universal/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-universal" --offline --size 1024x600 --screenshot "$RUNNER_TEMP/smoke-universal.png"
+          test -s "$RUNNER_TEMP/smoke-universal.png"
           mv build-universal/hamclock-pro.dmg hamclock-pro-macos-universal-unsigned.dmg
       - uses: actions/upload-artifact@v4
         with:
