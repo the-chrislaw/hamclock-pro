@@ -1,3 +1,4 @@
+#include <QSettings>
 #include "ui/alarms.hpp"
 
 #include "ui/alarms_model.hpp"
@@ -83,6 +84,17 @@ int main(int argc, char** argv) {
     {
         AlarmsModel m(path);
         CHECK(m.items().size() == 1 && m.items()[0].contains("18:00 UTC"));
+    }
+    {
+        AlarmsModel m(path);
+        CHECK(m.items().size() == 1);
+        {
+            QSettings ini(path, QSettings::IniFormat);
+            ini.setValue("alarms/list", QStringList{"0630,d,1", "2200,o,1"});
+            ini.sync();
+        }
+        m.reload();  // a restored configuration is picked up without a restart
+        CHECK(m.items().size() == 2 && m.items()[0].contains("06:30 UTC"));
     }
     {
         AlarmsModel m;  // no path: session only, nothing read or written

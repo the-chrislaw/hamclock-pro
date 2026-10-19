@@ -59,6 +59,15 @@ void AlarmsModel::save() {
     ini.sync();
 }
 
+void AlarmsModel::reload() {
+    if (path_.isEmpty()) return;
+    const QSettings ini(path_, QSettings::IniFormat);
+    const QVector<Alarm> fresh = alarms_parse(ini.value("alarms/list").toStringList());
+    if (alarms_serialize(fresh) == alarms_serialize(alarms_)) return;
+    alarms_ = fresh;
+    emit changed();
+}
+
 void AlarmsModel::dismiss() {
     if (ringing_.isEmpty()) return;
     ringing_.clear();
