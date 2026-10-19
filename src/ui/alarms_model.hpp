@@ -22,6 +22,8 @@ public:
     Q_INVOKABLE void remove(int index);
     Q_INVOKABLE void setEnabled(int index, bool enabled);
     Q_INVOKABLE void dismiss();
+    // Re-reads the alarm list from the options file (after a saved configuration is restored).
+    void reload();
     // Test hook: run one check between two instants.
     void check(const QDateTime& prev, const QDateTime& now);
 signals:

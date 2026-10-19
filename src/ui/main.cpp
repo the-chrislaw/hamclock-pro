@@ -135,6 +135,7 @@ int main(int argc, char** argv) {
     };
     apply_blanking();
     QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &blanking, apply_blanking);
+    QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &alarms, [&alarms] { alarms.reload(); });
     location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 

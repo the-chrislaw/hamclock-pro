@@ -260,3 +260,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-18 (hourly run, 61)
 - Backlog A14 slice (Big Clock option parity): the Big Clock page shows local sidereal time at DE beside the auxiliary line (`StationModel::lstTime`, same `aux_time_text` maths already covered by `aux-time-text-regression`; not repeated when the aux line is already LST). Full build, ctest 160/160, pre-existing legacy warnings unchanged. The Big Clock page is not reachable from `--screenshot`, so not checked visually; ASan/UBSan left to CI. Not validated on a device.
 - Open: #500 (QA log, still in CI, not mine) and #73 (stale docs, not mine); left alone.
+
+## 2026-10-19 (hourly run, 62)
+- Backlog A16 slice (live alarm re-apply): restoring a saved configuration now reloads the alarm list at once (`AlarmsModel::reload()` on `optionsChanged`); Settings text updated. `alarms-regression` extended (file changed under a live model). ctest 163/163; ASan/UBSan left to CI. No layout change, so no screenshots. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
