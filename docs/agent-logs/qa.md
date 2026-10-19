@@ -222,3 +222,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: bf08310 (PRs #506 and #507 since da74df4). #507 is the only source change: `eclipse_contacts()` solver (`src/domain/astro_eclipse_contacts.cpp`) on the vendored ELP moon, with `eclipse_contacts_regression`. Diff reviewed: domain-only, no UI, network, credential or QtWidgets code, Qt-independent, not yet wired into the Eclipse card (the WIDGETS.md note says so honestly). Tests compare with NASA greatest-eclipse times and totality durations (8 s tolerance for 2024 and 2027). The 2017 case uses a 100 s tolerance on a 160 s duration, which is loose but justified in a comment (Meeus Sun path offset); worth tightening once a better Sun is used. Build and all 162 ctest tests pass on main; no QML changes, so screenshots from run 24 still apply.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: main builds and passes tests; eclipse contact groundwork is sound and not yet user-visible. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-19 (UTC) QA run 34
+- Last reviewed commit: f0a4d4b (PR #508 only, my own run 33 log, since bf08310).
+- No source, test or workflow changes since run 33, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 33. Remaining risk is data freshness on the real Pi (#150).
