@@ -161,3 +161,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-18 (hourly run)
 - No qa issues for area F beyond #269 (awaiting owner confirmation); no open PR of mine; #73 (conflicting) is another area's, left alone. Main Apple runs green through 39131232051. Remaining F items (attribution screen, phone layout) wait on area A UI; no increment possible. CI logs only; no on-device claims.
+
+## 2026-10-19 (hourly run)
+- New qa issue #513 (text fields ignore the hardware keyboard in the iPad build on a Mac). Cause is Qt's iOS UITextInput path; I can't test keyboards from CI, so this slice: `TextEntryHint` (`apple_textentry*`) detects the iPad-app-on-Mac environment and hardware keyboard presence (GameController `GCKeyboard`), and `FormField` shows a warning under text fields only in that environment, so there is never a silent dead field. Logic tested on Linux (`text-entry-hint-regression`); the native part compiles only in the iOS jobs. Owner steps and a manual hardware-keyboard check are in `packaging/apple/RELEASE-CHECKLIST.md`. Not done: confirming whether a real iPad with a hardware keyboard works (needs a device check), so #513 stays open. No on-device claims.

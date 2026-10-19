@@ -12,6 +12,7 @@
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_safearea.hpp"
+#include "../platform/apple_textentry.hpp"
 #include <QGuiApplication>
 #include <QCommandLineParser>
 #include <QDir>
@@ -155,6 +156,8 @@ int main(int argc, char** argv) {
     // Declared before the engine so it outlives it: QML bindings on safeArea
     // re-evaluate during engine teardown and must not see a null object.
     hamclock::SafeArea safe_area;
+    hamclock::TextEntryHint text_entry_hint;
+    text_entry_hint.refresh();
     QQmlApplicationEngine engine;
     // In screenshot mode any QML warning (binding error, missing type) fails
     // the run, so CI catches broken QML that would otherwise render blank.
@@ -172,6 +175,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
+    engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));

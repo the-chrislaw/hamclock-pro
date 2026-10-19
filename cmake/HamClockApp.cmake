@@ -9,6 +9,7 @@ add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
     src/platform/apple_lifecycle.cpp
     src/platform/apple_safearea.cpp
+    src/platform/apple_textentry.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -16,7 +17,9 @@ add_library(hamclock-widget-core STATIC
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm)
+    find_library(HC_GAMECONTROLLER GameController REQUIRED)
+    target_link_libraries(hamclock-widget-core PUBLIC ${HC_GAMECONTROLLER})
 endif()
 
 # All widget models are compiled into this library by hamclock_add_widget().
@@ -134,6 +137,11 @@ if(BUILD_TESTING)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
     add_test(NAME safe-area-regression COMMAND safe-area-regression)
     set_tests_properties(safe-area-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(text-entry-hint-regression tests/text_entry_hint_regression.cpp)
+    target_link_libraries(text-entry-hint-regression PRIVATE hamclock-widget-core)
+    set_target_properties(text-entry-hint-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME text-entry-hint-regression COMMAND text-entry-hint-regression)
+    set_tests_properties(text-entry-hint-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
     target_include_directories(path-text-regression PRIVATE src)
     target_link_libraries(path-text-regression PRIVATE Qt6::Core)
