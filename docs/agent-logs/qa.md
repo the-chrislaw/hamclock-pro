@@ -212,3 +212,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No source, test or workflow changes since run 30, so the build, tests and screenshots from that run still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new to review; main is unchanged in behaviour since run 30. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-19 (UTC) QA run 32
+- Last reviewed commit: da74df4 (PRs #504 and #505 since f89b3ea). #505 is the only source change: vendored truncated ELP2000-82B lunar theory (`src/domain/astro_elp.{hpp,cpp}`, `elp82b_terms.inc`, `elp_regression` test, third-party note with source and licence). Diff reviewed: domain-only, no UI, network, credential or QtWidgets code, Qt-independent, tests compare against full-theory values and Meeus 47.a with tight tolerances (not weakened), provenance documented. Cosmetic only: `elp_moon` computes the same `fmod` twice in the return statement. Not wired into the eclipse model yet, so no screenshot change. Build and all 161 ctest tests pass on main; screenshots from run 24 still apply (no QML changes).
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: main builds and passes tests; the ELP groundwork looks sound and is not yet user-visible. Remaining risk is data freshness on the real Pi (#150).
