@@ -21,7 +21,7 @@ Card {
             Item {
                 required property var modelData
                 width: parent.width
-                height: Math.round(Theme.fontBody * 1.2) + (root.compact ? 0 : Theme.fontCaption * 1.3)
+                height: body.height
                 readonly property color tone: modelData.level >= 2 ? Theme.bad : modelData.level === 1 ? Theme.warn : Theme.ink
                 Text {
                     id: tag
@@ -31,20 +31,26 @@ Card {
                     font.bold: true
                     width: Theme.fontBody * 2
                 }
-                Text {
+                Column {
+                    id: body
                     anchors { left: tag.right; right: parent.right }
-                    text: modelData.headline
-                    color: Theme.ink
-                    font.pixelSize: Theme.fontBody
-                    elide: Text.ElideRight
-                }
-                Text {
-                    visible: !root.compact
-                    anchors { left: tag.right; right: parent.right; bottom: parent.bottom }
-                    text: modelData.kind + " " + modelData.issued + (modelData.until.length ? " · " + modelData.until : "")
-                    color: Theme.secondary
-                    font.pixelSize: Theme.fontCaption
-                    elide: Text.ElideRight
+                    Text {
+                        width: parent.width
+                        text: modelData.headline
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontBody
+                        wrapMode: Text.WordWrap
+                        maximumLineCount: 2
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        visible: !root.compact
+                        width: parent.width
+                        text: modelData.kind + " " + modelData.issued + (modelData.until.length ? " · " + modelData.until : "")
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        elide: Text.ElideRight
+                    }
                 }
             }
         }
