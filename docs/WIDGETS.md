@@ -31,6 +31,15 @@ src/widgets/<id>/
 
 Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
 
+
+## 1.0 release focus (owner, Oct 20)
+
+The feature set is close to complete. Until 1.0 ships, every area works in this order:
+1. Open `qa` issues for your area (bugs first).
+2. Release items: SD-card image (#526) and README/screenshots (#527) for area A; launch smoke tests for every artifact (area F, #521); keep each area's panes free of clipping at 800×480, 1024×600 and 1920×1080.
+3. Polish what exists: error states, empty states, offline behaviour, attribution, text size, keyboard/remote focus. No new panes or data sources unless they close a parity gap with the original HamClock (docs/FEATURE-AUDIT.md).
+4. If nothing is left, write the run log and stop. Don't invent work.
+
 ### A. UI shell and design (owns `src/ui/`, `cmake/HamClockApp.cmake`, `docs/WIDGETS.md` contract section)
 0. 🟡 **Top priority: one-page slot layout** (done: no scrolling, three pane slots, chooser, choices saved; map now fills its item without the widget's inner margin; done: dense small-screen shell (no header, tight spacing, settings button in the station card) and tap-anywhere/swipe pane switching; done: long-press pane options (change, step, empty, reset); done: per-slot rotation (off/5/10/30/60 s, set from the long-press menu, saved) with custom rotation sets (long-press: add/remove the shown widget; empty set = all widgets); done: category picker (all registered widgets categorised, tested); pending: side panes, `compact` layouts in each widget card). Remove page scrolling. Build the fixed slot grid (station column + pane row + map, scaling from 800×480 to 4K), a pane chooser (tap pane title → list of widgets; keyboard/remote accessible), per-slot choice saved in settings, optional rotation interval per slot. Default arrangement at 1024×600: station column left, three panes on top (Space weather, Solar wind, DX cluster), map filling the rest. Verify by screenshots at 800×480, 1024×600, 1280×800, 1920×1080 that nothing is clipped and nothing scrolls. Real-screen issues to fix: docs/hardware-validation.md.
 0c. 🟡 (done: tap the clock to swap UTC and DE local; DE and DX next sunrise/sunset countdown lines (tap toggles "in 3h 12m" and UTC clock times); tap the path line to toggle short/long path; Metric/Imperial distance units in Settings, saved; auxiliary time line: tap cycles day of year / JD / MJD / LST / UNIX; date order (D M Y / M D Y / ISO), 12/24 h clock and week start (Mon ISO / Sun US) in Settings, saved; DX local time with an automatic zone from the DX coordinates (offline nearest-city hint), manual DX zone override in Settings, saved) **Owner priority (Oct 13): station column parity with the original's DE/DX panels.** Do this right after A0, before 0b. Owner found the left column missing much of the original. Each item compact enough for the 7-inch 1024×600 column; verify by screenshot:
