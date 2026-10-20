@@ -147,3 +147,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-16 (UTC, thirty-third run)
 - Merged #439 (tvOS, green). #73 (area A) conflicting: not mine. No open `qa` issues for E.
 - Docs only: recorded the owner's #342 decision (IP geolocation won't do) in WIDGETS E12 and ROADMAP "On the radar". No code change. Remaining E backlog is blocked on owner input (#315), area G wiring, hardware or the radio safety review.
+
+## 2026-10-20 (UTC, thirty-fourth run)
+- #73 (area A) conflicting: not mine. Fixed qa #530 [E]: Host sensors Clock now shows status ("Synced") as the value with offset/stratum/server as an eliding caption (no mid-word clipping); Weather DE/DX labels shortened to "DE"/"DX" when no city is set (guard flagged elided "DE weather"). QML only; rendered weather/sensors at 800x480 and 1024x600 (no clock source in harness, so the clock line itself not rendered); full suite result above in PR. Not validated on-device.
