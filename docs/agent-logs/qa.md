@@ -260,3 +260,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No source or QML changes, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new in behaviour; the iOS plugin check closes a silent blank-app failure mode. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-20 (UTC) QA run 41
+- Last reviewed commit: 511accd (PR #524 only, my own run 40 log, since 0b74176).
+- No source, test or workflow changes since run 40, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 38. Remaining risk is data freshness on the real Pi (#150).
