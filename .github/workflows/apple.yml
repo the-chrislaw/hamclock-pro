@@ -228,6 +228,11 @@ jobs:
         run: |
           cmake --build build-ios --config Debug --target hamclock-pro -- \
             -sdk iphoneos CODE_SIGNING_ALLOWED=NO
+      - name: Check static QML plugins are linked (launch smoke test, #521)
+        run: |
+          BIN=$(find build-ios -path '*Debug-iphoneos/hamclock-pro.app/hamclock-pro' | head -1)
+          echo "binary: $BIN"
+          packaging/apple/check_ios_plugins.sh "$BIN"
       # Simulator: Qt's prebuilt QML resource objects are device-only in this kit
       # ("building for iOS-simulator, but linking object built for iOS"), so the
       # Simulator build/screenshot is attempted separately and is informational.
