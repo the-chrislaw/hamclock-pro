@@ -248,3 +248,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: a95a1d8 (PRs #518 and #519 since 4e4c4e4). #519 is the only source change: session-only demo mode (`AppSettings::demoMode`, Settings card, "Stop demo" in the pane long-press menu; `PaneSlot.qml` forces a 10 s rotation over all widgets while on). Diff reviewed: not persisted, saved rotations untouched (test added), no network, credential or QtWidgets code, Qt 6.4-safe. Cosmetic only: QML hard-codes `10` instead of using `AppSettings::kDemoSeconds`. Build and all 164 ctest tests pass on main; screenshots were not repeated (one new Settings card, no layout change to panes).
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: main builds and passes tests; demo mode looks sound and is off by default. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-20 (UTC) QA run 39
+- Last reviewed commit: 32233eb (PR #520 only, my own run 38 log, since a95a1d8).
+- No source, test or workflow changes since run 38, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new to review; main is unchanged in behaviour since run 38. Remaining risk is data freshness on the real Pi (#150).
