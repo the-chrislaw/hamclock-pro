@@ -14,7 +14,8 @@ Card {
             source: root.widget && root.widget.hasImage ? root.widget.imageUrl : ""
             fillMode: Image.PreserveAspectFit
             smooth: true
-            asynchronous: true
+            // Local data: URL decode is cheap; synchronous so a render or screenshot never catches it blank.
+            asynchronous: false
             sourceSize.width: 512
             sourceSize.height: 512
             Accessible.role: Accessible.Graphic

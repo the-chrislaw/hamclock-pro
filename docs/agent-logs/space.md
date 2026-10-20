@@ -156,3 +156,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 - Owner picked option A on #281: backlog 15 (tropo map style) marked won't-do in `docs/WIDGETS.md`; the ROADMAP "On the radar" row now records the decision and GFS/NOMADS as the future route. Docs only, no code.
 - Area B has no unblocked items left: the bandsmatrix settings UI needs area A's shared settings page. No open [B] qa issues. #368/#369 (others) had checks running; #73 (not mine) conflicts; left alone.
+
+## 2026-10-20 (UTC): issue #531 Space alerts truncation, Sun (SDO) blank
+
+- Space alerts: headlines wrap to two lines (then elide) instead of eliding at one, so "Geomagnetic Storm Category G1 Predicted" is fully readable at 800x480 and 1024x600; the issued/until caption sits under it in the full layout. Rendered with a synthetic far-future alerts fixture at 800x480, 1024x600 and 1920x1080: truncation guard clean.
+- Sun (SDO): could not reproduce a blank image from a cached body offline here (fresh and 2 h old caches both render). Most likely cause is the asynchronous decode of the data: URL not finishing before the screenshot grab on the slower Pi, so the Image is now synchronous (local 512 px JPEG, cheap). Not validated on the Pi; owner should re-check `--offline` render there. Age/"just now" comes from the cache file's own fetch stamp, so it does reflect the real fetch time.
+- Other open PR (#73) belongs to others; left alone.
