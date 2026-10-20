@@ -269,5 +269,5 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-20 (UTC) QA run 42
 - Last reviewed commit: d028a93 (PRs #528, #533, #534 since 511accd). #533 (sun/moon) and #534 (sensors, weather) are QML-only fit fixes for #529/#530: shorter DE/DX headers and values, `HorizontalFit` plus elide, a smaller Moon disc, a "Clock" caption that elides, and "DE"/"DX" weather labels. #528 is the 1.0 release-focus doc. Diffs reviewed: no network, credential, QtWidgets or Qt 6.4 problems; no tests changed. Build and all 164 ctest tests pass on main. Rendered Sun & Moon, Weather and Host sensors with a configured station (offline fixtures) at 800x480 and 1024x600, light and dark: no clipping; Moon rise/set and season rows drop out at 1024x600 by design. Sensors Clock row and weather data were not exercised (no fixture for them in this render); 1920x1080 not repeated.
-- Opened: none. Closed: none. Still open: the `qa` issues listed by run 41 plus the owner-input issues.
+- Opened: none. Closed: #529 (fixed by #533, verified by screenshots at 800x480 and 1024x600). Still open: #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes tests; the small-screen clipping fixes look good. Remaining risk is data freshness on the real Pi (#150).
