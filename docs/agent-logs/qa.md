@@ -243,3 +243,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 4e4c4e4 (PRs #516 and #517 since da566cd). #517 is the only source change: `TextEntryHint` (`src/platform/apple_textentry.*`, iOS-only `.mm` using GameController) shows a warning under `FormField` text fields only when the iPad app runs on a Mac (#513); the message is empty everywhere else, so layouts are unchanged. Diff reviewed: no network, credential or QtWidgets code, tests added (`text-entry-hint-regression`), Qt 6.4-safe. Build and all 164 ctest tests pass on main; a 1024x600 dark `--offline` screenshot is unchanged and clean.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: main builds and passes tests; the new hint is inert off iOS. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-20 (UTC) QA run 38
+- Last reviewed commit: a95a1d8 (PRs #518 and #519 since 4e4c4e4). #519 is the only source change: session-only demo mode (`AppSettings::demoMode`, Settings card, "Stop demo" in the pane long-press menu; `PaneSlot.qml` forces a 10 s rotation over all widgets while on). Diff reviewed: not persisted, saved rotations untouched (test added), no network, credential or QtWidgets code, Qt 6.4-safe. Cosmetic only: QML hard-codes `10` instead of using `AppSettings::kDemoSeconds`. Build and all 164 ctest tests pass on main; screenshots were not repeated (one new Settings card, no layout change to panes).
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: main builds and passes tests; demo mode looks sound and is off by default. Remaining risk is data freshness on the real Pi (#150).
