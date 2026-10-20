@@ -8,8 +8,10 @@ bin="${1:?usage: check_ios_plugins.sh <binary>}"
 syms=$(mktemp)
 xcrun nm -arch arm64 "$bin" > "$syms" 2>/dev/null || nm "$bin" > "$syms" || exit 2
 missing=0
+# QtQuick.Window lives inside the QtQuick plugin in Qt 6.5 (no separate symbol).
+echo "linked static plugins:"; grep -Eo "qt_static_plugin_[A-Za-z0-9_]+" "$syms" | sort -u
 for p in QtQuick2Plugin QtQuickControls2Plugin QtQuickControls2BasicStylePlugin \
-         QtQuickLayoutsPlugin QtQuick2?WindowPlugin; do
+         QtQuickLayoutsPlugin; do
   if grep -Eq "qt_static_plugin_$p" "$syms"; then
     echo "ok: $p"
   else
