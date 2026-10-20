@@ -206,8 +206,8 @@ if(BUILD_TESTING)
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
-    # Exit code 4 = a visible Text is truncated (issue #152); sizes cover small, primary and TV.
-    foreach(size 800x480 1920x1080 390x844 844x390)
+    # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary and TV.
+    foreach(size 800x480 1024x600 1920x1080 390x844 844x390)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30
