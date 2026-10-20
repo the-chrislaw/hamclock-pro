@@ -7,13 +7,13 @@ Item {
     id: slot
     property int index: 0
     readonly property string saved: appSettings.panes[index]
-    readonly property int rotateSeconds: appSettings.paneRotations[index]
+    readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index]
     // What is on screen: the saved choice, or the current stop of an automatic
     // rotation (never written to settings, so a rotation does not wear the SD card).
     property string rotated: ""
     readonly property string choice: rotateSeconds > 0 && rotated !== "" ? rotated : saved
     // Widgets the rotation cycles through (empty = every widget).
-    readonly property var rotationSet: appSettings.paneRotationSets[index]
+    readonly property var rotationSet: appSettings.demoMode ? [] : appSettings.paneRotationSets[index]
     // Pause rotation while the user is interacting or a menu is open.
     property bool paused: false
     onSavedChanged: rotated = ""

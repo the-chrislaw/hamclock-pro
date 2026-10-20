@@ -233,6 +233,10 @@ int main(int argc, char** argv) {
         check(again.paneRotations() == QList<int>({0, 0, 0}), "rotation off by default");
         check(!again.setPaneRotation(3, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
         check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations() == QList<int>({0, 30, 0}), "rotation applied");
+        check(!again.demoMode(), "demo mode off by default");
+        again.setDemoMode(true);
+        check(again.demoMode() && again.paneRotations() == QList<int>({0, 30, 0}), "demo mode leaves saved rotation alone");
+        again.setDemoMode(false);
         AppSettings third({}, pane_dir.path());
         check(third.paneRotations() == QList<int>({0, 30, 0}), "rotation survives restart");
         check(again.paneRotationSets()[1].toStringList().isEmpty(), "rotation set empty by default (all widgets)");

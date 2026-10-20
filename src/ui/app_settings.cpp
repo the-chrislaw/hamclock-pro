@@ -195,6 +195,12 @@ QList<int> AppSettings::paneRotations() const {
     return result;
 }
 
+void AppSettings::setDemoMode(bool on) {
+    if (demo_mode_ == on) return;
+    demo_mode_ = on;
+    emit demoModeChanged();
+}
+
 QString AppSettings::setPaneRotation(int slot, int seconds) {
     if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
     if (!validRotation(seconds)) return "Rotation must be off, 5, 10, 30 or 60 seconds.";

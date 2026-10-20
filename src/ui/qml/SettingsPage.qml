@@ -433,6 +433,27 @@ Rectangle {
             }
 
             Card {
+                title: "Demo mode"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    AppButton {
+                        text: appSettings.demoMode ? "Stop demo" : "Start demo"
+                        primary: appSettings.demoMode
+                        onClicked: appSettings.demoMode = !appSettings.demoMode
+                    }
+                    Text {
+                        text: "Steps every pane through all widgets every 10 s, showing real data. Not saved: it ends when the app restarts, or from a pane's long-press menu."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        width: parent.width
+                    }
+                }
+            }
+
+            Card {
                 id: exitCard
                 title: "Exit"
                 Layout.fillWidth: true

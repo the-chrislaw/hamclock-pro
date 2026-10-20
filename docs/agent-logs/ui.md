@@ -264,3 +264,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-19 (hourly run, 62)
 - Backlog A16 slice (live alarm re-apply): restoring a saved configuration now reloads the alarm list at once (`AlarmsModel::reload()` on `optionsChanged`); Settings text updated. `alarms-regression` extended (file changed under a live model). ctest 163/163; ASan/UBSan left to CI. No layout change, so no screenshots. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-20 (hourly run, 63)
+- Backlog A16 slice (demo mode): Settings > "Demo mode" starts a session-only mode (`AppSettings::demoMode`, never saved) in which every pane steps through all widgets every 10 s with real data (no invented data); "Stop demo" is in the pane long-press menu. `widget-core-regression` extended (off by default, saved rotation untouched). 1024x600 render ran with exit 0; Settings and the long-press menu are not reachable from `--screenshot`, so not checked visually. ctest 164/164; ASan/UBSan left to CI. Pre-existing legacy warnings unchanged. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
