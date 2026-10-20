@@ -33,6 +33,7 @@
 namespace {
     // Counts visible, non-empty Text-like items whose text is cut off (issue
     // #152). Items that elide on purpose set objectName "elideOk".
+    int count_clipped(QQuickItem* item);
     int count_truncated(QQuickItem* item) {
         if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
         int found = 0;
@@ -42,8 +43,40 @@ namespace {
             std::fprintf(stderr, "TRUNCATED: \"%s\"\n", qPrintable(item->property("text").toString()));
             ++found;
         }
+        found += count_clipped(item);
         for (auto* child : item->childItems()) found += count_truncated(child);
         return found;
+    }
+
+    // Text whose painted extent runs outside the nearest clipping ancestor or the
+    // window is cut off without eliding (issue #532). Scrolling views and items
+    // marked objectName "clipOk" are exempt.
+    int count_clipped(QQuickItem* item) {
+        const QVariant cw = item->property("contentWidth");
+        const QVariant ch = item->property("contentHeight");
+        const QString text = item->property("text").toString();
+        if (!cw.isValid() || !ch.isValid() || text.isEmpty() || item->objectName() == "clipOk" || item->objectName() == "elideOk") return 0;
+        if (item->property("truncated").toBool()) return 0; // already reported
+        const double w = cw.toDouble(), h = ch.toDouble();
+        if (w <= 0 || h <= 0) return 0;
+        const int align = item->property("horizontalAlignment").toInt();
+        double x = 0;
+        if (align == Qt::AlignRight) x = item->width() - w;
+        else if (align == Qt::AlignHCenter) x = (item->width() - w) / 2;
+        const QRectF content(item->mapToScene(QPointF(x, 0)), QSizeF(w, h));
+        constexpr double tol = 1.5;
+        QRectF bound = item->window() ? QRectF(0, 0, item->window()->width(), item->window()->height()) : QRectF();
+        for (auto* a = item->parentItem(); a; a = a->parentItem()) {
+            if (a->property("flickableDirection").isValid()) return 0; // scrolls on purpose
+            if (a->clip()) bound = bound.isNull() ? a->mapRectToScene(a->boundingRect()) : bound.intersected(a->mapRectToScene(a->boundingRect()));
+        }
+        if (bound.isNull()) return 0;
+        if (content.left() < bound.left() - tol || content.top() < bound.top() - tol || content.right() > bound.right() + tol ||
+            content.bottom() > bound.bottom() + tol) {
+            std::fprintf(stderr, "TRUNCATED: \"%s\" (clipped)\n", qPrintable(text));
+            return 1;
+        }
+        return 0;
     }
 
 constexpr int kScreenshotDelayMs = 1500;
