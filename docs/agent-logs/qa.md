@@ -254,3 +254,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - No source, test or workflow changes since run 38, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
 - Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
 - Health: nothing new to review; main is unchanged in behaviour since run 38. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-20 (UTC) QA run 40
+- Last reviewed commit: 0b74176 (PR #523 and #522 since 32233eb). #523 adds `packaging/apple/check_ios_plugins.sh` and an `apple.yml` step that fails the iOS build when a statically linked Qt Quick plugin is missing from the binary (#521). Diff reviewed: script and workflow only, no secrets, sound. #522 is my own run 39 log.
+- No source or QML changes, so the build, tests and screenshots from earlier runs still apply; they were not repeated.
+- Opened: none. Closed: none. Still open: #150, #151, #152, #246, #247, #269, #281 plus the owner-input issues.
+- Health: nothing new in behaviour; the iOS plugin check closes a silent blank-app failure mode. Remaining risk is data freshness on the real Pi (#150).
