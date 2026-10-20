@@ -46,6 +46,11 @@ Popup {
             onClicked: { options.close(); options.stepRequested(options.slot, -1) }
         }
         AppButton {
+            width: parent.width; text: "Stop demo"
+            visible: appSettings.demoMode
+            onClicked: { appSettings.demoMode = false; options.close() }
+        }
+        AppButton {
             readonly property var steps: [0, 5, 10, 30, 60]
             readonly property int current: appSettings.paneRotations[options.slot]
             width: parent.width

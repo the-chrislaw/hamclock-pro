@@ -68,6 +68,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QStringList panes READ panes NOTIFY panesChanged)
     // Seconds between automatic widget changes per slot (0 = off; 5, 10, 30 or 60).
     Q_PROPERTY(QList<int> paneRotations READ paneRotations NOTIFY panesChanged)
+    // Demo mode: every pane steps through all widgets every kDemoSeconds. Session only, never saved.
+    Q_PROPERTY(bool demoMode READ demoMode WRITE setDemoMode NOTIFY demoModeChanged)
     // Widgets a slot's rotation cycles through, one list per slot (empty list = every widget).
     Q_PROPERTY(QVariantList paneRotationSets READ paneRotationSets NOTIFY panesChanged)
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
@@ -152,6 +154,9 @@ public:
     Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
     Q_INVOKABLE void resetPanes();
     QList<int> paneRotations() const;
+    static constexpr int kDemoSeconds = 10;
+    bool demoMode() const { return demo_mode_; }
+    void setDemoMode(bool on);
     static bool validRotation(int seconds) { return seconds == 0 || seconds == 5 || seconds == 10 || seconds == 30 || seconds == 60; }
     Q_INVOKABLE QString setPaneRotation(int slot, int seconds);
     QVariantList paneRotationSets() const;
@@ -239,6 +244,7 @@ signals:
     void configsChanged();
     void accountsChanged();
     void panesChanged();
+    void demoModeChanged();
 
 private:
     void loadOptions();
@@ -291,6 +297,7 @@ private:
     int blank_off_ = -1;
     int blank_on_ = -1;
     int blank_days_ = 0x7F;
+    bool demo_mode_ = false;
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
