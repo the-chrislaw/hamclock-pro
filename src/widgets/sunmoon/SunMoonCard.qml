@@ -4,10 +4,12 @@ import HamClock
 
 Card {
     id: root
+    // Compact value: drop the " UTC" suffix (the DE/DX headers say UTC) and shorten durations.
+    function compact(t) { return t.replace(/ UTC/g, "").replace(/ h /, "h ").replace(/ min/, "m") }
     // Rows that fit in the body: header + 3 sun rows + Moon title are fixed;
     // the later Moon rows are dropped (Now first, then rise/set, then phase)
     // instead of being clipped. Estimate is non-circular (no layout feedback).
-    readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
+    readonly property real rowH: Theme.fontCaption * 1.3 * 1.4 + Theme.gap
     readonly property int rowsFit: Math.floor((grid.parent ? grid.parent.height : 0) / rowH)
     readonly property bool showPhase: rowsFit >= 6
     readonly property bool showRiseSet: rowsFit >= 7
@@ -18,21 +20,21 @@ Card {
         columns: 3
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
-        Text { text: ""; Layout.fillWidth: true }
-        Text { text: "DE"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
-        Text { text: "DX"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+        Text { text: ""; Layout.fillWidth: true; Layout.preferredWidth: 0 }
+        Text { text: "DE (UTC)"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+        Text { text: "DX (UTC)"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
 
         Text { text: "Sunrise"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { text: root.widget && root.widget.deRise ? root.widget.deRise : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
-        Text { text: root.widget && root.widget.dxRise ? root.widget.dxRise : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
+        Text { text: root.widget && root.widget.deRise ? root.compact(root.widget.deRise) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
+        Text { text: root.widget && root.widget.dxRise ? root.compact(root.widget.dxRise) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
 
         Text { text: "Sunset"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { text: root.widget && root.widget.deSet ? root.widget.deSet : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
-        Text { text: root.widget && root.widget.dxSet ? root.widget.dxSet : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
+        Text { text: root.widget && root.widget.deSet ? root.compact(root.widget.deSet) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
+        Text { text: root.widget && root.widget.dxSet ? root.compact(root.widget.dxSet) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
 
         Text { text: "Day length"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { text: root.widget && root.widget.deDay ? root.widget.deDay : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
-        Text { text: root.widget && root.widget.dxDay ? root.widget.dxDay : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3 }
+        Text { text: root.widget && root.widget.deDay ? root.compact(root.widget.deDay) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
+        Text { text: root.widget && root.widget.dxDay ? root.compact(root.widget.dxDay) : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; Layout.preferredWidth: 0; Layout.minimumWidth: 0; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
 
         Text {
             text: "Moon (DE)"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
@@ -45,7 +47,7 @@ Card {
             id: disc
             visible: root.showPhase && !!root.widget && !!root.widget.moonPhase
             Layout.rowSpan: 2; Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-            Layout.preferredWidth: Math.min(rowH * 2, 96); Layout.preferredHeight: Layout.preferredWidth
+            Layout.preferredWidth: Math.min(rowH * 1.6, 72); Layout.preferredHeight: Layout.preferredWidth
             readonly property real elong: root.widget ? root.widget.moonElongation : 0
             readonly property real tilt: root.widget ? root.widget.moonTilt : 0
             readonly property color ink: Theme.ink
@@ -93,8 +95,9 @@ Card {
         Text { visible: root.showRiseSet; text: "Moon rise/set"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text {
             visible: root.showRiseSet
-            text: (root.widget && root.widget.moonRise ? root.widget.moonRise : "—") + " / " + (root.widget && root.widget.moonSet ? root.widget.moonSet : "—")
+            text: compact((root.widget && root.widget.moonRise ? root.widget.moonRise : "—") + " / " + (root.widget && root.widget.moonSet ? root.widget.moonSet : "—"))
             color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.columnSpan: 2
+            Layout.fillWidth: true; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight
         }
         Text { visible: root.showRiseSet; text: "Next season"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text {
@@ -105,14 +108,14 @@ Card {
             elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text { visible: root.showNow; text: "Now"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.showNow; text: root.widget && root.widget.moonPosition ? root.widget.moonPosition : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.columnSpan: 2 }
+        Text { visible: root.showNow; text: root.widget && root.widget.moonPosition ? root.widget.moonPosition : "—"; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.columnSpan: 2; Layout.fillWidth: true; fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7; elide: Text.ElideRight }
 
         Text {
             visible: text.length > 0
             text: root.widget ? [root.widget.deNote ? "DE: " + root.widget.deNote : "",
                                  root.widget.dxNote ? "DX: " + root.widget.dxNote : ""].filter(Boolean).join("   ") : ""
             color: Theme.secondary; font.pixelSize: Theme.fontCaption
-            Layout.columnSpan: 3
+            Layout.columnSpan: 3; Layout.fillWidth: true; elide: Text.ElideRight
         }
     }
 }
