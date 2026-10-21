@@ -15,6 +15,9 @@ ApplicationWindow {
     title: "HamClock Pro"
     color: Theme.canvas
 
+    // Kiosk first boot (--first-run): no station yet, so start in Settings.
+    Component.onCompleted: if (firstRun && !station.configured) settingsLayer.visible = true
+
     SystemPalette { id: systemPalette }
     Binding {
         target: Theme; property: "dark"
