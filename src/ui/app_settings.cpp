@@ -317,6 +317,7 @@ void AppSettings::loadAccounts() {
     lookup_password_ = ini.value("lookup/password").toString().left(kMaxPasswordLength);
     hamalert_user_ = ini.value("hamalert/user").toString().left(kMaxUserLength);
     hamalert_password_ = ini.value("hamalert/password").toString().left(kMaxPasswordLength);
+    hamsat_key_ = ini.value("hamsat/key").toString().left(kMaxPasswordLength);
 }
 
 QString AppSettings::writeAccounts() {
@@ -329,6 +330,7 @@ QString AppSettings::writeAccounts() {
         ini.setValue("lookup/password", lookup_password_);
         ini.setValue("hamalert/user", hamalert_user_);
         ini.setValue("hamalert/password", hamalert_password_);
+        ini.setValue("hamsat/key", hamsat_key_);
         ini.sync();
         if (ini.status() != QSettings::NoError) return "Could not save account settings.";
     }
@@ -364,6 +366,18 @@ QString AppSettings::saveHamAlert(const QString& user, const QString& password) 
     hamalert_user_ = trimmed_user;
     if (trimmed_user.isEmpty()) hamalert_password_.clear();
     else if (!password.isEmpty()) hamalert_password_ = password;
+    const auto error = writeAccounts();
+    emit accountsChanged();
+    return error;
+}
+
+QString AppSettings::saveHamsatKey(const QString& key) {
+    const auto trimmed = key.trimmed();
+    if (trimmed.size() > kMaxPasswordLength) return "The key is too long.";
+    const bool plain = std::all_of(trimmed.begin(), trimmed.end(),
+                                   [](QChar c) { return c.unicode() > 32 && c.unicode() < 127; });
+    if (!plain) return "Use plain letters, digits and symbols only (no spaces).";
+    hamsat_key_ = trimmed;
     const auto error = writeAccounts();
     emit accountsChanged();
     return error;

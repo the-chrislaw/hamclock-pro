@@ -16,6 +16,7 @@ class AppSettings;
 struct WidgetContext {
     AppSettings* settings = nullptr;
     Transport transport;   // HTTP GET; fake in tests
+    AuthTransport auth_transport; // optional GET with a bearer token; unset in tests/fixtures
     QObject* owner = nullptr;
 };
 

@@ -17,6 +17,12 @@ struct Activation {
     double mhz = 0;     // 0 when not announced
     QDateTime aos;      // UTC
     QDateTime los;      // UTC
+    // Per-station values; hams.at fills them only for requests with an API key.
+    int workable = -1;            // 1 workable, 0 not, -1 not given
+    double max_elevation = -1;    // degrees; -1 when not given
+    QDateTime workable_start;     // UTC; invalid when not given
+    QDateTime workable_end;
+    bool personalised() const { return workable >= 0; }
 };
 
 struct Feed {

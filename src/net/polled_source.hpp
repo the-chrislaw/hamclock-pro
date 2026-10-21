@@ -27,6 +27,10 @@ using Transport = std::function<void(const QUrl&, FetchDone)>;
 // Real transport over QNetworkAccessManager: honest User-Agent, timeout,
 // redirects limited to the same scheme. Lives as long as the returned callable.
 Transport make_network_transport(QObject* owner);
+// Same, but sends `Authorization: Bearer <token>` when the token is non-empty
+// (hams.at API key). Optional: widgets fall back to the plain transport.
+using AuthTransport = std::function<void(const QUrl&, const QByteArray& bearer, FetchDone)>;
+AuthTransport make_authorized_transport(QObject* owner);
 QByteArray hamclock_user_agent();
 
 struct PollPolicy {

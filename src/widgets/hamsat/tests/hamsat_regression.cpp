@@ -3,6 +3,8 @@
 #include "../hamsat_model.hpp"
 #include "../hamsat_parse.hpp"
 #include "../../../net/polled_source.hpp"
+#include "../../../ui/app_settings.hpp"
+#include <QTemporaryDir>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -79,6 +81,59 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.hasNext(), "outage -> stale, last data kept");
+
+    // Personalised list: authenticated request carries the key; public fallback on 401.
+    QFile fa(QDir(argv[1]).filePath("upcoming_authed"));
+    check(fa.open(QIODevice::ReadOnly), "authed fixture present");
+    const QByteArray authed_body = fa.readAll();
+    const auto pf = hamsat::parse(authed_body);
+    check(pf.ok && pf.activations.size() == 2 && pf.activations[0].workable == 1 &&
+          pf.activations[0].max_elevation > 42.3 && pf.activations[0].max_elevation < 42.5 &&
+          pf.activations[0].workable_start == utc(2026, 10, 17, 1, 12) &&
+          pf.activations[1].workable == 0 && !pf.activations[1].workable_start.isValid(),
+          "per-station fields parsed");
+    check(feed.activations[0].workable == 0 && feed.activations[0].max_elevation < 0, "public list has no elevation");
+
+    QTemporaryDir dir;
+    AppSettings settings({}, dir.path());
+    check(!settings.hasHamsatKey(), "no key initially");
+    check(!settings.saveHamsatKey("abc def").isEmpty() && !settings.hasHamsatKey(), "key with space rejected");
+    QByteArray seen_bearer = "unset";
+    bool reject = false;
+    int calls = 0;
+    WidgetContext authed;
+    authed.settings = &settings;
+    authed.transport = context.transport;
+    authed.auth_transport = [&](const QUrl&, const QByteArray& bearer, FetchDone done) {
+        ++calls;
+        seen_bearer = bearer;
+        FetchResult result;
+        if (reject && !bearer.isEmpty()) { result.http_status = 401; result.error = {}; }
+        else { result.http_status = 200; result.body = bearer.isEmpty() ? body : authed_body; }
+        QTimer::singleShot(0, [done, result] { done(result); });
+    };
+    HamsatModel m2(authed);
+    auto clock2 = now;
+    m2.setClock([&] { return clock2; });
+    m2.source().setClock([&] { return clock2; });
+    QFile::remove(m2.source().cachePath());
+    m2.start();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(seen_bearer.isEmpty() && !m2.personalised() && m2.nextTitle() == "KB5FHK on RS-44", "no key -> public request");
+    check(settings.saveHamsatKey("  secret-key-1  ").isEmpty() && settings.hasHamsatKey(), "key saved");
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(seen_bearer == "secret-key-1" && m2.personalised(), "key change refetches with bearer");
+    check(m2.nextDetail() == "FM · 436.795 MHz · EN34 · 01:10Z-01:22Z · workable 01:12Z-01:20Z max el 42°",
+          "workable window and elevation shown");
+    check(m2.later().size() == 0 || m2.later().size() == 1, "later rows from personalised list");
+    reject = true;
+    calls = 0;
+    m2.source().refreshNow();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(calls == 2 && seen_bearer.isEmpty() && !m2.personalised() && m2.hasNext(), "401 -> public list, key not sent again");
+    check(m2.statusText().contains("rejected"), "rejected key explained");
+    check(settings.saveHamsatKey("").isEmpty() && !settings.hasHamsatKey(), "key cleared");
+    for (int i = 0; i < 20; ++i) app.processEvents();
 
     std::cout << "hams.at: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

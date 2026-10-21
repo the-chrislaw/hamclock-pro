@@ -75,6 +75,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(bool hasLookupPassword READ hasLookupPassword NOTIFY accountsChanged)
     Q_PROPERTY(QString hamAlertUser READ hamAlertUser NOTIFY accountsChanged)
     Q_PROPERTY(bool hasHamAlertPassword READ hasHamAlertPassword NOTIFY accountsChanged)
+    Q_PROPERTY(bool hasHamsatKey READ hasHamsatKey NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
@@ -143,6 +144,8 @@ public:
     QString hamAlertUser() const { return hamalert_user_; }
     bool hasHamAlertPassword() const { return !hamalert_password_.isEmpty(); }
     QString hamAlertPassword() const { return hamalert_password_; } // C++ only, like lookupPassword()
+    bool hasHamsatKey() const { return !hamsat_key_.isEmpty(); }
+    QString hamsatKey() const { return hamsat_key_; } // C++ only (never a QML property)
     QString stationPath() const { return station_path_; }
     QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
@@ -234,6 +237,8 @@ public:
     Q_INVOKABLE void clearAccount();
     // HamAlert.org telnet login; empty password keeps the stored one, empty user clears both.
     Q_INVOKABLE QString saveHamAlert(const QString& user, const QString& password);
+    // hams.at API key (Settings page on hams.at); empty clears it. Never shown back.
+    Q_INVOKABLE QString saveHamsatKey(const QString& key);
 
 signals:
     void stationChanged();
@@ -303,6 +308,7 @@ private:
     QStringList panes_;   // empty entry = default for that slot
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
     QString hamalert_user_, hamalert_password_;
+    QString hamsat_key_;
 };
 
 } // namespace hamclock
