@@ -87,6 +87,14 @@ int main(int argc, char** argv) {
     const auto nulday = weather::parse_current(
         R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[null],"temperature_2m_min":[8.6]}})");
     check(nulday && !nulday->high_c, "null daily value ignored");
+    const auto two = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[18.4,20.1],"temperature_2m_min":[8.6,9.2]}})");
+    check(two && two->tomorrow_high_c && *two->tomorrow_high_c == 20.1 && *two->tomorrow_low_c == 9.2, "tomorrow high/low parsed");
+    check(day && !day->tomorrow_high_c, "no tomorrow with one day");
+    const auto badtom = weather::parse_current(
+        R"({"latitude":1,"longitude":1,"current":{"temperature_2m":10,"relative_humidity_2m":50,"wind_speed_10m":1,"wind_direction_10m":1,"weather_code":3},"daily":{"temperature_2m_max":[18.4,3],"temperature_2m_min":[8.6,9.2]}})");
+    check(badtom && badtom->high_c && !badtom->tomorrow_high_c, "bad tomorrow ignored, today kept");
+    check(weather::request_url(1, 2).contains("forecast_days=2"), "url asks for two days");
     check(weather::request_url(1, 2).contains("temperature_2m_max"), "url asks for daily extremes");
     check(weather::request_url(1, 2).contains("timezone=auto"), "url asks for local zone");
     check(weather::request_url(1, 2).contains("past_hours=3"), "url asks for hourly pressure");
