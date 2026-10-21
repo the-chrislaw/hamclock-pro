@@ -277,3 +277,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Opened: none. Closed: none. #531 and #532 stay open: the guard still only walks the default layout, not every pane id as #532 asks, and #531's "age reflects the image's real fetch time" part is not addressed by #537.
 - Still open: #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes tests; the stricter guard is a good safety net. Remaining risk is data freshness on the real Pi (#150).
+
+## 2026-10-21 (UTC) QA run 44
+- Last reviewed commit: 02c2a3d (PRs #539 and #540 since bc3a43d; #538 was my run 43 log). #539 adds the Balloons pane (SondeHub telemetry, `src/widgets/balloons/`, map layer, fixture and tests); #540 is the README and screenshots. Diffs reviewed: fixture-served, no secrets or QtWidgets, Qt 6.4-safe, no tests weakened. Build and all 167 ctest tests pass on main. Rendered the Balloons pane at 800x480 and 1024x600 (dark, configured station, stale fixture): layout fits, but the empty-state message is never shown (#541). Not checked: the size of the real one-hour global SondeHub payload on a Pi, and Balloons with fresh data (fixture is hours old).
+- Opened: #541 (Metric hides the caption when unavailable). Closed: none. Still open: #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds and passes tests. The new Balloons pane is sound apart from the invisible empty-state text. Remaining risk is data freshness on the real Pi (#150).
