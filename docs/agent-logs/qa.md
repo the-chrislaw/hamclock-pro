@@ -300,5 +300,5 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-21 (UTC) QA run 48
 - Last reviewed commit: e7128ed (PRs #551 and #552 since 8259c98; #550 was my run 47 log). #551 adds a rough landing ETA for descending sondes (`landing_eta_s`, Balloons detail line); #552 adds tomorrow's high/low to the Weather line (`forecast_days=2`, bounded parse, tests added). Diffs reviewed: fixture-served, no secrets, QtWidgets or Qt 6.4 problems, no tests weakened. Build and all 167 ctest tests pass on main. Default layout rendered at 800x480 and 1024x600, light and dark: no clipping. Balloons rendered with no data; Weather stayed on "Loading" (fixtures not matched in this render), so the longer "Tmrw" line is unchecked for fit at 800x480.
-- Opened: the Balloons ETA issue (#551 ETA ignores the report's age, so a 25-minute-old report still shows "landing in ~12 min"). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Opened: #553 (#551 ETA ignores the report's age, so a 25-minute-old report still shows "landing in ~12 min"). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes tests; layout is stable. Remaining risk is data freshness on the real Pi (#150) and unchecked fit of the longer Weather line.
