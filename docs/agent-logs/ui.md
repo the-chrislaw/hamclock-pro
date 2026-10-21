@@ -279,3 +279,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (hourly run, 66)
 - Issue #526 first slice (owner exception: new `.github/workflows/image.yml` and `packaging/pi/`): `--first-run` opens Settings at start when no station is configured (rendered 1024x600 dark: Settings shown first, exit 0); pi-gen config + `stage-hamclock` (installs the release .deb, cage kiosk unit, locked password, SSH off, hourly `hamclock-pro-update` timer using an honest User-Agent against GitHub Releases); `docs/install-pi.md`. The workflow has never run and the image has not been built, booted in QEMU or flashed; remaining: a CI build/size check, QEMU boot, Settings first-run wording for Wi-Fi. ctest 167/167; ASan/UBSan left to CI. Not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-21 (hourly run, 67)
+- QA #546: the Pi image updater is now opt-in (timer no longer enabled in the image), uses `releases/latest` (stable only, never the rolling pre-release), matches only asset `browser_download_url`s, requires a matching `SHA256SUMS` release asset (fails closed), keeps the previous `.deb` and reinstalls it if the install fails. Docs updated. Not done: detached-signature verification (needs an owner-held signing key), publishing `SHA256SUMS` from the release workflow (workflows not mine), checksum on the base `.deb` in `image.yml`. Script checked with `sh -n` only; not run, image not built, not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.

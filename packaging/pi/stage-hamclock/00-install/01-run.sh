@@ -11,6 +11,6 @@ apt-get install -y /tmp/hamclock-pro*.deb
 rm -f /tmp/hamclock-pro*.deb
 usermod -aG video,render,input,audio hamclock
 passwd -l hamclock
-systemctl enable hamclock-kiosk.service hamclock-pro-update.timer
+systemctl enable hamclock-kiosk.service
 systemctl set-default graphical.target
 EOF

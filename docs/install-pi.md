@@ -10,7 +10,10 @@ what happens on your Pi.
 3. Boot. HamClock Pro starts full screen in a kiosk session (cage). With no saved station it opens
    Settings first: enter your callsign, use *Find location* or a grid, and pick a time zone.
 4. There are no default credentials: the `hamclock` user's password is locked.
-5. An hourly timer (`hamclock-pro-update.timer`) installs the newest release `.deb` from GitHub
-   Releases; run `sudo systemctl disable --now hamclock-pro-update.timer` to stop it.
+5. Automatic updates are off by default. To opt in run `sudo systemctl enable --now hamclock-pro-update.timer`;
+   it checks hourly for the newest *stable* release (never the rolling pre-release), installs the `.deb` only if
+   the release's `SHA256SUMS` asset matches, and reinstalls the previous version if the install fails.
+   The checksum comes from the same release, so it catches corruption but not a hostile publisher; signed
+   releases are still to do (needs a signing key from the owner).
 
 Files: `packaging/pi/` (pi-gen config, stage, kiosk and updater units).
