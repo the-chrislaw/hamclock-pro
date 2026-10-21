@@ -11,9 +11,15 @@ Card {
             label: root.compact ? "Nearest sonde" : "Nearest radiosonde"
             available: widget && widget.nearest !== ""
             value: available ? widget.nearest : ""
-            caption: available ? "" : (widget && widget.hasData
-                ? (widget.hasStation ? "None heard in the last 30 min" : "Set your station in Settings") : "")
             Layout.fillWidth: true
+        }
+        Text {
+            // Metric hides its caption while unavailable, so say why here.
+            visible: text.length > 0
+            text: widget && widget.nearest === "" && widget.hasData
+                ? (widget.hasStation ? "None heard in the last 30 min" : "Set your station in Settings") : ""
+            color: Theme.secondary; font.pixelSize: Theme.fontBody
+            wrapMode: Text.WordWrap; maximumLineCount: 2; Layout.fillWidth: true
         }
         Text {
             visible: widget && widget.nearestDetail !== ""
