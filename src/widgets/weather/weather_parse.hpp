@@ -18,6 +18,7 @@ struct Current {
     std::optional<int> cloud_pct;
     std::optional<int> utc_offset_s;     // local zone of the point (timezone=auto); absent if omitted
     std::optional<double> high_c, low_c;        // today's forecast extremes (local day); absent if omitted
+    std::optional<double> tomorrow_high_c, tomorrow_low_c;  // tomorrow's forecast extremes; absent if omitted
     std::optional<double> pressure_change_hpa;  // last hourly value minus the one 3 h earlier
 };
 

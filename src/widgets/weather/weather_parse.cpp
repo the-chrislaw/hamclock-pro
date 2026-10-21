@@ -42,7 +42,7 @@ std::optional<Current> parse_current(const QByteArray& body) {
             first.toDouble() >= 800 && first.toDouble() <= 1100 && last.toDouble() >= 800 && last.toDouble() <= 1100)
             c.pressure_change_hpa = last.toDouble() - first.toDouble();
     }
-    // Daily block (forecast_days=1): first element is today's local-day extremes.
+    // Daily block (forecast_days=2): element 0 is today's local-day extremes, element 1 tomorrow's.
     const auto daily = root.value("daily").toObject();
     const auto hi = daily.value("temperature_2m_max").toArray(), lo = daily.value("temperature_2m_min").toArray();
     if (!hi.isEmpty() && !lo.isEmpty() && hi.first().isDouble() && lo.first().isDouble()) {
@@ -50,6 +50,13 @@ std::optional<Current> parse_current(const QByteArray& body) {
         if (std::isfinite(h) && std::isfinite(l) && h >= -100 && h <= 70 && l >= -100 && l <= 70 && l <= h) {
             c.high_c = h;
             c.low_c = l;
+        }
+        if (hi.size() > 1 && lo.size() > 1 && hi.at(1).isDouble() && lo.at(1).isDouble()) {
+            const double th = hi.at(1).toDouble(), tl = lo.at(1).toDouble();
+            if (std::isfinite(th) && std::isfinite(tl) && th >= -100 && th <= 70 && tl >= -100 && tl <= 70 && tl <= th) {
+                c.tomorrow_high_c = th;
+                c.tomorrow_low_c = tl;
+            }
         }
     }
     if (number(root, "utc_offset_seconds", -14 * 3600, 14 * 3600, v)) c.utc_offset_s = static_cast<int>(v);
@@ -115,7 +122,7 @@ std::optional<double> dew_point_c(double t, int rh) {
 QString request_url(double latitude, double longitude) {
     return QString("https://api.open-meteo.com/v1/forecast?latitude=%1&longitude=%2"
                    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,"
-                   "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&past_hours=3&forecast_hours=1&timezone=auto")
+                   "weather_code,is_day,pressure_msl,cloud_cover&hourly=pressure_msl&daily=temperature_2m_max,temperature_2m_min&forecast_days=2&past_hours=3&forecast_hours=1&timezone=auto")
         .arg(latitude, 0, 'f', 2).arg(longitude, 0, 'f', 2);
 }
 

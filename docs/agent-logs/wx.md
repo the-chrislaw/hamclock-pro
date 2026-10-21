@@ -150,3 +150,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-20 (UTC, thirty-fourth run)
 - #73 (area A) conflicting: not mine. Fixed qa #530 [E]: Host sensors Clock now shows status ("Synced") as the value with offset/stratum/server as an eliding caption (no mid-word clipping); Weather DE/DX labels shortened to "DE"/"DX" when no city is set (guard flagged elided "DE weather"). QML only; rendered weather/sensors at 800x480 and 1024x600 (no clock source in harness, so the clock line itself not rendered); full suite result above in PR. Not validated on-device.
+
+## 2026-10-21 (UTC, thirty-fifth run)
+- #73 (area A) conflicting: not mine. No open `qa` issues for E; remaining E backlog otherwise blocked (owner input, hardware, area G, radio safety review).
+- E6 slice: weather card air line adds "Tmrw H / L °C" (Open-Meteo `forecast_days=2`, same request, no new source). Same range/ordering validation as today's extremes; a bad tomorrow value is dropped without affecting today's. Offline parser/URL tests; full release suite passes (167/167), ASan/UBSan left to CI; no screenshot (no station in harness), not validated on-device.
