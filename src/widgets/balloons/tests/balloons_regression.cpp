@@ -43,6 +43,15 @@ int main(int argc, char** argv) {
     balloons::Sonde level; level.has_vel_v = true; level.vel_v = 0.3;
     check(balloons::phase(down) == "descending" && balloons::phase(level).isEmpty() &&
           balloons::phase(balloons::Sonde{}).isEmpty(), "descending / level / unknown");
+    {
+        balloons::Sonde d; d.has_vel_v = true; d.alt_m = 10000; d.vel_v = -20;
+        const int eta = balloons::landing_eta_s(d);
+        check(eta > 690 && eta < 730, "10 km at 20 m/s: about 12 min (hand-computed 711 s)");
+        d.alt_m = 0; check(balloons::landing_eta_s(d) == 0, "on the ground: 0 s");
+        d.alt_m = 10000; d.vel_v = -1; check(balloons::landing_eta_s(d) == -1, "slow descent: unknown");
+        d.vel_v = 5; check(balloons::landing_eta_s(d) == -1, "climbing: none");
+        d.has_vel_v = false; check(balloons::landing_eta_s(d) == -1, "no vertical speed: none");
+    }
     check(!balloons::parse("").ok && !balloons::parse("[]").ok, "non-object rejected");
     check(balloons::parse(R"({"A":{"t":{"datetime":"junk","lat":1,"lon":2}},"B":{"t":{"datetime":"2026-01-01T00:00:00Z","lat":95,"lon":2}}})")
               .sondes.empty(), "bad time or position skipped");
