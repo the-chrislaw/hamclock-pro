@@ -33,10 +33,11 @@ QByteArray hamclock_user_agent() {
         " (+https://github.com/the-chrislaw/hamclock-pro)";
 }
 
-Transport make_network_transport(QObject* owner) {
+AuthTransport make_authorized_transport(QObject* owner) {
     auto* manager = new QNetworkAccessManager(owner);
-    return [manager](const QUrl& url, FetchDone done) {
+    return [manager](const QUrl& url, const QByteArray& bearer, FetchDone done) {
         QNetworkRequest request(url);
+        if (!bearer.isEmpty()) request.setRawHeader("Authorization", "Bearer " + bearer);
         request.setHeader(QNetworkRequest::UserAgentHeader, hamclock_user_agent());
         request.setTransferTimeout(kTimeoutMs);
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
@@ -58,6 +59,11 @@ Transport make_network_transport(QObject* owner) {
             done(std::move(result));
         });
     };
+}
+
+Transport make_network_transport(QObject* owner) {
+    auto auth = make_authorized_transport(owner);
+    return [auth](const QUrl& url, FetchDone done) { auth(url, {}, std::move(done)); };
 }
 
 PolledSource::PolledSource(QString cache_name, QUrl url, PollPolicy policy, Transport transport,

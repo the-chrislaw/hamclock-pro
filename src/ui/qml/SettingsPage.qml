@@ -641,6 +641,29 @@ Rectangle {
             }
 
             Card {
+                title: "hams.at API key"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.8
+                    Text {
+                        text: "Optional. Copy the key from your hams.at Settings page to see which satellite activations are workable from your station. Stored only on this device, readable by you alone. Save an empty key to remove it."
+                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    FormField { id: hamsatKey; label: "API key"; echoMode: TextInput.Password; Layout.fillWidth: true
+                                placeholder: appSettings.hasHamsatKey ? "Saved — save empty to remove" : "" }
+                    RowLayout {
+                        Text { id: hamsatKeyError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                        AppButton { text: "Save key"; primary: true
+                                    onClicked: {
+                                        hamsatKeyError.text = appSettings.saveHamsatKey(hamsatKey.text)
+                                        hamsatKey.text = ""
+                                    } }
+                    }
+                }
+            }
+
+            Card {
                 title: "Callsign lookup account"
                 Layout.fillWidth: true
                 ColumnLayout {
