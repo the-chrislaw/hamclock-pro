@@ -24,6 +24,12 @@ Feed parse(const QByteArray& body) {
         for (const auto& g : o.value("grids").toArray()) grids << g.toString();
         a.grids = grids.join(' ');
         a.mhz = o.value("mhz").toDouble(0);
+        if (o.value("is_workable").isBool()) a.workable = o.value("is_workable").toBool() ? 1 : 0;
+        if (o.value("max_elevation").isDouble()) a.max_elevation = o.value("max_elevation").toDouble();
+        if (o.value("workable_start_at").isString())
+            a.workable_start = QDateTime::fromString(o.value("workable_start_at").toString(), Qt::ISODate).toUTC();
+        if (o.value("workable_end_at").isString())
+            a.workable_end = QDateTime::fromString(o.value("workable_end_at").toString(), Qt::ISODate).toUTC();
         feed.activations.push_back(a);
     }
     std::stable_sort(feed.activations.begin(), feed.activations.end(),

@@ -145,6 +145,8 @@ int main(int argc, char** argv) {
     context.transport = parser.isSet(fixtures) ? fixture_transport(parser.value(fixtures))
         : parser.isSet(offline) ? offline_transport()
         : hamclock::make_network_transport(&app);
+    if (!parser.isSet(fixtures) && !parser.isSet(offline))
+        context.auth_transport = hamclock::make_authorized_transport(&app);
 
     hamclock::WidgetRegistry registry;
     hamclock::register_all_widgets(registry, context);
