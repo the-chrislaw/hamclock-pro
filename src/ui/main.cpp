@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
     const QCommandLineOption config({"c", "config-dir"}, "Settings directory.", "dir");
     const QCommandLineOption fullscreen("fullscreen", "Start fullscreen.");
     const QCommandLineOption windowed("windowed", "Start in a window even on small screens.");
+    const QCommandLineOption first_run("first-run", "Open Settings at start when no station is configured (kiosk first boot).");
     const QCommandLineOption offline("offline", "Do not use the network (cached data only).");
     const QCommandLineOption fixtures("fixtures", "Serve data from files in DIR instead of the network.", "dir");
     const QCommandLineOption screenshot("screenshot", "Render once to PNG and exit.", "png");
@@ -131,7 +132,7 @@ int main(int argc, char** argv) {
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
-    for (const auto& option : {allow_truncation, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    for (const auto& option : {allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     parser.process(app);
 
@@ -210,6 +211,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
+    engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;

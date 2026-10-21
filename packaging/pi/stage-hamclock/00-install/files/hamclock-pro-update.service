@@ -1,0 +1,8 @@
+[Unit]
+Description=Update HamClock Pro from GitHub Releases
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hamclock-pro-update

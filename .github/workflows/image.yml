@@ -1,0 +1,48 @@
+name: Raspberry Pi image
+
+# Builds a flashable arm64 Raspberry Pi OS Lite image (pi-gen) with HamClock Pro in kiosk mode.
+# Manual or on release tags; never runs on pull requests.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  image:
+    name: pi-gen (bookworm arm64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the arm64 bookworm .deb
+        run: |
+          mkdir -p packaging/pi/stage-hamclock/00-install/files
+          url=$(curl -fsSL -A "hamclock-pro-ci" "https://api.github.com/repos/${{ github.repository }}/releases?per_page=5" |
+                grep -o 'https://[^"]*_bookworm_arm64\.deb' | head -n1)
+          test -n "$url"
+          curl -fsSL -o packaging/pi/stage-hamclock/00-install/files/hamclock-pro.deb "$url"
+      - name: Fetch pi-gen
+        run: git clone --depth 1 --branch arm64 https://github.com/RPi-Distro/pi-gen.git ../pi-gen
+      - name: Build image
+        run: |
+          cp packaging/pi/config ../pi-gen/config
+          cp -r packaging/pi/stage-hamclock ../pi-gen/stage-hamclock
+          touch ../pi-gen/stage3/SKIP ../pi-gen/stage4/SKIP ../pi-gen/stage5/SKIP
+          touch ../pi-gen/stage3/SKIP_IMAGES ../pi-gen/stage4/SKIP_IMAGES ../pi-gen/stage5/SKIP_IMAGES
+          cd ../pi-gen && sudo ./build-docker.sh
+      - name: Checksum
+        run: |
+          mkdir -p out && cp ../pi-gen/deploy/*.img.xz out/ 
+          cd out && sha256sum *.img.xz > SHA256SUMS && ls -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hamclock-pro-pi-image
+          path: out/*
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*

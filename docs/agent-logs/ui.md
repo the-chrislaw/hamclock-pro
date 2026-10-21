@@ -275,3 +275,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (hourly run, 65)
 - QA #527: README rewritten for users (what it is, independence notice, four `--screenshot` renders under `docs/images/` at 1024x600 and 1920x1080 light/dark from recorded sample data, pane features grouped like the chooser, install options stated honestly as planned/unvalidated, sources, MIT, bug reporting); developer build/test/CLI notes moved to `docs/DEVELOPING.md`. No macOS window screenshot (no mac here). Docs and images only; not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-21 (hourly run, 66)
+- Issue #526 first slice (owner exception: new `.github/workflows/image.yml` and `packaging/pi/`): `--first-run` opens Settings at start when no station is configured (rendered 1024x600 dark: Settings shown first, exit 0); pi-gen config + `stage-hamclock` (installs the release .deb, cage kiosk unit, locked password, SSH off, hourly `hamclock-pro-update` timer using an honest User-Agent against GitHub Releases); `docs/install-pi.md`. The workflow has never run and the image has not been built, booted in QEMU or flashed; remaining: a CI build/size check, QEMU boot, Settings first-run wording for Wi-Fi. ctest 167/167; ASan/UBSan left to CI. Not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
