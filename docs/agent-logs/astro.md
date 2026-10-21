@@ -309,3 +309,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (UTC), run 59
 - Balloons (D14, slice): descending sondes (>= 2 m/s down) now show "landing in ~N min" in the nearest-sonde detail line. `balloons::landing_eta_s()` integrates the fall under a 1/sqrt(density) speed law in an exponential atmosphere (7.5 km scale height) anchored at the current speed; ignores wind and terrain, labelled as approximate with "~". Test: hand-computed 10 km at 20 m/s = 711 s, plus ground, slow, climbing and unknown cases. Full ctest 167/167 locally; ASan/UBSan left to CI. Text-only change to an existing line, no new layout, so no new screenshots; not on-device.
 - Not mine: #73 conflicting, left alone. No `[D]` QA issues open. Next: landing point (needs wind, probably a source decision), satellite pass refinements.
+
+## 2026-10-21 (UTC), run 60
+- Issue #553 (QA): the Balloons landing ETA ignored the age of the sonde report, so a 25-minute-old descending report still said "landing in ~12 min". `balloons::landing_eta_remaining_s()` subtracts the report age; when it has elapsed the detail line says "probably landed" instead of a countdown. Test extended in `widget-balloons-balloons_regression` (5 min old: 711 s - 300 s; 25 min old: 0; climbing: unknown). Balloons tests pass locally; full ctest and ASan/UBSan left to CI. Text-only change, no new screenshots; not on-device.
+- Not mine: #73 conflicting, left alone. Next: landing point (needs wind, source decision); satellite pass refinements.

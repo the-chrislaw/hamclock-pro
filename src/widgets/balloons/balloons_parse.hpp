@@ -39,6 +39,10 @@ QString phase(const Sonde& s);
 // the terrain height and wind, so it is only an estimate.
 int landing_eta_s(const Sonde& s);
 
+// Time still to go given the age of the report: landing_eta_s minus age_s,
+// 0 when that has already elapsed (the sonde has probably landed), -1 unknown.
+int landing_eta_remaining_s(const Sonde& s, qint64 age_s);
+
 // Sondes heard within `max_age_s` of `now`, nearest to (lat, lon) first, at
 // most `limit`. `distance_km` is parallel to the result.
 struct Near { Sonde sonde; double distance_km; double bearing_deg; };

@@ -65,4 +65,10 @@ int landing_eta_s(const Sonde& s) {
     return static_cast<int>(std::lround(h2 / -s.vel_v * (std::exp(s.alt_m / h2) - 1.0)));
 }
 
+int landing_eta_remaining_s(const Sonde& s, qint64 age_s) {
+    const int eta = landing_eta_s(s);
+    if (eta < 0) return -1;
+    return static_cast<int>(std::max<qint64>(0, eta - std::max<qint64>(0, age_s)));
+}
+
 } // namespace hamclock::balloons

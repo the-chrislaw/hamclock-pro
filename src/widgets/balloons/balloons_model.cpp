@@ -62,8 +62,9 @@ QString BalloonsModel::nearestDetail() const {
     QStringList parts{(s.type + " " + s.serial).trimmed(), QString::number(s.alt_m / 1000.0, 'f', 1) + " km up"};
     const auto ph = balloons::phase(s);
     if (!ph.isEmpty()) parts << ph;
-    const int eta = balloons::landing_eta_s(s);
-    if (eta >= 0) parts << (eta < 90 ? QString("landing in ~1 min") : QString("landing in ~%1 min").arg((eta + 30) / 60));
+    const int eta = balloons::landing_eta_remaining_s(s, s.time.secsTo(now()));
+    if (eta == 0) parts << QString("probably landed");
+    else if (eta > 0) parts << (eta < 90 ? QString("landing in ~1 min") : QString("landing in ~%1 min").arg((eta + 30) / 60));
     if (s.freq_mhz > 0) parts << QString::number(s.freq_mhz, 'f', 3) + " MHz";
     return parts.join(" · ");
 }

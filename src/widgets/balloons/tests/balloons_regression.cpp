@@ -51,6 +51,11 @@ int main(int argc, char** argv) {
         d.alt_m = 10000; d.vel_v = -1; check(balloons::landing_eta_s(d) == -1, "slow descent: unknown");
         d.vel_v = 5; check(balloons::landing_eta_s(d) == -1, "climbing: none");
         d.has_vel_v = false; check(balloons::landing_eta_s(d) == -1, "no vertical speed: none");
+        d.has_vel_v = true; d.vel_v = -20;
+        const int left = balloons::landing_eta_remaining_s(d, 300);
+        check(left > 390 && left < 430, "report 5 min old: 711 s - 300 s");
+        check(balloons::landing_eta_remaining_s(d, 1500) == 0, "report 25 min old: already elapsed");
+        d.vel_v = 5; check(balloons::landing_eta_remaining_s(d, 10) == -1, "climbing stays unknown");
     }
     check(!balloons::parse("").ok && !balloons::parse("[]").ok, "non-object rejected");
     check(balloons::parse(R"({"A":{"t":{"datetime":"junk","lat":1,"lon":2}},"B":{"t":{"datetime":"2026-01-01T00:00:00Z","lat":95,"lon":2}}})")
