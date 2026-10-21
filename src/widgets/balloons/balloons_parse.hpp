@@ -32,6 +32,13 @@ Feed parse(const QByteArray& body);
 // sonde is level (|v| < 1 m/s).
 QString phase(const Sonde& s);
 
+// Rough seconds until a descending sonde reaches the ground, or -1 when it is
+// not clearly descending (< 2 m/s down) or the vertical speed is unknown.
+// Assumes the fall speed scales with 1/sqrt(air density) in an exponential
+// atmosphere (scale height 7.5 km), anchored at the current speed. Ignores
+// the terrain height and wind, so it is only an estimate.
+int landing_eta_s(const Sonde& s);
+
 // Sondes heard within `max_age_s` of `now`, nearest to (lat, lon) first, at
 // most `limit`. `distance_km` is parallel to the result.
 struct Near { Sonde sonde; double distance_km; double bearing_deg; };

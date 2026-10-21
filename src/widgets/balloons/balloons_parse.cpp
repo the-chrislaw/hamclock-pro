@@ -4,6 +4,8 @@
 #include <QJsonObject>
 #include <algorithm>
 
+#include <cmath>
+
 namespace hamclock::balloons {
 
 Feed parse(const QByteArray& body) {
@@ -54,6 +56,13 @@ std::vector<Near> nearest(const Feed& feed, double lat, double lon, const QDateT
     std::sort(out.begin(), out.end(), [](const Near& a, const Near& b) { return a.distance_km < b.distance_km; });
     if (static_cast<int>(out.size()) > limit) out.resize(limit);
     return out;
+}
+
+int landing_eta_s(const Sonde& s) {
+    if (!s.has_vel_v || s.vel_v > -2.0 || s.alt_m < 0) return -1;
+    constexpr double kScaleHeightM = 7500.0;
+    const double h2 = 2.0 * kScaleHeightM;
+    return static_cast<int>(std::lround(h2 / -s.vel_v * (std::exp(s.alt_m / h2) - 1.0)));
 }
 
 } // namespace hamclock::balloons
