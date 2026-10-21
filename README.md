@@ -1,56 +1,56 @@
 # HamClock Pro
 
-Original native Raspberry Pi dashboard for amateur radio: world time, station geometry, map, and (planned) space weather and spots. Development preview only: this is not yet a HamClock replacement and does not establish feature parity with original HamClock 4.22. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan to 1.0.
+A native amateur-radio dashboard for the Raspberry Pi, from 7-inch touchscreens (1024x600) up to 4K TVs, also built for macOS and iPad. One screen, no scrolling: a station clock, a world map with day/night and overlays, and tappable panes for space weather, spots, weather, satellites and more.
 
-> **Independent project.** HamClock Pro is an original, independently developed application. It is not affiliated with, endorsed by, or derived from the code of the original HamClock or its authors. Data comes directly from public sources such as NOAA SWPC, NASA SDO, Open-Meteo, POTA, SOTA, PSKReporter and CelesTrak; see `docs/ROADMAP.md` (Data source policy).
+**Development preview.** HamClock Pro is not yet a replacement for the original HamClock and does not claim feature parity with it. See [docs/ROADMAP.md](docs/ROADMAP.md) for the plan to 1.0.
 
+> **Independent project.** HamClock Pro is an original, independently developed application. It is not affiliated with, endorsed by, or derived from the code of the original HamClock or its authors.
 
-## Build and test
+## Screenshots
 
-Requires CMake 3.16+, a C++17 compiler, Qt 6.4+ (Core, Gui, Widgets) and Python 3 for the development tests. On Raspberry Pi OS or Ubuntu: `sudo apt install build-essential cmake qt6-base-dev python3`. On macOS with Homebrew: `brew install cmake qt`.
+Rendered by the app itself (`--screenshot`) from recorded sample data, not from a device; panes show "Stale" where the sample data is old.
 
-```sh
-cmake -S . -B build
-cmake --build build
-ctest --test-dir build --output-on-failure
-```
-
-CI runs the same build and tests on Ubuntu, plus an AddressSanitizer/UBSan build (`.github/workflows/ci.yml`). Local compilation is not evidence of Raspberry Pi compatibility or performance.
-
-## Programs
-
-On macOS the GUI programs are app bundles, e.g. `build/hamclock-pro.app/Contents/MacOS/hamclock-pro`; elsewhere they are plain binaries in `build/`.
-
-| Program | Purpose |
+| 7-inch Pi screen, 1024x600 | TV, 1920x1080 |
 |---|---|
-| `hamclock-pro` | The Qt Quick dashboard (`--help` lists options). |
-| `hamclock-pro-cli` | Offline command-line tools (below). |
+| ![1024x600 dark](docs/images/pi-7inch-dark.png) | ![1920x1080 light](docs/images/tv-1080p-light.png) |
+| ![1024x600 light](docs/images/pi-7inch-light.png) | ![1920x1080 dark](docs/images/tv-1080p-dark.png) |
 
-Use a private directory you control for station files. Instrument panes without a data provider are explicitly marked unavailable; no simulated reading is presented as live. No radio control, incoming network service, live data provider or telemetry is implemented.
+A macOS window screenshot is not included yet.
 
-### Command-line tools
+## Using it
 
-```sh
-./build/hamclock-pro-cli --calculate 37.7749 -122.4194 51.5074 -0.1278
-./build/hamclock-pro-cli --save-station ./station.conf N0CALL 0 0 51.5 -0.1 system
-./build/hamclock-pro-cli --load-station ./station.conf
-./build/hamclock-pro-cli --self-test
-```
+- **Tap** a pane's title to choose what it shows; **swipe** to step through panes; **long-press** for that pane's options.
+- Open **Settings** (a header button on large screens) to set callsign, location, theme, accent colour and data sources.
+- Panes without a configured source say so ("Set up", "Not configured"); old data is marked Stale. Nothing is presented as live when it is not.
 
-`--calculate` prints JSON with Maidenhead locators, spherical great-circle distance and initial short/long path bearings. Inputs are signed decimal degrees; invalid or non-finite coordinates are rejected. Coincident and antipodal locations return an explicit status and null bearings. Distances use a mean-radius spherical Earth, not surveyed ellipsoidal distances. A route represents geometry, not predicted propagation.
+## Features
 
-A valid save atomically replaces the selected regular file with mode 0600; symlinks and corrupt files are refused without modification. See `docs/station-settings.md` for the format and limitations.
+Grouped as in the pane chooser:
 
-## Targets
+- **Space weather:** Kp, SFI, X-ray, solar wind and IMF, solar trend, band conditions, NOAA scales and alerts, aurora, D-RAP, Dst, SDO solar imagery.
+- **DX and contest:** DX cluster, PSKReporter, NCDXF beacons, POTA/SOTA, ADIF log, HamAlert, APRS.
+- **Weather and hazards:** local weather, earthquakes, tropical storms, fires, fire-weather and marine warnings.
+- **Sky and space:** sun and moon, satellite passes, planets, eclipses, EME, balloons.
+- **Station:** clocks, host sensors, GPS, read-only rigctld/rotctld, ADS-B.
+- **Map:** day/night, projections, path from DE to DX, and overlays for the panes above.
 
-First user test target: Pi 4 with a seven-inch touchscreen. Pi 3 is a required target; Zero 2 W is intended and original Zero W exploratory. Each supported board needs real display, input, startup, CPU and memory measurements before release.
+Many panes are partial; the per-widget status is in [docs/WIDGETS.md](docs/WIDGETS.md).
 
-The accepted visual design is `design/dashboard.html` (System/Light/Dark, larger text, touch controls). The native dashboard follows its composition but does not yet match it fully; see `docs/native-approved-design-gap.md`.
+## Install
 
-## Data, licensing and provenance
+- **Raspberry Pi (.deb):** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release on the GitHub Releases page. The automatic updater is planned, not shipped. These builds have not been validated on hardware by this project yet.
+- **SD-card image:** planned (tracked in issue #526); not available yet.
+- **macOS:** a signed dmg is planned; the CI-built app is not yet signed or notarised.
+- **iPad:** via TestFlight, later.
 
-Application source is MIT licensed. Qt and system components retain their own licenses; distribution dependency notices and name clearance remain release gates. Do not add dependencies, external graphics or fonts without recording their origin and license.
+## Data sources and attribution
 
-Bundled Natural Earth 110m coastline and land data are public domain, separately from the application's MIT copyright. Source version, checksum, transformations and reproduction instructions are in `docs/map-provenance.md` and `docs/land-provenance.md`. The build-time importers `tools/import_coastline.py` and `tools/import_land.py` work offline from a supplied archive; their malformed-input regressions run in CTest and never download data. The map is generalized, not a navigation chart.
+Data comes directly from public sources such as NOAA SWPC, NASA SDO, Open-Meteo, USGS, NHC, NWS, NASA FIRMS, POTA, SOTA, PSKReporter, SondeHub and CelesTrak (see the data source policy in [docs/ROADMAP.md](docs/ROADMAP.md)). Map data is Natural Earth (public domain); see [docs/map-provenance.md](docs/map-provenance.md).
 
-Review findings, specs and validation notes for each feature are in `docs/`.
+## Licence
+
+Application source is MIT licensed ([LICENSE](LICENSE)). Qt and system components keep their own licences.
+
+## Reporting bugs
+
+Open a GitHub issue with your version, platform and screen size, and a screenshot if the problem is visual. Developers: see [docs/DEVELOPING.md](docs/DEVELOPING.md).

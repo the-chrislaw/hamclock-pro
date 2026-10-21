@@ -271,3 +271,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-20 (hourly run, 64)
 - QA #532: the truncation guard (`count_truncated` in `src/ui/main.cpp`) now also reports Text whose painted extent (contentWidth x contentHeight, alignment-aware) runs outside its nearest clipping ancestor or the window, unless `objectName` is `clipOk`/`elideOk` or it sits under a Flickable/ListView. Proved the detector fires (temporary negative tolerance listed 'Your station', clock etc.), then ran all 42 registered panes (x3 in the pane slots) at 800x480 and 1024x600 dark with merged widget fixtures: no clipped text reported here. The Pi-only clipping in the issue (Sun & Moon DX column, Host sensors clock) depends on Pi fonts that this build machine does not have, so it is not reproduced here. `qml-app-truncation-*` now also runs at 1024x600. ctest qml-* 48/48; full ctest and ASan/UBSan left to CI. Not validated on a device.
+
+## 2026-10-21 (hourly run, 65)
+- QA #527: README rewritten for users (what it is, independence notice, four `--screenshot` renders under `docs/images/` at 1024x600 and 1920x1080 light/dark from recorded sample data, pane features grouped like the chooser, install options stated honestly as planned/unvalidated, sources, MIT, bug reporting); developer build/test/CLI notes moved to `docs/DEVELOPING.md`. No macOS window screenshot (no mac here). Docs and images only; not validated on a device.
+- Only #73 (stale docs, not mine) was open; left alone.
