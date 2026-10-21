@@ -1,0 +1,18 @@
+#!/bin/sh
+# Installs the newest HamClock Pro release (incl. the rolling pre-release) .deb for this OS release/arch from GitHub Releases.
+# Only github.com is contacted; nothing is sent beyond an honest User-Agent. Restarts the kiosk on update.
+set -eu
+repo=the-chrislaw/hamclock-pro
+arch=$(dpkg --print-architecture)
+rel=$(. /etc/os-release; echo "$VERSION_CODENAME")
+ua="hamclock-pro-update (+https://github.com/$repo)"
+url=$(curl -fsSL -A "$ua" "https://api.github.com/repos/$repo/releases?per_page=1" |
+      grep -o "https://[^\"]*_${rel}_${arch}\.deb" | head -n1 || true)
+[ -n "$url" ] || { echo "no release .deb for $rel/$arch"; exit 0; }
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+curl -fsSL -A "$ua" -o "$tmp/hc.deb" "$url"
+new=$(dpkg-deb -f "$tmp/hc.deb" Version)
+cur=$(dpkg-query -W -f='${Version}' hamclock-pro 2>/dev/null || true)
+[ "$new" != "$cur" ] || exit 0
+apt-get install -y "$tmp/hc.deb"
+systemctl restart hamclock-kiosk.service
