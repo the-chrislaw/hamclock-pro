@@ -317,3 +317,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 66d3825 (only #558, my run 50 log, since a157fcd). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since run 50 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather line.
+
+## 2026-10-22 (UTC) QA run 52
+- Last reviewed commit: 76f310d (only #560 since 66d3825; #559 was my run 51 log). #560 is a CI-only change to `apple.yml`: the iPad Simulator step now reads the bundle id from the built app's Info.plist (the old hard-coded `org.hamclockpro.app` was wrong) and fails if the app is not running 15 s after launch. No source, tests, QML or widgets changed, so the build, tests and screenshots were not repeated. The step is still `continue-on-error` and its first real result was not seen, so #521 stays open (tvOS launch check is still missing).
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 50 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather line.
