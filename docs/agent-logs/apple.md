@@ -167,3 +167,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-20 (hourly run)
 - Took #521 (iOS launch smoke test). #73 is another area's (left alone). New `packaging/apple/check_ios_plugins.sh` runs `nm` on the device-build executable and fails if a static Qt Quick plugin (QtQuick2, Controls2 and Basic style, Layouts, Window) is not linked; wired into the `iPad Simulator build` job after the device build. The exact symbol names are unverified until the job runs, so the first run may need a name fix. The job is still `continue-on-error`, so a failure shows red but does not block merges. A real Simulator launch check and tvOS are not done, so #521 stays open. CI logs only; no on-device claims.
+
+## 2026-10-22 (hourly run)
+- No qa issues for area F beyond #513/#521 (open); no open PR of mine; #73 is another area's (left alone). Main Apple runs green (39726371595), including the static-plugin check.
+- #521 slice: the Simulator step launched `org.hamclockpro.app`, but the iOS target's bundle id is `com.chrislaw.hamclockpro`, so the launch was probably failing silently under `continue-on-error`. It now reads the id from the built app's Info.plist and fails if the app is not listed by launchctl 15 s after launch (crash on start), printing the recent log. Still `continue-on-error`; first result visible on this PR's run. CI logs only; no on-device claims.

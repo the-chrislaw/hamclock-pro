@@ -286,9 +286,22 @@ jobs:
           UDID=$(xcrun simctl list devices available | grep -m1 'iPad' | grep -oE '[0-9A-F-]{36}')
           xcrun simctl boot "$UDID"
           xcrun simctl install "$UDID" "$APP"
-          xcrun simctl launch "$UDID" org.hamclockpro.app
+          # Take the bundle id from the built app (the iOS target uses
+          # HAMCLOCK_IOS_BUNDLE_ID, not the macOS identifier).
+          BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          echo "launching $BID"
+          xcrun simctl launch "$UDID" "$BID" | tee launch.txt
+          PID=$(awk -F': ' '{print $2}' launch.txt | tr -d ' ')
           sleep 15
           xcrun simctl io "$UDID" screenshot ipad.png
+          # Launch smoke test (#521): the process must still be alive after
+          # 15 s, otherwise the app crashed on start (e.g. a missing plugin).
+          if ! xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BID"; then
+            echo "app is not running after launch: likely crashed on start"
+            xcrun simctl spawn "$UDID" log show --last 1m --predicate "process == 'hamclock-pro'" 2>/dev/null | tail -40 || true
+            exit 1
+          fi
+          echo "app still running after 15 s (pid ${PID:-unknown})"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
