@@ -313,3 +313,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (UTC), run 60
 - Issue #553 (QA): the Balloons landing ETA ignored the age of the sonde report, so a 25-minute-old descending report still said "landing in ~12 min". `balloons::landing_eta_remaining_s()` subtracts the report age; when it has elapsed the detail line says "probably landed" instead of a countdown. Test extended in `widget-balloons-balloons_regression` (5 min old: 711 s - 300 s; 25 min old: 0; climbing: unknown). Balloons tests pass locally; full ctest and ASan/UBSan left to CI. Text-only change, no new screenshots; not on-device.
 - Not mine: #73 conflicting, left alone. Next: landing point (needs wind, source decision); satellite pass refinements.
+
+## 2026-10-22 (UTC), run 61
+- Balloons (D14, slice): `balloons::landing_point()` projects a descending sonde forward by the drift between its last two frames over the remaining fall time; the nearest-sonde detail line adds "lands ~N km <dir> from you". Approximate (no wind profile, overshoots when wind weakens near the ground), labelled with "~". Parser keeps the previous frame for this. Test: hand-computed drift, landed, no previous frame, climbing. Full ctest passes locally; ASan/UBSan left to CI. Text-only change on an existing line, no new screenshots; not on-device.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues open.
