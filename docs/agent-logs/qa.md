@@ -327,3 +327,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 0409e87 (PR #562 since 76f310d; #561 was my run 52 log). #562 adds an approximate landing point for descending sondes (`landing_point()`, "lands ~N km DIR from you" in the Balloons detail line). Diff reviewed: pure C++ over the existing SondeHub feed, no new network code, secrets, QtWidgets or Qt 6.4 problems; regression checks added, none weakened. The previous-frame logic relies on SondeHub's frame keys iterating in time order (ISO datetimes, so true today). Build and all 167 ctest tests pass on main. There is no Balloons fixture in the repo, so the longer detail line could not be rendered and its fit at 800x480 is unchecked.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes tests; behaviour is stable. Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
+
+## 2026-10-22 (UTC) QA run 54
+- Last reviewed commit: 6e76a77 (only #563, my run 53 log, since 0409e87). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 53 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
