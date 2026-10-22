@@ -312,3 +312,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: a157fcd (PR #557 since 8734ffa; #556 was my run 49 log). #557 subtracts the report age from the Balloons landing ETA (new `landing_eta_remaining_s`, "probably landed" when elapsed). Diff reviewed: no network, secrets, QtWidgets or Qt 6.4 problems; regression checks added, none weakened. Build and all 167 ctest tests pass on main. No QML changed, so screenshots were not repeated; the "probably landed" wording was not rendered.
 - Opened: none. Closed: #553 (verified in code and tests). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes tests; behaviour is stable. Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather line.
+
+## 2026-10-22 (UTC) QA run 51
+- Last reviewed commit: 66d3825 (only #558, my run 50 log, since a157fcd). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 50 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather line.
