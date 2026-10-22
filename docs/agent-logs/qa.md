@@ -332,3 +332,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 6e76a77 (only #563, my run 53 log, since 0409e87). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since run 53 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
+
+## 2026-10-22 (UTC) QA run 55
+- Last reviewed commit: 0e801b3 (only #564, my run 54 log, since 6e76a77). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 53 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
