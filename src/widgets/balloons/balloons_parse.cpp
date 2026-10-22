@@ -17,6 +17,7 @@ Feed parse(const QByteArray& body) {
     for (auto it = root.begin(); it != root.end(); ++it) {
         const auto frames = it.value().toObject();
         Sonde best;
+        Sonde prev;
         for (const auto& fv : frames) {
             const auto f = fv.toObject();
             if (!f.value("lat").isDouble() || !f.value("lon").isDouble()) continue;
@@ -33,7 +34,12 @@ Feed parse(const QByteArray& body) {
             s.vel_v = f.value("vel_v").toDouble();
             s.freq_mhz = f.value("frequency").toDouble();
             s.time = time;
+            prev = best;
             best = s;
+        }
+        if (best.time.isValid() && prev.time.isValid()) {
+            best.has_prev = true;
+            best.prev_lat = prev.lat; best.prev_lon = prev.lon; best.prev_time = prev.time;
         }
         if (best.time.isValid()) feed.sondes.push_back(best);
     }
@@ -43,6 +49,24 @@ Feed parse(const QByteArray& body) {
 QString phase(const Sonde& s) {
     if (!s.has_vel_v || qAbs(s.vel_v) < 1.0) return {};
     return s.vel_v > 0 ? "climbing" : "descending";
+}
+
+bool landing_point(const Sonde& s, qint64 age_s, double& lat, double& lon) {
+    const int left = landing_eta_remaining_s(s, age_s);
+    if (left <= 0 || !s.has_prev) return false;
+    const double dt = s.prev_time.msecsTo(s.time) / 1000.0;
+    if (dt <= 0 || dt > 600) return false;
+    // Frames are seconds apart, so a flat-earth step is accurate enough.
+    const double dlat = (s.lat - s.prev_lat) / dt;
+    double dlon = s.lon - s.prev_lon;
+    if (dlon > 180) dlon -= 360; else if (dlon < -180) dlon += 360;
+    dlon /= dt;
+    lat = s.lat + dlat * left;
+    lon = s.lon + dlon * left;
+    if (lat > 90 || lat < -90) return false;
+    while (lon > 180) lon -= 360;
+    while (lon < -180) lon += 360;
+    return true;
 }
 
 std::vector<Near> nearest(const Feed& feed, double lat, double lon, const QDateTime& now, int max_age_s, int limit) {

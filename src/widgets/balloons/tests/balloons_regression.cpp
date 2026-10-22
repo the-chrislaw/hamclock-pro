@@ -57,6 +57,21 @@ int main(int argc, char** argv) {
         check(balloons::landing_eta_remaining_s(d, 1500) == 0, "report 25 min old: already elapsed");
         d.vel_v = 5; check(balloons::landing_eta_remaining_s(d, 10) == -1, "climbing stays unknown");
     }
+    {
+        // Drifting 0.001 deg lat / 0.002 deg lon per 10 s, 100 s still to go
+        // (hand-computed): lands 0.01 deg north and 0.02 deg east of the last fix.
+        balloons::Sonde d; d.has_vel_v = true; d.vel_v = -20; d.alt_m = 1000;
+        const int left = balloons::landing_eta_remaining_s(d, 0);
+        d.lat = 50; d.lon = 10; d.prev_lat = 49.999; d.prev_lon = 9.998; d.has_prev = true;
+        d.prev_time = QDateTime::fromString("2026-10-20T21:00:00Z", Qt::ISODate);
+        d.time = d.prev_time.addSecs(10);
+        double lat = 0, lon = 0;
+        check(balloons::landing_point(d, 0, lat, lon), "descending with drift: has a landing point");
+        check(qAbs(lat - (50 + 0.0001 * left)) < 1e-9 && qAbs(lon - (10 + 0.0002 * left)) < 1e-9, "drift x time to go");
+        check(!balloons::landing_point(d, 5000, lat, lon), "already landed: none");
+        d.has_prev = false; check(!balloons::landing_point(d, 0, lat, lon), "no earlier frame: none");
+        d.has_prev = true; d.vel_v = 3; check(!balloons::landing_point(d, 0, lat, lon), "climbing: none");
+    }
     check(!balloons::parse("").ok && !balloons::parse("[]").ok, "non-object rejected");
     check(balloons::parse(R"({"A":{"t":{"datetime":"junk","lat":1,"lon":2}},"B":{"t":{"datetime":"2026-01-01T00:00:00Z","lat":95,"lon":2}}})")
               .sondes.empty(), "bad time or position skipped");

@@ -17,6 +17,9 @@ struct Sonde {
     double vel_v = 0;   // m/s, + climbing
     double freq_mhz = 0;  // 0 when unknown
     QDateTime time;     // time of the newest frame, UTC
+    bool has_prev = false;  // an earlier frame (> 0 s older) was also heard
+    double prev_lat = 0, prev_lon = 0;
+    QDateTime prev_time;
 };
 
 struct Feed {
@@ -42,6 +45,13 @@ int landing_eta_s(const Sonde& s);
 // Time still to go given the age of the report: landing_eta_s minus age_s,
 // 0 when that has already elapsed (the sonde has probably landed), -1 unknown.
 int landing_eta_remaining_s(const Sonde& s, qint64 age_s);
+
+// Where a descending sonde may come down: its newest position moved on by the
+// drift between its last two frames for the time still to go. Ignores that the
+// wind usually weakens towards the ground, so it tends to overshoot. Returns
+// false when it is not clearly descending, the drift is unknown or the report
+// has already run out (probably landed).
+bool landing_point(const Sonde& s, qint64 age_s, double& lat, double& lon);
 
 // Sondes heard within `max_age_s` of `now`, nearest to (lat, lon) first, at
 // most `limit`. `distance_km` is parallel to the result.

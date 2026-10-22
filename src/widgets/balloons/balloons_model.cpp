@@ -1,4 +1,5 @@
 #include "balloons_model.hpp"
+#include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QTimer>
@@ -65,6 +66,11 @@ QString BalloonsModel::nearestDetail() const {
     const int eta = balloons::landing_eta_remaining_s(s, s.time.secsTo(now()));
     if (eta == 0) parts << QString("probably landed");
     else if (eta > 0) parts << (eta < 90 ? QString("landing in ~1 min") : QString("landing in ~%1 min").arg((eta + 30) / 60));
+    double llat = 0, llon = 0;
+    if (balloons::landing_point(s, s.time.secsTo(now()), llat, llon)) {
+        const auto g = geometry({settings_->deLatitude(), settings_->deLongitude()}, {llat, llon});
+        parts << QString("lands ~%1 %2 from you").arg(km_text(g.distance_km), compass(g.short_bearing_deg));
+    }
     if (s.freq_mhz > 0) parts << QString::number(s.freq_mhz, 'f', 3) + " MHz";
     return parts.join(" · ");
 }
