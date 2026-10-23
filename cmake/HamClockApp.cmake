@@ -10,6 +10,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_lifecycle.cpp
     src/platform/apple_safearea.cpp
     src/platform/apple_textentry.cpp
+    src/platform/apple_skypointer.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -142,6 +143,11 @@ if(BUILD_TESTING)
     set_target_properties(text-entry-hint-regression PROPERTIES AUTOMOC ON)
     add_test(NAME text-entry-hint-regression COMMAND text-entry-hint-regression)
     set_tests_properties(text-entry-hint-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    add_executable(sky-pointer-regression tests/sky_pointer_regression.cpp)
+    target_link_libraries(sky-pointer-regression PRIVATE hamclock-widget-core)
+    add_test(NAME sky-pointer-regression COMMAND sky-pointer-regression)
+    set_tests_properties(sky-pointer-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
     target_include_directories(path-text-regression PRIVATE src)
     target_link_libraries(path-text-regression PRIVATE Qt6::Core)
