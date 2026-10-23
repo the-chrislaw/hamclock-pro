@@ -283,3 +283,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (hourly run, 67)
 - QA #546: the Pi image updater is now opt-in (timer no longer enabled in the image), uses `releases/latest` (stable only, never the rolling pre-release), matches only asset `browser_download_url`s, requires a matching `SHA256SUMS` release asset (fails closed), keeps the previous `.deb` and reinstalls it if the install fails. Docs updated. Not done: detached-signature verification (needs an owner-held signing key), publishing `SHA256SUMS` from the release workflow (workflows not mine), checksum on the base `.deb` in `image.yml`. Script checked with `sh -n` only; not run, image not built, not validated on a device.
 - Only #73 (stale docs, not mine) was open; left alone.
+
+## 2026-10-23 (hourly run, 68)
+- QA #574 audit (no code change): rendered dark with merged widget fixtures at 390x844, 844x390, 430x932 and 932x430: exit 0, no QML warnings, no truncation report; portrait stacks station strip, one pane (page dots) and map, landscape puts the map left and one pane right. With no station configured the portrait station card is mostly empty (Set up button only). Not done: the Passes / Find-in-the-sky entry points (no such widgets exist yet; areas D and F), Settings one-handed pass, App Store-size renders (6.9"/13" need exact pixel sizes). Not validated on a device.
+- Open: #577 and #578 (other areas, CI still running at the time) and stale #73; left alone.
