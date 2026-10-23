@@ -357,3 +357,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 1b07ae5 (only #568, my run 58 log, since 39a44b5). No source, test, workflow or widget change landed, so the build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since run 53 (builds and passes tests then). Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
+
+## 2026-10-23 (UTC) QA run 60
+- Last reviewed commit: fecdf8e (#570 balloon flight trail, plus my run 59 log #569, since 1b07ae5). Build clean, 167/167 ctest pass. #570 diff reviewed: trail parse is bounds-safe, test added not weakened, WIDGETS.md updated, layer removed when stale; no contract violation found. Screenshots not repeated (map overlay only, no new layout).
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds and passes all tests. Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
