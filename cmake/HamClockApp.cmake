@@ -11,6 +11,8 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_safearea.cpp
     src/platform/apple_textentry.cpp
     src/platform/apple_skypointer.cpp
+    src/platform/apple_skyattitude.cpp
+    src/platform/apple_skysensor.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -18,9 +20,11 @@ add_library(hamclock-widget-core STATIC
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_skysensor_ios.mm)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
-    target_link_libraries(hamclock-widget-core PUBLIC ${HC_GAMECONTROLLER})
+    find_library(HC_COREMOTION CoreMotion REQUIRED)
+    find_library(HC_CORELOCATION CoreLocation REQUIRED)
+    target_link_libraries(hamclock-widget-core PUBLIC ${HC_GAMECONTROLLER} ${HC_COREMOTION} ${HC_CORELOCATION})
 endif()
 
 # All widget models are compiled into this library by hamclock_add_widget().
@@ -148,6 +152,10 @@ if(BUILD_TESTING)
     target_link_libraries(sky-pointer-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-pointer-regression COMMAND sky-pointer-regression)
     set_tests_properties(sky-pointer-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
+    target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
+    add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
+    set_tests_properties(sky-attitude-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
     target_include_directories(path-text-regression PRIVATE src)
     target_link_libraries(path-text-regression PRIVATE Qt6::Core)
