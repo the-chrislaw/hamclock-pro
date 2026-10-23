@@ -29,6 +29,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key><false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>HamClock Pro uses your location and compass heading to point you at a satellite or planet in the sky. It is requested only when you open the sky finder.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>HamClock Pro shows the camera view behind the satellite marker in the optional sky finder AR mode. The camera is off unless you turn it on.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>HamClock Pro uses device motion to tell which way the phone is pointing in the sky finder.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>HamClock Pro listens on your local network only if you enable the optional WSJT-X/JTDX UDP spot feed or a local rig/GPS service.</string>
 </dict>
