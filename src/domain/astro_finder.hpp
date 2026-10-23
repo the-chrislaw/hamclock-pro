@@ -4,6 +4,7 @@
 #pragma once
 #include "astro_satellite.hpp"
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -48,9 +49,12 @@ std::optional<RisePoint> rise_point(const SatellitePropagator& sat, const Observ
 
 struct ScheduledPass { std::string name; FinderPass pass; };
 enum class PassFilter { All, VisibleToEye };
-// Passes of every satellite in [from, from + horizon_s), sorted by AOS.
+// Passes of every satellite in [from, from + horizon_s), sorted by AOS. `include`
+// (optional) keeps only satellites it accepts by name, e.g. the Amateur filter
+// (has SatNOGS transmitters); it combines with `filter`.
 std::vector<ScheduledPass> pass_schedule(const std::vector<std::pair<std::string, const SatellitePropagator*>>& sats,
                                          const Observer& obs, double from, double horizon_s, double min_el_deg,
-                                         PassFilter filter, int max_passes);
+                                         PassFilter filter, int max_passes,
+                                         const std::function<bool(const std::string&)>& include = {});
 
 } // namespace hamclock

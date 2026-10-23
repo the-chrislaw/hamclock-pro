@@ -83,6 +83,15 @@ int main(int argc, char** argv) {
     check(dark, "visible passes happen near/after dusk or before dawn");
     check(pass_schedule(sats, obs, from, 48 * 3600, 10.0, PassFilter::All, 2).size() == 2, "max_passes caps");
 
+    const std::vector<std::pair<std::string, const SatellitePropagator*>> two{{"ISS", &sat}, {"OTHER", &sat}};
+    const auto only = pass_schedule(two, obs, from, 48 * 3600, 10.0, PassFilter::All, 0,
+                                    [](const std::string& n) { return n == "OTHER"; });
+    bool named = !only.empty() && only.size() == all.size();
+    for (const auto& s : only) named = named && s.name == "OTHER";
+    check(named, "include predicate keeps only accepted satellites");
+    check(pass_schedule(two, obs, from, 48 * 3600, 10.0, PassFilter::All, 0,
+                        [](const std::string&) { return false; }).empty(), "include rejecting all gives none");
+
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

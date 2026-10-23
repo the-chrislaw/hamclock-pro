@@ -67,10 +67,12 @@ std::optional<RisePoint> rise_point(const SatellitePropagator& sat, const Observ
 
 std::vector<ScheduledPass> pass_schedule(const std::vector<std::pair<std::string, const SatellitePropagator*>>& sats,
                                          const Observer& obs, double from, double horizon_s, double min_el,
-                                         PassFilter filter, int max_passes) {
+                                         PassFilter filter, int max_passes,
+                                         const std::function<bool(const std::string&)>& include) {
     std::vector<ScheduledPass> out;
     for (const auto& [name, sat] : sats) {
         if (!sat || !sat->valid()) continue;
+        if (include && !include(name)) continue;
         for (const SatPass& p : sat->passes(obs, from, horizon_s, min_el, 64)) {
             FinderPass f = describe_pass(*sat, obs, p);
             if (filter == PassFilter::VisibleToEye && !f.visible_to_eye) continue;
