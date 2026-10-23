@@ -362,3 +362,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: fecdf8e (#570 balloon flight trail, plus my run 59 log #569, since 1b07ae5). Build clean, 167/167 ctest pass. #570 diff reviewed: trail parse is bounds-safe, test added not weakened, WIDGETS.md updated, layer removed when stale; no contract violation found. Screenshots not repeated (map overlay only, no new layout).
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes all tests. Remaining risk is data freshness on the real Pi (#150) and the unchecked fit of the longer Weather and Balloons detail lines.
+
+## 2026-10-23 (UTC) QA run 61
+- Last reviewed commit: 175e353 (#575 astro Find-in-the-sky domain model, #576 Apple sky-pointer maths and iOS privacy strings, plus my run 60 log #571, since fecdf8e). Build clean, 169/169 ctest pass. Diffs reviewed: no UI or QML change (screenshots not repeated), tests added, WIDGETS.md updated and honest about what is not done, no network code, no secrets, angle wrapping and lock hysteresis look correct; no contract violation found.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds and passes all tests. Remaining risk is data freshness on the real Pi (#150), the unchecked fit of the longer Weather and Balloons detail lines, and that the new sky-finder pane will need a 1024x600 layout check when it lands.
