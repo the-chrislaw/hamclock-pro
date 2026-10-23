@@ -72,6 +72,19 @@ int main(int argc, char** argv) {
         d.has_prev = false; check(!balloons::landing_point(d, 0, lat, lon), "no earlier frame: none");
         d.has_prev = true; d.vel_v = 3; check(!balloons::landing_point(d, 0, lat, lon), "climbing: none");
     }
+    {
+        // Unordered frames: trail is every older position, oldest first; 40 frames thin to kMaxTrail.
+        QString j = "{\"A\":{";
+        for (int i = 39; i >= 0; --i)
+            j += QString("\"t%1\":{\"datetime\":\"2026-01-01T00:%2:00Z\",\"lat\":%3,\"lon\":5},").arg(i).arg(i, 2, 10, QChar('0')).arg(10 + i * 0.01);
+        j.chop(1); j += "}}";
+        const auto tf = balloons::parse(j.toUtf8());
+        check(tf.sondes.size() == 1 && tf.sondes[0].trail.size() == static_cast<size_t>(balloons::kMaxTrail), "trail thinned to the maximum");
+        const auto& tr = tf.sondes[0].trail;
+        check(tr.front().first == 10 && tr.back().first == 10 + 38 * 0.01 && tr[1].first > tr[0].first, "trail oldest first, ends at the frame before the newest");
+        const auto few = balloons::parse(R"({"A":{"a":{"datetime":"2026-01-01T00:00:00Z","lat":1,"lon":2},"b":{"datetime":"2026-01-01T00:01:00Z","lat":3,"lon":4}}})");
+        check(few.sondes[0].trail.size() == 1 && few.sondes[0].trail[0].first == 1, "two frames: one trail point");
+    }
     check(!balloons::parse("").ok && !balloons::parse("[]").ok, "non-object rejected");
     check(balloons::parse(R"({"A":{"t":{"datetime":"junk","lat":1,"lon":2}},"B":{"t":{"datetime":"2026-01-01T00:00:00Z","lat":95,"lon":2}}})")
               .sondes.empty(), "bad time or position skipped");

@@ -317,3 +317,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-22 (UTC), run 61
 - Balloons (D14, slice): `balloons::landing_point()` projects a descending sonde forward by the drift between its last two frames over the remaining fall time; the nearest-sonde detail line adds "lands ~N km <dir> from you". Approximate (no wind profile, overshoots when wind weakens near the ground), labelled with "~". Parser keeps the previous frame for this. Test: hand-computed drift, landed, no previous frame, climbing. Full ctest passes locally; ASan/UBSan left to CI. Text-only change on an existing line, no new screenshots; not on-device.
 - Not mine: #73 conflicting, left alone. No `[D]` QA issues open.
+
+## 2026-10-23 (UTC), run 62
+- Balloons (D14, slice): the parser keeps each sonde's earlier frames (sorted, thinned to 24) and the model publishes the nearest sonde's flight path as a dotted map layer `balloon-trail` (the overlay API has no polylines; removed when stale or none heard). Test: unordered 40-frame input thins to 24 oldest-first, two frames give one point. Balloons tests pass locally; full ctest and ASan/UBSan left to CI. Map-only change, no card layout change, so no new screenshots; not on-device.
+- Not mine: #73 conflicting, left alone. No `[D]` QA issues open. Owner-blocked: #440 (EME link), #475 (ELP tables).

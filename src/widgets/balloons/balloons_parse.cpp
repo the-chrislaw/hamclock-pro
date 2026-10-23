@@ -18,6 +18,7 @@ Feed parse(const QByteArray& body) {
         const auto frames = it.value().toObject();
         Sonde best;
         Sonde prev;
+        std::vector<std::pair<QDateTime, std::pair<double, double>>> history;
         for (const auto& fv : frames) {
             const auto f = fv.toObject();
             if (!f.value("lat").isDouble() || !f.value("lon").isDouble()) continue;
@@ -34,6 +35,7 @@ Feed parse(const QByteArray& body) {
             s.vel_v = f.value("vel_v").toDouble();
             s.freq_mhz = f.value("frequency").toDouble();
             s.time = time;
+            history.push_back({time, {s.lat, s.lon}});
             prev = best;
             best = s;
         }
@@ -41,7 +43,18 @@ Feed parse(const QByteArray& body) {
             best.has_prev = true;
             best.prev_lat = prev.lat; best.prev_lon = prev.lon; best.prev_time = prev.time;
         }
-        if (best.time.isValid()) feed.sondes.push_back(best);
+        if (best.time.isValid()) {
+            // Frames arrive in no particular order; the trail is every frame
+            // older than the newest, thinned evenly to kMaxTrail points.
+            std::sort(history.begin(), history.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+            std::vector<std::pair<double, double>> older;
+            for (const auto& h : history)
+                if (h.first < best.time) older.push_back(h.second);
+            const size_t n = older.size();
+            const size_t keep = std::min<size_t>(n, kMaxTrail);
+            for (size_t i = 0; i < keep; ++i) best.trail.push_back(older[keep == n ? i : i * (n - 1) / (keep - 1)]);
+            feed.sondes.push_back(best);
+        }
     }
     return feed;
 }

@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QString>
+#include <utility>
 #include <vector>
 
 namespace hamclock::balloons {
@@ -20,7 +21,11 @@ struct Sonde {
     bool has_prev = false;  // an earlier frame (> 0 s older) was also heard
     double prev_lat = 0, prev_lon = 0;
     QDateTime prev_time;
+    // Earlier positions (lat, lon), oldest first, thinned to at most kMaxTrail.
+    std::vector<std::pair<double, double>> trail;
 };
+
+constexpr int kMaxTrail = 24;
 
 struct Feed {
     bool ok = false;

@@ -106,6 +106,25 @@ void BalloonsModel::updateMapLayer() {
     }
     if (layer.markers.empty()) MapOverlays::instance().remove_layer("balloons");
     else MapOverlays::instance().set_layer(layer);
+
+    // Where the sonde nearest to DE has been: dots from its older frames.
+    // The overlay API has no polylines yet, so the track is a dotted trail.
+    OverlayLayer trail;
+    trail.id = "balloon-trail";
+    trail.labels = OverlayLabelMode::None;
+    if (feed_.ok && !source_->isStale(now())) {
+        const auto n = near(1);
+        if (!n.empty())
+            for (const auto& p : n.front().sonde.trail) {
+                OverlayMarker m;
+                m.where = {p.first, p.second};
+                m.color = QColor("#5ec2b7");
+                m.size_px = 1.5;
+                trail.markers.push_back(m);
+            }
+    }
+    if (trail.markers.empty()) MapOverlays::instance().remove_layer("balloon-trail");
+    else MapOverlays::instance().set_layer(trail);
 }
 
 void BalloonsModel::refreshState() {
