@@ -388,3 +388,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 00c7660 (#593 astro Passes phone-size render note, plus my run 64 log #592, since 9b313fa). Docs and agent-log changes only (WIDGETS.md one line, astro.md); no source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since run 64 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and the Passes pane tap targets on the real touchscreen.
+
+## 2026-10-24 (UTC) QA run 66
+- Last reviewed commit: 911ecd9 (#595 eclipse totality/annular contact times, #596 air temperature 3 h range caption, plus my run 65 log #594, since 00c7660). Build clean, 176/176 ctest pass. Rendered 800x480, 1024x600 and 1920x1080 in both themes: clean, no clipping (new Eclipse row only shows at rowsFit >= 6, range caption only when not compact).
+- Diffs reviewed: tests added, no network code, no secrets; one test assertion is vacuous and one header comment is misplaced.
+- Opened: #597 ([D] vacuous Dallas totality assertion, misplaced comment in sensors_read.hpp). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
