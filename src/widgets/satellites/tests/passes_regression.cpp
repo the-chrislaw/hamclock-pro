@@ -80,6 +80,19 @@ int main(int argc, char** argv) {
     check(model.rows().size() <= rows.size(), "visible filter never adds passes");
     if (model.rows().isEmpty()) check(model.emptyReason().contains("visible"), "visible empty reason");
 
+    model.setFilter("starred");
+    check(model.rows().isEmpty() && model.emptyReason().contains("star"), "starred filter with no stars explains itself");
+    const QString first = rows.front().toMap()["name"].toString();
+    model.toggleStar(first);
+    check(model.isStarred(first) && !model.rows().isEmpty(), "starring shows its passes");
+    bool onlyStar = true;
+    for (const auto& r : model.rows()) onlyStar = onlyStar && r.toMap()["name"].toString() == first && r.toMap()["starred"].toBool();
+    check(onlyStar, "starred filter keeps only starred satellites");
+    check(QSettings(settings.optionsPath(), QSettings::IniFormat).value("passes/starred").toStringList() == QStringList{first}, "stars saved");
+    { PassesModel again(context); check(again.isStarred(first) && again.filter() == "starred", "stars and filter restored"); }
+    model.toggleStar(first);
+    check(!model.isStarred(first) && model.rows().isEmpty(), "unstar removes it");
+
     model.setFilter("bogus");
     check(model.filter() == "all" && model.rows().size() == rows.size(), "unknown filter -> all");
 

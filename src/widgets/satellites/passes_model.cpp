@@ -27,8 +27,11 @@ PassesModel::PassesModel(const WidgetContext& context, QObject* parent)
     connect(&timer_, &QTimer::timeout, this, &PassesModel::recompute);
     if (settings_) {
         connect(settings_, &AppSettings::stationChanged, this, &PassesModel::recompute);
-        const QString saved = QSettings(settings_->optionsPath(), QSettings::IniFormat).value("passes/filter").toString();
-        if (saved == "amateur" || saved == "visible") filter_ = saved;
+        QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
+        const QString saved = ini.value("passes/filter").toString();
+        if (saved == "amateur" || saved == "visible" || saved == "starred") filter_ = saved;
+        starred_ = ini.value("passes/starred").toStringList();
+        starred_.removeAll(QString());
     }
 }
 
@@ -41,10 +44,17 @@ void PassesModel::setElements(const std::vector<Tle>& tles, const std::set<int>&
 }
 
 void PassesModel::setFilter(const QString& filter) {
-    const QString f = (filter == "amateur" || filter == "visible") ? filter : QString("all");
+    const QString f = (filter == "amateur" || filter == "visible" || filter == "starred") ? filter : QString("all");
     if (f == filter_) return;
     filter_ = f;
     if (settings_) QSettings(settings_->optionsPath(), QSettings::IniFormat).setValue("passes/filter", f);
+    recompute();
+}
+
+void PassesModel::toggleStar(const QString& name) {
+    if (name.isEmpty()) return;
+    if (!starred_.removeOne(name)) starred_.append(name);
+    if (settings_) QSettings(settings_->optionsPath(), QSettings::IniFormat).setValue("passes/starred", starred_);
     recompute();
 }
 
@@ -79,6 +89,7 @@ void PassesModel::recompute() {
     }
     std::function<bool(const std::string&)> include;
     if (filter_ == "amateur") include = [&](const std::string& n) { return amateur_names.count(n) > 0; };
+    if (filter_ == "starred") include = [&](const std::string& n) { return starred_.contains(QString::fromStdString(n)); };
     // Start a few minutes back so a pass in progress is still listed.
     const auto sched = pass_schedule(sats, obs, t - 900, kHorizonS + 900, kMinEl,
                                      filter_ == "visible" ? PassFilter::VisibleToEye : PassFilter::All,
@@ -95,12 +106,13 @@ void PassesModel::recompute() {
             {"maxEl", qRound(s.pass.pass.max_el_deg)},
             {"from", QString::fromStdString(s.pass.aos_compass)}, {"to", QString::fromStdString(s.pass.los_compass)},
             {"duration", QString("%1 min").arg((s.pass.duration_s + 30) / 60)},
-            {"visible", s.pass.visible_to_eye}, {"live", aos <= now_s}});
+            {"visible", s.pass.visible_to_eye}, {"starred", starred_.contains(QString::fromStdString(s.name))}, {"live", aos <= now_s}});
         if (rows_.size() >= kMaxPasses) break;
     }
     if (rows_.isEmpty())
         empty_reason_ = filter_ == "visible" ? "No passes visible to the eye in 48 h"
-                      : filter_ == "amateur" ? "No amateur-satellite passes in 48 h" : "No passes in 48 h";
+                      : filter_ == "amateur" ? "No amateur-satellite passes in 48 h"
+                      : filter_ == "starred" ? (starred_.isEmpty() ? "Tap a satellite name to star it" : "No starred-satellite passes in 48 h") : "No passes in 48 h";
     setState("live", "Computed offline from CelesTrak elements", now());
     emit changed();
 }
