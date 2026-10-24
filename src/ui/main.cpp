@@ -9,6 +9,7 @@
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
 #include "../net/polled_source.hpp"
+#include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_safearea.hpp"
@@ -141,6 +142,7 @@ int main(int argc, char** argv) {
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
     if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
+    hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));
     hamclock::WidgetContext context;
     context.settings = &settings;
     context.owner = &app;

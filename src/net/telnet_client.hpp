@@ -31,6 +31,8 @@ signals:
 };
 using TelnetSocketFactory = std::function<TelnetSocket*(QObject* parent)>;
 TelnetSocketFactory make_tcp_socket_factory();
+// With false, sockets from make_tcp_socket_factory() never connect (--offline / --fixtures runs).
+void set_telnet_network_enabled(bool enabled);
 
 class TelnetClient : public QObject {
     Q_OBJECT
