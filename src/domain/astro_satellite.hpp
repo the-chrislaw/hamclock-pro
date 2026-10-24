@@ -57,6 +57,8 @@ public:
     // Sunlit state at `unix_time`; false if propagation fails.
     bool sunlit(double unix_time, bool& lit) const;
     bool look(double unix_time, const Observer& obs, LookAngle& out) const;
+    // Sun-satellite-observer angle, degrees (0 = full phase), for brightness estimates.
+    bool phase_angle_deg(double unix_time, const Observer& obs, double& out) const;
     // Passes above min_el_deg starting after `from`, within the horizon, up to max_passes.
     std::vector<SatPass> passes(const Observer& obs, double from, double horizon_s,
                                 double min_el_deg, int max_passes) const;

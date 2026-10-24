@@ -47,7 +47,7 @@ Card {
                     text: col === 0 ? (row.starred ? "★ " : "") + row.name
                         : col === 1 ? (row.live ? "now" : row.day + " " + row.utc)
                         : col === 2 ? row.maxEl + "° " + row.from + "→" + row.to
-                        : col === 3 ? row.local + " loc" : row.duration + (row.visible ? " ★" : "")
+                        : col === 3 ? row.local + " loc" : row.duration + (row.visible ? " ★" : "") + (row.mag !== "" ? " ~" + row.mag + "m" : "")
                     color: row.live ? Theme.accent : col === 0 ? Theme.ink : Theme.secondary
                     font.pixelSize: Theme.fontCaption * (col === 0 ? 1.2 : 1)
                     font.weight: col === 0 || row.live ? Font.DemiBold : Font.Normal

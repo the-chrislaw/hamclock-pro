@@ -92,6 +92,23 @@ int main(int argc, char** argv) {
     check(pass_schedule(two, obs, from, 48 * 3600, 10.0, PassFilter::All, 0,
                         [](const std::string&) { return false; }).empty(), "include rejecting all gives none");
 
+    // Magnitude: ISS-class only, bright and plausible only for dark-sky sunlit passes.
+    check(standard_magnitude("ISS (ZARYA)") && !standard_magnitude("AO-91") && standard_magnitude("CSS (TIANHE)"),
+          "standard magnitude only for known large objects");
+    int mags = 0;
+    bool plausible = true;
+    for (const auto& s : vis) {
+        for (double t = s.pass.pass.aos; t <= s.pass.pass.los; t += 15.0) {
+            const auto m = estimate_magnitude(sat, obs, t, -1.8);
+            if (m) { ++mags; plausible = plausible && *m > -6.0 && *m < 5.0; }
+        }
+    }
+    check(vis.empty() || (mags > 0 && plausible), "magnitudes exist and are plausible on visible passes");
+    // Daylight pass: no magnitude.
+    bool day_none = true;
+    for (const auto& s : all)
+        if (s.pass.sun_el_at_tca_deg > 10.0) day_none = day_none && !estimate_magnitude(sat, obs, s.pass.pass.tca, -1.8);
+    check(day_none, "no magnitude in daylight");
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }
