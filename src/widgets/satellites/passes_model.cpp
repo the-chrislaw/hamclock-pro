@@ -106,6 +106,7 @@ void PassesModel::recompute() {
             {"maxEl", qRound(s.pass.pass.max_el_deg)},
             {"from", QString::fromStdString(s.pass.aos_compass)}, {"to", QString::fromStdString(s.pass.los_compass)},
             {"duration", QString("%1 min").arg((s.pass.duration_s + 30) / 60)},
+            {"mag", s.pass.brightest_mag ? QString::number(*s.pass.brightest_mag, 'f', 1) : QString()},
             {"visible", s.pass.visible_to_eye}, {"starred", starred_.contains(QString::fromStdString(s.name))}, {"live", aos <= now_s}});
         if (rows_.size() >= kMaxPasses) break;
     }

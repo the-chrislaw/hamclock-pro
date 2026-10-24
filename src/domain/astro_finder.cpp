@@ -58,6 +58,23 @@ FinderPass describe_pass(const SatellitePropagator& sat, const Observer& obs, co
     return f;
 }
 
+std::optional<double> estimate_magnitude(const SatellitePropagator& sat, const Observer& obs, double t, double std_mag) {
+    const auto p = pointing_at(sat, obs, t);
+    if (!p || p->el_deg <= 0 || !p->sunlit || sun_elevation(obs, t) >= -6.0) return std::nullopt;
+    double ph = 0;
+    if (!sat.phase_angle_deg(t, obs, ph)) return std::nullopt;
+    const double r = ph * M_PI / 180.0;
+    const double f = std::sin(r) + (M_PI - r) * std::cos(r);
+    if (f <= 0) return std::nullopt;
+    return std_mag - 15.0 + 5.0 * std::log10(p->range_km) - 2.5 * std::log10(f);
+}
+
+std::optional<double> standard_magnitude(const std::string& name) {
+    if (name.rfind("ISS", 0) == 0) return -1.8;
+    if (name.rfind("CSS", 0) == 0 || name.find("TIANHE") != std::string::npos) return -1.5;
+    return std::nullopt;
+}
+
 std::optional<RisePoint> rise_point(const SatellitePropagator& sat, const Observer& obs, double after, double horizon_s) {
     const auto passes = sat.passes(obs, after, horizon_s, 0.0, 1);
     if (passes.empty()) return std::nullopt;
@@ -76,6 +93,12 @@ std::vector<ScheduledPass> pass_schedule(const std::vector<std::pair<std::string
         for (const SatPass& p : sat->passes(obs, from, horizon_s, min_el, 64)) {
             FinderPass f = describe_pass(*sat, obs, p);
             if (filter == PassFilter::VisibleToEye && !f.visible_to_eye) continue;
+            if (const auto sm = standard_magnitude(name)) {
+                for (double t = static_cast<double>(p.aos); t <= static_cast<double>(p.los); t += 15.0) {
+                    const auto m = estimate_magnitude(*sat, obs, t, *sm);
+                    if (m && (!f.brightest_mag || *m < *f.brightest_mag)) f.brightest_mag = m;
+                }
+            }
             out.push_back({name, f});
         }
     }

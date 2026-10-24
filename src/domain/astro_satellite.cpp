@@ -166,6 +166,24 @@ bool SatellitePropagator::look(double t, const Observer& obs, LookAngle& out) co
     return true;
 }
 
+bool SatellitePropagator::phase_angle_deg(double t, const Observer& obs, double& out) const {
+    double r[3], e[3], o[3], s[3];
+    if (!teme(t, r)) return false;
+    ecef_of_teme(r, t, e);
+    ecef_of_geodetic(obs.lat_deg * kDeg, obs.lon_deg * kDeg, obs.alt_km, o);
+    sun_teme_km(t, s);
+    double se[3];
+    ecef_of_teme(s, t, se);
+    double a[3], b[3], na = 0, nb = 0, dot = 0;
+    for (int i = 0; i < 3; ++i) {
+        a[i] = se[i] - e[i]; // satellite -> Sun
+        b[i] = o[i] - e[i];  // satellite -> observer
+        na += a[i] * a[i]; nb += b[i] * b[i]; dot += a[i] * b[i];
+    }
+    out = std::acos(std::clamp(dot / std::sqrt(na * nb), -1.0, 1.0)) / kDeg;
+    return true;
+}
+
 double doppler_downlink_hz(double f_hz, double rate) { return f_hz * (1.0 - rate / 299792.458); }
 double doppler_uplink_hz(double f_hz, double rate) { return f_hz * (1.0 + rate / 299792.458); }
 

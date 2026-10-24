@@ -38,6 +38,8 @@ struct FinderPass {
     bool visible_to_eye = false;
     // Sun elevation at the observer at TCA, degrees.
     double sun_el_at_tca_deg = 0;
+    // Brightest estimated magnitude during the pass (set by pass_schedule for known large objects only).
+    std::optional<double> brightest_mag;
 };
 FinderPass describe_pass(const SatellitePropagator& sat, const Observer& obs, const SatPass& pass);
 
@@ -46,6 +48,17 @@ FinderPass describe_pass(const SatellitePropagator& sat, const Observer& obs, co
 struct RisePoint { std::int64_t t = 0; double az_deg = 0; std::string compass; };
 std::optional<RisePoint> rise_point(const SatellitePropagator& sat, const Observer& obs, double after_unix,
                                     double horizon_s);
+
+// Rough visual magnitude of a large, diffuse-sphere-model satellite (ISS class):
+// m = std_mag - 15 + 5 log10(range_km) - 2.5 log10(sin(p) + (pi - p) cos(p)), with
+// p the Sun-satellite-observer phase angle and std_mag the magnitude at 1000 km,
+// 50% phase. Accurate to about +-1 mag at best; nullopt if not above the horizon,
+// not sunlit, or the Sun is higher than -6 deg. Only meaningful for known objects.
+std::optional<double> estimate_magnitude(const SatellitePropagator& sat, const Observer& obs, double unix_time,
+                                         double std_mag);
+// Standard magnitude for objects we know are large (ISS -1.8, Tiangong -1.5);
+// nullopt for everything else, so no magnitude is shown rather than a guess.
+std::optional<double> standard_magnitude(const std::string& name);
 
 struct ScheduledPass { std::string name; FinderPass pass; };
 enum class PassFilter { All, VisibleToEye };
