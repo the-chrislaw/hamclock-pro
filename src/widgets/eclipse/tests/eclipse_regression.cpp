@@ -86,7 +86,10 @@ int main(int argc, char** argv) {
     // Totality at the NASA greatest-eclipse point (25.29N 104.14W) is 268 s; Dallas is also in the path.
     const EclipseSummary sg = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 25.29, -104.14);
     check(sg.centralLabel == "Totality" && sg.central.startsWith("~18:") && sg.central.contains("(4 m"), "totality line at the centre of the path");
-    check(sd.central.isEmpty() || sd.centralLabel == "Totality", "Dallas totality label");
+    check(!sd.central.isEmpty() && sd.centralLabel == "Totality", "Dallas totality label");
+    // Annular: NASA greatest eclipse of 2023-10-14 (11.4N 83.1W), annularity about 5 min around 18:00 UTC.
+    const EclipseSummary sa = summarize_eclipse(UtcSeconds{utc(2023, 9, 1)}, 11.4, -83.1);
+    check(sa.centralLabel == "Annular" && sa.central.startsWith("~1") && sa.central.contains("(5 m"), "annular line at the centre of the path");
     const EclipseSummary sl = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 51.5, -0.13);
     check(sl.local.isEmpty(), "no local line when not visible");
 
