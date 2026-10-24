@@ -233,6 +233,14 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
+    # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
+    foreach(size 800x480 1024x600)
+        add_test(NAME qml-app-station-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-station-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})
+        set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # Widget panes only report truncation (widget layouts belong to other areas); the app smokes above enforce it.

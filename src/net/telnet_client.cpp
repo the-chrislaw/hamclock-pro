@@ -8,6 +8,18 @@ namespace hamclock {
 namespace {
 constexpr unsigned char IAC = 255, DONT = 254, DO = 253, WONT = 252, WILL = 251, SB = 250, SE = 240;
 constexpr int kMaxLineBytes = 4096;
+bool g_telnet_network = true;
+
+// Used under --offline / --fixtures: never opens a connection, fails like a dead network.
+class DisabledTelnetSocket : public TelnetSocket {
+public:
+    using TelnetSocket::TelnetSocket;
+    void connectToHost(const QString&, int) override {
+        QTimer::singleShot(0, this, [this] { emit closed("Network disabled (--offline)"); });
+    }
+    void write(const QByteArray&) override {}
+    void close() override {}
+};
 
 class TcpTelnetSocket : public TelnetSocket {
 public:
@@ -25,8 +37,13 @@ private:
 };
 } // namespace
 
+void set_telnet_network_enabled(bool enabled) { g_telnet_network = enabled; }
+
 TelnetSocketFactory make_tcp_socket_factory() {
-    return [](QObject* parent) -> TelnetSocket* { return new TcpTelnetSocket(parent); };
+    return [](QObject* parent) -> TelnetSocket* {
+        if (!g_telnet_network) return new DisabledTelnetSocket(parent);
+        return new TcpTelnetSocket(parent);
+    };
 }
 
 TelnetClient::TelnetClient(TelnetSocketFactory factory, QObject* parent)
