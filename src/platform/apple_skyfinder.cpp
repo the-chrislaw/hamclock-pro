@@ -19,8 +19,9 @@ void SkyFinder::setTarget(double az, double el) {
 
 void SkyFinder::start() {
     if (active_) return;
-    active_ = true;
     sensor_->start();
+    if (!sensor_->running()) return; // no motion sensors: stay inactive, not a silent dead 'active'
+    active_ = true;
     emit activeChanged();
 }
 

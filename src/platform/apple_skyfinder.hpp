@@ -15,12 +15,14 @@ class SkyFinder : public QObject {
     Q_PROPERTY(QString guidance READ guidance NOTIFY guidanceChanged)
     Q_PROPERTY(bool locked READ locked NOTIFY guidanceChanged)
     Q_PROPERTY(bool active READ active NOTIFY activeChanged)
+    Q_PROPERTY(bool magneticNorth READ magneticNorth NOTIFY activeChanged)
 public:
     explicit SkyFinder(SkySensor* sensor, QObject* parent = nullptr);
 
     QString guidance() const { return guide_.text; }
     bool locked() const { return tracker_.locked(); }
     bool active() const { return active_; }
+    bool magneticNorth() const { return active_ && !sensor_->trueNorth(); }
     PointingGuidance current() const { return guide_; }
 
     // Replaces the haptic (default: nativeHapticTick, a no-op off iOS).

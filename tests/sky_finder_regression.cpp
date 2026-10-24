@@ -21,9 +21,12 @@ int main(int argc, char** argv) {
     QObject::connect(&finder, &SkyFinder::lockedOn, [&] { ++locks; });
 
     finder.setTarget(90, 30);
+    finder.start();
+    check(!finder.active(), "stays inactive without motion sensors");
+    sensor.setAvailableOverride(true);
     emit sensor.attitudeChanged(50, 18);
     check(finder.guidance().isEmpty(), "ignored before start");
-    finder.start(); // sensors are absent on Linux; the finder still arms itself
+    finder.start();
     check(finder.active(), "start arms the finder");
     emit sensor.attitudeChanged(50, 18);
     check(finder.guidance().contains("right") && finder.guidance().contains("up"), "guides right and up");
