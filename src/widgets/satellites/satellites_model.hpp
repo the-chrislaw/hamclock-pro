@@ -7,11 +7,13 @@
 #include <QStringList>
 #include <QTimer>
 #include <QVariantList>
+#include <set>
 
 namespace hamclock {
 
 class PolledSource;
 class AppSettings;
+std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
 
 // Next amateur-satellite passes at the DE station: CelesTrak TLEs (cached,
 // refreshed daily) propagated offline with SGP4 from the system clock.
@@ -62,9 +64,18 @@ public:
     // (nothing is written then).
     Q_INVOKABLE QString saveUserTles(const QString& text);
 
+    // Fresh element sets and the NORAD ids with SatNOGS transmitters, for the Passes pane.
+    std::vector<Tle> elements() const { return fresh_tles(tles_, static_cast<double>(now().toSecsSinceEpoch())); }
+    std::set<int> transmitterNorads() const {
+        std::set<int> ids;
+        for (const auto& kv : transmitters_) ids.insert(kv.first);
+        return ids;
+    }
+
 signals:
     void changed();
     void detailChanged();
+    void elementsChanged();
 
 private:
     void load();

@@ -200,6 +200,7 @@ void SatellitesModel::load() {
             tles_ = merge_user_tles(tles_, parse_tle_set(f.read(1 << 20).toStdString()));
     }
     recompute();
+    emit elementsChanged();
 }
 
 namespace {
@@ -317,6 +318,7 @@ void SatellitesModel::recompute() {
 void SatellitesModel::load_transmitters() {
     transmitters_ = group_by_norad(parse_satnogs_transmitters(tx_source_->body().toStdString()));
     refresh_detail();
+    emit elementsChanged();
 }
 
 void SatellitesModel::selectRow(int index) {
