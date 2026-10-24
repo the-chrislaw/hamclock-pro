@@ -185,6 +185,10 @@ int main(int argc, char** argv) {
         check(!ov2.saveAccentStyle(5).isEmpty() && ov2.accentStyle() == 0, "bad accent rejected");
         check(ov2.saveAccentStyle(3).isEmpty() && ov2.accentStyle() == 3, "accent applied");
         { AppSettings ov4({}, ov_dir.path()); check(ov4.accentStyle() == 3, "accent survives restart"); }
+        check(ov2.bigClockFace() == 0, "big clock digital by default");
+        check(!ov2.saveBigClockFace(2).isEmpty() && ov2.bigClockFace() == 0, "bad big clock face rejected");
+        check(ov2.saveBigClockFace(1).isEmpty() && ov2.bigClockFace() == 1, "big clock analog applied");
+        { AppSettings ov5({}, ov_dir.path()); check(ov5.bigClockFace() == 1, "big clock face survives restart"); }
         {
             AppSettings cs({}, ov_dir.path());
             int pane_signals = 0;

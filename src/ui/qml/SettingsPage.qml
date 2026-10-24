@@ -352,6 +352,23 @@ Rectangle {
             }
 
             Card {
+                title: "Big Clock face"
+                Layout.fillWidth: true
+                Flow {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: ["Digital", "Analog"]
+                        AppButton {
+                            text: modelData
+                            primary: appSettings.bigClockFace === index
+                            onClicked: appSettings.saveBigClockFace(index)
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
                 ColumnLayout {

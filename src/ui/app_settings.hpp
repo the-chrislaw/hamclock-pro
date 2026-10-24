@@ -54,6 +54,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
     Q_PROPERTY(int textScalePercent READ textScalePercent NOTIFY optionsChanged)
     Q_PROPERTY(int accentStyle READ accentStyle NOTIFY optionsChanged)
+    Q_PROPERTY(int bigClockFace READ bigClockFace NOTIFY optionsChanged)
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
     Q_PROPERTY(int blankOnHour READ blankOnHour NOTIFY optionsChanged)
@@ -108,6 +109,7 @@ public:
     int textScalePercent() const { return text_scale_; }
     // 0 blue (default), 1 green, 2 amber, 3 red, 4 purple.
     int accentStyle() const { return accent_style_; }
+    int bigClockFace() const { return big_clock_face_; }
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
     int blankOnHour() const { return blank_on_; }
@@ -211,6 +213,8 @@ public:
     // Large-type option for TVs and the 7-inch screen: 100, 115, 130 or 150 %.
     Q_INVOKABLE QString saveTextScale(int percent);
     Q_INVOKABLE QString saveAccentStyle(int style);
+    /// Big Clock page face: 0 digital, 1 analog dial above the digital lines.
+    Q_INVOKABLE QString saveBigClockFace(int face);
     // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
     // (local, 0..23; -1 and -1 = none). Software overlay only.
     Q_INVOKABLE QString saveBlanking(int idle_minutes, int off_hour, int on_hour);
@@ -298,6 +302,7 @@ private:
     int overscan_ = 0;
     int text_scale_ = 100;
     int accent_style_ = 0;
+    int big_clock_face_ = 0;
     int blank_idle_ = 0;
     int blank_off_ = -1;
     int blank_on_ = -1;

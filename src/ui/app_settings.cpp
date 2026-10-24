@@ -152,6 +152,8 @@ void AppSettings::loadOptions() {
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     accent_style_ = ini.value("display/accent", 0).toInt();
     if (accent_style_ < 0 || accent_style_ > 4) accent_style_ = 0;
+    big_clock_face_ = ini.value("display/bigClockFace", 0).toInt();
+    if (big_clock_face_ < 0 || big_clock_face_ > 1) big_clock_face_ = 0;
     text_scale_ = ini.value("display/text_scale", 100).toInt();
     if (text_scale_ != 100 && text_scale_ != 115 && text_scale_ != 130 && text_scale_ != 150) text_scale_ = 100;
     {
@@ -788,6 +790,17 @@ QString AppSettings::saveAccentStyle(int style) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the accent colour.";
     accent_style_ = style;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveBigClockFace(int face) {
+    if (face < 0 || face > 1) return "The Big Clock face must be 0 or 1.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/bigClockFace", face);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the Big Clock face.";
+    big_clock_face_ = face;
     emit optionsChanged();
     return {};
 }
