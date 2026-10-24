@@ -4,7 +4,7 @@ namespace hamclock {
 
 #ifndef Q_OS_IOS
 bool nativeSkySensorAvailable() { return false; }
-void nativeSkySensorStart(SkySensor*, void (*)(SkySensor*, const RotationMatrix&)) {}
+bool nativeSkySensorStart(SkySensor*, void (*)(SkySensor*, const RotationMatrix&)) { return true; }
 void nativeSkySensorStop(SkySensor*) {}
 #endif
 
@@ -12,13 +12,13 @@ SkySensor::SkySensor(QObject* parent) : QObject(parent) {}
 
 SkySensor::~SkySensor() { stop(); }
 
-bool SkySensor::available() const { return nativeSkySensorAvailable(); }
+bool SkySensor::available() const { return available_override_ || nativeSkySensorAvailable(); }
 
 void SkySensor::start() {
     if (running_ || !available()) return;
     smoother_.reset();
     running_ = true;
-    nativeSkySensorStart(this, [](SkySensor* self, const RotationMatrix& r) { self->feedAttitude(r); });
+    true_north_ = nativeSkySensorStart(this, [](SkySensor* self, const RotationMatrix& r) { self->feedAttitude(r); });
     emit runningChanged();
 }
 

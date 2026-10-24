@@ -18,6 +18,11 @@ public:
     // True on iOS devices with motion sensors; false on the simulator, macOS, Pi.
     bool available() const;
     bool running() const { return running_; }
+    // False when only the magnetic-north frame was available: azimuths are then
+    // off by the local declination and the UI should say so.
+    bool trueNorth() const { return true_north_; }
+    // Test seam: pretend sensors exist (the native start is still a no-op off iOS).
+    void setAvailableOverride(bool on) { available_override_ = on; }
     void setAxis(PointingAxis axis) { axis_ = axis; smoother_.reset(); }
 
     void start();
@@ -32,13 +37,16 @@ signals:
 
 private:
     bool running_ = false;
+    bool true_north_ = true;
+    bool available_override_ = false;
     PointingAxis axis_ = PointingAxis::BackCamera;
     AttitudeSmoother smoother_;
 };
 
 // Native hooks, implemented in apple_skysensor_ios.mm on iOS only.
 bool nativeSkySensorAvailable();
-void nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&));
+// Returns true when the true-north reference frame is in use.
+bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&));
 void nativeSkySensorStop(SkySensor* owner);
 
 } // namespace hamclock
