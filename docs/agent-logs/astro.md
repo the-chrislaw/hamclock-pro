@@ -349,3 +349,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-24 (UTC), run 69
 - Eclipse (D9, slice): `summarize_eclipse()` with a station now calls `eclipse_contacts()` for total/annular/hybrid eclipses and, when DE is inside the path and the Sun is up at maximum, fills a new `central` line ("~HH:MM:SS - HH:MM:SS Z (m s)") with label Totality or Annular; the Eclipse card shows it as an extra row only when 6 rows fit (dropped, not clipped). Test extended in `widget-eclipse-eclipse_regression` (centre of the 2024-04-08 path: label, 18:xx start, 4 m duration). Contact times are only good to tens of seconds (Meeus Sun), hence the "~". Eclipse ctests pass locally (build has pre-existing warnings in src/qt de_clock files, not mine); full ctest and ASan/UBSan left to CI. Not re-rendered, not on-device.
 - Not mine: #73 conflicting, left alone. #572 complete on the D side.
+
+## 2026-10-24 (UTC), run 70
+- Issue #597 (QA), item 1: the Dallas totality assertion passed when the line was empty; it now requires a non-empty `central` with label Totality. Added the missing annular case at the NASA greatest-eclipse point of 2023-10-14 (11.4N 83.1W): label Annular, line starts "~1", duration "(5 m"; actual output "~17:56:41 - 18:01:54Z (5 m 13 s)" against NASA's 18:00:41 maximum. Eclipse test passes (60 checks). Item 2 (misplaced comment in `sensors_read.hpp`) is area B's file, left to them. Test-only change; full ctest and ASan/UBSan left to CI, not on-device.
+- Not mine: #73 conflicting, left alone.
