@@ -169,6 +169,9 @@ int main(int argc, char** argv) {
         w.add(0, -60.0); w.add(120, -82.0); w.add(240, -70.0);
         check(w.trough() && *w.trough() == -82.0, "trough is the minimum");
     }
+    check(sensors::format_temp_range(18.24, 23.55) == "3 h: 18.2 to 23.6 °C", "temp range one decimal");
+    check(sensors::format_temp_range(std::nullopt, 20.0).isEmpty(), "missing low -> empty");
+    check(sensors::format_temp_range(25.0, 20.0).isEmpty(), "inverted range -> empty");
     check(sensors::format_free_bytes(12'400'000'000) == "12.4 GB free", "free GB one decimal");
     check(sensors::format_free_bytes(250'000'000'000) == "250 GB free", "free GB rounded when large");
     check(sensors::format_free_bytes(850'000'000) == "850 MB free", "free MB under 1 GB");

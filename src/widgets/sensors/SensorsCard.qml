@@ -17,6 +17,7 @@ Card {
             label: "Air temp"
             visible: root.widget && root.widget.envTemp !== ""
             value: visible ? root.widget.envTemp : ""
+            caption: visible && !root.compact ? root.widget.envTempRange : ""
         }
         Metric {
             label: "Pressure"
