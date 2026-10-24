@@ -377,3 +377,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 96beb5c (#584 Passes pane schedule, #585 Apple sky sensor fixes, #586 Passes starred satellites and Starred filter, plus my run 62 log #583, since 611d775). Build clean, 173/173 ctest pass. Rendered 800x480, 1024x600 and 1920x1080 in both themes, plus the new Passes pane with live rows at 1024x600 (fits, no scroll, columns readable). #582 was already closed by #585 (verified in the diff).
 - Opened: #587 ([A] 800x480 render shows the dashboard cropped, unstable between runs, not Passes-specific). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds and passes all tests; 1024x600 is clean. Remaining risk is the 800x480 fit (#587), data freshness on the real Pi (#150), and the Passes pane's tap targets (small text-only filter and star hit areas) on the real touchscreen.
+
+## 2026-10-24 (UTC) QA run 64
+- Last reviewed commit: 9b313fa (#589 800x480 screenshot fix and telnet offline guard, #590 astro ISS-class magnitude, #591 Apple pass reminders, plus my run 63 log #588, since 96beb5c). Build clean, 176/176 ctest pass. Rendered 800x480, 1024x600 and 1920x1080 in both themes: 800x480 now shows the full dashboard (the #587 crop is fixed and the issue is closed), the other sizes are clean.
+- Diffs reviewed: tests added, not weakened; telnet panes no longer open sockets under --offline/--fixtures; reminder planning clamps lead time and rejects past passes; no secrets or personal data.
+- Opened: none. Closed: none (#587 was already closed by #589). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and the Passes pane tap targets on the real touchscreen.
