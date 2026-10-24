@@ -394,3 +394,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Diffs reviewed: tests added, no network code, no secrets; one test assertion is vacuous and one header comment is misplaced.
 - Opened: #597 ([D] vacuous Dallas totality assertion, misplaced comment in sensors_read.hpp). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-24 (UTC) QA run 67
+- Last reviewed commit: f7aafc3 (#599 eclipse test fix for #597, plus my run 66 log #598, since 911ecd9). Build clean, 176/176 ctest pass. Test-only change; no QML or layout change, so screenshots were not repeated. The Dallas assertion now checks the real outcome and an annular case was added.
+- Opened: none. Closed: none (#597 stays open: the misplaced `format_temp_range` comment in sensors_read.hpp is not yet fixed; commented). Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds, passes all tests and is unchanged in behaviour since run 66. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
