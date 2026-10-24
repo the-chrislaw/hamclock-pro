@@ -160,3 +160,12 @@ void apply_offsets(EnvReading& reading, const QString& temp_offset_c, const QStr
     if (reading.pressure_hpa) if (const auto o = parse_offset(pressure_offset_hpa, 50)) *reading.pressure_hpa += *o;
 }
 }
+
+namespace hamclock::sensors {
+
+QString format_temp_range(std::optional<double> low, std::optional<double> high) {
+    if (!low || !high || *low > *high) return QString();
+    return QString("3 h: %1 to %2 °C").arg(*low, 0, 'f', 1).arg(*high, 0, 'f', 1);
+}
+
+} // namespace hamclock::sensors

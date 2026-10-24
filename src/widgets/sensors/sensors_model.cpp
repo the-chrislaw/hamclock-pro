@@ -32,6 +32,7 @@ void SensorsModel::refresh() {
         sensors::apply_offsets(env_, ini.value("sensors/temp_offset_c").toString(),
                                ini.value("sensors/pressure_offset_hpa").toString());
     }
+    if (env_.temp_c) envTempHistory_.add(now().toSecsSinceEpoch(), *env_.temp_c);
     if (env_.pressure_hpa) pressure_.add(now().toSecsSinceEpoch(), *env_.pressure_hpa);
     clock_ = clockReader_ ? clockReader_() : std::nullopt;
     if (temp_ || wifi_ || disk_ || env_.any() || clock_) setState("live", "Host sensors", now());

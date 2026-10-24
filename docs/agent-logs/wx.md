@@ -154,3 +154,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-21 (UTC, thirty-fifth run)
 - #73 (area A) conflicting: not mine. No open `qa` issues for E; remaining E backlog otherwise blocked (owner input, hardware, area G, radio safety review).
 - E6 slice: weather card air line adds "Tmrw H / L °C" (Open-Meteo `forecast_days=2`, same request, no new source). Same range/ordering validation as today's extremes; a bad tomorrow value is dropped without affecting today's. Offline parser/URL tests; full release suite passes (167/167), ASan/UBSan left to CI; no screenshot (no station in harness), not validated on-device.
+
+## 2026-10-24 (UTC, thirty-sixth run)
+- #595 (area D) CI running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
+- E11 slice: sensors card Air temp caption shows the 3 h low-to-high range ("3 h: 18.2 to 23.6 °C", full layout only) from in-memory history via the existing PeakHistory. Offline formatter tests; full release suite passes (176/176), ASan/UBSan left to CI; no screenshot (card needs a BME280/IIO sensor), not run on a Pi. Remaining E backlog is blocked on owner input, area G wiring, hardware or the radio safety review.
