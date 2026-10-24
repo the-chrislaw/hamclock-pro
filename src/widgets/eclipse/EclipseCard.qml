@@ -26,6 +26,8 @@ Card {
         Text { visible: root.rowsFit >= 4 && root.widget && root.widget.local !== ""; text: root.widget ? root.widget.local : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
         Text { visible: root.rowsFit >= 5 && root.widget && root.widget.contacts !== ""; text: "Partial"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text { visible: root.rowsFit >= 5 && root.widget && root.widget.contacts !== ""; text: root.widget ? root.widget.contacts : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
+        Text { visible: root.rowsFit >= 6 && root.widget && root.widget.central !== ""; text: root.widget ? root.widget.centralLabel : ""; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+        Text { visible: root.rowsFit >= 6 && root.widget && root.widget.central !== ""; text: root.widget ? root.widget.central : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
         Text { visible: root.rowsFit >= 4; text: "Path"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
         Text { visible: root.rowsFit >= 4; text: root.v(root.widget ? root.widget.detail : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
     }

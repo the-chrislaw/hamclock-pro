@@ -39,6 +39,16 @@ EclipseSummary summarize_eclipse(UtcSeconds now, double lat, double lon) {
         out.contacts = QString("%1%2 – %3%4Z").arg(loc.start_at_sunrise ? QStringLiteral("sunrise ") : QString()).arg(hm(loc.start_time))
                            .arg(loc.end_at_sunset ? QStringLiteral("sunset ") : QString()).arg(hm(loc.end_time));
     }
+    if (e->type != SolarEclipseType::Partial && loc.visibility != EclipseVisibility::None) {
+        const EclipseContacts c = eclipse_contacts(*e, lat, lon);
+        if (c.central && c.sun_up_at_maximum && c.second.value != 0 && c.third.value > c.second.value) {
+            const std::int64_t d = c.third.value - c.second.value;
+            const auto hms = [](UtcSeconds t) { return QDateTime::fromSecsSinceEpoch(t.value, QTimeZone::utc()).toString("HH:mm:ss"); };
+            // The Meeus Sun limits contact times to tens of seconds, so say so.
+            out.central = QString("~%1 – %2Z (%3 m %4 s)").arg(hms(c.second)).arg(hms(c.third)).arg(d / 60).arg(d % 60, 2, 10, QChar('0'));
+            out.centralLabel = e->type == SolarEclipseType::Annular ? "Annular" : "Totality";
+        }
+    }
     switch (loc.visibility) {
     case EclipseVisibility::Visible: out.visibility = "Visible at DE"; break;
     case EclipseVisibility::Marginal: out.visibility = "Borderline at DE"; break;

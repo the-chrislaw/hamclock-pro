@@ -345,3 +345,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-24 (UTC), run 68
 - Issue #572 (phone layouts, check only): rendered the Passes pane with live rows (CelesTrak fixture served as `gp.php`, DE FN20MA) at 390x844 dark and 844x390 light. The compact 3-column rows and the 12-row landscape list fit with no clipping in the pane; the only elided text is the shared card footer ("Computed offline from CelesTrak elem..."), which is area A's Card, so no QML change here. Docs row updated. Remaining for #572: nothing in area D; finder screens are A/F. Docs-only change; offscreen render, not on-device.
 - Not mine: #73 conflicting, left alone.
+
+## 2026-10-24 (UTC), run 69
+- Eclipse (D9, slice): `summarize_eclipse()` with a station now calls `eclipse_contacts()` for total/annular/hybrid eclipses and, when DE is inside the path and the Sun is up at maximum, fills a new `central` line ("~HH:MM:SS - HH:MM:SS Z (m s)") with label Totality or Annular; the Eclipse card shows it as an extra row only when 6 rows fit (dropped, not clipped). Test extended in `widget-eclipse-eclipse_regression` (centre of the 2024-04-08 path: label, 18:xx start, 4 m duration). Contact times are only good to tens of seconds (Meeus Sun), hence the "~". Eclipse ctests pass locally (build has pre-existing warnings in src/qt de_clock files, not mine); full ctest and ASan/UBSan left to CI. Not re-rendered, not on-device.
+- Not mine: #73 conflicting, left alone. #572 complete on the D side.
