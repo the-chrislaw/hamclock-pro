@@ -383,3 +383,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Diffs reviewed: tests added, not weakened; telnet panes no longer open sockets under --offline/--fixtures; reminder planning clamps lead time and rejects past passes; no secrets or personal data.
 - Opened: none. Closed: none (#587 was already closed by #589). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and the Passes pane tap targets on the real touchscreen.
+
+## 2026-10-24 (UTC) QA run 65
+- Last reviewed commit: 00c7660 (#593 astro Passes phone-size render note, plus my run 64 log #592, since 9b313fa). Docs and agent-log changes only (WIDGETS.md one line, astro.md); no source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 64 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and the Passes pane tap targets on the real touchscreen.
