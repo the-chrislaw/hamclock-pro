@@ -14,12 +14,52 @@ Item {
         spacing: Theme.gap
 
         Item { Layout.fillHeight: true }
+        Canvas {
+            id: dial
+            visible: appSettings.bigClockFace === 1
+            Layout.alignment: Qt.AlignHCenter
+            Layout.preferredHeight: visible ? Math.min(root.height * 0.42, root.width * 0.5) : 0
+            Layout.preferredWidth: Layout.preferredHeight
+            property var parts: station.utcTime.split(":")
+            property real hh: parts.length > 2 ? Number(parts[0]) : 0
+            property real mm: parts.length > 2 ? Number(parts[1]) : 0
+            property real ss: parts.length > 2 ? Number(parts[2]) : 0
+            onPartsChanged: requestPaint()
+            onWidthChanged: requestPaint()
+            Accessible.ignored: true
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.reset();
+                var r = Math.min(width, height) / 2 - 2;
+                var cx = width / 2, cy = height / 2;
+                ctx.strokeStyle = Theme.secondary;
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI); ctx.stroke();
+                for (var i = 0; i < 12; i++) {
+                    var a = i * Math.PI / 6;
+                    ctx.lineWidth = i % 3 === 0 ? 3 : 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + Math.sin(a) * r * 0.86, cy - Math.cos(a) * r * 0.86);
+                    ctx.lineTo(cx + Math.sin(a) * r * 0.97, cy - Math.cos(a) * r * 0.97);
+                    ctx.stroke();
+                }
+                function hand(angle, len, w, color) {
+                    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = "round";
+                    ctx.beginPath(); ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.sin(angle) * r * len, cy - Math.cos(angle) * r * len);
+                    ctx.stroke();
+                }
+                hand(((hh % 12) + mm / 60) * Math.PI / 6, 0.5, 5, Theme.ink);
+                hand((mm + ss / 60) * Math.PI / 30, 0.8, 3, Theme.ink);
+                hand(ss * Math.PI / 30, 0.88, 1.5, Theme.accent);
+            }
+        }
         Text {
             Layout.fillWidth: true
             horizontalAlignment: Text.AlignHCenter
             fontSizeMode: Text.Fit
             minimumPixelSize: Theme.fontValue
-            Layout.preferredHeight: root.height * 0.38
+            Layout.preferredHeight: root.height * (dial.visible ? 0.2 : 0.38)
             text: station.utcTime
             color: Theme.ink
             font.pixelSize: root.height
