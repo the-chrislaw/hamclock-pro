@@ -13,7 +13,9 @@
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
+#include <QEventLoop>
 #include <QGuiApplication>
+#include <QThread>
 #include <QCommandLineParser>
 #include <QDir>
 #include <QFile>
@@ -223,9 +225,24 @@ int main(int argc, char** argv) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         const auto parts = parser.value(size).split('x');
         if (!window || parts.size() != 2) return 2;
-        window->resize(parts[0].toInt(), parts[1].toInt());
+        // The window's resize event reaches the content item asynchronously on some
+        // platforms (offscreen), so a grab straight away can show the old 1024x600
+        // layout cropped to the new size (#587). Resize, then wait until the content
+        // item has followed before the screenshot timer starts.
+        const QSize wanted(parts[0].toInt(), parts[1].toInt());
+        window->resize(wanted);
+        for (int i = 0; i < 200 && window->contentItem()->size().toSize() != wanted; ++i) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+            if (window->contentItem()->size().toSize() != wanted) QThread::msleep(5);
+        }
+        if (window->contentItem()->size().toSize() != wanted) window->contentItem()->setSize(wanted);
         const auto out = parser.value(screenshot);
         QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation)] {
+            if (window->contentItem()->size().toSize() != window->size()) {
+                std::fprintf(stderr, "Content item is not window-sized: layout would be cropped\n");
+                QCoreApplication::exit(6);
+                return;
+            }
             const int truncated = count_truncated(window->contentItem());
             const bool saved = window->grabWindow().save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
