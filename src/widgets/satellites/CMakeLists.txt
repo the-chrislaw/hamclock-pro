@@ -44,3 +44,8 @@ if(BUILD_TESTING)
         COMMAND widget-satellites-finder_regression ${CMAKE_SOURCE_DIR}/tests/fixtures/sources/celestrak-amateur.tle)
     set_tests_properties(widget-satellites-finder_regression PROPERTIES TIMEOUT 30)
 endif()
+hamclock_add_widget(passes
+    SOURCES passes_model.cpp
+    QML PassesCard.qml
+    TESTS tests/passes_regression.cpp
+    TEST_DATA_DIR ../../../tests/fixtures/sources)
