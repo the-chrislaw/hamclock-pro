@@ -15,7 +15,7 @@ Card {
             visible: !root.compact
             spacing: Theme.gap
             Repeater {
-                model: [{k: "all", t: "All"}, {k: "amateur", t: "Amateur"}, {k: "visible", t: "Visible"}]
+                model: [{k: "all", t: "All"}, {k: "amateur", t: "Amateur"}, {k: "visible", t: "Visible"}, {k: "starred", t: "★ Starred"}]
                 delegate: Text {
                     required property var modelData
                     readonly property bool on: root.widget && root.widget.filter === modelData.k
@@ -44,7 +44,7 @@ Card {
                     readonly property int cols: root.compact ? 3 : 5
                     readonly property var row: root.widget.rows[Math.floor(index / cols)]
                     readonly property int col: index % cols
-                    text: col === 0 ? row.name
+                    text: col === 0 ? (row.starred ? "★ " : "") + row.name
                         : col === 1 ? (row.live ? "now" : row.day + " " + row.utc)
                         : col === 2 ? row.maxEl + "° " + row.from + "→" + row.to
                         : col === 3 ? row.local + " loc" : row.duration + (row.visible ? " ★" : "")
@@ -53,6 +53,11 @@ Card {
                     font.weight: col === 0 || row.live ? Font.DemiBold : Font.Normal
                     elide: Text.ElideRight
                     Layout.fillWidth: col === 2
+                    MouseArea {
+                        visible: col === 0
+                        anchors.fill: parent; anchors.margins: -Theme.gap * 0.4
+                        onClicked: root.widget.toggleStar(row.name)
+                    }
                 }
             }
         }
