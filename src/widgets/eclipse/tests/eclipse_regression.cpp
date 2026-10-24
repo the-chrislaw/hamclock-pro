@@ -83,6 +83,10 @@ int main(int argc, char** argv) {
     const EclipseSummary sd = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 32.78, -96.80);
     check(sd.visibility == "Visible at DE" && sd.local.startsWith("Max 18:") && sd.local.contains("Z"), "summary local line");
     check(sd.contacts.contains("17:") && sd.contacts.contains("19:"), "summary contacts line");
+    // Totality at the NASA greatest-eclipse point (25.29N 104.14W) is 268 s; Dallas is also in the path.
+    const EclipseSummary sg = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 25.29, -104.14);
+    check(sg.centralLabel == "Totality" && sg.central.startsWith("~18:") && sg.central.contains("(4 m"), "totality line at the centre of the path");
+    check(sd.central.isEmpty() || sd.centralLabel == "Totality", "Dallas totality label");
     const EclipseSummary sl = summarize_eclipse(UtcSeconds{utc(2024, 1, 1)}, 51.5, -0.13);
     check(sl.local.isEmpty(), "no local line when not visible");
 
