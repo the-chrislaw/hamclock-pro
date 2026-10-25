@@ -158,3 +158,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-24 (UTC, thirty-sixth run)
 - #595 (area D) CI running, #73 (area A) conflicting: not mine, left alone. No open `qa` issues for E.
 - E11 slice: sensors card Air temp caption shows the 3 h low-to-high range ("3 h: 18.2 to 23.6 °C", full layout only) from in-memory history via the existing PeakHistory. Offline formatter tests; full release suite passes (176/176), ASan/UBSan left to CI; no screenshot (card needs a BME280/IIO sensor), not run on a Pi. Remaining E backlog is blocked on owner input, area G wiring, hardware or the radio safety review.
+
+## 2026-10-25 (UTC, thirty-seventh run)
+- #73 (area A) conflicting: not mine. Fixed qa #597 item 2: moved the `format_temp_range` declaration above the PeakHistory comment in sensors_read.hpp (comment only). Item 1 is area D's (eclipse test).

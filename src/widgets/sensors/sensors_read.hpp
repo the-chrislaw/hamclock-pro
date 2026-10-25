@@ -57,11 +57,11 @@ private:
     std::vector<std::pair<qint64, double>> samples_;
 };
 
-// Highest value seen in the last 3 h (in-memory, one sample per minute); used for the
-// CPU temperature peak. Absent until a sample exists.
 // "3 h: 18.2 to 23.5 °C" from a window low and high; empty when either is missing or inverted.
 QString format_temp_range(std::optional<double> low, std::optional<double> high);
 
+// Highest value seen in the last 3 h (in-memory, one sample per minute); used for the
+// CPU temperature peak. Absent until a sample exists.
 class PeakHistory {
 public:
     void add(qint64 epoch_s, double value);
