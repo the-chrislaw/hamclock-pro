@@ -399,3 +399,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: f7aafc3 (#599 eclipse test fix for #597, plus my run 66 log #598, since 911ecd9). Build clean, 176/176 ctest pass. Test-only change; no QML or layout change, so screenshots were not repeated. The Dallas assertion now checks the real outcome and an annular case was added.
 - Opened: none. Closed: none (#597 stays open: the misplaced `format_temp_range` comment in sensors_read.hpp is not yet fixed; commented). Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds, passes all tests and is unchanged in behaviour since run 66. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-25 (UTC) QA run 68
+- Last reviewed commit: 0260a9b (#601 Big Clock analog face option, plus my run 67 log #600, since f7aafc3). Build clean, 176/176 ctest pass. Rendered the Big Clock page with the analog face at 800x480, 1024x600 and 1920x1080 in both themes (local-only QML tweak to open the page, reverted): dial, hands and digital lines fit with no clipping or scroll.
+- Diffs reviewed: setting validated and persisted with a restart test, no network code, no secrets; dial is UTC-only and repaints on time ticks (not on theme change, minor).
+- Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
