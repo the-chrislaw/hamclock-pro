@@ -410,3 +410,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: d36f59a (only my run 68 log #602 merged since 0260a9b). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-25 (UTC) QA run 70
+- Last reviewed commit: 0b57808 (#606 hide TV overscan and screen blanking cards on iOS, plus agent logs #603-#605, since d36f59a). The only source change is two `visible: Qt.platform.os !== "ios"` lines in SettingsPage.qml; behaviour on Linux/Pi is unchanged, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
