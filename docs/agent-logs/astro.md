@@ -353,3 +353,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-24 (UTC), run 70
 - Issue #597 (QA), item 1: the Dallas totality assertion passed when the line was empty; it now requires a non-empty `central` with label Totality. Added the missing annular case at the NASA greatest-eclipse point of 2023-10-14 (11.4N 83.1W): label Annular, line starts "~1", duration "(5 m"; actual output "~17:56:41 - 18:01:54Z (5 m 13 s)" against NASA's 18:00:41 maximum. Eclipse test passes (60 checks). Item 2 (misplaced comment in `sensors_read.hpp`) is area B's file, left to them. Test-only change; full ctest and ASan/UBSan left to CI, not on-device.
 - Not mine: #73 conflicting, left alone.
+
+## 2026-10-25 (UTC), run 71
+- Checked the backlog against the 1.0 release focus: no open `[D]` QA issue has work left for area D (#597 item 1 landed in run 70, item 2 is area B's file; #572 complete on the D side). Remaining D items are owner-blocked (#440 EME link, #475 ELP tables, #400 hams.at key, #314 SondeHub allowlist), belong to areas A/F (DX-panel placement, finder screens), or are open-ended eclipse-accuracy research that the release focus says not to start. No code change; nothing invented.
+- Not mine: #73 conflicting (dirty), left alone.
