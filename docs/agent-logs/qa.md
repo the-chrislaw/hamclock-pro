@@ -405,3 +405,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Diffs reviewed: setting validated and persisted with a restart test, no network code, no secrets; dial is UTC-only and repaints on time ticks (not on theme change, minor).
 - Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main builds, passes all tests and renders correctly at all three sizes. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-25 (UTC) QA run 69
+- Last reviewed commit: d36f59a (only my run 68 log #602 merged since 0260a9b). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
