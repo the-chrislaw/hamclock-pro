@@ -186,3 +186,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-24 (second hourly run)
 - #573 slice 4 (notifications, item 4): `planPassReminder` (`apple_passreminder`) turns a pass (AOS/LOS, max el) into a reminder N minutes before AOS (lead clamped 0-120, stable id per satellite + AOS so rescheduling replaces, nothing for past/over passes), tested on Linux (`pass-reminder-regression`). `apple_passreminder_ios.mm` hands it to `UNUserNotificationCenter` as a local notification and asks for permission only on first schedule; links UserNotifications on iOS. The .mm compiles only in the iOS jobs, so the first run may need a fix. Not done: starring a pass and calling this (areas A/D UI, #572/#574), camera AR, hiding Pi-only settings. #573 stays open. No on-device claims.
+
+## 2026-10-25 (hourly run)
+- No qa issues for area F beyond #513/#521/#573 (open); no open PR of mine; #73 is another area's (left alone). #573 item 6 slice: the TV overscan and Screen blanking cards in Settings are now hidden on iOS (`Qt.platform.os !== "ios"`, the same guard the Exit card already had); no GPIO settings exist in QML. Minimal change to area A's `SettingsPage.qml`, other platforms unaffected. Not done: camera AR, finder screen (area A, #574), starring a pass, #513 device check. #573 stays open. No on-device claims.
