@@ -415,3 +415,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 0b57808 (#606 hide TV overscan and screen blanking cards on iOS, plus agent logs #603-#605, since d36f59a). The only source change is two `visible: Qt.platform.os !== "ios"` lines in SettingsPage.qml; behaviour on Linux/Pi is unchanged, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #597, #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-25 (UTC) QA run 71
+- Last reviewed commit: 7ba1b92 (#608 move `format_temp_range` above the PeakHistory comment, plus my run 70 log #607 and wx log, since 0b57808). The only source change is a comment move in sensors_read.hpp; no behaviour change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: #597 (verified on main: #599 fixed the Dallas assertion and added an annular case, #608 fixed the comment). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
