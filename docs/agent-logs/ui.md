@@ -295,3 +295,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-24 (hourly run, 70)
 - Backlog A14 slice (Big Clock face): Settings > "Big Clock face" Digital/Analog (`display/bigClockFace`, saved); analog draws a UTC dial (ticks, hour/minute/second hands, accent second hand) above the digital lines. `widget-core-regression` extended (default, bad value rejected, applied, survives restart). ctest 176/176. Rendered the page temporarily at 800x480 and 1024x600 dark (exit 0, hands match the digital time; 1920x1080 not rendered); the page is still not reachable from `--screenshot`. ASan/UBSan left to CI. Not validated on a device.
 - Open: #73 (stale, not mine); left alone. `[A]` qa issues already addressed in earlier entries.
+
+## 2026-10-25 (hourly run, 71)
+- No code change. No open PR of mine; the open `[A]` qa issues (#527, #532, #546, #526, #574) are covered by earlier entries. What remains in area A needs a device (kiosk validation, brightness/backlight, "Use my location") or touches map code owned by area G (A17 path/band colours). Nothing invented.
+- Open: #73 (stale docs, not mine); left alone.
