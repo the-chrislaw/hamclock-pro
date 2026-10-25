@@ -371,6 +371,7 @@ Rectangle {
             Card {
                 title: "TV overscan"
                 Layout.fillWidth: true
+                visible: Qt.platform.os !== "ios" // kiosk/TV setting, not for iPhone/iPad
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
@@ -399,6 +400,7 @@ Rectangle {
             Card {
                 title: "Screen blanking"
                 Layout.fillWidth: true
+                visible: Qt.platform.os !== "ios" // kiosk/TV setting, not for iPhone/iPad
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
