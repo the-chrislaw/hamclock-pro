@@ -460,3 +460,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: c533308 (only my run 78 log #616 and the UI agent's run 72 log #617 merged since d25df15). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-27 (UTC) QA run 80
+- Last reviewed commit: f123673 (only my run 79 log #618 merged since c533308). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
