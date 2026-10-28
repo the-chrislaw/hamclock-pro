@@ -195,3 +195,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-28 (second hourly run)
 - #573 item 3 slice 2: `previewFov` (`apple_camerafov`) turns the camera format's long-side field of view and sensor size into the horizontal/vertical field of view of an aspect-fill preview (portrait rotates the sensor, the shorter axis is cropped), which `projectToScreen` needs. Platform-free, tested on Linux (`camera-fov-regression`). Not done: the AVFoundation camera layer that reads `videoFieldOfView`, the AR overlay QML (area A), starring a pass, #513 device check. #573 stays open. No on-device claims.
+
+## 2026-10-28 (third hourly run)
+- #573 item 3 slice 3: `nativeCameraLongFovDeg` (`apple_camera_ios.mm`) reads the rear wide camera's active-format `videoFieldOfView` and size for `previewFov`; built only with `HAMCLOCK_SKY_FINDER` (off by default, so App Review sees no new camera use), links AVFoundation/CoreMedia. Compiles only in the iOS jobs when the option is on, so it is not exercised by the default CI; Linux build unaffected. Not done: the camera preview layer, AR overlay QML (area A), starring a pass, #513 device check. #573 stays open. No on-device claims.
