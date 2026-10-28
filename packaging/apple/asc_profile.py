@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Create (or delete) an iOS App Store provisioning profile through the App Store
+"""Create (or delete) an iOS or tvOS App Store provisioning profile through the App Store
 Connect API, for CI archives signed manually with an imported Apple Distribution
 certificate. Needs `pip install pyjwt cryptography`. Secrets come from the
 environment and are never printed.
 
-  asc_profile.py create <bundle-id> <cert.pem> <profile-name> <out.mobileprovision>
+  asc_profile.py create <bundle-id> <cert.pem> <profile-name> <out.mobileprovision> [profile-type]
+      profile-type defaults to IOS_APP_STORE (TVOS_APP_STORE for Apple TV);
       prints the profile id and uuid as "ID UUID"
   asc_profile.py delete <profile-id>
 
@@ -54,7 +55,7 @@ def pem_to_der_b64(path):
     return re.sub(r"\s+", "", m.group(1))
 
 
-def create(bundle_id, cert_pem, name, out):
+def create(bundle_id, cert_pem, name, out, profile_type="IOS_APP_STORE"):
     want = pem_to_der_b64(cert_pem)
     certs = call("GET", "/certificates?filter[certificateType]=IOS_DISTRIBUTION,DISTRIBUTION&limit=200")["data"]
     cert = next((c for c in certs if c["attributes"].get("certificateContent") == want), None)
@@ -66,7 +67,7 @@ def create(bundle_id, cert_pem, name, out):
         sys.exit("Bundle ID %s is not registered for this team" % bundle_id)
     prof = call("POST", "/profiles", {"data": {
         "type": "profiles",
-        "attributes": {"name": name, "profileType": "IOS_APP_STORE"},
+        "attributes": {"name": name, "profileType": profile_type},
         "relationships": {
             "bundleId": {"data": {"type": "bundleIds", "id": bundle["id"]}},
             "certificates": {"data": [{"type": "certificates", "id": cert["id"]}]}}}})["data"]
@@ -76,7 +77,7 @@ def create(bundle_id, cert_pem, name, out):
 
 
 def main(argv):
-    if len(argv) == 6 and argv[1] == "create":
+    if len(argv) in (6, 7) and argv[1] == "create":
         create(*argv[2:])
     elif len(argv) == 3 and argv[1] == "delete":
         call("DELETE", "/profiles/" + argv[2])
