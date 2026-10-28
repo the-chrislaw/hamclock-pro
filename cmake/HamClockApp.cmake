@@ -262,6 +262,15 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
+    # Band conditions with SWPC fixture data in the phone pane: all eight bands (80m..10m) fit in portrait.
+    foreach(size 390x844 440x956)
+        add_test(NAME qml-app-truncation-bands-${size} COMMAND hamclock-pro --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-bands-${size}
+            --fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/bands/tests/fixtures
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
+            --pane 1=bands --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-bands-${size}.png --size ${size})
+        set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
+    endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # Widget panes only report truncation (widget layouts belong to other areas); the app smokes above enforce it.
