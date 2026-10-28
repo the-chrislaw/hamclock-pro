@@ -505,3 +505,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 00eb867 (only my run 87 log #630 merged since 10aea08). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 89
+- Last reviewed commit: 9f704d0 (only my run 88 log #631 merged since 00eb867). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
