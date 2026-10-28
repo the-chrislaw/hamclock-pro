@@ -45,7 +45,9 @@ Rectangle {
                     font.weight: Font.DemiBold
                     Layout.fillWidth: true
                 }
-                AppButton { text: "Done"; primary: true; onClicked: page.closeRequested() }
+                // Done keeps what was typed (iOS convention); it stays open only to show an error.
+                AppButton { text: "Done"; primary: true
+                            onClicked: { if (stationCard.save()) page.closeRequested(); else flick.contentY = 0 } }
             }
 
             Card {
@@ -130,27 +132,48 @@ Rectangle {
                         Layout.fillWidth: true
                         spacing: Theme.gap
                         TimeZonePicker { id: dxZone; label: "DX time zone (empty = automatic)"; Layout.fillWidth: true
-                                         zoneId: appSettings.dxZoneOverride }
-                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveDxZone(dxZone.zoneId) }
-                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom
-                                    onClicked: { dxZone.zoneId = ""; appSettings.saveDxZone("") } }
+                                         Layout.preferredWidth: 0; zoneId: appSettings.dxZoneOverride }
+                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom; onClicked: dxZone.zoneId = "" }
                     }
                     Text { id: zoneHint; visible: text.length > 0; color: Theme.secondary
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                    RowLayout {
-                        Text { id: stationError; color: Theme.bad; font.pixelSize: Theme.fontCaption
-                               wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton {
-                            text: "Save station"
-                            primary: true
-                            onClicked: {
-                                const values = [locationTools.parseCoordinate(deLat.text, true), locationTools.parseCoordinate(deLon.text, false),
-                                                locationTools.parseCoordinate(dxLat.text, true), locationTools.parseCoordinate(dxLon.text, false)]
-                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees or degrees:minutes:seconds (N/S, E/W)."; return }
-                                stationError.text = appSettings.saveStation(callsign.text, values[0], values[1],
-                                                                            values[2], values[3], zone.zoneId)
-                            }
+                    Text { id: stationError; visible: text.length > 0; color: Theme.bad; font.pixelSize: Theme.fontCaption
+                           wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    AppButton { text: "Save"; primary: true; Layout.alignment: Qt.AlignRight
+                                onClicked: if (stationCard.save()) stationError.text = "" }
+
+                    function coordinate(field, latitude) { return locationTools.parseCoordinate(field.text, latitude) }
+                    // Saves the station and DX zone when anything changed. DX is optional:
+                    // left empty it keeps the current target. Returns false with a message
+                    // in stationError when the input can't be saved.
+                    function save() {
+                        const typed = callsign.text.trim().length || deLat.text.trim().length || deLon.text.trim().length
+                        if (!appSettings.configured && !typed) return true
+                        const de = [coordinate(deLat, true), coordinate(deLon, false)]
+                        if (de.some(isNaN)) {
+                            stationError.text = "Add your home location: press Find, type a grid square, or enter latitude and longitude."
+                            return false
                         }
+                        const dxTyped = dxLat.text.trim().length || dxLon.text.trim().length
+                        const dx = dxTyped ? [coordinate(dxLat, true), coordinate(dxLon, false)]
+                                           : [appSettings.dxLatitude, appSettings.dxLongitude]
+                        if (dx.some(isNaN)) {
+                            stationError.text = "For DX, enter both latitude and longitude, or leave both empty."
+                            return false
+                        }
+                        const changed = !appSettings.configured || callsign.text !== appSettings.callsign
+                                        || de[0] !== appSettings.deLatitude || de[1] !== appSettings.deLongitude
+                                        || dx[0] !== appSettings.dxLatitude || dx[1] !== appSettings.dxLongitude
+                                        || zone.zoneId !== appSettings.deZone
+                        if (changed) {
+                            stationError.text = appSettings.saveStation(callsign.text, de[0], de[1], dx[0], dx[1], zone.zoneId)
+                            if (stationError.text.length) return false
+                        }
+                        if (dxZone.zoneId !== appSettings.dxZoneOverride) {
+                            stationError.text = appSettings.saveDxZone(dxZone.zoneId)
+                            if (stationError.text.length) return false
+                        }
+                        return true
                     }
                 }
             }
@@ -554,21 +577,24 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
-                    RowLayout {
+                    // Five controls: one row on wide screens, two columns on a phone.
+                    GridLayout {
                         Layout.fillWidth: true
-                        spacing: Theme.gap
+                        columns: width < 600 * Theme.scale ? 2 : 5
+                        columnSpacing: Theme.gap
+                        rowSpacing: Theme.gap * 0.8
                         FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
-                                    text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
-                                    onClicked: lan = !lan; Layout.preferredWidth: 2 }
+                                    text: lan ? "UDP from LAN: on" : "UDP from this device only"; primary: lan
+                                    onClicked: lan = !lan; Layout.preferredWidth: 2; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
                         FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup; Layout.preferredWidth: 1 }
                         AppButton { id: udpMe; property bool me: appSettings.udpSpotByMe; checkable: false
                                     text: me ? "UDP spots: by me" : "UDP spots: all"; primary: me
-                                    onClicked: me = !me; Layout.preferredWidth: 1 }
+                                    onClicked: me = !me; Layout.preferredWidth: 1; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
                         AppButton { id: udpSetsDx; property bool on: appSettings.udpSetsDx; checkable: false
                                     text: on ? "UDP sets DX: on (10 min)" : "UDP sets DX: off"; primary: on
-                                    onClicked: on = !on; Layout.preferredWidth: 1 }
+                                    onClicked: on = !on; Layout.preferredWidth: 1; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
                     }
                     RowLayout {
                         Layout.fillWidth: true

@@ -13,8 +13,12 @@ ColumnLayout {
     property alias field: field
     spacing: 4 * Theme.scale
     Layout.fillWidth: true
+    // Share the row's width instead of asking for the caption's full length, so a
+    // long label wraps rather than pushing the field off a phone screen.
+    Layout.preferredWidth: 0
 
-    Text { id: caption; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+    Text { id: caption; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+           wrapMode: Text.WordWrap; Layout.fillWidth: true }
     TextField {
         id: field
         Layout.fillWidth: true
