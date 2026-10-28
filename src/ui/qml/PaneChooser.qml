@@ -42,7 +42,8 @@ Popup {
     }
     onOpened: {
         const current = appSettings.panes[slot]
-        category = current in categoryOf ? categoryOf[current] : 0
+        // A pane saved by another device may sit in a tab this device hides; show All then.
+        category = current in categoryOf && hasPanes(categoryOf[current]) ? categoryOf[current] : 0
         list.currentIndex = 0
         for (let i = 0; i < widgetRegistry.count; ++i) {
             const row = list.itemAtIndex(i)

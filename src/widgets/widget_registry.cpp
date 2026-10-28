@@ -12,7 +12,7 @@ bool widget_available(const QString& id, bool ios) {
 
 WidgetRegistry::WidgetRegistry(QObject* parent) : QAbstractListModel(parent) {}
 
-void WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
+bool WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
     // The registry owns the model even when it rejects it, so callers never leak.
     if (!model || info.id.isEmpty() || !info.card.isValid()) {
         delete model;
@@ -29,7 +29,7 @@ void WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
 #endif
     model->setParent(this);
     // Kept alive (registration code may still use it) but never listed or looked up.
-    if (!widget_available(info.id, kIos)) return;
+    if (!widget_available(info.id, kIos)) return false;
     const auto position = std::upper_bound(entries_.begin(), entries_.end(), info.order,
         [](int order, const Entry& entry) { return order < entry.info.order; });
     const int row = static_cast<int>(position - entries_.begin());
@@ -37,6 +37,7 @@ void WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
     entries_.insert(position, Entry{std::move(info), model});
     endInsertRows();
     emit countChanged();
+    return true;
 }
 
 int WidgetRegistry::rowCount(const QModelIndex& parent) const {

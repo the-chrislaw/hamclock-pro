@@ -23,6 +23,42 @@ Rectangle {
         page.closeRequested()
     }
 
+    // Called each time Settings opens: every field shows what is saved again, so
+    // closing without Done (Escape) discards typing and a restored configuration
+    // is not overwritten by fields typed in before it.
+    function reload() {
+        const bound = [
+            [callsign, () => appSettings.callsign], [pskMatch, () => appSettings.pskMatch],
+            [clusterHost, () => appSettings.clusterHost], [clusterPort, () => appSettings.clusterPort],
+            [clusterSsid, () => appSettings.clusterSsid], [clusterCmds, () => appSettings.clusterCommandsText.split("\n").join("; ")],
+            [udpPort, () => appSettings.udpSpotPort], [udpGroup, () => appSettings.udpSpotGroup],
+            [aprsHost, () => appSettings.aprsHost], [aprsPort, () => appSettings.aprsPort], [aprsRadius, () => appSettings.aprsRadiusKm],
+            [meshHost, () => appSettings.meshHost], [meshPort, () => appSettings.meshPort], [pskMax, () => appSettings.pskMaxKm],
+            [adifPath, () => appSettings.adifPath], [otaProgram, () => appSettings.otaProgram], [otaBand, () => appSettings.otaBand],
+            [otaMode, () => appSettings.otaMode], [otaSort, () => appSettings.otaSort], [otaAge, () => appSettings.otaMaxAgeMin],
+            [watchList, () => appSettings.watchListText], [hamAlertUser, () => appSettings.hamAlertUser],
+            [lookupUser, () => appSettings.lookupUser], [bannerTitle, () => appSettings.bannerTitle]
+        ]
+        for (const [field, value] of bound) {
+            field.text = Qt.binding(value)
+            field.edited = false
+        }
+        for (const [field, value] of [[deLat, () => appSettings.deLatitude], [deLon, () => appSettings.deLongitude],
+                                      [dxLat, () => appSettings.dxLatitude], [dxLon, () => appSettings.dxLongitude]])
+            field.text = Qt.binding(() => appSettings.configured ? value() : "")
+        zone.zoneId = Qt.binding(() => appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone())
+        dxZone.zoneId = Qt.binding(() => appSettings.dxZoneOverride)
+        for (const secret of [hamAlertPassword, hamsatKey, lookupPassword, place, deGrid]) secret.text = ""
+        placeStatus.text = ""
+        zoneHint.text = ""
+        udpLan.lan = Qt.binding(() => appSettings.udpSpotLan)
+        udpMe.me = Qt.binding(() => appSettings.udpSpotByMe)
+        udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
+        accountCard.service = Qt.binding(() => appSettings.lookupService)
+        for (const message of [stationError, clusterError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
+        flick.contentY = 0
+    }
+
     function num(text) { const v = Number(text.trim()); return text.trim().length && isFinite(v) ? v : NaN }
 
     // Title bar stays put while the sections scroll, so Done is always in reach.
@@ -639,10 +675,14 @@ Rectangle {
                             () => appSettings.saveUdpScope(udpMe.me),
                             () => appSettings.saveUdpSetsDx(udpSetsDx.on)
                         ]
+                        // "Saved; ..." is a warning (something was trimmed), not a failure.
+                        let warning = ""
                         for (const step of steps) {
-                            clusterError.text = step()
-                            if (clusterError.text.length) return false
+                            const message = step()
+                            if (message.startsWith("Saved")) { warning = message; continue }
+                            if (message.length) { clusterError.text = message; return false }
                         }
+                        clusterError.text = warning
                         fields.forEach(f => f.edited = false)
                         return true
                     }

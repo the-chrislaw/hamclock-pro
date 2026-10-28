@@ -333,7 +333,7 @@ ApplicationWindow {
         z: 10
         // Swallow taps and wheel events so they never reach the page underneath.
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
-        onVisibleChanged: if (visible) settingsPage.forceActiveFocus()
+        onVisibleChanged: if (visible) { settingsPage.reload(); settingsPage.forceActiveFocus() }
         SettingsPage { id: settingsPage; anchors.fill: parent; onCloseRequested: settingsLayer.visible = false }
     }
 }

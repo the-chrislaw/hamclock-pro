@@ -179,13 +179,24 @@ int main(int argc, char** argv) {
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
     }
     // With a secret store (the Keychain on Apple devices) passwords and keys never
-    // reach credentials.ini, and ones an older version wrote there are moved over.
+    // reach credentials.ini, old ones are moved over, and each settings directory
+    // keeps its own secrets.
     {
         struct MemoryStore final : CredentialStore {
             std::shared_ptr<QHash<QString, QString>> values = std::make_shared<QHash<QString, QString>>();
-            bool set(const QString& k, const QString& v) override { values->insert(k, v); return true; }
+            bool refuse = false;
+            bool set(const QString& k, const QString& v) override { if (refuse) return false; values->insert(k, v); return true; }
             QString get(const QString& k) const override { return values->value(k); }
-            bool remove(const QString& k) override { values->remove(k); return true; }
+            bool remove(const QString& k) override { if (refuse) return false; values->remove(k); return true; }
+        };
+        const auto stored = [](const QHash<QString, QString>& values, const QString& prefix) {
+            for (auto it = values.begin(); it != values.end(); ++it)
+                if (it.key().startsWith(prefix + "@")) return it.value();
+            return QString();
+        };
+        const auto ini_text = [](const QTemporaryDir& d) {
+            QFile f(d.filePath("credentials.ini"));
+            return f.open(QIODevice::ReadOnly) ? QString::fromUtf8(f.readAll()) : QString();
         };
         QTemporaryDir secret_dir;
         {
@@ -196,13 +207,35 @@ int main(int argc, char** argv) {
         const auto values = store->values;
         AppSettings settings({}, secret_dir.path());
         settings.setSecretStore(std::move(store));
-        const auto ini_text = [&] { QFile f(secret_dir.filePath("credentials.ini")); f.open(QIODevice::ReadOnly); return QString::fromUtf8(f.readAll()); };
-        check(values->value("hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
-        check(!ini_text().contains("alertpw"), "moved password removed from credentials.ini");
+        check(stored(*values, "hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
+        check(!ini_text(secret_dir).contains("alertpw"), "moved password removed from credentials.ini");
         check(settings.saveAccount("hamqth", "N0CALL", "lookpw").isEmpty() && settings.saveHamsatKey("key123").isEmpty(), "accounts saved with a secret store");
-        check(values->value("lookup.password") == "lookpw" && values->value("hamsat.key") == "key123", "secrets in the store");
-        check(!ini_text().contains("lookpw") && !ini_text().contains("key123") && ini_text().contains("N0CALL"), "only user names in the file");
-        check(settings.saveHamsatKey("").isEmpty() && !values->contains("hamsat.key"), "empty key removes it from the store");
+        check(stored(*values, "lookup.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
+        check(!ini_text(secret_dir).contains("lookpw") && !ini_text(secret_dir).contains("key123") && ini_text(secret_dir).contains("N0CALL"),
+              "only user names in the file");
+        check(settings.saveHamsatKey("").isEmpty() && stored(*values, "hamsat.key").isEmpty(), "empty key removes it from the store");
+
+        // A second settings directory sharing the same store sees none of it.
+        QTemporaryDir other_dir;
+        auto shared = std::make_unique<MemoryStore>();
+        shared->values = values;
+        AppSettings other({}, other_dir.path());
+        other.setSecretStore(std::move(shared));
+        check(!other.hasHamAlertPassword() && !other.hasLookupPassword(), "another profile does not see these secrets");
+        check(other.saveHamAlert("", "").isEmpty() && stored(*values, "hamalert.password") == "alertpw", "clearing another profile keeps these secrets");
+
+        // A store that refuses leaves the file alone: nothing is lost.
+        QTemporaryDir stuck_dir;
+        {
+            AppSettings old_version({}, stuck_dir.path());
+            old_version.saveHamAlert("N0CALL", "keepme");
+        }
+        auto refusing = std::make_unique<MemoryStore>();
+        refusing->refuse = true;
+        AppSettings stuck({}, stuck_dir.path());
+        stuck.setSecretStore(std::move(refusing));
+        check(stuck.hamAlertPassword() == "keepme" && ini_text(stuck_dir).contains("keepme"), "unmigrated password still read from the file");
+        check(!stuck.saveHamsatKey("k").isEmpty() && ini_text(stuck_dir).contains("keepme"), "failed store write keeps the file intact");
     }
     {
         QTemporaryDir ov_dir;

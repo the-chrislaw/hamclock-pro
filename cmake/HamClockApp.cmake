@@ -260,7 +260,7 @@ if(BUILD_TESTING)
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
     # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary,
     # TV, phones and the adaptive pane grid on desktops (MacBook window, 1440p two rows, Retina full resolution).
-    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 820x1180 1180x820 1512x982 2560x1440 3024x1964)
+    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 600x1024 820x1180 1180x820 1512x982 2560x1440 3024x1964)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30

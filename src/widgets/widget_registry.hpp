@@ -37,8 +37,10 @@ public:
     enum Role { IdRole = Qt::UserRole + 1, TitleRole, CardRole, AreaRole, ModelRole };
     explicit WidgetRegistry(QObject* parent = nullptr);
 
-    // Takes ownership of model (reparented to the registry).
-    void add(WidgetInfo info, WidgetModel* model);
+    // Takes ownership of model (reparented to the registry). Returns false when the
+    // widget is not offered on this platform (see widget_available); the model is
+    // kept alive but never listed, so callers should not start it.
+    bool add(WidgetInfo info, WidgetModel* model);
     int rowCount(const QModelIndex& parent = {}) const override;
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;

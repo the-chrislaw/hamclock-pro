@@ -282,6 +282,7 @@ signals:
 private:
     void loadOptions();
     std::unique_ptr<CredentialStore> secrets_;
+    QString secretKey(const QString& store_key) const;
     void loadAccounts();
     QString writeAccounts();
 

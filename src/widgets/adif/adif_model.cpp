@@ -139,8 +139,8 @@ QVariantList AdifModel::recent() const {
 
 void register_widget_adif(WidgetRegistry& registry, const WidgetContext& context) {
     auto* model = new AdifModel(context);
-    registry.add({"adif", "Log", QUrl("qrc:/widgets/adif/AdifCard.qml"), "side", 140}, model);
-    QTimer::singleShot(0, model, &AdifModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"adif", "Log", QUrl("qrc:/widgets/adif/AdifCard.qml"), "side", 140}, model)) QTimer::singleShot(0, model, &AdifModel::start);
 }
 
 } // namespace hamclock

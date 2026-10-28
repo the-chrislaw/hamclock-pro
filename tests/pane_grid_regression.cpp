@@ -40,6 +40,8 @@ int main() {
 
     // iPad portrait: a tall, narrow area gets two wider columns and a second row.
     check(is(fit_pane_grid(input(600, 1100, 0.55)), 2, 2), "tall narrow area gets two columns");
+    // A tall area with room for three still gets three: the rule only lowers the floor.
+    check(is(fit_pane_grid(input(900, 1400, 0.55)), 3, 2), "tall area with room keeps three columns");
     // ...while a wide area just as narrow (Pi 800x480 pane area) keeps three.
     check(is(fit_pane_grid({600, 450, 5, 250, 190, 0.55, 12}), 3, 1), "wide narrow area keeps three");
 
