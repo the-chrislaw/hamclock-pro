@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
     QGuiApplication::setApplicationName("hamclock-pro");
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QGuiApplication::setApplicationVersion("0.1.0");
+    QGuiApplication::setApplicationVersion("1.0.0");
     hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
 
     QCommandLineParser parser;
