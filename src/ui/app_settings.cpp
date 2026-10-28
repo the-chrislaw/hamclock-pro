@@ -27,6 +27,10 @@ QString default_config_dir() {
     auto dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     return dir.isEmpty() ? QDir::homePath() + "/.config/hamclock-pro" : dir;
 }
+bool valid_orientation_lock(const QString& lock) {
+    return lock == "auto" || lock == "portrait" || lock == "landscape";
+}
+
 // Share of the pane-and-map height the map keeps at each map size; -1 for unknown names.
 double map_share(const QString& size) {
     if (size == "large") return 0.55;
@@ -162,6 +166,8 @@ void AppSettings::loadOptions() {
     if (accent_style_ < 0 || accent_style_ > 4) accent_style_ = 0;
     map_size_ = ini.value("display/map_size", "large").toString();
     if (map_share(map_size_) < 0) map_size_ = "large";
+    orientation_lock_ = ini.value("display/orientation_lock", "auto").toString();
+    if (!valid_orientation_lock(orientation_lock_)) orientation_lock_ = "auto";
     big_clock_face_ = ini.value("display/bigClockFace", 0).toInt();
     if (big_clock_face_ < 0 || big_clock_face_ > 1) big_clock_face_ = 0;
     text_scale_ = ini.value("display/text_scale", 100).toInt();
@@ -851,6 +857,17 @@ QString AppSettings::saveMapSize(const QString& size) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the map size.";
     map_size_ = size;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOrientationLock(const QString& lock) {
+    if (!valid_orientation_lock(lock)) return "Screen rotation must be auto, portrait or landscape.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/orientation_lock", lock);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the screen rotation.";
+    orientation_lock_ = lock;
     emit optionsChanged();
     return {};
 }

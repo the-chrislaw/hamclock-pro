@@ -35,9 +35,9 @@ ApplicationWindow {
 
     Binding { target: Theme; property: "dense"; value: (window.width <= 1280 && window.height <= 720) || window.phone }
 
-    // Phone portrait (A0d): one column, station strip over one pane over the map.
+    // Phone portrait (A0d): one column, compact station strip over two panes over the map.
     readonly property bool phone: width < 600 && height > width
-    // Phone landscape (A0d): map left, one pane right of it; 800x480 Pi panels keep the 3-pane grid.
+    // Phone landscape (A0d): station, map, then two stacked panes; 800x480 Pi panels keep the 3-pane grid.
     readonly property bool phoneWide: height < 440 && width > height
     Binding { target: Theme; property: "phone"; value: window.phone }
 
@@ -92,10 +92,11 @@ ApplicationWindow {
         StationCard {
             id: stationCard
             wide: window.phone
+            compact: window.phone || window.phoneWide
             Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
-            Layout.preferredHeight: window.phone ? page.height * 0.36 : -1
+            Layout.preferredHeight: window.phone ? Math.min(implicitHeight, page.height * 0.3) : -1
             onSetupRequested: settingsLayer.visible = true
             onSettingsRequested: settingsLayer.visible = true
             onTimersRequested: timersLayer.visible = true
@@ -114,14 +115,14 @@ ApplicationWindow {
                 id: paneRow
                 readonly property real minPaneWidth: (Theme.dense ? 250 : 260) * Theme.scale
                 readonly property real minPaneHeight: (Theme.dense ? 190 : 220) * Theme.scale
-                // Phones show one swipeable pane; mapSize is read so a Map size change re-fits.
-                readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 1 })
+                // Phones show two stacked swipeable panes; mapSize is read so a Map size change re-fits.
+                readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 2 })
                     : (appSettings.mapSize, appSettings.paneGrid(paneAndMap.width, page.height, Theme.gap, minPaneWidth, minPaneHeight))
                 columns: grid.columns
                 Layout.fillWidth: !window.phoneWide
                 Layout.fillHeight: window.phoneWide
-                Layout.preferredWidth: window.phoneWide ? page.width * 0.3 : -1
-                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22
+                Layout.preferredWidth: window.phoneWide ? page.width * 0.32 : -1
+                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.42
                     : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight

@@ -12,6 +12,7 @@
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
+#include "../platform/apple_orientation.hpp"
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include <QEventLoop>
@@ -222,6 +223,14 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+    // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
+    QString orientation_lock = settings.orientationLock();
+    hamclock::applyOrientationLock(orientation_lock);
+    QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &app, [&settings, &orientation_lock] {
+        if (settings.orientationLock() == orientation_lock) return;
+        orientation_lock = settings.orientationLock();
+        hamclock::applyOrientationLock(orientation_lock);
+    });
 
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());

@@ -189,6 +189,10 @@ int main(int argc, char** argv) {
         const auto small_map = ov2.paneGrid(845, 590, 5, 250, 190);
         check(small_map["columns"].toInt() == 3 && small_map["rows"].toInt() == 2, "small map: two rows on a 7-inch panel");
         { AppSettings ov3({}, ov_dir.path()); check(ov3.mapSize() == "small", "map size survives restart"); }
+        check(ov2.orientationLock() == "auto", "rotation follows the device by default");
+        check(!ov2.saveOrientationLock("sideways").isEmpty() && ov2.orientationLock() == "auto", "bad rotation lock rejected");
+        check(ov2.saveOrientationLock("landscape").isEmpty() && ov2.orientationLock() == "landscape", "rotation lock applied");
+        { AppSettings ov4({}, ov_dir.path()); check(ov4.orientationLock() == "landscape", "rotation lock survives restart"); }
         check(ov2.accentStyle() == 0, "accent blue by default");
         check(!ov2.saveAccentStyle(5).isEmpty() && ov2.accentStyle() == 0, "bad accent rejected");
         check(ov2.saveAccentStyle(3).isEmpty() && ov2.accentStyle() == 3, "accent applied");
