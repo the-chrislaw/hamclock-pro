@@ -56,6 +56,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int textScalePercent READ textScalePercent NOTIFY optionsChanged)
     Q_PROPERTY(int accentStyle READ accentStyle NOTIFY optionsChanged)
     Q_PROPERTY(QString mapSize READ mapSize NOTIFY optionsChanged)
+    Q_PROPERTY(QString orientationLock READ orientationLock NOTIFY optionsChanged)
     Q_PROPERTY(int bigClockFace READ bigClockFace NOTIFY optionsChanged)
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
@@ -113,6 +114,8 @@ public:
     int accentStyle() const { return accent_style_; }
     // "large" (default), "medium" or "small": how much height the map keeps; a smaller map leaves room for a second row of panes.
     QString mapSize() const { return map_size_; }
+    // "auto" (follow the device), "portrait" or "landscape". Applied on iPhone/iPad only.
+    QString orientationLock() const { return orientation_lock_; }
     int bigClockFace() const { return big_clock_face_; }
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
@@ -218,6 +221,7 @@ public:
     Q_INVOKABLE QString saveTextScale(int percent);
     Q_INVOKABLE QString saveAccentStyle(int style);
     Q_INVOKABLE QString saveMapSize(const QString& size);
+    Q_INVOKABLE QString saveOrientationLock(const QString& lock);
     // Pane columns and rows that fit the pane area at the current map size, and the area's height: {columns, rows, height}.
     Q_INVOKABLE QVariantMap paneGrid(double width, double height, double gap, double min_pane_width, double min_pane_height) const;
     /// Big Clock page face: 0 digital, 1 analog dial above the digital lines.
@@ -310,6 +314,7 @@ private:
     int text_scale_ = 100;
     int accent_style_ = 0;
     QString map_size_ = "large";
+    QString orientation_lock_ = "auto";
     int big_clock_face_ = 0;
     int blank_idle_ = 0;
     int blank_off_ = -1;

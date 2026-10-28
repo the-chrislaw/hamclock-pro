@@ -335,8 +335,37 @@ Rectangle {
             }
 
             Card {
+                title: "Screen rotation"
+                visible: Qt.platform.os === "ios"   // the Pi, Mac and TV don't rotate
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Keep HamClock Pro upright or sideways however you hold the device. The Control Center rotation lock still applies."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [{ id: "auto", label: "Auto" }, { id: "portrait", label: "Portrait" }, { id: "landscape", label: "Landscape" }]
+                            AppButton {
+                                text: modelData.label
+                                primary: appSettings.orientationLock === modelData.id
+                                onClicked: appSettings.saveOrientationLock(modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "Map size"
-                visible: !Theme.phone   // phones show one swipeable pane
+                visible: !Theme.phone   // phones always show two stacked panes
                 Layout.fillWidth: true
                 ColumnLayout {
                     width: parent.width

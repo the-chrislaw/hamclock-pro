@@ -9,6 +9,7 @@ add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
     src/platform/apple_lifecycle.cpp
     src/platform/apple_safearea.cpp
+    src/platform/apple_orientation.cpp
     src/platform/apple_textentry.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
@@ -29,7 +30,7 @@ set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 # so App Review doesn't ask about camera/location use it can't find.
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
