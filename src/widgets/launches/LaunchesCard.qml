@@ -27,7 +27,8 @@ Card {
                 spacing: Theme.gap
                 Text { text: modelData.when; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
                        Layout.preferredWidth: Theme.fontBody * 7 }
-                Text { text: modelData.name + (modelData.ham ? "  ★" : ""); color: Theme.ink; font.pixelSize: Theme.fontBody
+                // Mission names run to any length; the row ends them with "…".
+                Text { objectName: "elideOk"; text: modelData.name + (modelData.ham ? "  ★" : ""); color: Theme.ink; font.pixelSize: Theme.fontBody
                        elide: Text.ElideRight; Layout.fillWidth: true }
             }
         }

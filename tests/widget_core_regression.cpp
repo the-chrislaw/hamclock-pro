@@ -181,6 +181,14 @@ int main(int argc, char** argv) {
         check(!ov2.saveTextScale(120).isEmpty() && ov2.textScalePercent() == 100, "bad text size rejected");
         check(ov2.saveTextScale(130).isEmpty() && ov2.textScalePercent() == 130, "text size applied");
         { AppSettings ov3({}, ov_dir.path()); check(ov3.textScalePercent() == 130, "text size survives restart"); }
+        check(ov2.mapSize() == "large", "map large by default");
+        check(!ov2.saveMapSize("huge").isEmpty() && ov2.mapSize() == "large", "bad map size rejected");
+        const auto big_map = ov2.paneGrid(845, 590, 5, 250, 190);
+        check(big_map["columns"].toInt() == 3 && big_map["rows"].toInt() == 1, "large map: one row of three on a 7-inch panel");
+        check(ov2.saveMapSize("small").isEmpty() && ov2.mapSize() == "small", "map size applied");
+        const auto small_map = ov2.paneGrid(845, 590, 5, 250, 190);
+        check(small_map["columns"].toInt() == 3 && small_map["rows"].toInt() == 2, "small map: two rows on a 7-inch panel");
+        { AppSettings ov3({}, ov_dir.path()); check(ov3.mapSize() == "small", "map size survives restart"); }
         check(ov2.accentStyle() == 0, "accent blue by default");
         check(!ov2.saveAccentStyle(5).isEmpty() && ov2.accentStyle() == 0, "bad accent rejected");
         check(ov2.saveAccentStyle(3).isEmpty() && ov2.accentStyle() == 3, "accent applied");
@@ -227,24 +235,25 @@ int main(int argc, char** argv) {
         QTemporaryDir pane_dir;
         AppSettings panes({}, pane_dir.path());
         const auto defaults = panes.panes();
-        check(defaults == QStringList({"spaceweather", "solarwind", "dxcluster"}), "default pane arrangement");
-        check(!panes.setPane(3, "weather").isEmpty() && !panes.setPane(-1, "weather").isEmpty(), "slot out of range rejected");
+        check(defaults.mid(0, 3) == QStringList({"spaceweather", "solarwind", "dxcluster"}), "default pane arrangement");
+        check(defaults.size() == AppSettings::kPaneSlots && defaults[3] == "bands", "every slot has a default widget");
+        check(!panes.setPane(AppSettings::kPaneSlots, "weather").isEmpty() && !panes.setPane(-1, "weather").isEmpty(), "slot out of range rejected");
         check(!panes.setPane(0, "bad id;").isEmpty(), "malformed widget id rejected");
         check(panes.setPane(1, "weather").isEmpty() && panes.panes()[1] == "weather", "pane choice applied");
         check(panes.setPane(2, "none").isEmpty() && panes.panes()[2] == "none", "pane can be left empty");
         AppSettings again({}, pane_dir.path());
-        check(again.panes() == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
-        check(again.paneRotations() == QList<int>({0, 0, 0}), "rotation off by default");
-        check(!again.setPaneRotation(3, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
-        check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations() == QList<int>({0, 30, 0}), "rotation applied");
+        check(again.panes().mid(0, 3) == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
+        check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "rotation off by default");
+        check(!again.setPaneRotation(AppSettings::kPaneSlots, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
+        check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations().mid(0, 3) == QList<int>({0, 30, 0}), "rotation applied");
         check(!again.demoMode(), "demo mode off by default");
         again.setDemoMode(true);
-        check(again.demoMode() && again.paneRotations() == QList<int>({0, 30, 0}), "demo mode leaves saved rotation alone");
+        check(again.demoMode() && again.paneRotations().mid(0, 3) == QList<int>({0, 30, 0}), "demo mode leaves saved rotation alone");
         again.setDemoMode(false);
         AppSettings third({}, pane_dir.path());
-        check(third.paneRotations() == QList<int>({0, 30, 0}), "rotation survives restart");
+        check(third.paneRotations().mid(0, 3) == QList<int>({0, 30, 0}), "rotation survives restart");
         check(again.paneRotationSets()[1].toStringList().isEmpty(), "rotation set empty by default (all widgets)");
-        check(!again.togglePaneRotationMember(1, "none").isEmpty() && !again.togglePaneRotationMember(5, "weather").isEmpty() &&
+        check(!again.togglePaneRotationMember(1, "none").isEmpty() && !again.togglePaneRotationMember(AppSettings::kPaneSlots, "weather").isEmpty() &&
                   !again.togglePaneRotationMember(1, "bad id;").isEmpty(), "bad rotation set member rejected");
         check(again.togglePaneRotationMember(1, "weather").isEmpty() && again.togglePaneRotationMember(1, "dxcluster").isEmpty() &&
                   again.paneRotationSets()[1].toStringList() == QStringList({"weather", "dxcluster"}), "rotation set built");
@@ -256,7 +265,7 @@ int main(int argc, char** argv) {
         again.resetPanes();
         check(again.paneRotationSets()[0].toStringList().isEmpty(), "reset clears rotation sets");
         check(again.panes() == defaults, "panes reset to default");
-        check(again.paneRotations() == QList<int>({0, 0, 0}), "reset turns rotation off");
+        check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "reset turns rotation off");
     }
 
     std::cout << "Widget core: " << checks << " checks, " << failures << " failures\n";

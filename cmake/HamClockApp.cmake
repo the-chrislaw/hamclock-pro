@@ -19,6 +19,7 @@ add_library(hamclock-widget-core STATIC
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
+    src/ui/pane_grid.cpp
     src/platform/settings.cpp)
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
@@ -142,6 +143,9 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
+    target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
+    add_test(NAME pane-grid-regression COMMAND pane-grid-regression)
     add_executable(safe-area-regression tests/safe_area_regression.cpp)
     target_link_libraries(safe-area-regression PRIVATE hamclock-widget-core)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
@@ -237,8 +241,9 @@ if(BUILD_TESTING)
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
-    # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary and TV.
-    foreach(size 800x480 1024x600 1920x1080 390x844 844x390)
+    # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary,
+    # TV, phones and the adaptive pane grid on desktops (MacBook window, 1440p two rows, Retina full resolution).
+    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 1512x982 2560x1440 3024x1964)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30

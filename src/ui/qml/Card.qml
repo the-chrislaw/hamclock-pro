@@ -11,7 +11,7 @@ Rectangle {
     property bool showStatus: widget !== null
     default property alias content: body.data
     // True in a small dashboard slot: show key numbers only, drop details.
-    readonly property bool compact: width < 300 * Theme.scale || height < 190 * Theme.scale
+    readonly property bool compact: width < 420 * Theme.scale || height < 190 * Theme.scale
     // When true (set by the pane slot) tapping the title or pressing Enter asks to change the widget.
     property bool chooser: false
     // Content sized by the card (map): its size must not feed back into the card's own.

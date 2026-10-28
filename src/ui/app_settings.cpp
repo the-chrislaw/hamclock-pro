@@ -3,6 +3,7 @@
 #include "banner_text.hpp"
 #include "blanking.hpp"
 #include "config_store.hpp"
+#include "pane_grid.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
@@ -25,6 +26,13 @@ constexpr int kMaxPasswordLength = 128;
 QString default_config_dir() {
     auto dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     return dir.isEmpty() ? QDir::homePath() + "/.config/hamclock-pro" : dir;
+}
+// Share of the pane-and-map height the map keeps at each map size; -1 for unknown names.
+double map_share(const QString& size) {
+    if (size == "large") return 0.55;
+    if (size == "medium") return 0.40;
+    if (size == "small") return 0.28;
+    return -1;
 }
 } // namespace
 
@@ -152,6 +160,8 @@ void AppSettings::loadOptions() {
     if (overscan_ < 0 || overscan_ > 10) overscan_ = 0;
     accent_style_ = ini.value("display/accent", 0).toInt();
     if (accent_style_ < 0 || accent_style_ > 4) accent_style_ = 0;
+    map_size_ = ini.value("display/map_size", "large").toString();
+    if (map_share(map_size_) < 0) map_size_ = "large";
     big_clock_face_ = ini.value("display/bigClockFace", 0).toInt();
     if (big_clock_face_ < 0 || big_clock_face_ > 1) big_clock_face_ = 0;
     text_scale_ = ini.value("display/text_scale", 100).toInt();
@@ -184,7 +194,9 @@ void AppSettings::loadOptions() {
 }
 
 QStringList AppSettings::panes() const {
-    static const QStringList defaults{"spaceweather", "solarwind", "dxcluster"};
+    static const QStringList defaults{"spaceweather", "solarwind", "dxcluster", "bands", "sunmoon", "satellites",
+                                      "pskreporter", "ota", "solarimage", "weather", "launches", "quakes"};
+    static_assert(kPaneSlots == 12, "one default widget per pane slot");
     QStringList result;
     for (int slot = 0; slot < kPaneSlots; ++slot)
         result << (slot < panes_.size() && !panes_[slot].isEmpty() ? panes_[slot] : defaults[slot]);
@@ -830,6 +842,22 @@ QString AppSettings::saveBlankDays(int days) {
     blank_days_ = days;
     emit optionsChanged();
     return {};
+}
+
+QString AppSettings::saveMapSize(const QString& size) {
+    if (map_share(size) < 0) return "The map size must be large, medium or small.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/map_size", size);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the map size.";
+    map_size_ = size;
+    emit optionsChanged();
+    return {};
+}
+
+QVariantMap AppSettings::paneGrid(double width, double height, double gap, double min_pane_width, double min_pane_height) const {
+    const auto grid = fit_pane_grid({width, height, gap, min_pane_width, min_pane_height, map_share(map_size_), kPaneSlots});
+    return {{"columns", grid.columns}, {"rows", grid.rows}, {"height", grid.height}};
 }
 
 } // namespace hamclock

@@ -335,6 +335,35 @@ Rectangle {
             }
 
             Card {
+                title: "Map size"
+                visible: !Theme.phone   // phones show one swipeable pane
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Panes fill the width of the screen. A smaller map leaves room for a second row of panes."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [{ id: "large", label: "Large" }, { id: "medium", label: "Medium" }, { id: "small", label: "Small" }]
+                            AppButton {
+                                text: modelData.label
+                                primary: appSettings.mapSize === modelData.id
+                                onClicked: appSettings.saveMapSize(modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "Accent colour"
                 Layout.fillWidth: true
                 Flow {
