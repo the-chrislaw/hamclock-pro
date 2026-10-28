@@ -4,12 +4,14 @@
 // in an INI file; account credentials in a separate owner-only (0600) file so
 // they never sit next to shareable settings. All files are under the per-user
 // config directory unless an explicit station path is given.
+#include "../platform/credential_store.hpp"
 #include "../platform/settings.hpp"
 #include <QHash>
 #include <QObject>
 #include <QString>
 #include <QStringList>
 #include <QVariantMap>
+#include <memory>
 
 namespace hamclock {
 
@@ -29,6 +31,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString watchListText READ watchListText NOTIFY optionsChanged)
     Q_PROPERTY(QString adifPath READ adifPath NOTIFY optionsChanged)
+    Q_PROPERTY(bool canChooseFiles READ canChooseFiles CONSTANT)
     Q_PROPERTY(QString otaProgram READ otaProgram NOTIFY optionsChanged)
     Q_PROPERTY(QString otaBand READ otaBand NOTIFY optionsChanged)
     Q_PROPERTY(QString otaMode READ otaMode NOTIFY optionsChanged)
@@ -82,6 +85,9 @@ class AppSettings : public QObject {
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
+    // Keeps account passwords and keys in `store` (the Keychain on Apple platforms)
+    // instead of credentials.ini; secrets already in the INI move over once.
+    void setSecretStore(std::unique_ptr<CredentialStore> store);
 
     QString callsign() const { return QString::fromStdString(station_.callsign); }
     double deLatitude() const { return station_.de.latitude; }
@@ -182,6 +188,9 @@ public:
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
+    // Native open panel (macOS): the sandboxed build can only read a log chosen here.
+    bool canChooseFiles() const;
+    Q_INVOKABLE QString chooseAdifFile() const; // empty when cancelled
     // program: POTA, SOTA, WWFF or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
     Q_INVOKABLE QString saveOtaSort(const QString& sort);
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);
@@ -266,6 +275,7 @@ private:
     void loadOptions();
     void loadAccounts();
     QString writeAccounts();
+    QString* secretField(const QString& key);
 
     QString config_dir_, station_path_, load_error_;
     StationSettings station_{};  // value-init: coordinates are 0, never indeterminate, when no station file exists
@@ -322,6 +332,7 @@ private:
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
     QString hamalert_user_, hamalert_password_;
     QString hamsat_key_;
+    std::unique_ptr<CredentialStore> secrets_; // null = passwords stay in credentials.ini
 };
 
 } // namespace hamclock

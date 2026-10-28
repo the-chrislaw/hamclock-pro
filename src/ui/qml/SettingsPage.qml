@@ -616,7 +616,14 @@ Rectangle {
                                     Connections { target: appSettings; function onOptionsChanged() { px = appSettings.mapMinLabelPx() } }
                                     onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
                     }
-                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
+                        // macOS open panel: the Mac App Store (sandboxed) build can only read a log picked here.
+                        AppButton { text: "Choose…"; visible: appSettings.canChooseFiles; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { const p = appSettings.chooseAdifFile(); if (p !== "") adifPath.text = p } }
+                    }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap

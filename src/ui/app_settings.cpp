@@ -5,6 +5,7 @@
 #include "config_store.hpp"
 #include "pane_grid.hpp"
 #include "../net/telnet_client.hpp"
+#include "../platform/file_access.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
 #include <QDir>
@@ -22,6 +23,9 @@ namespace {
 constexpr int kMaxHostLength = 253;
 constexpr int kMaxUserLength = 64;
 constexpr int kMaxPasswordLength = 128;
+
+// INI key in credentials.ini (also the secret store key) for each account secret.
+const QStringList kSecretKeys = {"lookup/password", "hamalert/password", "hamsat/key"};
 
 QString default_config_dir() {
     auto dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -99,6 +103,10 @@ void AppSettings::loadOptions() {
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
+    // Sandboxed build: the bookmark is what lets the app read the chosen log after a relaunch.
+    if (const QByteArray bookmark = ini.value("adif/bookmark").toByteArray(); !bookmark.isEmpty()) {
+        if (const QString resolved = file_access::openReadBookmark(bookmark); !resolved.isEmpty()) adif_path_ = resolved;
+    }
     ota_program_ = ini.value("ota/program").toString();
     if (ota_program_ != "POTA" && ota_program_ != "SOTA" && ota_program_ != "WWFF") ota_program_.clear();
     static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
@@ -334,23 +342,51 @@ void AppSettings::loadAccounts() {
     hamsat_key_ = ini.value("hamsat/key").toString().left(kMaxPasswordLength);
 }
 
+QString* AppSettings::secretField(const QString& key) {
+    if (key == "lookup/password") return &lookup_password_;
+    if (key == "hamalert/password") return &hamalert_password_;
+    if (key == "hamsat/key") return &hamsat_key_;
+    return nullptr;
+}
+
+void AppSettings::setSecretStore(std::unique_ptr<CredentialStore> store) {
+    secrets_ = std::move(store);
+    if (!secrets_) return;
+    bool migrate = false;
+    for (const auto& key : kSecretKeys) {
+        QString* field = secretField(key);
+        if (!field->isEmpty()) migrate = true; // still in credentials.ini: move it to the store
+        else *field = secrets_->get(key).left(kMaxPasswordLength);
+    }
+    if (migrate && !writeAccounts().isEmpty()) qWarning("Could not move account secrets to the secure store");
+    emit accountsChanged();
+}
+
 QString AppSettings::writeAccounts() {
     const auto path = config_dir_ + "/credentials.ini";
+    bool store_failed = false;
     {
         QSettings ini(path, QSettings::IniFormat);
         ini.clear();
         ini.setValue("lookup/service", lookup_service_);
         ini.setValue("lookup/user", lookup_user_);
-        ini.setValue("lookup/password", lookup_password_);
         ini.setValue("hamalert/user", hamalert_user_);
-        ini.setValue("hamalert/password", hamalert_password_);
-        ini.setValue("hamsat/key", hamsat_key_);
+        if (secrets_)
+            for (const auto& key : kSecretKeys) {
+                const QString& value = *secretField(key);
+                store_failed |= !(value.isEmpty() ? secrets_->remove(key) : secrets_->set(key, value));
+            }
+        // No store, or it refused: keep every secret in the INI so nothing is lost
+        // (the next start with a working store moves them over).
+        if (!secrets_ || store_failed)
+            for (const auto& key : kSecretKeys) ini.setValue(key, *secretField(key));
         ini.sync();
         if (ini.status() != QSettings::NoError) return "Could not save account settings.";
     }
     // Owner read/write only; credentials must not be readable by other users.
     if (!QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner))
         return "Saved, but could not restrict credentials file permissions.";
+    if (store_failed) return "Could not save to the Keychain; kept in the settings file instead.";
     return {};
 }
 
@@ -414,14 +450,23 @@ QString AppSettings::saveWatchList(const QString& entries) {
 
 QString AppSettings::saveAdifPath(const QString& path) {
     const QString kept = path.trimmed().left(1024);
+    const QByteArray bookmark = kept.isEmpty() ? QByteArray() : file_access::readBookmark(kept);
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
     ini.setValue("adif/path", kept);
+    if (bookmark.isEmpty()) ini.remove("adif/bookmark");
+    else ini.setValue("adif/bookmark", bookmark);
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
     emit optionsChanged();
+    if (!kept.isEmpty() && bookmark.isEmpty() && file_access::sandboxed())
+        return "Saved, but macOS only lets HamClock Pro read a log picked with Choose.";
     return {};
 }
+
+bool AppSettings::canChooseFiles() const { return file_access::canChooseFiles(); }
+
+QString AppSettings::chooseAdifFile() const { return file_access::chooseFileToRead("Choose your ADIF log (.adi)"); }
 
 QString AppSettings::saveOtaSort(const QString& sort) {
     const auto s = sort.trimmed().toLower();

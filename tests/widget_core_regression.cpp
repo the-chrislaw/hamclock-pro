@@ -170,6 +170,57 @@ int main(int argc, char** argv) {
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
     }
     {
+        // Secret store (the Keychain in the app): INI secrets move over once and
+        // the INI keeps only names; a refusing store keeps them in the INI.
+        QTemporaryDir sec_dir;
+        const QString ini_path = sec_dir.filePath("credentials.ini");
+        const auto ini_has_secret = [&] { QFile f(ini_path); return f.open(QIODevice::ReadOnly) && f.readAll().contains("pw1"); };
+        {
+            AppSettings plain({}, sec_dir.path());
+            check(plain.saveAccount("qrz", "N0CALL", "pw1").isEmpty() && plain.saveHamsatKey("key1").isEmpty(), "INI secrets saved");
+        }
+        check(ini_has_secret(), "without a store the password is in the INI");
+        const QString store_path = sec_dir.filePath("store/secrets.json");
+        {
+            AppSettings migrated({}, sec_dir.path());
+            migrated.setSecretStore(std::make_unique<FileCredentialStore>(store_path));
+            check(migrated.lookupPassword() == "pw1" && migrated.hamsatKey() == "key1", "secrets kept after migration");
+        }
+        check(!ini_has_secret(), "migration removes the password from the INI");
+        check(FileCredentialStore(store_path).get("lookup/password") == "pw1", "password is in the store");
+        {
+            AppSettings from_store({}, sec_dir.path());
+            check(!from_store.hasLookupPassword(), "INI alone no longer has the password");
+            from_store.setSecretStore(std::make_unique<FileCredentialStore>(store_path));
+            check(from_store.lookupUser() == "N0CALL" && from_store.lookupPassword() == "pw1" && from_store.hamsatKey() == "key1",
+                  "secrets read back from the store");
+            check(from_store.saveHamsatKey("").isEmpty() && FileCredentialStore(store_path).get("hamsat/key").isEmpty(),
+                  "cleared key removed from the store");
+        }
+        struct RefusingStore : CredentialStore {
+            bool set(const QString&, const QString&) override { return false; }
+            QString get(const QString&) const override { return {}; }
+            bool remove(const QString&) override { return false; }
+        };
+        {
+            AppSettings refused({}, sec_dir.path());
+            refused.setSecretStore(std::make_unique<RefusingStore>());
+            check(!refused.saveAccount("qrz", "N0CALL", "pw1").isEmpty(), "store refusal is reported");
+        }
+        check(ini_has_secret(), "store refusal keeps the password in the INI");
+    }
+    {
+        // ADIF path: plain path off the sandbox (no bookmark needed to read it).
+        QTemporaryDir adif_dir;
+        AppSettings adif({}, adif_dir.path());
+        const QString log = adif_dir.filePath("log.adi");
+        { QFile f(log); f.open(QIODevice::WriteOnly); f.write("<eoh>"); }
+        check(adif.saveAdifPath(log).isEmpty() && adif.adifPath() == log, "ADIF path saved");
+        check(AppSettings({}, adif_dir.path()).adifPath() == QFileInfo(log).canonicalFilePath() ||
+              AppSettings({}, adif_dir.path()).adifPath() == log, "ADIF path survives restart");
+        check(adif.saveAdifPath("").isEmpty() && AppSettings({}, adif_dir.path()).adifPath().isEmpty(), "ADIF path cleared");
+    }
+    {
         QTemporaryDir ov_dir;
         AppSettings ov({}, ov_dir.path());
         check(ov.overscanPercent() == 0, "overscan off by default");

@@ -140,6 +140,11 @@ int main(int argc, char** argv) {
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
+#ifdef Q_OS_DARWIN
+    // Account passwords live in the Keychain on Apple platforms. A --config-dir run
+    // (tests, smoke screenshots, second profiles) keeps them in its own folder.
+    if (!parser.isSet(config)) settings.setSecretStore(hamclock::makeDefaultCredentialStore());
+#endif
     if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
     hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));

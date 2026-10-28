@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Create (or delete) an iOS App Store provisioning profile through the App Store
-Connect API, for CI archives signed manually with an imported Apple Distribution
-certificate. Needs `pip install pyjwt cryptography`. Secrets come from the
+"""Create (or delete) an App Store provisioning profile (iOS, or macOS with
+MAC_APP_STORE) through the App Store Connect API, for CI builds signed manually
+with an imported Apple Distribution certificate. Needs `pip install pyjwt cryptography`. Secrets come from the
 environment and are never printed.
 
-  asc_profile.py create <bundle-id> <cert.pem> <profile-name> <out.mobileprovision>
+  asc_profile.py create <bundle-id> <cert.pem> <profile-name> <out.mobileprovision> [profile-type]
+      profile-type: IOS_APP_STORE (default) or MAC_APP_STORE
       prints the profile id and uuid as "ID UUID"
   asc_profile.py delete <profile-id>
 
@@ -54,9 +55,14 @@ def pem_to_der_b64(path):
     return re.sub(r"\s+", "", m.group(1))
 
 
-def create(bundle_id, cert_pem, name, out):
+PROFILE_TYPES = ("IOS_APP_STORE", "MAC_APP_STORE")
+
+
+def create(bundle_id, cert_pem, name, out, profile_type="IOS_APP_STORE"):
+    if profile_type not in PROFILE_TYPES:
+        sys.exit("Unknown profile type %s" % profile_type)
     want = pem_to_der_b64(cert_pem)
-    certs = call("GET", "/certificates?filter[certificateType]=IOS_DISTRIBUTION,DISTRIBUTION&limit=200")["data"]
+    certs = call("GET", "/certificates?filter[certificateType]=IOS_DISTRIBUTION,MAC_APP_DISTRIBUTION,DISTRIBUTION&limit=200")["data"]
     cert = next((c for c in certs if c["attributes"].get("certificateContent") == want), None)
     if cert is None:
         sys.exit("The imported Apple Distribution certificate is not registered for this team")
@@ -66,7 +72,7 @@ def create(bundle_id, cert_pem, name, out):
         sys.exit("Bundle ID %s is not registered for this team" % bundle_id)
     prof = call("POST", "/profiles", {"data": {
         "type": "profiles",
-        "attributes": {"name": name, "profileType": "IOS_APP_STORE"},
+        "attributes": {"name": name, "profileType": profile_type},
         "relationships": {
             "bundleId": {"data": {"type": "bundleIds", "id": bundle["id"]}},
             "certificates": {"data": [{"type": "certificates", "id": cert["id"]}]}}}})["data"]
@@ -76,7 +82,7 @@ def create(bundle_id, cert_pem, name, out):
 
 
 def main(argv):
-    if len(argv) == 6 and argv[1] == "create":
+    if len(argv) in (6, 7) and argv[1] == "create":
         create(*argv[2:])
     elif len(argv) == 3 and argv[1] == "delete":
         call("DELETE", "/profiles/" + argv[2])
