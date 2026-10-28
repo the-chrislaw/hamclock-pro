@@ -189,3 +189,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-25 (hourly run)
 - No qa issues for area F beyond #513/#521/#573 (open); no open PR of mine; #73 is another area's (left alone). #573 item 6 slice: the TV overscan and Screen blanking cards in Settings are now hidden on iOS (`Qt.platform.os !== "ios"`, the same guard the Exit card already had); no GPIO settings exist in QML. Minimal change to area A's `SettingsPage.qml`, other platforms unaffected. Not done: camera AR, finder screen (area A, #574), starring a pass, #513 device check. #573 stays open. No on-device claims.
+
+## 2026-10-28 (hourly run)
+- No new qa issues for area F beyond #513/#521/#573 (open); no open PR of mine; #73 is another area's (left alone). #573 item 3 slice: `projectToScreen`/`projectTrack` (`apple_skyproject`) project a satellite az/el (and a pass track) onto the camera preview from the phone attitude, roll and the camera's field of view; they report in-front/on-screen and an edge direction for an off-screen arrow. Platform-free, tested on Linux (`sky-project-regression`). Not done: the AVFoundation camera layer and its field of view, the AR overlay QML (area A), starring a pass, #513 device check. #573 stays open. No on-device claims.
