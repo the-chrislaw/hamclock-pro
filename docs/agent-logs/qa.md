@@ -515,3 +515,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 43db071 (merged since 9f704d0: my run 89 log #632 and #633, aspect-fill camera preview FOV maths, #573). Reviewed #633: focal length, portrait rotation and aspect-fill crop are correct, invalid input falls back to defaults, new test is not weakened, no QtWidgets/new Qt APIs/network code. Main builds and passes 178/178 tests. No QML or Linux-visible UI change, so screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627/#633), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 91
+- Last reviewed commit: 3f7f9cc (merged since 43db071: #628 adaptive pane grid, #634 sky finder left out of iOS builds, #635 privacy policy, my run 90 log). Main builds and passes 182/182 tests; #628 extends the pane tests rather than weakening them, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480, 1024x600 and 1280x720 are correct.
+- Opened: #638 ([A] pane grid renders empty at 1920x1080). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: the Pi sizes are fine, but #628 left the pane area blank at 1920x1080 in both themes, the first visible regression since run 68. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
