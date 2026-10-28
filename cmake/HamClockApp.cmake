@@ -12,6 +12,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_textentry.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
+    src/platform/apple_camerafov.cpp
     src/platform/apple_skyattitude.cpp
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
@@ -161,6 +162,10 @@ if(BUILD_TESTING)
     target_link_libraries(sky-project-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-project-regression COMMAND sky-project-regression)
     set_tests_properties(sky-project-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(camera-fov-regression tests/camera_fov_regression.cpp)
+    target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
+    add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
+    set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
     target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
