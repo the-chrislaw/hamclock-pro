@@ -510,3 +510,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 9f704d0 (only my run 88 log #631 merged since 00eb867). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 90
+- Last reviewed commit: 43db071 (merged since 9f704d0: my run 89 log #632 and #633, aspect-fill camera preview FOV maths, #573). Reviewed #633: focal length, portrait rotation and aspect-fill crop are correct, invalid input falls back to defaults, new test is not weakened, no QtWidgets/new Qt APIs/network code. Main builds and passes 178/178 tests. No QML or Linux-visible UI change, so screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627/#633), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
