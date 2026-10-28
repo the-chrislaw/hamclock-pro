@@ -13,6 +13,7 @@
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_orientation.hpp"
+#include "../platform/credential_store.hpp"
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include <QEventLoop>
@@ -141,6 +142,14 @@ int main(int argc, char** argv) {
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
+#ifdef Q_OS_DARWIN
+    // Passwords and API keys live in the Keychain on Mac, iPhone and iPad. Screenshot
+    // runs (CI) leave the Keychain alone; their config directories hold no accounts.
+    if (!parser.isSet(screenshot)) {
+        if (auto keychain = std::make_unique<hamclock::KeychainCredentialStore>("org.hamclockpro.app"); keychain->available())
+            settings.setSecretStore(std::move(keychain));
+    }
+#endif
     if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
     hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));

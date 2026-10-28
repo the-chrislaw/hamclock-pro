@@ -10,8 +10,11 @@
 #include <QString>
 #include <QStringList>
 #include <QVariantMap>
+#include <memory>
 
 namespace hamclock {
+
+class CredentialStore;
 
 class AppSettings : public QObject {
     Q_OBJECT
@@ -83,6 +86,11 @@ class AppSettings : public QObject {
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
+    ~AppSettings() override;
+    // Keeps passwords and API keys in `store` (the Keychain on Apple devices)
+    // instead of credentials.ini, moving any already in the file there. Without
+    // one they stay in the owner-only credentials.ini (the Pi).
+    void setSecretStore(std::unique_ptr<CredentialStore> store);
 
     QString callsign() const { return QString::fromStdString(station_.callsign); }
     double deLatitude() const { return station_.de.latitude; }
@@ -126,7 +134,12 @@ public:
     bool dxOverrideActive() const { return dx_override_; }
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     QString udpSpotGroup() const { return udp_group_; }               // IPv4 multicast group, empty = unicast
-    bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
+    // false = 127.0.0.1 only. Always true on iOS: WSJT-X never runs on the phone itself.
+#ifdef Q_OS_IOS
+    bool udpSpotLan() const { return true; }
+#else
+    bool udpSpotLan() const { return udp_lan_; }
+#endif
     // On-the-air display filter; empty / 0 = no restriction.
     QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA", "WWFF" or empty
     QString otaBand() const { return ota_band_; }        // e.g. "20m"
@@ -268,6 +281,7 @@ signals:
 
 private:
     void loadOptions();
+    std::unique_ptr<CredentialStore> secrets_;
     void loadAccounts();
     QString writeAccounts();
 

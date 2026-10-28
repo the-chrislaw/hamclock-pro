@@ -38,6 +38,11 @@ int main() {
     // A slot limit below three columns' worth of a second row keeps one row.
     check(is(fit_pane_grid({1500, 1100, 10, 260, 220, 0.55, 5}), 5, 1), "small cap keeps one row");
 
+    // iPad portrait: a tall, narrow area gets two wider columns and a second row.
+    check(is(fit_pane_grid(input(600, 1100, 0.55)), 2, 2), "tall narrow area gets two columns");
+    // ...while a wide area just as narrow (Pi 800x480 pane area) keeps three.
+    check(is(fit_pane_grid({600, 450, 5, 250, 190, 0.55, 12}), 3, 1), "wide narrow area keeps three");
+
     // Garbage in, the classic layout out.
     const double nan = std::numeric_limits<double>::quiet_NaN();
     check(is(fit_pane_grid({nan, 600, 5, 250, 190, 0.55, 12}), 3, 1) && fit_pane_grid({nan, 600, 5, 250, 190, 0.55, 12}).height == 0, "NaN width");

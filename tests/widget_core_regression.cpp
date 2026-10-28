@@ -3,6 +3,7 @@
 // owner-only credentials file. Offline: all network access is faked.
 #include "../src/net/polled_source.hpp"
 #include "../src/ui/app_settings.hpp"
+#include "../src/platform/credential_store.hpp"
 #include "../src/widgets/widget_model.hpp"
 #include "../src/widgets/widget_registry.hpp"
 #include <QCoreApplication>
@@ -130,6 +131,14 @@ int main(int argc, char** argv) {
           WidgetModel::formatAge(t0, t0.addSecs(3 * 3600)) == "3 h ago" &&
           WidgetModel::formatAge({}, t0).isEmpty(), "age formatting");
 
+    // Panes tied to local station hardware or files are left out on iOS only.
+    for (const char* id : {"radio", "rotator", "gps", "adsb", "sensors", "adif"}) {
+        check(widget_available(id, false), "local-station pane offered on the Pi and Mac");
+        check(!widget_available(id, true), "local-station pane left out on iOS");
+    }
+    check(widget_available("spaceweather", true) && widget_available("dxcluster", true), "network panes offered on iOS");
+    check(!widget_available("radio", true) && widget_available("radio", false), "radio pane only off iOS");
+
     // Registry ordering and validation.
     {
         WidgetRegistry registry;
@@ -168,6 +177,32 @@ int main(int argc, char** argv) {
               "all settings survive restart");
         reloaded.clearAccount();
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
+    }
+    // With a secret store (the Keychain on Apple devices) passwords and keys never
+    // reach credentials.ini, and ones an older version wrote there are moved over.
+    {
+        struct MemoryStore final : CredentialStore {
+            std::shared_ptr<QHash<QString, QString>> values = std::make_shared<QHash<QString, QString>>();
+            bool set(const QString& k, const QString& v) override { values->insert(k, v); return true; }
+            QString get(const QString& k) const override { return values->value(k); }
+            bool remove(const QString& k) override { values->remove(k); return true; }
+        };
+        QTemporaryDir secret_dir;
+        {
+            AppSettings old_version({}, secret_dir.path());
+            check(old_version.saveHamAlert("N0CALL", "alertpw").isEmpty(), "file-only HamAlert password saved");
+        }
+        auto store = std::make_unique<MemoryStore>();
+        const auto values = store->values;
+        AppSettings settings({}, secret_dir.path());
+        settings.setSecretStore(std::move(store));
+        const auto ini_text = [&] { QFile f(secret_dir.filePath("credentials.ini")); f.open(QIODevice::ReadOnly); return QString::fromUtf8(f.readAll()); };
+        check(values->value("hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
+        check(!ini_text().contains("alertpw"), "moved password removed from credentials.ini");
+        check(settings.saveAccount("hamqth", "N0CALL", "lookpw").isEmpty() && settings.saveHamsatKey("key123").isEmpty(), "accounts saved with a secret store");
+        check(values->value("lookup.password") == "lookpw" && values->value("hamsat.key") == "key123", "secrets in the store");
+        check(!ini_text().contains("lookpw") && !ini_text().contains("key123") && ini_text().contains("N0CALL"), "only user names in the file");
+        check(settings.saveHamsatKey("").isEmpty() && !values->contains("hamsat.key"), "empty key removes it from the store");
     }
     {
         QTemporaryDir ov_dir;

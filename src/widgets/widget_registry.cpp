@@ -1,8 +1,14 @@
 #include "widget_registry.hpp"
+#include <QStringList>
 #include <algorithm>
 #include <stdexcept>
 
 namespace hamclock {
+
+bool widget_available(const QString& id, bool ios) {
+    static const QStringList kLocalStationOnly{"radio", "rotator", "gps", "adsb", "sensors", "adif"};
+    return !ios || !kLocalStationOnly.contains(id);
+}
 
 WidgetRegistry::WidgetRegistry(QObject* parent) : QAbstractListModel(parent) {}
 
@@ -16,7 +22,14 @@ void WidgetRegistry::add(WidgetInfo info, WidgetModel* model) {
         delete model;
         throw std::invalid_argument("Duplicate widget id");
     }
+#ifdef Q_OS_IOS
+    constexpr bool kIos = true;
+#else
+    constexpr bool kIos = false;
+#endif
     model->setParent(this);
+    // Kept alive (registration code may still use it) but never listed or looked up.
+    if (!widget_available(info.id, kIos)) return;
     const auto position = std::upper_bound(entries_.begin(), entries_.end(), info.order,
         [](int order, const Entry& entry) { return order < entry.info.order; });
     const int row = static_cast<int>(position - entries_.begin());

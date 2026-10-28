@@ -52,6 +52,12 @@ private:
     std::vector<Entry> entries_;
 };
 
+// Panes that read the station's own hardware or files: rigctld/rotctld/flrig,
+// gpsd or a serial GPS, a local ADS-B receiver, Linux sensors and a typed ADIF
+// log path. iPhone and iPad have none of these and no way to point the panes at
+// them, so the registry leaves them out there instead of offering dead panes.
+bool widget_available(const QString& id, bool ios);
+
 // Generated from every hamclock_add_widget() call (widgets_generated.cpp).
 void register_all_widgets(WidgetRegistry& registry, const WidgetContext& context);
 

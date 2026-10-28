@@ -31,7 +31,9 @@ QtObject {
     readonly property real radius: (dense ? 8 : 14) * scale
     readonly property real gap: (dense ? 5 : 10) * scale
     readonly property real pad: (dense ? 7 : 14) * scale
-    readonly property real touch: 44 * scale   // minimum touch target
+    // Minimum touch target. iPhone/iPad never go below Apple's 44 pt (phones run at
+    // scale 0.85); the Pi's 800x480 panel keeps its tuned, slightly smaller size.
+    readonly property real touch: Qt.platform.os === "ios" ? Math.max(44, 44 * scale) : 44 * scale
 
     readonly property int fontCaption: Math.round(12 * scale)
     readonly property int fontBody: Math.round(14 * scale)
