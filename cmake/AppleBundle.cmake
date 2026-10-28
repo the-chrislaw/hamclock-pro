@@ -38,6 +38,11 @@ endif()
 if(IOS AND TARGET hamclock-pro)
     set(HAMCLOCK_BUILD_NUMBER "1" CACHE STRING "CFBundleVersion for Apple uploads")
     set(HAMCLOCK_IOS_BUNDLE_ID "com.chrislaw.hamclockpro" CACHE STRING "iOS bundle identifier")
+    # Sky finder permission strings go in only when the finder is built in.
+    set(HAMCLOCK_SKY_FINDER_PLIST_KEYS "")
+    if(HAMCLOCK_SKY_FINDER)
+        file(READ "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/sky-finder-keys.plist.in" HAMCLOCK_SKY_FINDER_PLIST_KEYS)
+    endif()
     set_target_properties(hamclock-pro PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "${HAMCLOCK_IOS_BUNDLE_ID}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
