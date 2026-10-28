@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QVariantMap>
 
 namespace hamclock {
 
@@ -54,6 +55,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int overscanPercent READ overscanPercent NOTIFY optionsChanged)
     Q_PROPERTY(int textScalePercent READ textScalePercent NOTIFY optionsChanged)
     Q_PROPERTY(int accentStyle READ accentStyle NOTIFY optionsChanged)
+    Q_PROPERTY(QString mapSize READ mapSize NOTIFY optionsChanged)
     Q_PROPERTY(int bigClockFace READ bigClockFace NOTIFY optionsChanged)
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
@@ -109,6 +111,8 @@ public:
     int textScalePercent() const { return text_scale_; }
     // 0 blue (default), 1 green, 2 amber, 3 red, 4 purple.
     int accentStyle() const { return accent_style_; }
+    // "large" (default), "medium" or "small": how much height the map keeps; a smaller map leaves room for a second row of panes.
+    QString mapSize() const { return map_size_; }
     int bigClockFace() const { return big_clock_face_; }
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
@@ -152,7 +156,7 @@ public:
     QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
 
-    static constexpr int kPaneSlots = 3;
+    static constexpr int kPaneSlots = 12;
     static constexpr int kMaxRotationSet = 64;
     QStringList panes() const;
     // Returns an empty string or a user-facing error.
@@ -213,6 +217,9 @@ public:
     // Large-type option for TVs and the 7-inch screen: 100, 115, 130 or 150 %.
     Q_INVOKABLE QString saveTextScale(int percent);
     Q_INVOKABLE QString saveAccentStyle(int style);
+    Q_INVOKABLE QString saveMapSize(const QString& size);
+    // Pane columns and rows that fit the pane area at the current map size, and the area's height: {columns, rows, height}.
+    Q_INVOKABLE QVariantMap paneGrid(double width, double height, double gap, double min_pane_width, double min_pane_height) const;
     /// Big Clock page face: 0 digital, 1 analog dial above the digital lines.
     Q_INVOKABLE QString saveBigClockFace(int face);
     // Screen blanking: idle minutes (0 = never, max 240) and a daily window off_hour..on_hour
@@ -302,6 +309,7 @@ private:
     int overscan_ = 0;
     int text_scale_ = 100;
     int accent_style_ = 0;
+    QString map_size_ = "large";
     int big_clock_face_ = 0;
     int blank_idle_ = 0;
     int blank_off_ = -1;

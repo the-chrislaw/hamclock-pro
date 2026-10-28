@@ -25,8 +25,11 @@ ApplicationWindow {
                (appSettings.appearance === "dark" ||
                 (appSettings.appearance === "system" && systemPalette.window.hslLightness < 0.5)))
     }
-    // 1.0 on a 1024x600 panel; grows on TVs so text stays readable from the sofa.
-    Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, 3)) * appSettings.textScalePercent / 100 }
+    // TV-sized screens (over ~36 inches wide, or Apple TV) are read from the sofa.
+    readonly property bool tvScreen: Qt.platform.os === "tvos" || Screen.width / Math.max(Screen.pixelDensity, 0.1) > 800
+    // 1.0 on a 1024x600 panel and on desktops, tablets and monitors, which use the room
+    // for more panes instead; grows on TVs so text stays readable from the sofa.
+    Binding { target: Theme; property: "scale"; value: Math.max(0.85, Math.min(window.width / 1024, window.height / 600, window.tvScreen ? 3 : 1)) * appSettings.textScalePercent / 100 }
 
     Binding { target: Theme; property: "accentStyle"; value: appSettings.accentStyle }
 
@@ -71,8 +74,9 @@ ApplicationWindow {
         }
     }
 
-    // One page, no scrolling: station column | (pane row over map). Every size
-    // from 800x480 to 4K shares this grid; slots clip their content.
+    // One page, no scrolling: station column | (pane grid over map). Every size
+    // from 800x480 to 4K shares this grid; slots clip their content. The pane grid
+    // holds as many panes as fit (at least three; a second row when Map size allows).
     GridLayout {
         id: page
         columns: window.phone ? 1 : 2
@@ -88,7 +92,7 @@ ApplicationWindow {
         StationCard {
             id: stationCard
             wide: window.phone
-            Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.max(0, page.width * 0.22 - 190 * Theme.scale))
+            Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
             Layout.preferredHeight: window.phone ? page.height * 0.36 : -1
@@ -98,6 +102,7 @@ ApplicationWindow {
         }
 
         GridLayout {
+            id: paneAndMap
             columns: window.phoneWide ? 2 : 1
             layoutDirection: window.phoneWide ? Qt.RightToLeft : Qt.LeftToRight
             rowSpacing: Theme.gap
@@ -105,25 +110,34 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            RowLayout {
+            GridLayout {
                 id: paneRow
+                readonly property real minPaneWidth: (Theme.dense ? 250 : 260) * Theme.scale
+                readonly property real minPaneHeight: (Theme.dense ? 190 : 220) * Theme.scale
+                // Phones show one swipeable pane; mapSize is read so a Map size change re-fits.
+                readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 1 })
+                    : (appSettings.mapSize, appSettings.paneGrid(paneAndMap.width, page.height, Theme.gap, minPaneWidth, minPaneHeight))
+                columns: grid.columns
                 Layout.fillWidth: !window.phoneWide
                 Layout.fillHeight: window.phoneWide
                 Layout.preferredWidth: window.phoneWide ? page.width * 0.3 : -1
-                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22 : Math.max(150 * Theme.scale, page.height * 0.4))
+                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22
+                    : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
-                spacing: Theme.gap
+                rowSpacing: Theme.gap
+                columnSpacing: Theme.gap
                 function slotAt(i) { return paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
-                    model: (window.phone || window.phoneWide) ? 1 : 3
+                    model: paneRow.grid.columns * paneRow.grid.rows
                     PaneSlot {
                         index: modelData
                         paused: paneChooser.visible || paneOptions.visible
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         Layout.preferredWidth: 1
+                        Layout.preferredHeight: 1
                         onChooseRequested: function (slotIndex) {
                             paneChooser.slot = slotIndex
                             paneChooser.open()
