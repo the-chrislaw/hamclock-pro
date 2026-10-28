@@ -289,6 +289,14 @@ jobs:
           # Take the bundle id from the built app (the iOS target uses
           # HAMCLOCK_IOS_BUNDLE_ID, not the macOS identifier).
           BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          # The sky finder is off for 1.0: no camera/location/motion prompts, and
+          # the plist placeholder must have been substituted.
+          if grep -q 'HAMCLOCK_SKY_FINDER' "$APP/Info.plist" ||
+             plutil -p "$APP/Info.plist" | grep -qE 'NS(Camera|LocationWhenInUse|Motion)UsageDescription'; then
+            echo "Info.plist has sky finder permission strings or an unsubstituted placeholder"
+            plutil -p "$APP/Info.plist"
+            exit 1
+          fi
           echo "launching $BID"
           xcrun simctl launch "$UDID" "$BID" | tee launch.txt
           PID=$(awk -F': ' '{print $2}' launch.txt | tr -d ' ')

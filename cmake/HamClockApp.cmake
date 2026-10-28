@@ -24,14 +24,23 @@ add_library(hamclock-widget-core STATIC
     src/platform/settings.cpp)
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
+# "Find it in the sky" (#573) has no screen yet. Until it does, iOS builds leave
+# out its sensor code, frameworks and permission prompts (see AppleBundle.cmake)
+# so App Review doesn't ask about camera/location use it can't find.
+option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_skysensor_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
-    find_library(HC_COREMOTION CoreMotion REQUIRED)
-    find_library(HC_CORELOCATION CoreLocation REQUIRED)
-    target_link_libraries(hamclock-widget-core PUBLIC ${HC_USERNOTIFICATIONS} ${HC_GAMECONTROLLER} ${HC_COREMOTION} ${HC_CORELOCATION} ${HC_UIKIT})
+    target_link_libraries(hamclock-widget-core PUBLIC ${HC_USERNOTIFICATIONS} ${HC_GAMECONTROLLER} ${HC_UIKIT})
+    if(HAMCLOCK_SKY_FINDER)
+        target_sources(hamclock-widget-core PRIVATE src/platform/apple_skysensor_ios.mm)
+        target_compile_definitions(hamclock-widget-core PRIVATE HAMCLOCK_SKY_FINDER)
+        find_library(HC_COREMOTION CoreMotion REQUIRED)
+        find_library(HC_CORELOCATION CoreLocation REQUIRED)
+        target_link_libraries(hamclock-widget-core PUBLIC ${HC_COREMOTION} ${HC_CORELOCATION})
+    endif()
 endif()
 
 # All widget models are compiled into this library by hamclock_add_widget().

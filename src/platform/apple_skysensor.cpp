@@ -2,7 +2,8 @@
 
 namespace hamclock {
 
-#ifndef Q_OS_IOS
+// Off iOS, or with the finder left out of the build: no sensors.
+#if !defined(Q_OS_IOS) || !defined(HAMCLOCK_SKY_FINDER)
 bool nativeSkySensorAvailable() { return false; }
 bool nativeSkySensorStart(SkySensor*, void (*)(SkySensor*, const RotationMatrix&)) { return true; }
 void nativeSkySensorStop(SkySensor*) {}
