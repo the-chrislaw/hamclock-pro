@@ -34,6 +34,14 @@ MapViewport MapViewport::fill(double width, double height, double preferred_cent
     }
     return v;
 }
+double MapViewport::auto_center_lon(double width, double height, double de_lon, std::optional<double> dx_lon) {
+    const auto v = fill(width, height, de_lon);
+    if (!dx_lon || !v.longitude_cropped()) return de_lon;
+    const double span = wrap180(*dx_lon - de_lon);
+    const double visible = v.width / v.scale;
+    if (std::abs(span) > visible - 2.0 * auto_center_margin_deg) return de_lon;
+    return wrap180(de_lon + span / 2.0);
+}
 double MapViewport::origin_x() const { return width / 2.0 - (center_lon + 180.0) * scale; }
 double MapViewport::x_of(double lon) const { return width / 2.0 + wrap180(lon - center_lon) * scale; }
 MapViewport::LatLon MapViewport::location_at(double px, double py) const {

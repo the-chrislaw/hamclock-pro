@@ -29,7 +29,9 @@ ColumnLayout {
         color: Theme.ink
         placeholderTextColor: Theme.secondary
         selectByMouse: true
-        onTextEdited: parent.edited = true
+        // Typing drops the caller's `text: appSettings.x` binding, so another section
+        // saving (which re-evaluates every binding) can't wipe an unsaved edit.
+        onTextEdited: { parent.edited = true; text = text }
         Accessible.name: caption.text
         background: Rectangle {
             radius: 10 * Theme.scale

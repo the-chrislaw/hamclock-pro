@@ -136,6 +136,95 @@ int hcp_coast_part_count(void);
 int hcp_coast_part(int index, uint32_t* start, uint32_t* count);
 const float* hcp_coast_points(size_t* point_count);
 
+/* Kp / X-ray / solar-wind history for sparklines and bars. Fill out[] with up to cap readings,
+ * OLDEST FIRST (most recent last), only valid rows; return count, or -1 when the body is not the product.
+ * When there are more than cap rows the most recent cap are kept. */
+int hcp_swpc_kp_series(const char* body, size_t len, HcpReading* out, size_t cap);      /* noaa-planetary-k-index.json */
+int hcp_swpc_xray_series(const char* body, size_t len, HcpReading* out, size_t cap);    /* xrays-6-hour.json, 0.1-0.8 nm long channel only */
+int hcp_solarwind_series(const char* body, size_t len, int field, HcpReading* out, size_t cap); /* field 0 speed (rtsw_wind_1m), 1 density (wind), 2 bt (rtsw_mag_1m), 3 bz (mag); active spacecraft rows as the latest_* functions choose */
+
+/* NOAA scales (products/noaa-scales.json), port of src/widgets/solarscales/solar_scales_parse. -1 = not stated. */
+typedef struct { int r, s, g; int r_minor, r_major, s_prob; } HcpScaleDay;
+typedef struct {
+    int valid;
+    int64_t observed_ms;
+    HcpScaleDay current, past24h;
+    HcpScaleDay forecast[3];  /* today, tomorrow, day after */
+} HcpScales;
+int hcp_scales_parse(const char* body, size_t len, HcpScales* out);   /* returns out->valid */
+int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
+
+/* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.
+ * grid may be NULL; otherwise it must hold 360*181 bytes, index (lat+90)*360 + lon(0..359), probability %. */
+typedef struct { int valid; int64_t observed_ms, forecast_ms; int north_peak, south_peak; } HcpAurora;
+int hcp_aurora_parse(const char* body, size_t len, HcpAurora* out, unsigned char* grid);  /* returns out->valid */
+
+/* D-RAP (text/drap_global_frequencies.txt), port of solar_drap_parse.
+ * grid may be NULL; otherwise 90*90 floats, row 0 = lat 89, step 2 down; col 0 = lon -178, step 4. */
+typedef struct { int valid; int64_t valid_ms; double peak_mhz; char xray[64]; char proton[64]; } HcpDrap;
+int hcp_drap_parse(const char* body, size_t len, HcpDrap* out, float* grid);  /* returns out->valid */
+
+/* Launch Library 2 upcoming list, port of launches_parse (parse + ham_hint + pad_position). Soonest first.
+ * Returns count or -1 when there is no "results" array. */
+typedef struct {
+    char name[96]; char provider[48]; char pad[64]; char location[96];
+    char status[16]; char mission[96]; char mission_type[48]; char hint[64];
+    int64_t net_ms; int precise; int has_pad; double pad_lat, pad_lon;
+} HcpLaunch;
+int hcp_launches_parse(const char* body, size_t len, HcpLaunch* out, size_t cap);
+int hcp_launch_countdown(int64_t net_ms, int64_t now_ms, char* buf, size_t cap);  /* same text as countdown_text */
+
+/* On-the-air spots, port of ota_parse (POTA api.pota.app/spot/activator, SOTA api-db2.sota.org.uk, WWFF spots.wwff.co).
+ * Newest first, same skip/QRT rules as the Qt parse_* functions (which do not collapse duplicates; the Qt
+ * merge() does that across feeds). Returns count or -1 when not a JSON array (as the Qt parser's ok=false). */
+typedef struct {
+    char program[8]; char call[16]; char reference[24]; char name[64];
+    double freq_khz; char mode[12]; int64_t time_ms;
+    int has_position; double lat, lon; char comment[64];
+} HcpOtaSpot;
+int hcp_pota_parse(const char* body, size_t len, HcpOtaSpot* out, size_t cap);
+int hcp_sota_parse(const char* body, size_t len, HcpOtaSpot* out, size_t cap);
+int hcp_wwff_parse(const char* body, size_t len, HcpOtaSpot* out, size_t cap);
+int hcp_band_name(double freq_khz, char* buf, size_t cap);  /* "20m" etc, same band table the Qt dxcluster/ota filter uses; 0 when outside bands */
+
+/* NASA FIRMS VIIRS CSV, port of src/widgets/fires/fires_parse. Strongest (FRP) first, as Qt does.
+ * Returns count or -1 when not the expected CSV header. */
+typedef struct { double lat, lon, frp_mw; int64_t time_ms; int high_confidence; } HcpFire;
+int hcp_fires_parse(const char* body, size_t len, HcpFire* out, size_t cap);
+
+/* Planets (src/domain/astro_planets): index 0..6 Mercury..Neptune. Returns 0 on bad input. */
+typedef struct { char name[12]; double az_deg, el_deg, sub_lat, sub_lon, distance_au, elongation_deg, ra_deg, dec_deg; } HcpPlanet;
+int hcp_planet(int index, int64_t unix_s, double lat_deg, double lon_deg, HcpPlanet* out);
+/* Next rise (kind 0) / set (kind 1) of a planet strictly after unix_s: 5-minute elevation samples, then
+ * bisection to 1 s; horizon 0 deg (geocentric, no refraction), 48 h search. 0 when none in the window. */
+int hcp_next_planet_event(int index, int64_t unix_s, int kind, double lat_deg, double lon_deg, int64_t* event_s);
+
+/* Solar eclipse (src/domain/astro_eclipse: next_solar_eclipse + eclipse_visibility). */
+typedef struct {
+    int valid; int64_t greatest_s; char type[12]; double gamma, magnitude;
+    int visibility;            /* 0 none, 1 marginal, 2 visible at the station */
+    double local_magnitude; int64_t local_max_s, local_start_s, local_end_s;
+} HcpEclipse;
+int hcp_next_solar_eclipse(int64_t after_s, double lat_deg, double lon_deg, HcpEclipse* out);  /* returns out->valid; lat/lon NaN = no station -> visibility 0 */
+
+/* Great-circle path and locator (src/domain/geometry). Bearings are NaN when defined = 0. */
+typedef struct { int defined; double distance_km, short_bearing_deg, long_distance_km, long_bearing_deg; } HcpPath;
+int hcp_path(double de_lat, double de_lon, double dx_lat, double dx_lon, HcpPath* out);   /* 0 on invalid coords; defined=0 for coincident/antipodal */
+int hcp_maidenhead(double lat_deg, double lon_deg, int precision, char* buf, size_t cap); /* 0 on invalid */
+
+/* Map tables (src/map/land.hpp and src/map/borders.hpp), same style as hcp_coast_*: interleaved (lon,lat) floats. */
+int hcp_land_ring_count(void);
+int hcp_land_ring(int index, uint32_t* start, uint32_t* count);
+const float* hcp_land_points(size_t* point_count);   /* converted once to a static float array */
+int hcp_border_part_count(void);
+int hcp_border_part(int index, uint32_t* start, uint32_t* count);
+const float* hcp_border_points(size_t* point_count);
+
+/* Place search for first-run setup. */
+typedef struct { char name[160]; double lat, lon; } HcpPlace;
+int hcp_nominatim_parse(const char* body, size_t len, HcpPlace* out, size_t cap); /* jsonv2 array as src/ui/location_tools.cpp parseSearchReply; -1 not an array */
+int hcp_open_meteo_timezone(const char* body, size_t len, char* buf, size_t cap); /* "timezone" field of an Open-Meteo forecast reply; 0 when absent */
+
 #ifdef __cplusplus
 }
 #endif

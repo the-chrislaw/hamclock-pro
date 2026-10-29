@@ -4,6 +4,7 @@
 #include "../../domain/astro_satellite.hpp"
 #include "../../domain/astro_transmitters.hpp"
 #include "../../map/overlay.hpp"
+#include "../../net/polled_source.hpp"
 #include <QStringList>
 #include <QTimer>
 #include <QVariantList>
@@ -14,6 +15,10 @@ namespace hamclock {
 class PolledSource;
 class AppSettings;
 std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
+// Wraps a transport so a failed GET is retried once at `fallback` (CelesTrak -> AMSAT mirror).
+Transport with_fallback(Transport primary, QUrl fallback);
+// True for the popular FM/linear birds the pane lists, under CelesTrak or AMSAT naming.
+bool is_tracked_satellite(const QString& tle_name);
 
 // Next amateur-satellite passes at the DE station: CelesTrak TLEs (cached,
 // refreshed daily) propagated offline with SGP4 from the system clock.
@@ -122,6 +127,10 @@ QString compass_point(double az_deg);
 constexpr int kMaxTleAgeDays = 30;
 // Sets whose epoch is within kMaxTleAgeDays of unix_time (or in the near future).
 std::vector<Tle> fresh_tles(const std::vector<Tle>& tles, double unix_time);
+// Wraps a transport so a failed GET is retried once at `fallback` (CelesTrak -> AMSAT mirror).
+Transport with_fallback(Transport primary, QUrl fallback);
+// True for the popular FM/linear birds the pane lists, under CelesTrak or AMSAT naming.
+bool is_tracked_satellite(const QString& tle_name);
 
 // At most this many satellites get a ground track on the map.
 constexpr int kMaxTracked = 2;

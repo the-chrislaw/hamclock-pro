@@ -400,7 +400,9 @@ MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
             lo = lo ? std::min(*lo, l->latitude) : l->latitude;
             hi = hi ? std::max(*hi, l->latitude) : l->latitude;
         }
-    return MapViewport::fill(size.width(), size.height(), scene.de ? scene.de->longitude : 0.0, lo, hi,
+    const double de_lon = scene.de ? scene.de->longitude : 0.0;
+    const std::optional<double> dx_lon = scene.de && scene.dx ? std::optional(scene.dx->longitude) : std::nullopt;
+    return MapViewport::fill(size.width(), size.height(), MapViewport::auto_center_lon(size.width(), size.height(), de_lon, dx_lon), lo, hi,
                             scene.zoom, scene.pan_lon ? scene.pan_lon : scene.center_lon, scene.pan_lat);
 }
 void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) const {

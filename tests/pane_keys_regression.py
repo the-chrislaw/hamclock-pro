@@ -23,6 +23,9 @@ main = (root / "Main.qml").read_text()
 timers = (root / "TimersPage.qml").read_text()
 if "closeRequested()" not in big or "TapHandler" not in big:
     sys.exit("BigClockPage.qml: tap must close")
+# 12-hour mode makes the seconds field "18 PM"; Number() turns that into NaN and the hands vanish.
+if re.search(r"Number\(parts\[", big):
+    sys.exit("BigClockPage.qml: analog hands must parse 12-hour time (use parseInt)")
 if "bigClockRequested" not in timers or "bigClockLayer" not in main or "BigClockPage" not in main:
     sys.exit("Big Clock is not wired from the Timers page")
 settings = (root / "SettingsPage.qml").read_text()

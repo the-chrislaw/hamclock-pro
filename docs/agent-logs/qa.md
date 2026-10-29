@@ -540,3 +540,13 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 01ce85e (merged since 0572e03: #648 adaptive panes for every widget plus audit fixes, #651 tvOS version 1.0.0, my run 94 log #650). Main builds; 186 of 187 tests pass. `qml-app-truncation-1512x982` fails here (exit 4, Sun & Moon status badge clipped at the card edge in the spill pane). Reviewed #648: no QtWidgets, scrolling containers, password exposure or network code seen in the diff; pane tests gained assertions. Screenshots at 800x480, 1024x600 and 1920x1080 in light and dark are correct.
 - Opened: #652 ([A] Sun & Moon badge clipped at 1512x982). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: the Pi sizes are fine. #648 left a desktop-size clipping regression in the Sun & Moon spill pane, which CI did not catch, so the guard may depend on fonts. Remaining risk is iOS/tvOS code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-29 (UTC) QA run 96
+- Last reviewed commit: 82b125d (merged since 01ce85e: #656 status badge width tracks dotOnly, my run 95 log #653). Main builds and passes 187/187 tests, including `qml-app-truncation-1512x982`, so #652 is fixed on main and already closed. #656 is a one-line change in StatusBadge.qml with no QtWidgets, scrolling, network or credential code. Screenshots were not repeated for this one-line change.
+- Opened: none. Closed: none (#652 was already closed). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and the 1512x982 clipping regression is resolved. Remaining risk is iOS/tvOS code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-29 (UTC) QA run 97
+- Last reviewed commit: fa180ce (only my run 96 log #658 merged since 82b125d). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise and data freshness on the real Pi (#150).

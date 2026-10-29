@@ -2,29 +2,21 @@ import SwiftUI
 
 @main
 struct HamClockApp: App {
-    @StateObject private var weather = SpaceWeatherStore()
-    @StateObject private var quakes = QuakeStore()
-    @StateObject private var localWx = LocalWeatherStore()
-    @StateObject private var storms = StormStore()
+    @StateObject private var settings = AppSettings()
+    @StateObject private var feeds = Feeds()
     @StateObject private var sats = SatelliteStore()
-    @StateObject private var station = StationStore()
-    @StateObject private var panes = PaneStore()
+    @StateObject private var localWx = LocalWeatherStore()
 
     var body: some Scene {
         WindowGroup {
             DashboardView()
-                .environmentObject(weather)
-                .environmentObject(station)
-                .environmentObject(quakes)
+                .environmentObject(settings)
+                .environmentObject(feeds)
                 .environmentObject(sats)
-                .environmentObject(storms)
                 .environmentObject(localWx)
-                .environmentObject(panes)
-                .task { await weather.run() }
-                .task { await quakes.run() }
+                .task { await feeds.run() }
                 .task { await sats.run() }
-                .task { await storms.run() }
-                .task(id: station.locator) { await localWx.run(station: station) }
+                .task(id: settings.de.map { "\($0.lat),\($0.lon)" } ?? "") { await localWx.run(position: settings.de) }
         }
     }
 }

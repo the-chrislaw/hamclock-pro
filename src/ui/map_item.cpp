@@ -140,9 +140,11 @@ QString MapItem::pathText(double latitude, double longitude) const {
 
 void MapItem::panBy(double dx, double dy) {
     if (scene_.projection != MapProjection::Equirectangular) return;
-    if (scene_.zoom <= 1.0 || width() <= 0 || height() <= 0) return;
+    if (width() <= 0 || height() <= 0) return;
     const auto vp = MapRenderer::viewportFor(QSizeF(width(), height()), scene_);
     if (vp.scale <= 0) return;
+    // At zoom 1 a tall pane (iPad portrait) still crops longitude: allow sideways pans there.
+    if (scene_.zoom <= 1.0 && !vp.longitude_cropped()) return;
     scene_.pan_lon = vp.center_lon - dx / vp.scale;
     scene_.pan_lat = vp.center_lat + dy / vp.scale;
     update();
