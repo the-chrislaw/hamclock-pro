@@ -12,37 +12,56 @@ permissions:
 
 jobs:
   image:
-    name: pi-gen (bookworm arm64)
+    name: pi-gen (trixie arm64)
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 240
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      # pi-gen's arm64 branch builds Trixie (current Raspberry Pi OS); the .deb must match.
+      DEB_SUFFIX: _trixie_arm64.deb
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch the arm64 bookworm .deb
+      - name: Fetch the arm64 trixie .deb
         run: |
-          mkdir -p packaging/pi/stage-hamclock/00-install/files
-          url=$(curl -fsSL -A "hamclock-pro-ci" "https://api.github.com/repos/${{ github.repository }}/releases?per_page=5" |
-                grep -o 'https://[^"]*_bookworm_arm64\.deb' | head -n1)
-          test -n "$url"
-          curl -fsSL -o packaging/pi/stage-hamclock/00-install/files/hamclock-pro.deb "$url"
+          files=packaging/pi/stage-hamclock/00-install/files
+          mkdir -p "$files"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # Release builds publishes the tag's release from a separate workflow started by the
+            # same push; wait for its .deb so the image never bakes in an older build.
+            for i in $(seq 1 60); do
+              name=$(gh release view "$GITHUB_REF_NAME" --json assets --jq ".assets[].name | select(endswith(\"$DEB_SUFFIX\"))" 2>/dev/null | head -n1 || true)
+              [ -n "$name" ] && break
+              echo "waiting for $GITHUB_REF_NAME release .deb ($i/60)"; sleep 120
+            done
+            test -n "$name"
+            gh release download "$GITHUB_REF_NAME" --pattern "$name" --output "$files/hamclock-pro.deb"
+          else
+            # Manual run: newest published build (the rolling pre-release included).
+            gh release download latest --pattern "*$DEB_SUFFIX" --output "$files/hamclock-pro.deb"
+          fi
+          dpkg-deb -f "$files/hamclock-pro.deb" Package Version Architecture
       - name: Fetch pi-gen
         run: git clone --depth 1 --branch arm64 https://github.com/RPi-Distro/pi-gen.git ../pi-gen
       - name: Build image
         run: |
           cp packaging/pi/config ../pi-gen/config
+          # pi-gen refuses DISABLE_FIRST_BOOT_USER_RENAME without a password. Use a random one
+          # that is never stored or printed; the stage locks the account (passwd -l) anyway.
+          echo "FIRST_USER_PASS='$(openssl rand -hex 24)'" >> ../pi-gen/config
           cp -r packaging/pi/stage-hamclock ../pi-gen/stage-hamclock
           touch ../pi-gen/stage3/SKIP ../pi-gen/stage4/SKIP ../pi-gen/stage5/SKIP
           touch ../pi-gen/stage3/SKIP_IMAGES ../pi-gen/stage4/SKIP_IMAGES ../pi-gen/stage5/SKIP_IMAGES
           cd ../pi-gen && sudo ./build-docker.sh
       - name: Checksum
         run: |
-          mkdir -p out && cp ../pi-gen/deploy/*.img.xz out/ 
-          cd out && sha256sum *.img.xz > SHA256SUMS && ls -l
+          mkdir -p out && cp ../pi-gen/deploy/*.img.xz out/
+          # Not "SHA256SUMS": that name belongs to the .deb checksums the updater reads.
+          cd out && sha256sum *.img.xz > SHA256SUMS-image && ls -l
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-pi-image
           path: out/*
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: out/*
+        run: gh release upload "$GITHUB_REF_NAME" out/* --clobber

@@ -1,10 +1,11 @@
 # Installing on a Raspberry Pi
 
 The flashable image is built by `.github/workflows/image.yml` (pi-gen, Raspberry Pi OS Lite arm64,
-Bookworm). **Not yet validated on a device**: build it from the Actions tab (manual run) and report
+Trixie). **Not yet validated on a device**: build it from the Actions tab (manual run) and report
 what happens on your Pi.
 
-1. Download `hamclock-pro-*.img.xz` and `SHA256SUMS`; check with `sha256sum -c SHA256SUMS`.
+1. Download the `*-hamclock-pro.img.xz` image and `SHA256SUMS-image` from the release; check with
+   `sha256sum -c SHA256SUMS-image`.
 2. In Raspberry Pi Imager choose *Use custom* and the `.img.xz`. In the settings dialog set Wi-Fi
    (and, only if you want it, enable SSH with a key or password you choose; SSH is off by default).
 3. Boot. HamClock Pro starts full screen in a kiosk session (cage). With no saved station it opens
