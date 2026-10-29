@@ -11,7 +11,7 @@ Rectangle {
     // Width with the word shown, independent of dotOnly, so a parent can decide without a binding loop.
     readonly property real fullWidth: (7 + 5) * Theme.scale + wordMetrics.advanceWidth + 12 * Theme.scale
     TextMetrics { id: wordMetrics; text: Theme.stateLabel(status); font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
-    implicitWidth: row.implicitWidth + 12 * Theme.scale
+    implicitWidth: dotOnly ? (7 + 12) * Theme.scale : fullWidth
     implicitHeight: 20 * Theme.scale
     radius: height / 2
     color: Qt.rgba(Theme.stateColor(status).r, Theme.stateColor(status).g, Theme.stateColor(status).b, 0.14)
