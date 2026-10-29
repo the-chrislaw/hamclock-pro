@@ -22,6 +22,9 @@ std::optional<Reading> latest_kp(std::string_view body);          // Kp in [0, 9
 std::optional<Reading> latest_solar_flux(std::string_view body);  // sfu, (0, 1000]
 std::optional<Reading> latest_xray_flux(std::string_view body);   // 0.1-0.8nm, W/m^2
 std::vector<Reading> xray_series(std::string_view body, int bucket_minutes);
+// Every valid row, oldest first (stable for equal times); nullopt when the body is not a JSON array.
+std::optional<std::vector<Reading>> kp_history(std::string_view body);
+std::optional<std::vector<Reading>> xray_history(std::string_view body); // 0.1-0.8nm only, unbucketed
 double xray_plot_fraction(double flux_w_m2);
 std::string xray_class(double flux_w_m2);      // 3.2e-6 -> "C3.2"; "" when invalid
 std::string kp_description(double kp);         // NOAA G-scale wording

@@ -17,6 +17,8 @@ struct Point {
 // Only rows with "active": true; null / non-numeric / -9999 fill values skipped.
 // Oldest first, at most one point per timestamp.
 std::vector<Point> series(std::string_view body, const std::string& field);
+// Same rows; nullopt when the body is not a JSON array.
+std::optional<std::vector<Point>> checked_series(std::string_view body, const std::string& field);
 std::optional<Point> latest(std::string_view body, const std::string& field);
 
 inline constexpr char kSpeed[] = "proton_speed";     // km/s (rtsw_wind_1m)

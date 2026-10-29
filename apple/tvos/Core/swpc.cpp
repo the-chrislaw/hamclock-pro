@@ -42,6 +42,32 @@ std::optional<Reading> latest(std::string_view body, Read read) {
     return best;
 }
 
+template <class Read>
+std::optional<std::vector<Reading>> history(std::string_view body, Read read) {
+    const auto doc = json::parse(body);
+    if (!doc || !doc->is_array()) return std::nullopt;
+    std::vector<Reading> out;
+    for (const auto* row : rows(doc)) {
+        const auto time = row_time(*row);
+        const auto value = read(*row);
+        if (time && value && std::isfinite(*value)) out.push_back(Reading{*value, *time});
+    }
+    std::stable_sort(out.begin(), out.end(), [](const Reading& a, const Reading& b) { return a.time_ms < b.time_ms; });
+    return out;
+}
+
+std::optional<double> kp_value(const json::Value& row) {
+    const auto& kp = row.at("Kp");
+    if (!kp.is_number() || kp.number < 0 || kp.number > 9) return std::nullopt;
+    return kp.number;
+}
+
+std::optional<double> xray_value(const json::Value& row) {
+    const auto& f = row.at("flux");
+    if (row.at("energy").as_string() != kFlareBand || !f.is_number() || f.number <= 0) return std::nullopt;
+    return f.number;
+}
+
 std::string format(const char* fmt, char letter, double v, int digits) {
     char buf[32];
     std::snprintf(buf, sizeof buf, fmt, letter, digits, v);
@@ -69,13 +95,9 @@ std::optional<int64_t> parse_iso_utc_ms(std::string_view text) {
     return ((days_from_civil(Y, unsigned(M), unsigned(D)) * 24 + h) * 60 + m) * 60 * 1000 + s * 1000 + ms;
 }
 
-std::optional<Reading> latest_kp(std::string_view body) {
-    return latest(body, [](const json::Value& row) -> std::optional<double> {
-        const auto& kp = row.at("Kp");
-        if (!kp.is_number() || kp.number < 0 || kp.number > 9) return std::nullopt;
-        return kp.number;
-    });
-}
+std::optional<Reading> latest_kp(std::string_view body) { return latest(body, kp_value); }
+std::optional<std::vector<Reading>> kp_history(std::string_view body) { return history(body, kp_value); }
+std::optional<std::vector<Reading>> xray_history(std::string_view body) { return history(body, xray_value); }
 
 std::optional<Reading> latest_solar_flux(std::string_view body) {
     return latest(body, [](const json::Value& row) -> std::optional<double> {
@@ -85,13 +107,7 @@ std::optional<Reading> latest_solar_flux(std::string_view body) {
     });
 }
 
-std::optional<Reading> latest_xray_flux(std::string_view body) {
-    return latest(body, [](const json::Value& row) -> std::optional<double> {
-        const auto& f = row.at("flux");
-        if (row.at("energy").as_string() != kFlareBand || !f.is_number() || f.number <= 0) return std::nullopt;
-        return f.number;
-    });
-}
+std::optional<Reading> latest_xray_flux(std::string_view body) { return latest(body, xray_value); }
 
 std::vector<Reading> xray_series(std::string_view body, int bucket_minutes) {
     std::vector<Reading> out;

@@ -7,9 +7,14 @@
 namespace hcp::solarwind {
 
 std::vector<Point> series(std::string_view body, const std::string& field) {
+    auto s = checked_series(body, field);
+    return s ? std::move(*s) : std::vector<Point>{};
+}
+
+std::optional<std::vector<Point>> checked_series(std::string_view body, const std::string& field) {
     std::vector<Point> out;
     const auto doc = json::parse(body);
-    if (!doc || !doc->is_array()) return out;
+    if (!doc || !doc->is_array()) return std::nullopt;
     for (const auto& row : doc->array) {
         if (!row.is_object()) continue;
         const auto& active = row.at("active");

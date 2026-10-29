@@ -1,4 +1,5 @@
 #include "hcpcore.h"
+#include "abi_util.hpp"
 #include "bands.hpp"
 #include "quakes.hpp"
 #include "storms.hpp"
@@ -28,14 +29,8 @@ HcpReading wrap(const std::optional<hcp::solarwind::Point>& p) {
     if (p) { out.valid = 1; out.value = p->value; out.time_ms = p->time_ms; }
     return out;
 }
-std::string_view view(const char* body, size_t len) { return body ? std::string_view(body, len) : std::string_view(); }
-int copy(const std::string& s, char* buf, size_t cap) {
-    if (!buf || cap == 0) return 0;
-    const size_t n = s.size() < cap - 1 ? s.size() : cap - 1;
-    std::memcpy(buf, s.data(), n);
-    buf[n] = '\0';
-    return n > 0;
-}
+using hcp::abi::copy;
+using hcp::abi::view;
 } // namespace
 
 extern "C" {
