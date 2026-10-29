@@ -47,6 +47,7 @@ Card {
             Layout.minimumHeight: 40 * Theme.scale
             Layout.preferredHeight: 60 * Theme.scale
             values: root.widget ? root.widget.xrayHistory : []
+            pixelScale: root.fit
         }
     }
     // Compact slot: one line per value (label left, value right) so nothing is clipped.
@@ -98,6 +99,7 @@ Card {
             // Desktop panes: the plot takes the height left under the values (the 7-inch layout keeps 34).
             height: Theme.dense ? 34 * Theme.scale : Math.max(34 * Theme.scale, compactColumn.parent.height - y)
             values: root.widget ? root.widget.xrayHistory : []
+            pixelScale: root.fit
         }
     }
     Column {
@@ -138,6 +140,7 @@ Card {
         width: parent.width
         height: Math.max(56 * Theme.scale, Math.min(parent.height * 0.3, 160 * Theme.scale))
         values: root.widget ? root.widget.xrayHistory : []
+        pixelScale: root.fit
     }
     }
 }
