@@ -35,7 +35,7 @@ targets:
   HamClockWidgets:
     type: app-extension
     platform: iOS
-    sources: [Shared, Widgets/Sources]
+    sources: [Shared, Widgets/Sources, Widgets/Resources]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.chrislaw.hamclockpro.widgets

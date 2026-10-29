@@ -647,7 +647,9 @@ jobs:
             /usr/libexec/PlistBuddy -c "Delete :keychain-access-groups" "$RUNNER_TEMP/widgets.entitlements" 2>/dev/null || true
             codesign --force --sign "$IDENT" --keychain "$KC" --timestamp=none \
               --entitlements "$RUNNER_TEMP/widgets.entitlements" "$EXT"
-            codesign -d --entitlements - --xml "$APPDIR" > "$RUNNER_TEMP/app.entitlements"
+            # ":-" always prints a plain XML plist (the blob form has a binary header).
+            codesign -d --entitlements :- "$APPDIR" > "$RUNNER_TEMP/app.entitlements"
+            plutil -lint "$RUNNER_TEMP/app.entitlements"
             grep -qF "$GROUP" "$RUNNER_TEMP/app.entitlements" || { echo "app was archived without the App Group"; exit 1; }
             codesign --force --sign "$IDENT" --keychain "$KC" --timestamp=none \
               --entitlements "$RUNNER_TEMP/app.entitlements" "$APPDIR"
