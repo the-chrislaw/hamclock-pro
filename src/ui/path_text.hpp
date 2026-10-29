@@ -6,6 +6,13 @@
 
 namespace hamclock {
 
+constexpr double kKmPerMile = 1.609344;
+
+// "123 km", or "76 mi" with imperial units, rounded to whole units.
+inline QString distance_label(double km, bool imperial) {
+    return QString("%1 %2").arg(qRound(imperial ? km / kKmPerMile : km)).arg(imperial ? "mi" : "km");
+}
+
 // DE == DX gives "0 KM" and "BEARING UNDEFINED", which reads as broken.
 // Show a prompt instead; any other distance/bearing pair is shown as is.
 inline QString path_summary(const QString& distance, const QString& bearing) {
@@ -24,7 +31,7 @@ inline QString path_detail(const GeometryResult& g, bool long_path, bool imperia
     const QChar nb(0x00A0);
     return QString("%1\n%2%3%4\n%5°%3TRUE")
         .arg(long_path ? "Long path" : "Short path")
-        .arg(qRound(imperial ? km / 1.609344 : km)).arg(nb).arg(imperial ? "MI" : "KM").arg(qRound(deg) % 360);
+        .arg(qRound(imperial ? km / kKmPerMile : km)).arg(nb).arg(imperial ? "MI" : "KM").arg(qRound(deg) % 360);
 }
 
 } // namespace hamclock
