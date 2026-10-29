@@ -10,7 +10,6 @@ Card {
     // Stacked: azimuth and elevation over a compass dial that takes the leftover height.
     designWidth: stacked ? Math.min(260 * Theme.scale, Math.max(150 * Theme.scale, values.implicitWidth))
                       : (compact ? 260 : 420) * Theme.scale
-    onDesignWidthChanged: Qt.callLater(refit)
     ColumnLayout {
         visible: root.stacked
         width: parent.width

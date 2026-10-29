@@ -23,7 +23,7 @@ Item {
     signal chooseRequested(int slot)
     signal setupRequested()
     // Phone: the page dots get their own strip under the card instead of covering its footer.
-    readonly property real dotsRoom: pageDots.visible ? 12 * Theme.scale : 0
+    readonly property real dotsRoom: Theme.phone && ids().length > 1 ? 12 * Theme.scale : 0
     signal optionsRequested(int slot)
 
     // Step to the next (+1) or previous (-1) widget in registry order; "none" sits

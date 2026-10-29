@@ -26,7 +26,6 @@ Card {
     // grid's own, so the card grows it until it fills the pane (never past the compact width).
     designWidth: stacked ? Math.min(260 * Theme.scale, Math.max(150 * Theme.scale, grid.implicitWidth))
                       : (compact ? 260 : 420) * Theme.scale
-    onDesignWidthChanged: Qt.callLater(refit)
     GridLayout {
         id: grid
         visible: root.stacked

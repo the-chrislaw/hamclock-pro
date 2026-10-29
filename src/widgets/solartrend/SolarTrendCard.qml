@@ -6,8 +6,8 @@ Card {
     id: root
     // Full labels, stacked values and the flux line need a tall pane with real height (not a barely-tall
     // 1024x768 pane); otherwise the compact summary, so the Kp bars always keep their room.
-    readonly property bool roomy: trendColumn.parent !== null && trendColumn.parent.height >= 260 * Theme.scale
-    readonly property bool brief: root.compact && !(root.tall && roomy)
+    readonly property bool trendRoomy: trendColumn.parent !== null && trendColumn.parent.height >= 260 * Theme.scale
+    readonly property bool brief: root.compact && !(root.tall && trendRoomy)
     ColumnLayout {
         id: trendColumn
         width: parent.width
@@ -16,7 +16,7 @@ Card {
         // Tall pane: the two values stacked with full labels and captions.
         GridLayout {
             Layout.fillWidth: true
-            columns: root.tall && root.roomy ? 1 : 2
+            columns: root.tall && root.trendRoomy ? 1 : 2
             columnSpacing: Theme.gap * 1.5
             rowSpacing: Theme.gap * 0.6
             Metric {

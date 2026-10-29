@@ -10,7 +10,6 @@ Card {
     // card grows it until it fills the pane (never past the compact width).
     designWidth: stacked ? Math.min(260 * Theme.scale, Math.max(150 * Theme.scale, stack.implicitWidth))
                       : (compact ? 260 : 420) * Theme.scale
-    onDesignWidthChanged: Qt.callLater(refit)
     ColumnLayout {
         id: stack
         visible: root.stacked

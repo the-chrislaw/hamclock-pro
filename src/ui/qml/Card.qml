@@ -23,6 +23,9 @@ Rectangle {
     // A narrow pane with height to spare (desktop pane rows, the station column's
     // spill pane): widgets stack their full layout instead of the compact one.
     readonly property bool tall: compact && width >= 240 * Theme.scale && height >= width * 1.1
+    // A compact pane with real height (the two-row grids at 1280x800 and 2560x1440):
+    // room for a list or a stacked layout even when it is not taller than wide.
+    readonly property bool roomy: compact && height >= 260 * Theme.scale
     // A widget that needs setting up shows why, in full, with a button to Settings.
     readonly property bool needsSetup: adaptive && widget !== null && widget.state === "unconfigured"
     signal setupRequested()
@@ -49,6 +52,7 @@ Rectangle {
     onHeightChanged: Qt.callLater(refit)
     onAdaptiveChanged: Qt.callLater(refit)
     onCompactChanged: Qt.callLater(refit)
+    onDesignWidthChanged: Qt.callLater(refit)
     // When true (set by the pane slot) tapping the title or pressing Enter asks to change the widget.
     property bool chooser: false
     // Content sized by the card (map): its size must not feed back into the card's own.
