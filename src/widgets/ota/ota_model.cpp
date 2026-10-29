@@ -14,7 +14,7 @@ constexpr PollPolicy kPolicy{2min, 15min, 30min};
 constexpr char kPotaUrl[] = "https://api.pota.app/spot/activator";
 constexpr char kSotaUrl[] = "https://api-db2.sota.org.uk/api/spots/50/all/all";
 constexpr char kWwffUrl[] = "https://spots.wwff.co/static/spots.json";
-constexpr int kRecentRows = 6;
+constexpr int kRecentRows = 30; // the card shows as many as fit
 } // namespace
 
 OtaModel::OtaModel(const WidgetContext& context, QObject* parent)

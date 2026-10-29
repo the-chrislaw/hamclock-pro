@@ -4,8 +4,11 @@ import HamClock
 
 Card {
     id: root
+    // Full layout (wide pane, tall pane, or a narrow one with room below, e.g. 1440p rows): the node list fills the leftover height.
+    readonly property bool full: !compact || tall || height >= 260 * Theme.scale
     ColumnLayout {
         width: parent.width
+        height: root.full ? parent.height : implicitHeight
         spacing: Theme.gap
         Metric {
             label: root.compact ? "Mesh" : "Meshtastic nodes with a position"
@@ -16,15 +19,28 @@ Card {
                      : (available ? "Waiting for the node list" : "")
             Layout.fillWidth: true
         }
-        Repeater {
-            model: root.compact || !widget ? [] : widget.nearest
-            delegate: RowLayout {
-                Layout.fillWidth: true
-                spacing: Theme.gap
-                Text { text: modelData.name; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
-                       Layout.preferredWidth: Theme.fontBody * 5 }
-                Text { text: modelData.km + " km"; color: Theme.secondary; font.pixelSize: Theme.fontBody
-                       elide: Text.ElideRight; Layout.fillWidth: true }
+        // Nearest first, as many as fit, whole rows only.
+        Item {
+            visible: root.full && list.count > 0
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.preferredHeight: list.contentHeight
+            ListView {
+                id: list
+                readonly property real rowHeight: Theme.fontBody * 1.5
+                width: parent.width
+                height: Math.min(contentHeight, Math.floor(parent.height / rowHeight) * rowHeight)
+                clip: true
+                interactive: false
+                model: root.full && widget ? widget.nearest : []
+                delegate: RowLayout {
+                    width: ListView.view.width
+                    height: list.rowHeight
+                    spacing: Theme.gap
+                    Text { text: modelData.name; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
+                           elide: Text.ElideRight; Layout.fillWidth: true; objectName: "elideOk" }
+                    Text { text: modelData.km + " km"; color: Theme.secondary; font.pixelSize: Theme.fontBody }
+                }
             }
         }
     }

@@ -35,11 +35,20 @@ ApplicationWindow {
 
     Binding { target: Theme; property: "dense"; value: (window.width <= 1280 && window.height <= 720) || window.phone }
 
-    // Phone portrait (A0d): one column, station strip over one pane over the map.
+    // Phone portrait (A0d): one column, compact station strip over two panes over the map.
     readonly property bool phone: width < 600 && height > width
-    // Phone landscape (A0d): map left, one pane right of it; 800x480 Pi panels keep the 3-pane grid.
+    // Phone landscape (A0d): station, map, then two stacked panes; 800x480 Pi panels keep the 3-pane grid.
     readonly property bool phoneWide: height < 440 && width > height
     Binding { target: Theme; property: "phone"; value: window.phone }
+
+    // Settings, timers and the big clock cover the page. On iOS a tap arrives as a
+    // touch and then again as a synthesized mouse click, so the page stays disabled
+    // while one is open and for a moment after it closes; otherwise the second copy
+    // of the tap that closed it lands on whatever is underneath (e.g. the gear).
+    readonly property bool overlayOpen: settingsLayer.visible || timersLayer.visible || bigClockLayer.visible
+    property bool pageInputBlocked: false
+    onOverlayOpenChanged: if (overlayOpen) { pageInputBlocked = true; unblockTimer.stop() } else unblockTimer.restart()
+    Timer { id: unblockTimer; interval: 350; onTriggered: window.pageInputBlocked = false }
 
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
@@ -51,6 +60,7 @@ ApplicationWindow {
 
     header: Rectangle {
         visible: !Theme.dense
+        enabled: !window.pageInputBlocked
         color: Theme.canvas
         implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
         RowLayout {
@@ -79,6 +89,7 @@ ApplicationWindow {
     // holds as many panes as fit (at least three; a second row when Map size allows).
     GridLayout {
         id: page
+        enabled: !window.pageInputBlocked
         columns: window.phone ? 1 : 2
         rowSpacing: Theme.gap
         columnSpacing: Theme.gap
@@ -89,16 +100,50 @@ ApplicationWindow {
         anchors.rightMargin: Theme.pad + safeArea.right + window.overscanX
         anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
 
-        StationCard {
-            id: stationCard
-            wide: window.phone
+        // Station column. When the station card leaves room below it (tall desktop
+        // windows), the room becomes one more pane instead of empty space: the next
+        // saved slot after the grid's, so it never repeats a widget on screen.
+        // Plain Item with explicit geometry (like the pane row): a layout that shows
+        // and hides the spill slot while it settles can leave the slot at 0x0 (#638).
+        Item {
+            id: stationColumn
             Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
-            Layout.preferredHeight: window.phone ? page.height * 0.36 : -1
-            onSetupRequested: settingsLayer.visible = true
-            onSettingsRequested: settingsLayer.visible = true
-            onTimersRequested: timersLayer.visible = true
+            Layout.preferredHeight: window.phone ? Math.min(stationCard.implicitHeight, page.height * 0.3) : -1
+            implicitHeight: stationCard.implicitHeight
+            readonly property int spillIndex: paneRow.grid.columns * paneRow.grid.rows
+            readonly property bool spill: !window.phone && !window.phoneWide && spillIndex < appSettings.panes.length
+                && width >= paneRow.minPaneWidth && height - stationCard.implicitHeight - Theme.gap >= paneRow.minPaneHeight
+
+            StationCard {
+                id: stationCard
+                wide: window.phone
+                compact: window.phone || window.phoneWide
+                width: parent.width
+                height: stationColumn.spill ? implicitHeight : parent.height
+                onSetupRequested: settingsLayer.visible = true
+                onSettingsRequested: settingsLayer.visible = true
+                onTimersRequested: timersLayer.visible = true
+            }
+            PaneSlot {
+                id: spillSlot
+                visible: stationColumn.spill
+                index: stationColumn.spillIndex
+                paused: paneChooser.visible || paneOptions.visible
+                y: stationCard.height + Theme.gap
+                width: parent.width
+                height: Math.max(0, parent.height - y)
+                onChooseRequested: function (slotIndex) {
+                    paneChooser.slot = slotIndex
+                    paneChooser.open()
+                }
+                onSetupRequested: settingsLayer.visible = true
+                onOptionsRequested: function (slotIndex) {
+                    paneOptions.slot = slotIndex
+                    paneOptions.open()
+                }
+            }
         }
 
         GridLayout {
@@ -110,38 +155,42 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            GridLayout {
+            // Plain Item with explicit slot geometry: a GridLayout whose column count
+            // changes while the layout settles can leave every slot at 0x0 (#638).
+            Item {
                 id: paneRow
                 readonly property real minPaneWidth: (Theme.dense ? 250 : 260) * Theme.scale
                 readonly property real minPaneHeight: (Theme.dense ? 190 : 220) * Theme.scale
-                // Phones show one swipeable pane; mapSize is read so a Map size change re-fits.
-                readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 1 })
+                // Phones show two stacked swipeable panes; mapSize is read so a Map size change re-fits.
+                readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 2 })
                     : (appSettings.mapSize, appSettings.paneGrid(paneAndMap.width, page.height, Theme.gap, minPaneWidth, minPaneHeight))
-                columns: grid.columns
+                readonly property int cols: Math.max(1, grid.columns)
+                readonly property int rowCount: Math.max(1, grid.rows)
+                readonly property real slotWidth: Math.max(0, (width - (cols - 1) * Theme.gap) / cols)
+                readonly property real slotHeight: Math.max(0, (height - (rowCount - 1) * Theme.gap) / rowCount)
                 Layout.fillWidth: !window.phoneWide
                 Layout.fillHeight: window.phoneWide
-                Layout.preferredWidth: window.phoneWide ? page.width * 0.3 : -1
-                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.22
+                Layout.preferredWidth: window.phoneWide ? page.width * 0.32 : -1
+                Layout.preferredHeight: window.phoneWide ? -1 : (window.phone ? page.height * 0.42
                     : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
-                rowSpacing: Theme.gap
-                columnSpacing: Theme.gap
-                function slotAt(i) { return paneRepeater.itemAt(i) }
+                function slotAt(i) { return i === stationColumn.spillIndex ? spillSlot : paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
                     model: paneRow.grid.columns * paneRow.grid.rows
                     PaneSlot {
                         index: modelData
                         paused: paneChooser.visible || paneOptions.visible
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 1
-                        Layout.preferredHeight: 1
+                        x: (index % paneRow.cols) * (paneRow.slotWidth + Theme.gap)
+                        y: Math.floor(index / paneRow.cols) * (paneRow.slotHeight + Theme.gap)
+                        width: paneRow.slotWidth
+                        height: paneRow.slotHeight
                         onChooseRequested: function (slotIndex) {
                             paneChooser.slot = slotIndex
                             paneChooser.open()
                         }
+                        onSetupRequested: settingsLayer.visible = true
                         onOptionsRequested: function (slotIndex) {
                             paneOptions.slot = slotIndex
                             paneOptions.open()
@@ -263,6 +312,8 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 9
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
         TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false; onBigClockRequested: bigClockLayer.visible = true }
     }
 
@@ -272,6 +323,8 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 10
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
         BigClockPage { anchors.fill: parent; onCloseRequested: bigClockLayer.visible = false }
     }
 
@@ -315,7 +368,9 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 10
-        onVisibleChanged: if (visible) settingsPage.forceActiveFocus()
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
+        onVisibleChanged: if (visible) { settingsPage.reload(); settingsPage.forceActiveFocus() }
         SettingsPage { id: settingsPage; anchors.fill: parent; onCloseRequested: settingsLayer.visible = false }
     }
 }

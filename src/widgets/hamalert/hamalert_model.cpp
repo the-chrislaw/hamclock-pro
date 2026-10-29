@@ -2,8 +2,12 @@
 #include "../dxcluster/spot_layer_style.hpp"
 #include "../../ui/app_settings.hpp"
 #include "../../map/overlay.hpp"
+#include <QCryptographicHash>
 
 namespace hamclock {
+namespace {
+const QString kRejectedText = QString::fromUtf8("HamAlert rejected the user name or password — check them in Settings");
+} // namespace
 
 HamAlertModel::HamAlertModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent)
     : WidgetModel("hamalert", "HamAlert", parent), settings_(context.settings), client_(std::move(factory), this) {
@@ -17,6 +21,7 @@ HamAlertModel::HamAlertModel(const WidgetContext& context, TelnetSocketFactory f
     }
     connect(&client_, &TelnetClient::lineReceived, this, &HamAlertModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &HamAlertModel::on_state);
+    connect(&client_, &TelnetClient::loginRejected, this, &HamAlertModel::on_rejected);
     if (settings_) connect(settings_, &AppSettings::accountsChanged, this, &HamAlertModel::start);
 }
 
@@ -48,6 +53,12 @@ void HamAlertModel::start() {
         setState("unconfigured", "Not configured: add your HamAlert login in Settings");
         return;
     }
+    // A refused login is not tried again (the server would only refuse it again) until the user or password changes.
+    tried_ = credentialsDigest(user, password);
+    if (tried_ == rejected_) {
+        setState("error", kRejectedText);
+        return;
+    }
     client_.start(kHost, kPort, user, {}, password);
     if (client_.state() == TelnetClient::State::Idle)
         setState("error", "HamAlert login contains characters the telnet feed cannot take");
@@ -61,6 +72,17 @@ void HamAlertModel::on_state(TelnetClient::State state) {
     case S::Waiting: setState("offline", "HamAlert connection lost; retrying"); break;
     case S::Idle: break;
     }
+    publishOverlay();
+}
+
+// A digest only, so the password is not kept a second time in memory.
+QByteArray HamAlertModel::credentialsDigest(const QString& user, const QString& password) {
+    return QCryptographicHash::hash((user + '\n' + password).toUtf8(), QCryptographicHash::Sha256);
+}
+
+void HamAlertModel::on_rejected() {
+    rejected_ = tried_;
+    setState("error", kRejectedText);
     publishOverlay();
 }
 

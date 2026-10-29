@@ -10,11 +10,91 @@ Rectangle {
     color: Theme.canvas
     signal closeRequested()
 
+    // Saves every section with changes, in page order. On the first error the page
+    // stays open and scrolls to that section so the message is visible.
+    function saveAndClose() {
+        for (const section of [stationCard, clusterCard, hardwareCard, hamAlertCard, hamsatCard, accountCard]) {
+            if (!section.save()) {
+                flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
+                                                      section.mapToItem(column, 0, 0).y - Theme.pad))
+                return
+            }
+        }
+        page.closeRequested()
+    }
+
+    // Called each time Settings opens: every field shows what is saved again, so
+    // closing without Done (Escape) discards typing and a restored configuration
+    // is not overwritten by fields typed in before it.
+    function reload() {
+        const bound = [
+            [callsign, () => appSettings.callsign], [pskMatch, () => appSettings.pskMatch],
+            [clusterHost, () => appSettings.clusterHost], [clusterPort, () => appSettings.clusterPort],
+            [clusterSsid, () => appSettings.clusterSsid], [clusterCmds, () => appSettings.clusterCommandsText.split("\n").join("; ")],
+            [udpPort, () => appSettings.udpSpotPort], [udpGroup, () => appSettings.udpSpotGroup],
+            [aprsHost, () => appSettings.aprsHost], [aprsPort, () => appSettings.aprsPort], [aprsRadius, () => appSettings.aprsRadiusKm],
+            [meshHost, () => appSettings.meshHost], [meshPort, () => appSettings.meshPort], [pskMax, () => appSettings.pskMaxKm],
+            [adifPath, () => appSettings.adifPath], [otaProgram, () => appSettings.otaProgram], [otaBand, () => appSettings.otaBand],
+            [otaMode, () => appSettings.otaMode], [otaSort, () => appSettings.otaSort], [otaAge, () => appSettings.otaMaxAgeMin],
+            [watchList, () => appSettings.watchListText], [hamAlertUser, () => appSettings.hamAlertUser],
+            [lookupUser, () => appSettings.lookupUser], [bannerTitle, () => appSettings.bannerTitle],
+            [radioHost, () => appSettings.radioHost], [radioPort, () => appSettings.radioPort],
+            [rotatorHost, () => appSettings.rotatorHost], [rotatorPort, () => appSettings.rotatorPort],
+            [adsbHost, () => appSettings.adsbHost], [adsbPort, () => appSettings.adsbPort],
+            [gpsHost, () => appSettings.gpsHost], [gpsPort, () => appSettings.gpsPort],
+            [gpsDevice, () => appSettings.gpsDevice], [gpsBaud, () => appSettings.gpsBaud]
+        ]
+        for (const [field, value] of bound) {
+            field.text = Qt.binding(value)
+            field.edited = false
+        }
+        for (const [field, value] of [[deLat, () => appSettings.deLatitude], [deLon, () => appSettings.deLongitude],
+                                      [dxLat, () => appSettings.dxLatitude], [dxLon, () => appSettings.dxLongitude]])
+            field.text = Qt.binding(() => appSettings.configured ? value() : "")
+        zone.zoneId = Qt.binding(() => appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone())
+        dxZone.zoneId = Qt.binding(() => appSettings.dxZoneOverride)
+        for (const secret of [hamAlertPassword, hamsatKey, lookupPassword, place, deGrid]) secret.text = ""
+        placeStatus.text = ""
+        zoneHint.text = ""
+        udpLan.lan = Qt.binding(() => appSettings.udpSpotLan)
+        udpMe.me = Qt.binding(() => appSettings.udpSpotByMe)
+        udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
+        accountCard.service = Qt.binding(() => appSettings.lookupService)
+        for (const message of [stationError, clusterError, hardwareError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
+        flick.contentY = 0
+    }
+
     function num(text) { const v = Number(text.trim()); return text.trim().length && isFinite(v) ? v : NaN }
+
+    // Title bar stays put while the sections scroll, so Done is always in reach.
+    Rectangle {
+        id: titleBar
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: titleRow.implicitHeight + 2 * Theme.pad
+        color: Theme.canvas
+        z: 1
+        RowLayout {
+            id: titleRow
+            width: column.width
+            x: column.x
+            anchors.verticalCenter: parent.verticalCenter
+            Text {
+                text: "Settings"
+                color: Theme.ink
+                font.pixelSize: Theme.fontValue
+                font.weight: Font.DemiBold
+                Layout.fillWidth: true
+            }
+            // Done keeps what was typed (iOS convention); it stays open only to show an error.
+            AppButton { text: "Done"; primary: true; onClicked: page.saveAndClose() }
+        }
+        Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.divider
+                    visible: flick.contentY > 0 }
+    }
 
     Flickable {
         id: flick
-        anchors.fill: parent
+        anchors { top: titleBar.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
         contentHeight: column.implicitHeight + 2 * Theme.pad
         clip: true
         boundsBehavior: Flickable.StopAtBounds
@@ -33,20 +113,8 @@ Rectangle {
             id: column
             width: Math.min(flick.width - 2 * Theme.pad, 640 * Theme.scale)
             x: Math.max(Theme.pad, (flick.width - width) / 2)
-            y: Theme.pad
+            y: 0
             spacing: Theme.gap
-
-            RowLayout {
-                Layout.fillWidth: true
-                Text {
-                    text: "Settings"
-                    color: Theme.ink
-                    font.pixelSize: Theme.fontValue
-                    font.weight: Font.DemiBold
-                    Layout.fillWidth: true
-                }
-                AppButton { text: "Done"; primary: true; onClicked: page.closeRequested() }
-            }
 
             Card {
                 title: "Station"
@@ -130,27 +198,48 @@ Rectangle {
                         Layout.fillWidth: true
                         spacing: Theme.gap
                         TimeZonePicker { id: dxZone; label: "DX time zone (empty = automatic)"; Layout.fillWidth: true
-                                         zoneId: appSettings.dxZoneOverride }
-                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveDxZone(dxZone.zoneId) }
-                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom
-                                    onClicked: { dxZone.zoneId = ""; appSettings.saveDxZone("") } }
+                                         Layout.preferredWidth: 0; zoneId: appSettings.dxZoneOverride }
+                        AppButton { text: "Auto"; Layout.alignment: Qt.AlignBottom; onClicked: dxZone.zoneId = "" }
                     }
                     Text { id: zoneHint; visible: text.length > 0; color: Theme.secondary
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                    RowLayout {
-                        Text { id: stationError; color: Theme.bad; font.pixelSize: Theme.fontCaption
-                               wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton {
-                            text: "Save station"
-                            primary: true
-                            onClicked: {
-                                const values = [locationTools.parseCoordinate(deLat.text, true), locationTools.parseCoordinate(deLon.text, false),
-                                                locationTools.parseCoordinate(dxLat.text, true), locationTools.parseCoordinate(dxLon.text, false)]
-                                if (values.some(isNaN)) { stationError.text = "Enter all four coordinates as decimal degrees or degrees:minutes:seconds (N/S, E/W)."; return }
-                                stationError.text = appSettings.saveStation(callsign.text, values[0], values[1],
-                                                                            values[2], values[3], zone.zoneId)
-                            }
+                    Text { id: stationError; visible: text.length > 0; color: Theme.bad; font.pixelSize: Theme.fontCaption
+                           wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    AppButton { text: "Save"; primary: true; Layout.alignment: Qt.AlignRight
+                                onClicked: if (stationCard.save()) stationError.text = "" }
+
+                    function coordinate(field, latitude) { return locationTools.parseCoordinate(field.text, latitude) }
+                    // Saves the station and DX zone when anything changed. DX is optional:
+                    // left empty it keeps the current target. Returns false with a message
+                    // in stationError when the input can't be saved.
+                    function save() {
+                        const typed = callsign.text.trim().length || deLat.text.trim().length || deLon.text.trim().length
+                        if (!appSettings.configured && !typed) return true
+                        const de = [coordinate(deLat, true), coordinate(deLon, false)]
+                        if (de.some(isNaN)) {
+                            stationError.text = "Add your home location: press Find, type a grid square, or enter latitude and longitude."
+                            return false
                         }
+                        const dxTyped = dxLat.text.trim().length || dxLon.text.trim().length
+                        const dx = dxTyped ? [coordinate(dxLat, true), coordinate(dxLon, false)]
+                                           : [appSettings.dxLatitude, appSettings.dxLongitude]
+                        if (dx.some(isNaN)) {
+                            stationError.text = "For DX, enter both latitude and longitude, or leave both empty."
+                            return false
+                        }
+                        const changed = !appSettings.configured || callsign.text !== appSettings.callsign
+                                        || de[0] !== appSettings.deLatitude || de[1] !== appSettings.deLongitude
+                                        || dx[0] !== appSettings.dxLatitude || dx[1] !== appSettings.dxLongitude
+                                        || zone.zoneId !== appSettings.deZone
+                        if (changed) {
+                            stationError.text = appSettings.saveStation(callsign.text, de[0], de[1], dx[0], dx[1], zone.zoneId)
+                            if (stationError.text.length) return false
+                        }
+                        if (dxZone.zoneId !== appSettings.dxZoneOverride) {
+                            stationError.text = appSettings.saveDxZone(dxZone.zoneId)
+                            if (stationError.text.length) return false
+                        }
+                        return true
                     }
                 }
             }
@@ -226,13 +315,6 @@ Rectangle {
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
-                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
-                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
-                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
-                    AppButton { id: pskRbn; property bool on: appSettings.pskRbn; checkable: false
-                                text: on ? "PSKReporter card: include RBN skimmers (telnet) on" : "PSKReporter card: include RBN skimmers (telnet) off"; primary: on
-                                onClicked: { on = !on; clusterError.text = appSettings.savePskRbn(on) } }
-                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Theme.gap * 0.6
@@ -335,8 +417,37 @@ Rectangle {
             }
 
             Card {
+                title: "Screen rotation"
+                visible: Qt.platform.os === "ios"   // the Pi, Mac and TV don't rotate
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.6
+                    Text {
+                        text: "Keep HamClock Pro upright or sideways however you hold the device. The Control Center rotation lock still applies."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        Repeater {
+                            model: [{ id: "auto", label: "Auto" }, { id: "portrait", label: "Portrait" }, { id: "landscape", label: "Landscape" }]
+                            AppButton {
+                                text: modelData.label
+                                primary: appSettings.orientationLock === modelData.id
+                                onClicked: appSettings.saveOrientationLock(modelData.id)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Card {
                 title: "Map size"
-                visible: !Theme.phone   // phones show one swipeable pane
+                visible: !Theme.phone   // phones always show two stacked panes
                 Layout.fillWidth: true
                 ColumnLayout {
                     width: parent.width
@@ -534,7 +645,45 @@ Rectangle {
                 title: "DX cluster"
                 Layout.fillWidth: true
                 ColumnLayout {
+                    id: clusterCard
                     width: parent.width
+                    readonly property var fields: [clusterHost, clusterPort, clusterSsid, clusterCmds, udpPort, udpGroup,
+                        aprsHost, aprsPort, aprsRadius, meshHost, meshPort, pskMax, pskMatch, adifPath,
+                        otaProgram, otaBand, otaMode, otaSort, otaAge, watchList]
+                    function changed() {
+                        return fields.some(f => f.edited) || udpLan.lan !== appSettings.udpSpotLan
+                               || udpMe.me !== appSettings.udpSpotByMe || udpSetsDx.on !== appSettings.udpSetsDx
+                    }
+                    // Returns false with the message in clusterError when something can't be saved.
+                    function save() {
+                        if (!changed()) return true
+                        const steps = [
+                            () => appSettings.saveCluster(clusterHost.text, parseInt(clusterPort.text) || 0),
+                            () => appSettings.saveClusterLogin(parseInt(clusterSsid.text) || 0, clusterCmds.text.split(";").join("\n")),
+                            () => appSettings.saveWatchList(watchList.text),
+                            () => appSettings.saveAdifPath(adifPath.text),
+                            () => appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0),
+                            () => appSettings.saveOtaSort(otaSort.text),
+                            () => appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0),
+                            () => appSettings.saveMesh(meshHost.text, parseInt(meshPort.text) || 0),
+                            () => appSettings.savePskMaxKm(parseInt(pskMax.text) || 0),
+                            () => appSettings.savePskMatch(pskMatch.text),
+                            () => appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan),
+                            () => appSettings.saveUdpGroup(udpGroup.text),
+                            () => appSettings.saveUdpScope(udpMe.me),
+                            () => appSettings.saveUdpSetsDx(udpSetsDx.on)
+                        ]
+                        // "Saved; ..." is a warning (something was trimmed), not a failure.
+                        let warning = ""
+                        for (const step of steps) {
+                            const message = step()
+                            if (message.startsWith("Saved")) { warning = message; continue }
+                            if (message.length) { clusterError.text = message; return false }
+                        }
+                        clusterError.text = warning
+                        fields.forEach(f => f.edited = false)
+                        return true
+                    }
                     spacing: Theme.gap * 0.8
                     Text {
                         text: "Spots come from a DX cluster node you choose; it logs in with your callsign. Leave empty to stay disconnected."
@@ -554,21 +703,29 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
-                    RowLayout {
+                    // Five controls: one row on wide screens, two columns below ~1100 px (a 1024x600
+                    // panel cannot fit the five labels on one line without cutting them).
+                    GridLayout {
                         Layout.fillWidth: true
-                        spacing: Theme.gap
+                        columns: width < 1100 * Theme.scale ? 2 : 5
+                        columnSpacing: Theme.gap
+                        rowSpacing: Theme.gap * 0.8
                         FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
+                        // iOS always listens on the network (WSJT-X runs on another computer), and
+                        // multicast needs an Apple entitlement the app doesn't have.
                         AppButton { id: udpLan; property bool lan: appSettings.udpSpotLan; checkable: false
-                                    text: lan ? "UDP from LAN: on" : "UDP from this computer only"; primary: lan
-                                    onClicked: lan = !lan; Layout.preferredWidth: 2 }
-                        FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup; Layout.preferredWidth: 1 }
+                                    visible: Qt.platform.os !== "ios"
+                                    text: lan ? "UDP from LAN: on" : "UDP from this device only"; primary: lan
+                                    onClicked: lan = !lan; Layout.preferredWidth: 2; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
+                        FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup; Layout.preferredWidth: 1
+                                    visible: Qt.platform.os !== "ios" }
                         AppButton { id: udpMe; property bool me: appSettings.udpSpotByMe; checkable: false
                                     text: me ? "UDP spots: by me" : "UDP spots: all"; primary: me
-                                    onClicked: me = !me; Layout.preferredWidth: 1 }
+                                    onClicked: me = !me; Layout.preferredWidth: 1; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
                         AppButton { id: udpSetsDx; property bool on: appSettings.udpSetsDx; checkable: false
                                     text: on ? "UDP sets DX: on (10 min)" : "UDP sets DX: off"; primary: on
-                                    onClicked: on = !on; Layout.preferredWidth: 1 }
+                                    onClicked: on = !on; Layout.preferredWidth: 1; Layout.fillWidth: true; Layout.alignment: Qt.AlignBottom }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -588,12 +745,19 @@ Rectangle {
                     }
                     FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
                                 field.inputMethodHints: Qt.ImhDigitsOnly }
+                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
+                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
+                    AppButton { id: pskRbn; property bool on: appSettings.pskRbn; checkable: false
+                                text: on ? "PSKReporter card: include RBN skimmers (telnet) on" : "PSKReporter card: include RBN skimmers (telnet) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskRbn(on) } }
+                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Theme.gap
                         Text { text: "Show on map:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
                         Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"], ["adif", "Log"]]
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"]].concat(Qt.platform.os === "ios" ? [] : [["adif", "Log"]])
                             AppButton { property bool on: appSettings.mapSourceVisible(modelData[0]); checkable: false
                                         text: modelData[1] + (on ? ": on" : ": off"); primary: on
                                         Connections { target: appSettings; function onOptionsChanged() { on = appSettings.mapSourceVisible(modelData[0]) } }
@@ -605,7 +769,7 @@ Rectangle {
                         spacing: Theme.gap
                         Text { text: "Map labels:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
                         Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"], ["adif", "Log"]]
+                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"]].concat(Qt.platform.os === "ios" ? [] : [["adif", "Log"]])
                             AppButton { property int mode: appSettings.mapSourceLabel(modelData[0]); checkable: false
                                         text: modelData[1] + ": " + ["auto", "none", "prefix", "call", "dot"][mode + 1]
                                         Connections { target: appSettings; function onOptionsChanged() { mode = appSettings.mapSourceLabel(modelData[0]) } }
@@ -616,10 +780,15 @@ Rectangle {
                                     Connections { target: appSettings; function onOptionsChanged() { px = appSettings.mapMinLabelPx() } }
                                     onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
                     }
-                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
-                    RowLayout {
+                    // A typed path can't reach a file inside the iOS sandbox; the log pane is off there too.
+                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true
+                                visible: Qt.platform.os !== "ios" }
+                    // Five filters: one row on wide screens, two columns on a phone.
+                    GridLayout {
                         Layout.fillWidth: true
-                        spacing: Theme.gap
+                        columns: width < 600 * Theme.scale ? 2 : 5
+                        columnSpacing: Theme.gap
+                        rowSpacing: Theme.gap * 0.8
                         FormField { id: otaProgram; label: "On the air: POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
                         FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
                         FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
@@ -630,36 +799,88 @@ Rectangle {
                     FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC, NAPREF, NAGRID or NABAND for spots your ADIF log still needs, OTA/POTA/SOTA/IOTA/WWFF for spots naming a reference; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save cluster"; primary: true
-                                    onClicked: {
-                                        clusterError.text = appSettings.saveCluster(clusterHost.text, parseInt(clusterPort.text) || 0)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveClusterLogin(parseInt(clusterSsid.text) || 0, clusterCmds.text.split(";").join("\n"))
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveWatchList(watchList.text)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveAdifPath(adifPath.text)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveOtaSort(otaSort.text)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveAprs(aprsHost.text, parseInt(aprsPort.text) || 0, parseInt(aprsRadius.text) || 0)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveMesh(meshHost.text, parseInt(meshPort.text) || 0)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.savePskMaxKm(parseInt(pskMax.text) || 0)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.savePskMatch(pskMatch.text)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveUdpSpots(parseInt(udpPort.text) || 0, udpLan.lan)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveUdpGroup(udpGroup.text)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveUdpScope(udpMe.me)
-                                        if (clusterError.text === "")
-                                            clusterError.text = appSettings.saveUdpSetsDx(udpSetsDx.on)
-                                    } }
+                        AppButton { text: "Save"; primary: true; onClicked: clusterCard.save() }
+                    }
+                }
+            }
+
+            // Local station hardware. iPhone and iPad have none and do not list these panes
+            // (widget_available), so the section is hidden there, like the ADIF path.
+            Card {
+                title: "On this computer: station hardware"
+                Layout.fillWidth: true
+                visible: Qt.platform.os !== "ios"
+                ColumnLayout {
+                    id: hardwareCard
+                    width: parent.width
+                    spacing: Theme.gap * 0.8
+                    readonly property var fields: [radioHost, radioPort, rotatorHost, rotatorPort, adsbHost, adsbPort,
+                        gpsHost, gpsPort, gpsDevice, gpsBaud]
+                    function changed() { return fields.some(f => f.edited) }
+                    // Returns false with the message in hardwareError when something can't be saved.
+                    function save() {
+                        if (Qt.platform.os === "ios" || !changed()) return true
+                        const steps = [
+                            () => appSettings.saveRadio(radioHost.text, parseInt(radioPort.text) || 0),
+                            () => appSettings.saveRotator(rotatorHost.text, parseInt(rotatorPort.text) || 0),
+                            () => appSettings.saveAdsb(adsbHost.text, parseInt(adsbPort.text) || 0),
+                            () => appSettings.saveGps(gpsHost.text, parseInt(gpsPort.text) || 0, gpsDevice.text, parseInt(gpsBaud.text) || 0)
+                        ]
+                        for (const step of steps) {
+                            const message = step()
+                            if (message.length) { hardwareError.text = message; return false }
+                        }
+                        hardwareError.text = ""
+                        fields.forEach(f => f.edited = false)
+                        return true
+                    }
+                    Text {
+                        text: "Programs that read your radio, rotator, ADS-B receiver and GPS. Read-only: nothing is sent that could change the rig or move the rotator. Use 127.0.0.1 when they run on this computer; changes apply at once."
+                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: radioHost; label: "Radio: rigctld (Hamlib) address"; text: appSettings.radioHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: radioPort; label: "Port"; text: appSettings.radioPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: rotatorHost; label: "Rotator: rotctld (Hamlib) address"; text: appSettings.rotatorHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: rotatorPort; label: "Port"; text: appSettings.rotatorPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: adsbHost; label: "ADS-B: PiAware / dump1090 address"; text: appSettings.adsbHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: adsbPort; label: "Port"; text: appSettings.adsbPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: gpsHost; label: "GPS: gpsd address"; text: appSettings.gpsHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: gpsPort; label: "Port"; text: appSettings.gpsPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: gpsDevice; label: "Or a serial GPS instead of gpsd (e.g. /dev/ttyACM0; empty = gpsd)"; text: appSettings.gpsDevice; Layout.preferredWidth: 3
+                                    field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: gpsBaud; label: "Baud"; text: appSettings.gpsBaud; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Text { id: hardwareError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                        AppButton { text: "Save"; primary: true; onClicked: hardwareCard.save() }
                     }
                 }
             }
@@ -674,16 +895,21 @@ Rectangle {
                         text: "Optional. Personal spot alerts from hamalert.org (telnet). Stored only on this device, readable by you alone. Leave the user name empty to turn it off."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
+                    id: hamAlertCard
+                    function save() {
+                        if (!hamAlertUser.edited && !hamAlertPassword.text.length) return true
+                        hamAlertError.text = appSettings.saveHamAlert(hamAlertUser.text, hamAlertPassword.text)
+                        hamAlertPassword.text = ""
+                        if (hamAlertError.text.length) return false
+                        hamAlertUser.edited = false
+                        return true
+                    }
                     FormField { id: hamAlertUser; label: "HamAlert user name"; text: appSettings.hamAlertUser; Layout.fillWidth: true }
                     FormField { id: hamAlertPassword; label: "Password"; echoMode: TextInput.Password; Layout.fillWidth: true
                                 placeholder: appSettings.hasHamAlertPassword ? "Saved — leave empty to keep" : "" }
                     RowLayout {
                         Text { id: hamAlertError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save HamAlert"; primary: true
-                                    onClicked: {
-                                        hamAlertError.text = appSettings.saveHamAlert(hamAlertUser.text, hamAlertPassword.text)
-                                        hamAlertPassword.text = ""
-                                    } }
+                        AppButton { text: "Save"; primary: true; onClicked: hamAlertCard.save() }
                     }
                 }
             }
@@ -698,15 +924,21 @@ Rectangle {
                         text: "Optional. Copy the key from your hams.at Settings page to see which satellite activations are workable from your station. Stored only on this device, readable by you alone. Save an empty key to remove it."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
+                    id: hamsatCard
+                    function save() {
+                        if (!hamsatKey.text.length) return true
+                        return saveKey()
+                    }
+                    function saveKey() {
+                        hamsatKeyError.text = appSettings.saveHamsatKey(hamsatKey.text)
+                        hamsatKey.text = ""
+                        return hamsatKeyError.text.length === 0
+                    }
                     FormField { id: hamsatKey; label: "API key"; echoMode: TextInput.Password; Layout.fillWidth: true
                                 placeholder: appSettings.hasHamsatKey ? "Saved — save empty to remove" : "" }
                     RowLayout {
                         Text { id: hamsatKeyError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save key"; primary: true
-                                    onClicked: {
-                                        hamsatKeyError.text = appSettings.saveHamsatKey(hamsatKey.text)
-                                        hamsatKey.text = ""
-                                    } }
+                        AppButton { text: "Save key"; primary: true; onClicked: hamsatCard.saveKey() }
                     }
                 }
             }
@@ -721,7 +953,16 @@ Rectangle {
                         text: "Optional. Used to look up names and locations for spotted callsigns. QRZ.com needs an XML subscription; HamQTH is free. Stored only on this device, readable by you alone."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
+                    id: accountCard
                     property string service: appSettings.lookupService
+                    function save() {
+                        if (service === appSettings.lookupService && !lookupUser.edited && !lookupPassword.text.length) return true
+                        accountError.text = appSettings.saveAccount(service, lookupUser.text, lookupPassword.text)
+                        lookupPassword.text = ""
+                        if (accountError.text.length) return false
+                        lookupUser.edited = false
+                        return true
+                    }
                     RowLayout {
                         spacing: Theme.gap * 0.6
                         Repeater {
@@ -739,14 +980,7 @@ Rectangle {
                                 placeholder: appSettings.hasLookupPassword ? "Saved — leave empty to keep" : "" }
                     RowLayout {
                         Text { id: accountError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton {
-                            text: "Save account"
-                            primary: true
-                            onClicked: {
-                                accountError.text = appSettings.saveAccount(parent.parent.service, lookupUser.text, lookupPassword.text)
-                                lookupPassword.text = ""
-                            }
-                        }
+                        AppButton { text: "Save"; primary: true; onClicked: accountCard.save() }
                     }
                 }
             }

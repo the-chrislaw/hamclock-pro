@@ -2,10 +2,12 @@
 #include "../radio_model.hpp"
 #include "../flrig_parse.hpp"
 #include "../radio_parse.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTemporaryDir>
 #include <iostream>
 
 namespace {
@@ -110,5 +112,31 @@ int main(int argc, char** argv) {
     check(waitFor([&] { return model.state() == "error"; }) && !model.hasRig(), "error reply is not live");
     peer->disconnectFromHost();
     check(waitFor([&] { return model.state() == "unconfigured"; }), "connection loss -> unconfigured");
+
+    {
+        // Settings change: the registered model drops the old rigctld and connects to the new address, no restart.
+        QTemporaryDir dir;
+        AppSettings settings({}, dir.path());
+        QTcpServer first, second;
+        check(first.listen(QHostAddress::LocalHost, 0) && second.listen(QHostAddress::LocalHost, 0), "two fake rigctld servers listen");
+        check(settings.saveRadio("127.0.0.1", first.serverPort()).isEmpty(), "first rigctld address saved");
+        WidgetContext sctx;
+        sctx.settings = &settings;
+        WidgetRegistry registry;
+        register_widget_radio(registry, sctx);
+        auto* registered = qobject_cast<WidgetModel*>(registry.model("radio"));
+        check(registered != nullptr, "radio widget registered");
+        check(waitFor([&] { return first.hasPendingConnections(); }), "connects to the saved rigctld address");
+        QTcpSocket* old_peer = first.nextPendingConnection();
+        check(settings.saveRadio("127.0.0.1", second.serverPort()).isEmpty(), "new rigctld address saved");
+        check(waitFor([&] { return second.hasPendingConnections(); }), "settings change connects to the new rigctld address");
+        check(waitFor([&] { return old_peer->state() != QAbstractSocket::ConnectedState; }), "old rigctld link closed");
+        second.close();
+        QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);
+        const quint16 dead = probe.serverPort(); probe.close();
+        check(settings.saveRadio("127.0.0.1", dead).isEmpty(), "unreachable rigctld address saved");
+        const QString expected = QString("rigctld not reachable at 127.0.0.1:%1 — set the address in Settings").arg(dead);
+        check(waitFor([&] { return registered && registered->statusText() == expected; }), "unreachable message names the address and Settings");
+    }
     return failures ? 1 : 0;
 }

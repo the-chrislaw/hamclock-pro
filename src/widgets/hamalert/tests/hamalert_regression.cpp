@@ -76,6 +76,47 @@ int main(int argc, char** argv) {
     check(model.state() == "offline", "lost connection shown as offline");
     check(MapOverlays::instance().layers().empty(), "lost link leaves nothing on the map");
 
+    // Rejected login: an error naming Settings, and no retry until the credentials change.
+    {
+        QTemporaryDir bad_dir;
+        AppSettings bad_settings(bad_dir.filePath("station.conf"), bad_dir.path());
+        check(bad_settings.saveHamAlert("K1ABC", "wrong!").isEmpty(), "wrong password saved");
+        WidgetContext bad_ctx;
+        bad_ctx.settings = &bad_settings;
+        FakeSocket* bs = nullptr;
+        int sockets = 0;
+        HamAlertModel rejected(bad_ctx, [&](QObject* parent) -> TelnetSocket* { ++sockets; return bs = new FakeSocket(parent); });
+        rejected.start();
+        const QString kRejected = QString::fromUtf8("HamAlert rejected the user name or password — check them in Settings");
+        emit bs->connected();
+        emit bs->dataReceived("login: ");
+        emit bs->dataReceived("Password: ");
+        emit bs->dataReceived("\r\nLogin failed, check username and password\r\n");
+        check(rejected.state() == "error" && rejected.statusText() == kRejected, "login failure line -> error naming Settings");
+        check(rejected.client().state() == TelnetClient::State::Idle, "no reconnect scheduled after a rejected login");
+        check(!rejected.statusText().contains("wrong!"), "password never shown");
+        check(bad_settings.saveHamsatKey("unrelated-key").isEmpty() && sockets == 1 && rejected.state() == "error",
+              "other account changes do not retry the rejected login");
+        check(bad_settings.saveHamAlert("K1ABC", "right!").isEmpty() && sockets == 2 && rejected.state() == "loading",
+              "new credentials connect again");
+        // The server may close without a message right after the password.
+        emit bs->connected();
+        emit bs->dataReceived("login: ");
+        emit bs->dataReceived("Password: ");
+        emit bs->closed({});
+        check(rejected.state() == "error" && rejected.statusText() == kRejected, "close right after the password -> rejected");
+        check(rejected.client().state() == TelnetClient::State::Idle, "no retry after a close at login");
+        check(bad_settings.saveHamAlert("K1ABC", "again!").isEmpty() && sockets == 3, "changed password retries");
+        emit bs->connected();
+        emit bs->dataReceived("login: ");
+        emit bs->dataReceived("Password: ");
+        emit bs->dataReceived("\r\nHello K1ABC, this is HamAlert\r\n");
+        check(rejected.state() == "live", "accepted login goes live");
+        emit bs->closed({});
+        check(rejected.state() == "offline" && rejected.client().state() == TelnetClient::State::Waiting,
+              "a later connection loss still retries");
+    }
+
     // Without a password the client behaves as before (cluster login only).
     TelnetClient plain([&](QObject* p) -> TelnetSocket* { return sock = new FakeSocket(p); });
     plain.start("cluster.example", 7300, "K1ABC");

@@ -1,10 +1,12 @@
 // rotctld read-only client against a loopback fake rotctld. Offline.
 #include "../rotator_model.hpp"
 #include "../rotator_parse.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTemporaryDir>
 #include <iostream>
 
 namespace {
@@ -79,6 +81,32 @@ int main(int argc, char** argv) {
     all.replace("p\n", "");
     check(all.isEmpty(), "nothing but 'p' was sent");
 
+
+    {
+        // Settings change: the registered model drops the old rotctld and connects to the new address, no restart.
+        QTemporaryDir dir;
+        AppSettings settings({}, dir.path());
+        QTcpServer first, second;
+        check(first.listen(QHostAddress::LocalHost, 0) && second.listen(QHostAddress::LocalHost, 0), "two fake rotctld servers listen");
+        check(settings.saveRotator("127.0.0.1", first.serverPort()).isEmpty(), "first rotctld address saved");
+        WidgetContext sctx;
+        sctx.settings = &settings;
+        WidgetRegistry registry;
+        register_widget_rotator(registry, sctx);
+        auto* registered = qobject_cast<WidgetModel*>(registry.model("rotator"));
+        check(registered != nullptr, "rotator widget registered");
+        check(waitFor([&] { return first.hasPendingConnections(); }), "connects to the saved rotctld address");
+        QTcpSocket* old_peer = first.nextPendingConnection();
+        check(settings.saveRotator("127.0.0.1", second.serverPort()).isEmpty(), "new rotctld address saved");
+        check(waitFor([&] { return second.hasPendingConnections(); }), "settings change connects to the new rotctld address");
+        check(waitFor([&] { return old_peer->state() != QAbstractSocket::ConnectedState; }), "old rotctld link closed");
+        second.close();
+        QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);
+        const quint16 dead = probe.serverPort(); probe.close();
+        check(settings.saveRotator("127.0.0.1", dead).isEmpty(), "unreachable rotctld address saved");
+        const QString expected = QString("rotctld not reachable at 127.0.0.1:%1 — set the address in Settings").arg(dead);
+        check(waitFor([&] { return registered && registered->statusText() == expected; }), "unreachable message names the address and Settings");
+    }
     if (failures == 0) std::cout << "rotator tests passed\n";
     return failures == 0 ? 0 : 1;
 }

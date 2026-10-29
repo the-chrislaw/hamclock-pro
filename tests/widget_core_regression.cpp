@@ -3,6 +3,7 @@
 // owner-only credentials file. Offline: all network access is faked.
 #include "../src/net/polled_source.hpp"
 #include "../src/ui/app_settings.hpp"
+#include "../src/platform/credential_store.hpp"
 #include "../src/widgets/widget_model.hpp"
 #include "../src/widgets/widget_registry.hpp"
 #include <QCoreApplication>
@@ -10,6 +11,7 @@
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimeZone>
@@ -130,6 +132,14 @@ int main(int argc, char** argv) {
           WidgetModel::formatAge(t0, t0.addSecs(3 * 3600)) == "3 h ago" &&
           WidgetModel::formatAge({}, t0).isEmpty(), "age formatting");
 
+    // Panes tied to local station hardware or files are left out on iOS only.
+    for (const char* id : {"radio", "rotator", "gps", "adsb", "sensors", "adif"}) {
+        check(widget_available(id, false), "local-station pane offered on the Pi and Mac");
+        check(!widget_available(id, true), "local-station pane left out on iOS");
+    }
+    check(widget_available("spaceweather", true) && widget_available("dxcluster", true), "network panes offered on iOS");
+    check(!widget_available("radio", true) && widget_available("radio", false), "radio pane only off iOS");
+
     // Registry ordering and validation.
     {
         WidgetRegistry registry;
@@ -169,6 +179,65 @@ int main(int argc, char** argv) {
         reloaded.clearAccount();
         check(!reloaded.hasLookupPassword() && reloaded.lookupService() == "none", "account cleared");
     }
+    // With a secret store (the Keychain on Apple devices) passwords and keys never
+    // reach credentials.ini, old ones are moved over, and each settings directory
+    // keeps its own secrets.
+    {
+        struct MemoryStore final : CredentialStore {
+            std::shared_ptr<QHash<QString, QString>> values = std::make_shared<QHash<QString, QString>>();
+            bool refuse = false;
+            bool set(const QString& k, const QString& v) override { if (refuse) return false; values->insert(k, v); return true; }
+            QString get(const QString& k) const override { return values->value(k); }
+            bool remove(const QString& k) override { if (refuse) return false; values->remove(k); return true; }
+        };
+        const auto stored = [](const QHash<QString, QString>& values, const QString& prefix) {
+            for (auto it = values.begin(); it != values.end(); ++it)
+                if (it.key().startsWith(prefix + "@")) return it.value();
+            return QString();
+        };
+        const auto ini_text = [](const QTemporaryDir& d) {
+            QFile f(d.filePath("credentials.ini"));
+            return f.open(QIODevice::ReadOnly) ? QString::fromUtf8(f.readAll()) : QString();
+        };
+        QTemporaryDir secret_dir;
+        {
+            AppSettings old_version({}, secret_dir.path());
+            check(old_version.saveHamAlert("N0CALL", "alertpw").isEmpty(), "file-only HamAlert password saved");
+        }
+        auto store = std::make_unique<MemoryStore>();
+        const auto values = store->values;
+        AppSettings settings({}, secret_dir.path());
+        settings.setSecretStore(std::move(store));
+        check(stored(*values, "hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
+        check(!ini_text(secret_dir).contains("alertpw"), "moved password removed from credentials.ini");
+        check(settings.saveAccount("hamqth", "N0CALL", "lookpw").isEmpty() && settings.saveHamsatKey("key123").isEmpty(), "accounts saved with a secret store");
+        check(stored(*values, "lookup.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
+        check(!ini_text(secret_dir).contains("lookpw") && !ini_text(secret_dir).contains("key123") && ini_text(secret_dir).contains("N0CALL"),
+              "only user names in the file");
+        check(settings.saveHamsatKey("").isEmpty() && stored(*values, "hamsat.key").isEmpty(), "empty key removes it from the store");
+
+        // A second settings directory sharing the same store sees none of it.
+        QTemporaryDir other_dir;
+        auto shared = std::make_unique<MemoryStore>();
+        shared->values = values;
+        AppSettings other({}, other_dir.path());
+        other.setSecretStore(std::move(shared));
+        check(!other.hasHamAlertPassword() && !other.hasLookupPassword(), "another profile does not see these secrets");
+        check(other.saveHamAlert("", "").isEmpty() && stored(*values, "hamalert.password") == "alertpw", "clearing another profile keeps these secrets");
+
+        // A store that refuses leaves the file alone: nothing is lost.
+        QTemporaryDir stuck_dir;
+        {
+            AppSettings old_version({}, stuck_dir.path());
+            old_version.saveHamAlert("N0CALL", "keepme");
+        }
+        auto refusing = std::make_unique<MemoryStore>();
+        refusing->refuse = true;
+        AppSettings stuck({}, stuck_dir.path());
+        stuck.setSecretStore(std::move(refusing));
+        check(stuck.hamAlertPassword() == "keepme" && ini_text(stuck_dir).contains("keepme"), "unmigrated password still read from the file");
+        check(!stuck.saveHamsatKey("k").isEmpty() && ini_text(stuck_dir).contains("keepme"), "failed store write keeps the file intact");
+    }
     {
         QTemporaryDir ov_dir;
         AppSettings ov({}, ov_dir.path());
@@ -189,6 +258,10 @@ int main(int argc, char** argv) {
         const auto small_map = ov2.paneGrid(845, 590, 5, 250, 190);
         check(small_map["columns"].toInt() == 3 && small_map["rows"].toInt() == 2, "small map: two rows on a 7-inch panel");
         { AppSettings ov3({}, ov_dir.path()); check(ov3.mapSize() == "small", "map size survives restart"); }
+        check(ov2.orientationLock() == "auto", "rotation follows the device by default");
+        check(!ov2.saveOrientationLock("sideways").isEmpty() && ov2.orientationLock() == "auto", "bad rotation lock rejected");
+        check(ov2.saveOrientationLock("landscape").isEmpty() && ov2.orientationLock() == "landscape", "rotation lock applied");
+        { AppSettings ov4({}, ov_dir.path()); check(ov4.orientationLock() == "landscape", "rotation lock survives restart"); }
         check(ov2.accentStyle() == 0, "accent blue by default");
         check(!ov2.saveAccentStyle(5).isEmpty() && ov2.accentStyle() == 0, "bad accent rejected");
         check(ov2.saveAccentStyle(3).isEmpty() && ov2.accentStyle() == 3, "accent applied");
@@ -243,6 +316,13 @@ int main(int argc, char** argv) {
         check(panes.setPane(2, "none").isEmpty() && panes.panes()[2] == "none", "pane can be left empty");
         AppSettings again({}, pane_dir.path());
         check(again.panes().mid(0, 3) == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
+        {
+            // --pane (screenshots) shows a widget for this run only.
+            AppSettings shown({}, pane_dir.path());
+            check(shown.showPane(0, "quakes").isEmpty() && shown.panes()[0] == "quakes", "shown pane applied");
+            check(!shown.showPane(AppSettings::kPaneSlots, "quakes").isEmpty(), "shown pane slot validated");
+            check(AppSettings({}, pane_dir.path()).panes()[0] == "spaceweather", "shown pane not saved");
+        }
         check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "rotation off by default");
         check(!again.setPaneRotation(AppSettings::kPaneSlots, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
         check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations().mid(0, 3) == QList<int>({0, 30, 0}), "rotation applied");
@@ -266,6 +346,50 @@ int main(int argc, char** argv) {
         check(again.paneRotationSets()[0].toStringList().isEmpty(), "reset clears rotation sets");
         check(again.panes() == defaults, "panes reset to default");
         check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "reset turns rotation off");
+    }
+
+    // Station hardware endpoints (rigctld, rotctld, PiAware, gpsd / serial GPS): validated, saved, reloaded.
+    {
+        QTemporaryDir hw_dir;
+        AppSettings hw({}, hw_dir.path());
+        check(hw.radioHost() == "127.0.0.1" && hw.radioPort() == 4532 && hw.rotatorHost() == "127.0.0.1" && hw.rotatorPort() == 4533,
+              "rigctld and rotctld default to this computer");
+        check(hw.adsbHost() == "127.0.0.1" && hw.adsbPort() == 8080 && hw.gpsHost() == "127.0.0.1" && hw.gpsPort() == 2947 &&
+                  hw.gpsDevice().isEmpty() && hw.gpsBaud() == 9600, "PiAware and gpsd default to this computer");
+        int radio = 0, rotator = 0, adsb = 0, gps = 0;
+        QObject::connect(&hw, &AppSettings::radioChanged, [&] { ++radio; });
+        QObject::connect(&hw, &AppSettings::rotatorChanged, [&] { ++rotator; });
+        QObject::connect(&hw, &AppSettings::adsbChanged, [&] { ++adsb; });
+        QObject::connect(&hw, &AppSettings::gpsChanged, [&] { ++gps; });
+        check(!hw.saveRadio("shack pc;rm", 4532).isEmpty() && !hw.saveRadio("shack-pc", 0).isEmpty() &&
+                  !hw.saveRadio("shack-pc", 70000).isEmpty() && !hw.saveRadio(QString(254, 'a'), 4532).isEmpty(),
+              "bad rigctld host or port rejected");
+        check(hw.radioHost() == "127.0.0.1" && radio == 0, "rejected radio input changes nothing");
+        check(hw.saveRadio(" shack-pc.local ", 4540).isEmpty() && hw.radioHost() == "shack-pc.local" && hw.radioPort() == 4540 && radio == 1,
+              "rigctld endpoint saved, change signalled");
+        check(hw.saveRadio("shack-pc.local", 4540).isEmpty() && radio == 1, "unchanged radio endpoint not signalled");
+        check(hw.saveRotator("", 4533).isEmpty() && rotator == 0, "empty rotctld host means this computer");
+        check(hw.saveRotator("fe80::1", 4555).isEmpty() && hw.rotatorHost() == "fe80::1" && rotator == 1, "IPv6 rotctld host saved");
+        check(!hw.saveAdsb("piaware/x", 8080).isEmpty() && hw.saveAdsb("piaware", 8081).isEmpty() && adsb == 1, "PiAware endpoint validated and saved");
+        check(!hw.saveGps("127.0.0.1", 2947, "/etc/passwd", 9600).isEmpty() && !hw.saveGps("127.0.0.1", 2947, "/dev/ttyUSB0/../x", 9600).isEmpty() &&
+                  !hw.saveGps("127.0.0.1", 2947, "/dev/ttyUSB0", 1234).isEmpty() && gps == 0, "bad serial GPS device or baud rejected");
+        check(hw.saveGps("gps-pi", 2948, "/dev/ttyACM0", 4800).isEmpty() && hw.gpsHost() == "gps-pi" && hw.gpsPort() == 2948 &&
+                  hw.gpsDevice() == "/dev/ttyACM0" && hw.gpsBaud() == 4800 && gps == 1, "gpsd and serial GPS saved");
+        AppSettings reloaded({}, hw_dir.path());
+        check(reloaded.radioHost() == "shack-pc.local" && reloaded.radioPort() == 4540 && reloaded.rotatorHost() == "fe80::1" &&
+                  reloaded.rotatorPort() == 4555 && reloaded.adsbHost() == "piaware" && reloaded.adsbPort() == 8081,
+              "hardware endpoints survive restart");
+        check(reloaded.gpsHost() == "gps-pi" && reloaded.gpsPort() == 2948 && reloaded.gpsDevice() == "/dev/ttyACM0" && reloaded.gpsBaud() == 4800,
+              "GPS settings survive restart");
+        {
+            QSettings ini(hw.optionsPath(), QSettings::IniFormat);
+            ini.setValue("radio/host", "bad host;rm");
+            ini.setValue("radio/port", "99999");
+            ini.setValue("gps/device", "/tmp/evil");
+        }
+        AppSettings tampered({}, hw_dir.path());
+        check(tampered.radioHost() == "127.0.0.1" && tampered.radioPort() == 4532 && tampered.gpsDevice().isEmpty(),
+              "hand-edited bad values fall back to defaults");
     }
 
     std::cout << "Widget core: " << checks << " checks, " << failures << " failures\n";

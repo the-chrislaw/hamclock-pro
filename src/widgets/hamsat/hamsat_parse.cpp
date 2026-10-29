@@ -30,6 +30,7 @@ Feed parse(const QByteArray& body) {
             a.workable_start = QDateTime::fromString(o.value("workable_start_at").toString(), Qt::ISODate).toUTC();
         if (o.value("workable_end_at").isString())
             a.workable_end = QDateTime::fromString(o.value("workable_end_at").toString(), Qt::ISODate).toUTC();
+        feed.personalised = feed.personalised || a.personalised();
         feed.activations.push_back(a);
     }
     std::stable_sort(feed.activations.begin(), feed.activations.end(),

@@ -47,10 +47,12 @@ struct DashboardView: View {
                 if show(.quakes) { QuakeCard(now: ctx.date) }
                 if show(.weather) { LocalWeatherCard(now: ctx.date) }
                 if show(.storms) { StormCard(now: ctx.date) }
-                Spacer()
+                // The map page has no spacer: the map itself takes the spare height.
+                if !show(.map) { Spacer(minLength: 0) }
                 Button("Panes…") { showSettings = true }
                 Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; NOAA National Hurricane Center; Open-Meteo; CelesTrak; Natural Earth")
                     .font(.system(size: 29)).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true) // the credit line never gives up height
             }
             .offset(BurnInShift.offset(at: ctx.date)) // slow pixel shift of static chrome
             .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area

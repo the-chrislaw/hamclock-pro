@@ -6,7 +6,7 @@ Card {
     // The picture fills the body; the channel name is overlaid so it also fits compact slots.
     Item {
         width: parent.width
-        height: Math.max(80 * Theme.scale, root.height - 2 * Theme.pad - 3 * Theme.gap - 2 * Theme.fontCaption - Theme.fontTitle)
+        height: Math.max(80 * Theme.scale, (root.height / root.fit) - 2 * Theme.pad - 3 * Theme.gap - 2 * Theme.fontCaption - Theme.fontTitle)
         Image {
             id: sun
             anchors.fill: parent
@@ -29,7 +29,8 @@ Card {
             font.pixelSize: Theme.fontBody
         }
         Text {
-            anchors { left: parent.left; bottom: parent.bottom; margins: Theme.gap * 0.5 }
+            // Top-left: NASA burns its own caption into the bottom of the image.
+            anchors { left: parent.left; top: parent.top; margins: Theme.gap * 0.5 }
             text: root.widget ? root.widget.channelName + (root.compact ? "" : " · " + root.widget.channelCaption) : ""
             color: "#ffffff"
             style: Text.Outline

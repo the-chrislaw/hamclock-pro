@@ -2,13 +2,12 @@
 #include "../../platform/apple_lifecycle.hpp"
 #include "radio_parse.hpp"
 #include "../../ui/app_settings.hpp"
-#include <QSettings>
 
 namespace hamclock {
 
 RadioModel::RadioModel(const WidgetContext&, QString host, quint16 port, QObject* parent)
     : WidgetModel("radio", "Radio", parent), host_(std::move(host)), port_(port) {
-    setState("unconfigured", "rigctld not running on this device");
+    setState("unconfigured", unreachableText());
     retry_.setInterval(15000);
     poll_.setInterval(1000);
     connect(&retry_, &QTimer::timeout, this, &RadioModel::connectNow);
@@ -57,6 +56,30 @@ void RadioModel::onResumed() {
     flrig_.start();
 }
 
+QString RadioModel::unreachableText() const {
+    const QString where = host_.contains(':') ? "[" + host_ + "]" : host_;
+    return QString("rigctld not reachable at %1:%2 — set the address in Settings").arg(where).arg(port_);
+}
+
+void RadioModel::setEndpoint(const QString& host, quint16 port) {
+    if (host == host_ && port == port_) return;
+    retry_.stop();
+    poll_.stop();
+    socket_.abort();
+    host_ = host;
+    port_ = port;
+    if (!fromFlrig_) {                       // flrig readings, if any, stay until rigctld answers
+        wait_ = Wait::Idle;
+        hz_.reset(); mode_.clear(); passband_.reset();
+        setState("unconfigured", unreachableText());
+        emit changed();
+    }
+    // Not started (or suspended on iPad): start() / onResumed() connect to the new address.
+    if (!started_ || AppLifecycle::instance().isSuspended()) return;
+    connectNow();
+    retry_.start();
+}
+
 void RadioModel::connectNow() {
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;
     socket_.connectToHost(host_, port_);
@@ -77,7 +100,7 @@ void RadioModel::onDisconnected() {
     poll_.stop();
     wait_ = Wait::Idle;
     hz_.reset(); mode_.clear(); passband_.reset();
-    setState("unconfigured", had && state() != "unconfigured" ? "rigctld connection lost" : "rigctld not running on this device");
+    setState("unconfigured", had && state() != "unconfigured" ? "rigctld connection lost" : unreachableText());
     emit changed();
 }
 
@@ -142,14 +165,13 @@ QString RadioModel::frequency() const { return hz_ ? radio::format_frequency(*hz
 QString RadioModel::band() const { return hz_ ? radio::band_for(*hz_) : QString(); }
 
 void register_widget_radio(WidgetRegistry& registry, const WidgetContext& context) {
-    radio::Endpoint ep{"127.0.0.1", 4532};
-    if (context.settings) {
-        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
-        ep = radio::parse_endpoint(ini.value("radio/host").toString(), ini.value("radio/port").toString(), ep);
-    }
-    auto* model = new RadioModel(context, ep.host, ep.port);
-    registry.add({"radio", "Radio", QUrl("qrc:/widgets/radio/RadioCard.qml"), "strip", 76}, model);
-    QTimer::singleShot(0, model, &RadioModel::start);
+    AppSettings* settings = context.settings;
+    auto* model = settings ? new RadioModel(context, settings->radioHost(), quint16(settings->radioPort())) : new RadioModel(context);
+    if (settings) QObject::connect(settings, &AppSettings::radioChanged, model, [model, settings] {
+        model->setEndpoint(settings->radioHost(), quint16(settings->radioPort()));
+    });
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"radio", "Radio", QUrl("qrc:/widgets/radio/RadioCard.qml"), "strip", 76}, model)) QTimer::singleShot(0, model, &RadioModel::start);
 }
 
 } // namespace hamclock

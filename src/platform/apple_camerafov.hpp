@@ -18,4 +18,9 @@ struct PreviewFov {
 // Invalid input (fov outside (1, 170) or empty sizes) returns the defaults.
 PreviewFov previewFov(double sensor_long_fov_deg, const QSizeF &sensor_px, const QSizeF &preview);
 
+#ifdef HAMCLOCK_SKY_FINDER
+// iOS only (apple_camera_ios.mm). Returns 0 when no rear camera is available.
+double nativeCameraLongFovDeg(QSizeF *sensor_px);
+#endif
+
 } // namespace hamclock

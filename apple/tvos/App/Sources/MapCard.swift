@@ -144,8 +144,12 @@ struct MapCard: View {
             }
             .aspectRatio(2, contentMode: .fit)
             .background(Color(red: 0.02, green: 0.07, blue: 0.14))
-            Text("Yellow: subsolar point. Red: your station. White: DX target. Orange rings: USGS M2.5+ quakes (shown only while live). Cyan: amateur satellites (CelesTrak, hidden if elements are over 2 days old). Land fill and coastlines: Natural Earth (public domain). Computed on device. Select cycles World / DE / DX views (DE and DX need their locators set).")
-                .font(.system(size: 29)).foregroundStyle(.secondary)
+            // The map takes the card's height; the legend stays a short caption under it.
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(1)
+            Text("Yellow: Sun overhead · Red: you · White: DX · Orange: quakes M2.5+ · Cyan: satellites · Select: World / DE / DX")
+                .font(.system(size: 26)).foregroundStyle(.secondary)
+                .lineLimit(2).minimumScaleFactor(0.7)
         }
         .padding(32)
         .frame(maxWidth: .infinity, alignment: .leading)

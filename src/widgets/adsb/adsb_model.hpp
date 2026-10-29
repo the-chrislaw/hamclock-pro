@@ -2,6 +2,8 @@
 #include "../widget_model.hpp"
 #include "../widget_registry.hpp"
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QPointer>
 #include <QTimer>
 #include <optional>
 
@@ -18,6 +20,8 @@ class AdsbModel : public WidgetModel {
 public:
     explicit AdsbModel(const WidgetContext& context, QString url = "http://127.0.0.1:8080/data/aircraft.json", QObject* parent = nullptr);
     void start();
+    // Settings changed the receiver address: cancel the request in flight and poll the new URL.
+    void setUrl(const QString& url);
     bool hasReceiver() const { return tracked_.has_value(); }
     QString tracked() const { return tracked_ ? QString::number(*tracked_) : QString(); }
     QString withPosition() const { return tracked_ ? QString::number(positioned_) : QString(); }
@@ -27,7 +31,9 @@ private slots:
     void poll();
 private:
     void fail(const QString& state, const QString& text);
+    QString unreachableText() const;
     QString url_;
+    QPointer<QNetworkReply> reply_;
     QNetworkAccessManager net_;
     QTimer timer_;
     bool busy_ = false, started_ = false;
