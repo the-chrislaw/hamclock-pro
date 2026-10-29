@@ -6,7 +6,7 @@ Card {
     // The picture fills the body; the channel name is overlaid so it also fits compact slots.
     Item {
         width: parent.width
-        height: Math.max(80 * Theme.scale, root.height - 2 * Theme.pad - 3 * Theme.gap - 2 * Theme.fontCaption - Theme.fontTitle)
+        height: Math.max(80 * Theme.scale, (root.height / root.fit) - 2 * Theme.pad - 3 * Theme.gap - 2 * Theme.fontCaption - Theme.fontTitle)
         Image {
             id: sun
             anchors.fill: parent

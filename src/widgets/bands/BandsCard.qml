@@ -9,8 +9,11 @@ Card {
     function conditionColor(name) {
         return name === "Good" ? Theme.good : name === "Fair" ? Theme.warn : Theme.bad
     }
+    // Tall pane: the full Day/Night table, rows spread over the height.
+    readonly property bool table: !compact || tall
     ColumnLayout {
         width: parent.width
+        height: root.tall ? parent.height : implicitHeight
         spacing: Theme.gap * 0.4
         Text {
             visible: !(root.widget && root.widget.hasOutlook)
@@ -19,7 +22,8 @@ Card {
             font.pixelSize: Theme.fontValue
         }
         Text {
-            visible: root.widget && root.widget.hasOutlook && !root.compact
+            visible: root.widget && root.widget.hasOutlook && root.table
+            wrapMode: root.tall ? Text.WordWrap : Text.NoWrap
             text: root.widget ? root.widget.inputsText + " · now: " + root.widget.period : ""
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
@@ -27,19 +31,23 @@ Card {
             elide: Text.ElideRight
         }
         GridLayout {
-            visible: !root.compact && root.widget && root.widget.hasOutlook
+            visible: root.table && root.widget && root.widget.hasOutlook
+            Layout.fillHeight: root.tall
             columns: 3
             columnSpacing: Theme.gap
             rowSpacing: 2 * Theme.scale
             Layout.fillWidth: true
             // Regular layout: one row per band with Day/Night.
             Repeater {
-                model: root.compact ? [] : root.rows
+                model: root.table ? root.rows : []
                 delegate: Item {
                     Layout.columnSpan: 3
                     Layout.fillWidth: true
+                    Layout.fillHeight: root.tall
+                    Layout.maximumHeight: Theme.fontBody * 3
                     implicitHeight: Theme.fontBody * 1.5
                     Row {
+                        anchors.verticalCenter: parent.verticalCenter
                         spacing: Theme.gap
                         Text { width: 44 * Theme.scale; text: modelData.band; color: Theme.ink
                                font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold }
@@ -57,11 +65,11 @@ Card {
         }
         // Compact layout: band + current-period condition only, wrapping.
         Flow {
-            visible: root.compact && root.widget && root.widget.hasOutlook
+            visible: !root.table && root.widget && root.widget.hasOutlook
             spacing: Theme.gap
             Layout.fillWidth: true
             Repeater {
-                model: root.compact ? root.rows : []
+                model: root.table ? [] : root.rows
                 delegate: Text {
                     readonly property string cond: root.widget.period === "night" ? modelData.night : modelData.day
                     text: modelData.band + " " + cond

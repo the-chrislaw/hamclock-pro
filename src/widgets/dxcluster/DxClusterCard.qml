@@ -5,8 +5,10 @@ import HamClock
 Card {
     id: root
     readonly property bool configured: widget && widget.state !== "unconfigured"
+    // The spot list takes whatever height the pane has.
     ColumnLayout {
         width: parent.width
+        height: parent.height
         spacing: Theme.gap
         RowLayout {
             visible: root.configured && widget.totalCount > 0
@@ -46,6 +48,7 @@ Card {
         ListView {
             visible: root.configured && widget.spotCount > 0
             Layout.fillWidth: true
+            Layout.fillHeight: true
             Layout.preferredHeight: Math.min(contentHeight, Theme.touch * 6)
             clip: true
             model: widget ? widget.spots : null

@@ -58,7 +58,7 @@ Card {
                     Repeater {
                         model: modelData.cells
                         delegate: Rectangle {
-                            width: Math.max(2, (root.width - 40 * Theme.scale - 25 * 2 * Theme.scale - 2 * Theme.gap) / 24)
+                            width: Math.max(2, ((root.width / root.fit) - 40 * Theme.scale - 25 * 2 * Theme.scale - 2 * Theme.gap) / 24)
                             height: Theme.fontCaption * 1.2
                             color: root.shade(modelData)
                             opacity: 0.25 + 0.75 * modelData

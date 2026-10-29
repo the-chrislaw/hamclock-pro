@@ -9,9 +9,46 @@ Rectangle {
     property string title: widget ? widget.title : ""
     property QtObject widget: null
     property bool showStatus: widget !== null
-    default property alias content: body.data
+    default property alias content: stage.data
     // True in a small dashboard slot: show key numbers only, drop details.
     readonly property bool compact: width < 420 * Theme.scale || height < 190 * Theme.scale
+
+    // Adaptive fit (dashboard panes; the slot turns it on). The content is laid out
+    // in a stage 1/fit the size of the body and drawn `fit` times larger, so a pane
+    // bigger than its layout needs grows crisply to fill it instead of leaving space.
+    // fit stops where the widest layout is reached (designWidth: 420 for the full
+    // layout, 260 for the compact one) and where the content's natural height fills
+    // the body; content that stretches (lists, plots) fills the stage at any fit.
+    property bool adaptive: false
+    // A narrow pane with height to spare (desktop pane rows, the station column's
+    // spill pane): widgets stack their full layout instead of the compact one.
+    readonly property bool tall: compact && width >= 240 * Theme.scale && height >= width * 1.1
+    // A widget that needs setting up shows why, in full, with a button to Settings.
+    readonly property bool needsSetup: adaptive && widget !== null && widget.state === "unconfigured"
+    signal setupRequested()
+    property real designWidth: (compact ? 260 : 420) * Theme.scale
+    property real maxFit: 2.2
+    property real fit: 1
+    // Natural content height in stage units: what the children ask for, not what they were given.
+    readonly property real naturalHeight: {
+        let h = 0
+        for (let i = 0; i < stage.children.length; ++i) {
+            const c = stage.children[i]
+            if (c.visible) h = Math.max(h, c.y + Math.max(c.implicitHeight, 1))
+        }
+        return h
+    }
+    function refit() {
+        if (!adaptive || fillBody || body.width <= 0 || body.height <= 0 || naturalHeight <= 0) { fit = 1; return }
+        const target = Math.max(1, Math.min(maxFit, body.width / designWidth, body.height / naturalHeight))
+        // Hysteresis: small changes (text ticking, wrapping at the new width) do not re-layout.
+        if (Math.abs(target - fit) > 0.03 * fit) fit = Math.round(target * 100) / 100
+    }
+    onNaturalHeightChanged: Qt.callLater(refit)
+    onWidthChanged: Qt.callLater(refit)
+    onHeightChanged: Qt.callLater(refit)
+    onAdaptiveChanged: Qt.callLater(refit)
+    onCompactChanged: Qt.callLater(refit)
     // When true (set by the pane slot) tapping the title or pressing Enter asks to change the widget.
     property bool chooser: false
     // Content sized by the card (map): its size must not feed back into the card's own.
@@ -78,10 +115,37 @@ Rectangle {
             clip: true
             Layout.fillWidth: true
             Layout.fillHeight: true
-            implicitHeight: card.fillBody ? 0 : childrenRect.height
+            implicitHeight: card.fillBody ? 0 : stage.childrenRect.height
+            Item {
+                id: stage
+                width: body.width / card.fit
+                height: body.height / card.fit
+                scale: card.fit
+                transformOrigin: Item.TopLeft
+                visible: !card.needsSetup
+            }
+            ColumnLayout {
+                visible: card.needsSetup
+                anchors.centerIn: parent
+                width: Math.min(parent.width, 360 * Theme.scale)
+                spacing: Theme.gap
+                Text {
+                    text: card.widget ? card.widget.statusText : ""
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontBody
+                    wrapMode: Text.WordWrap
+                    horizontalAlignment: Text.AlignHCenter
+                    Layout.fillWidth: true
+                }
+                AppButton {
+                    text: "Open Settings"
+                    Layout.alignment: Qt.AlignHCenter
+                    onClicked: card.setupRequested()
+                }
+            }
         }
         RowLayout {
-            visible: card.showStatus && (statusLine.text.length > 0 || ageLine.text.length > 0)
+            visible: card.showStatus && !card.needsSetup && (statusLine.text.length > 0 || ageLine.text.length > 0)
             Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             // The status reason may be shortened; the data age never is.

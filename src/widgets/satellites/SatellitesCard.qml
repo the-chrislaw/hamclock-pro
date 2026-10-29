@@ -55,7 +55,7 @@ Card {
             id: sky
             visible: root.showSky
             Layout.alignment: Qt.AlignTop
-            Layout.preferredWidth: Math.min(root.height * 0.45, 110 * Theme.scale)
+            Layout.preferredWidth: Math.min((root.height / root.fit) * 0.45, 110 * Theme.scale)
             Layout.preferredHeight: Layout.preferredWidth
             readonly property var track: root.widget ? root.widget.skyTrack : []
             onTrackChanged: requestPaint()

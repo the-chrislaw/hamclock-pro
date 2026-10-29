@@ -100,17 +100,49 @@ ApplicationWindow {
         anchors.rightMargin: Theme.pad + safeArea.right + window.overscanX
         anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
 
-        StationCard {
-            id: stationCard
-            wide: window.phone
-            compact: window.phone || window.phoneWide
+        // Station column. When the station card leaves room below it (tall desktop
+        // windows), the room becomes one more pane instead of empty space: the next
+        // saved slot after the grid's, so it never repeats a widget on screen.
+        ColumnLayout {
+            id: stationColumn
+            spacing: Theme.gap
             Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
-            Layout.preferredHeight: window.phone ? Math.min(implicitHeight, page.height * 0.3) : -1
-            onSetupRequested: settingsLayer.visible = true
-            onSettingsRequested: settingsLayer.visible = true
-            onTimersRequested: timersLayer.visible = true
+            Layout.preferredHeight: window.phone ? stationCard.Layout.preferredHeight : -1
+            readonly property int spillIndex: paneRow.grid.columns * paneRow.grid.rows
+            readonly property bool spill: !window.phone && !window.phoneWide && spillIndex < appSettings.panes.length
+                && width >= paneRow.minPaneWidth && height - stationCard.implicitHeight - Theme.gap >= paneRow.minPaneHeight
+
+            StationCard {
+                id: stationCard
+                wide: window.phone
+                compact: window.phone || window.phoneWide
+                Layout.fillWidth: true
+                Layout.fillHeight: !window.phone && !stationColumn.spill
+                Layout.preferredHeight: window.phone ? Math.min(implicitHeight, page.height * 0.3)
+                                                     : stationColumn.spill ? implicitHeight : -1
+                onSetupRequested: settingsLayer.visible = true
+                onSettingsRequested: settingsLayer.visible = true
+                onTimersRequested: timersLayer.visible = true
+            }
+            PaneSlot {
+                id: spillSlot
+                visible: stationColumn.spill
+                index: stationColumn.spillIndex
+                paused: paneChooser.visible || paneOptions.visible
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                onChooseRequested: function (slotIndex) {
+                    paneChooser.slot = slotIndex
+                    paneChooser.open()
+                }
+                onSetupRequested: settingsLayer.visible = true
+                onOptionsRequested: function (slotIndex) {
+                    paneOptions.slot = slotIndex
+                    paneOptions.open()
+                }
+            }
         }
 
         GridLayout {
@@ -142,7 +174,7 @@ ApplicationWindow {
                     : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
-                function slotAt(i) { return paneRepeater.itemAt(i) }
+                function slotAt(i) { return i === stationColumn.spillIndex ? spillSlot : paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
                     model: paneRow.grid.columns * paneRow.grid.rows
@@ -157,6 +189,7 @@ ApplicationWindow {
                             paneChooser.slot = slotIndex
                             paneChooser.open()
                         }
+                        onSetupRequested: settingsLayer.visible = true
                         onOptionsRequested: function (slotIndex) {
                             paneOptions.slot = slotIndex
                             paneOptions.open()

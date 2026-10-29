@@ -7,20 +7,21 @@ Item {
     id: slot
     objectName: "paneSlot"
     property int index: 0
-    readonly property string saved: appSettings.panes[index]
-    readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index]
+    readonly property string saved: appSettings.panes[index] || "none"
+    readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index] || 0
     // What is on screen: the saved choice, or the current stop of an automatic
     // rotation (never written to settings, so a rotation does not wear the SD card).
     property string rotated: ""
     readonly property string choice: rotateSeconds > 0 && rotated !== "" ? rotated : saved
     // Widgets the rotation cycles through (empty = every widget).
-    readonly property var rotationSet: appSettings.demoMode ? [] : appSettings.paneRotationSets[index]
+    readonly property var rotationSet: appSettings.demoMode ? [] : appSettings.paneRotationSets[index] || []
     // Pause rotation while the user is interacting or a menu is open.
     property bool paused: false
     onSavedChanged: rotated = ""
     onRotateSecondsChanged: rotated = ""
     onRotationSetChanged: rotated = ""
     signal chooseRequested(int slot)
+    signal setupRequested()
     signal optionsRequested(int slot)
 
     // Step to the next (+1) or previous (-1) widget in registry order; "none" sits
@@ -63,7 +64,9 @@ Item {
             onLoaded: {
                 item.widget = widgetModel
                 item.chooser = true
+                item.adaptive = true
                 item.titleActivated.connect(function () { slot.chooseRequested(slot.index) })
+                item.setupRequested.connect(slot.setupRequested)
             }
         }
     }

@@ -32,7 +32,7 @@ Card {
             Repeater {
                 model: root.widget ? root.widget.continents : []
                 delegate: Text {
-                    width: Math.max(8, (root.width - 40 * Theme.scale - 6 * 2 * Theme.scale) / 6)
+                    width: Math.max(8, ((root.width / root.fit) - 40 * Theme.scale - 6 * 2 * Theme.scale) / 6)
                     text: modelData
                     horizontalAlignment: Text.AlignHCenter
                     color: Theme.secondary
@@ -52,7 +52,7 @@ Card {
                     model: root.widget.continents
                     delegate: Rectangle {
                         readonly property int n: bandRow.rowData[modelData] || 0
-                        width: Math.max(8, (root.width - 40 * Theme.scale - 6 * 2 * Theme.scale) / 6)
+                        width: Math.max(8, ((root.width / root.fit) - 40 * Theme.scale - 6 * 2 * Theme.scale) / 6)
                         height: Theme.fontCaption * 1.3
                         color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b,
                                        n > 0 ? 0.2 + 0.8 * n / Math.max(1, root.widget.maxCell) : 0.07)

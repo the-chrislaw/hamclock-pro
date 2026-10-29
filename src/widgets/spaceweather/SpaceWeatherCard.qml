@@ -4,9 +4,51 @@ import HamClock
 
 Card {
     id: root
+    readonly property bool hasKp: widget !== null && widget.hasKp
+    readonly property color kpColor: hasKp && widget.kp >= 5 ? Theme.bad : hasKp && widget.kp >= 4 ? Theme.warn : Theme.ink
+    readonly property color xrayColor: widget && widget.xrayClass[0] === "X" ? Theme.bad
+                                     : widget && widget.xrayClass[0] === "M" ? Theme.warn : Theme.ink
+    // Tall pane: the three values stacked with their captions, the X-ray plot takes the rest.
+    ColumnLayout {
+        visible: root.tall
+        width: parent.width
+        height: parent.height
+        spacing: Theme.gap
+        Metric {
+            label: "Kp index"
+            available: root.hasKp
+            value: available ? root.widget.kp.toFixed(1) : ""
+            caption: available ? root.widget.kpText : ""
+            valueColor: root.kpColor
+            Layout.fillWidth: true
+        }
+        Metric {
+            label: "Solar flux"
+            available: root.widget && root.widget.hasSolarFlux
+            value: available ? root.widget.solarFlux : ""
+            caption: "SFI, 10.7 cm"
+            Layout.fillWidth: true
+        }
+        Metric {
+            label: "X-ray"
+            available: root.widget && root.widget.xrayClass.length > 0
+            value: available ? root.widget.xrayClass : ""
+            caption: "GOES flare class"
+            valueColor: root.xrayColor
+            Layout.fillWidth: true
+        }
+        XrayPlot {
+            visible: root.widget && root.widget.hasXrayHistory
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 40 * Theme.scale
+            Layout.preferredHeight: 60 * Theme.scale
+            values: root.widget ? root.widget.xrayHistory : []
+        }
+    }
     // Compact slot: one line per value (label left, value right) so nothing is clipped.
     Column {
-        visible: root.compact
+        visible: root.compact && !root.tall
         width: parent.width
         spacing: Theme.gap * 0.4
         Repeater {

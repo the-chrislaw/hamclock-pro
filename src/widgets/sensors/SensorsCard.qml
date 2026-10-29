@@ -43,7 +43,7 @@ Card {
             // "Synced, <1 ms, stratum 2, server": status is the value, the rest a caption that elides.
             value: visible ? root.widget.clock.split(", ")[0] : ""
             caption: visible ? root.widget.clock.split(", ").slice(1).join(", ") : ""
-            width: Math.min(implicitWidth, root.width)
+            width: Math.min(implicitWidth, (root.width / root.fit))
         }
         Metric {
             label: "Disk"
