@@ -530,3 +530,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 1df00d0 (merged since 8507bee: #645 iPhone/iPad parity pass, my run 92 log #647). Main builds and passes 187/187 tests. Reviewed #645: Keychain secret store is only set on Apple builds (Pi still uses owner-only credentials.ini), writeAccounts leaves the file alone if the store refuses, passwords are not exposed to QML or logs, per-config-dir keys keep scratch profiles from touching real ones; tall-area pane grid only affects height > width so Pi sizes are unchanged, pane tests gained assertions, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480 and 1024x600 in light and dark are unchanged and correct, with only the known truncation of stale footers at 800x480.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy and unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 94
+- Last reviewed commit: 0572e03 (only my run 93 log #649 merged since 1df00d0). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
