@@ -19,6 +19,10 @@ struct Point {
 std::vector<Point> series(std::string_view body, const std::string& field);
 // Same rows; nullopt when the body is not a JSON array.
 std::optional<std::vector<Point>> checked_series(std::string_view body, const std::string& field);
+// Several fields of the same rows from ONE parse of the body (the feed carries speed and density,
+// or Bt and Bz, side by side); out[i] belongs to fields[i].
+std::optional<std::vector<std::vector<Point>>> checked_series(std::string_view body,
+                                                              const std::vector<std::string>& fields);
 std::optional<Point> latest(std::string_view body, const std::string& field);
 
 inline constexpr char kSpeed[] = "proton_speed";     // km/s (rtsw_wind_1m)
