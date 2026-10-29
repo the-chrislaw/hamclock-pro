@@ -155,7 +155,6 @@ int main(int argc, char** argv) {
             settings.setSecretStore(std::move(keychain));
     }
 #endif
-    if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
     hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));
     hamclock::WidgetContext context;

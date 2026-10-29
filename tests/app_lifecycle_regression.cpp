@@ -4,6 +4,8 @@
 #include "../src/platform/apple_lifecycle.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QDir>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <iostream>
@@ -21,6 +23,9 @@ int main(int argc, char** argv) {
     QCoreApplication::setApplicationName("hamclock-pro-lifecycle-test");
     QTemporaryDir cache;
     qputenv("XDG_CACHE_HOME", cache.path().toUtf8());
+    // macOS ignores XDG_CACHE_HOME: start from an empty cache for this test's own
+    // app name, or a cache left by an earlier run makes resume() wait instead of fetch.
+    QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
     using namespace hamclock;
     using namespace std::chrono_literals;
 
