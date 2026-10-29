@@ -41,6 +41,17 @@ int main(int argc, char** argv) {
     check(lookup::parse_qrz(fx("qrz_notfound.xml")).outcome == Outcome::NotFound, "qrz not found");
     check(lookup::parse_qrz(fx("qrz_expired.xml")).outcome == Outcome::SessionExpired, "qrz expired");
     check(lookup::parse_qrz(fx("qrz_badlogin.xml")).outcome == Outcome::LoginFailed, "qrz bad login");
+    check(lookup::parse_qrz(fx("qrz_login.xml")).subscription == "Wed Jan 1 12:34:03 2025", "qrz subscription expiry kept");
+    {
+        const auto nonsub = lookup::parse_qrz(fx("qrz_login_nonsub.xml"));
+        check(nonsub.outcome == Outcome::Ok && nonsub.session.startsWith("7a1b2c") && nonsub.subscription == "non-subscriber" &&
+                  !lookup::has_xml_subscription(nonsub.subscription),
+              "qrz non-subscriber login is a session without a subscription");
+        check(lookup::has_xml_subscription("Wed Jan 1 12:34:03 2025") && lookup::has_xml_subscription(""),
+              "an expiry date (or no field, HamQTH) counts as subscribed");
+    }
+    // QRZ: "Connection refused" means no login will succeed for at least 24 hours (spec 1.34).
+    check(lookup::parse_qrz(fx("qrz_refused.xml")).outcome == Outcome::Blocked, "qrz connection refused is a block, not a bad password");
 
     login = lookup::parse_hamqth(fx("hamqth_login.xml"));
     check(login.outcome == Outcome::Ok && login.session.startsWith("09b0ae"), "hamqth login");
@@ -84,7 +95,11 @@ int main(int argc, char** argv) {
         r.http_status = 200;
         const QString s = u.toString();
         if (mode == "down") { r.http_status = 0; r.error = "offline"; }
-        else if (s.contains("password=")) r.body = fx(mode == "badlogin" ? "qrz_badlogin.xml" : "qrz_login.xml");
+        else if (mode == "busy") { r.http_status = 503; r.error = "HTTP 503"; r.body = "<html>Service Unavailable</html>"; }
+        else if (s.contains("hamqth.com")) r.body = fx(mode == "badlogin" ? "hamqth_badlogin.xml"
+                                                       : s.contains("p=") ? "hamqth_login.xml" : "hamqth_callsign.xml");
+        else if (s.contains("password=")) r.body = fx(mode == "badlogin" ? "qrz_badlogin.xml" : mode == "refused" ? "qrz_refused.xml"
+                                                       : mode == "nonsub" ? "qrz_login_nonsub.xml" : "qrz_login.xml");
         else if (mode == "expire-once" && !s.contains("W1AW-RETRY")) { mode = "ok"; r.body = fx("qrz_expired.xml"); }
         else if (s.contains("N0XYZ")) r.body = fx("qrz_notfound.xml");
         else r.body = fx("qrz_callsign.xml");
@@ -129,6 +144,68 @@ int main(int argc, char** argv) {
     model.lookup("DL1ABC");
     settle();
     check(model.state() == "error" && model.message() == "Lookup service unreachable", "offline reported");
+
+    // Server busy: an HTTP 5xx with an HTML body is not a bad password.
+    mode = "busy";
+    settings.saveAccount("qrz", "me", "pw3");
+    model.lookup("DL1ABC");
+    settle();
+    check(model.state() == "error" && model.message().contains("busy") && !model.message().contains("password"),
+          "server busy reported as busy");
+
+    // QRZ's 24-hour block.
+    mode = "refused";
+    settings.saveAccount("qrz", "me", "pw4");
+    model.lookup("DL1ABC");
+    settle();
+    check(model.state() == "error" && model.message().contains("24 hours"), "qrz block explained");
+
+    // Test connection (Settings): logs in only, says what the account can do.
+    urls.clear();
+    model.checkLogin();
+    settle();
+    check(model.message().contains("24 hours") && urls.size() == 1 && urls[0].contains("password="), "check: login only");
+    mode = "ok";
+    settings.saveAccount("qrz", "me", "pw5");
+    model.checkLogin();
+    check(model.busy() && model.state() == "loading", "check: busy while asking");
+    settle();
+    check(!model.busy() && model.state() == "live" && model.message().contains("QRZ.com accepted") &&
+              model.message().contains("Wed Jan 1 12:34:03 2025") && !model.message().contains("pw5"),
+          "check: subscribed account reported with expiry");
+    check(model.call().isEmpty(), "check: no lookup result shown");
+    mode = "nonsub";
+    settings.saveAccount("qrz", "me", "pw6");
+    model.checkLogin();
+    settle();
+    check(model.state() == "live" && model.message().contains("no XML") && model.subscriptionWarning(), "check: non-subscriber warned");
+    model.lookup("W1AW");
+    settle();
+    check(model.call() == "W1AW" && model.statusText().contains("limited"), "non-subscriber lookups still run, marked limited");
+    mode = "badlogin";
+    settings.saveAccount("qrz", "me", "pw7");
+    model.checkLogin();
+    settle();
+    check(model.state() == "error" && model.message().contains("check user and password"), "check: bad login reported");
+
+    // HamQTH (free): login, wrong password.
+    mode = "ok";
+    settings.saveAccount("hamqth", "W1AW", "pw8");
+    model.checkLogin();
+    settle();
+    check(model.state() == "live" && model.message().contains("HamQTH accepted"), "check: hamqth login");
+    model.lookup("OK2CQR");
+    settle();
+    check(model.call() == "OK2CQR" && urls.last().contains("prg=hamclock-pro") && urls.last().contains("id=09b0ae"),
+          "hamqth lookup uses the session id and names the program");
+    mode = "badlogin";
+    settings.saveAccount("hamqth", "W1AW", "pw9");
+    model.checkLogin();
+    settle();
+    check(model.state() == "error" && model.message().contains("check user and password"), "check: hamqth bad login");
+    settings.saveAccount("none", {}, {});
+    model.checkLogin();
+    check(model.state() == "unconfigured", "check without an account does nothing");
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

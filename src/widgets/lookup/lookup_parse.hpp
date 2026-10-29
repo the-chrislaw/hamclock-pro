@@ -12,7 +12,8 @@ struct Record {
     QString call, name, qth, country, grid;
 };
 
-enum class Outcome { Ok, NotFound, SessionExpired, LoginFailed, Error };
+// Blocked: QRZ answered "Connection refused", meaning no login will succeed for at least 24 hours.
+enum class Outcome { Ok, NotFound, SessionExpired, LoginFailed, Blocked, Error };
 
 // One reply, either a login reply (session set), a lookup reply (record set)
 // or an error. message is a short user-facing text; it never contains the
@@ -22,7 +23,12 @@ struct Reply {
     QString session;
     std::optional<Record> record;
     QString message;
+    // QRZ <SubExp>: the subscription expiry date, or "non-subscriber". Empty when absent (HamQTH).
+    QString subscription;
 };
+
+// False only for QRZ's "non-subscriber": the login works but lookups return a reduced record.
+bool has_xml_subscription(const QString& subscription);
 
 Reply parse_qrz(const QByteArray& body);
 Reply parse_hamqth(const QByteArray& body);
