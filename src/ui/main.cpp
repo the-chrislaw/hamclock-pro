@@ -73,7 +73,8 @@ namespace {
         double x = 0;
         if (align == Qt::AlignRight) x = item->width() - w;
         else if (align == Qt::AlignHCenter) x = (item->width() - w) / 2;
-        const QRectF content(item->mapToScene(QPointF(x, 0)), QSizeF(w, h));
+        // Mapped as a rectangle so a scaled ancestor (an adaptive pane's stage) scales the text too.
+        const QRectF content = item->mapRectToScene(QRectF(x, 0, w, h));
         constexpr double tol = 1.5;
         QRectF bound = item->window() ? QRectF(0, 0, item->window()->width(), item->window()->height()) : QRectF();
         for (auto* a = item->parentItem(); a; a = a->parentItem()) {

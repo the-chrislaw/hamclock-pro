@@ -44,8 +44,10 @@ Rectangle {
     function refit() {
         if (!adaptive || fillBody || body.width <= 0 || body.height <= 0 || naturalHeight <= 0) { fit = 1; return }
         const target = Math.max(1, Math.min(maxFit, body.width / designWidth, body.height / naturalHeight))
-        // Hysteresis: small changes (text ticking, wrapping at the new width) do not re-layout.
-        if (Math.abs(target - fit) > 0.03 * fit) fit = Math.round(target * 100) / 100
+        // Content that no longer fits (text wrapped onto another line at the new width)
+        // always shrinks; otherwise small changes (text ticking) do not re-layout.
+        const overflows = naturalHeight * fit > body.height + 1
+        if (overflows ? target < fit : Math.abs(target - fit) > 0.03 * fit) fit = Math.floor(target * 100) / 100
     }
     onNaturalHeightChanged: Qt.callLater(refit)
     onWidthChanged: Qt.callLater(refit)
