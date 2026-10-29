@@ -29,7 +29,18 @@ Popup {
         primary: on
     }
 
-    contentItem: ColumnLayout {
+    // Scrolls when the map card is shorter than the menu (Pi panel, phone, MacBook
+    // window), so every control stays reachable.
+    contentItem: Flickable {
+        implicitWidth: menuColumn.implicitWidth
+        implicitHeight: menuColumn.implicitHeight
+        contentHeight: menuColumn.implicitHeight
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollIndicator.vertical: ScrollIndicator { }
+    ColumnLayout {
+        id: menuColumn
+        width: parent.width
         spacing: Theme.gap
         Text { text: "Map view"; color: Theme.ink; font.pixelSize: Theme.fontBody; font.weight: Font.Bold }
         GridLayout {
@@ -128,5 +139,6 @@ Popup {
             }
         }
         AppButton { text: "Close"; Layout.alignment: Qt.AlignRight; onClicked: menu.close() }
+    }
     }
 }
