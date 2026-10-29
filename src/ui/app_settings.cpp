@@ -275,13 +275,23 @@ QString AppSettings::clearPaneRotationSet(int slot) {
 }
 
 QString AppSettings::setPane(int slot, const QString& widget_id) {
+    return assignPane(slot, widget_id, true);
+}
+
+QString AppSettings::showPane(int slot, const QString& widget_id) {
+    return assignPane(slot, widget_id, false);
+}
+
+QString AppSettings::assignPane(int slot, const QString& widget_id, bool persist) {
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
     if (!valid_id.match(widget_id).hasMatch()) return "Unknown widget.";
-    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
-    ini.setValue(QString("panes/slot%1").arg(slot), widget_id);
-    ini.sync();
-    if (ini.status() != QSettings::NoError) return "Could not save the pane choice.";
+    if (persist) {
+        QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+        ini.setValue(QString("panes/slot%1").arg(slot), widget_id);
+        ini.sync();
+        if (ini.status() != QSettings::NoError) return "Could not save the pane choice.";
+    }
     while (panes_.size() < kPaneSlots) panes_ << QString();
     panes_[slot] = widget_id;
     emit panesChanged();

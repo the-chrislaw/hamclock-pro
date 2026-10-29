@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
         bool number_ok = false;
         const int slot = parts.value(0).toInt(&number_ok) - 1;
         const auto problem = parts.size() == 2 && number_ok && registry.model(parts[1])
-            ? settings.setPane(slot, parts[1]) : QString("Unknown widget or pane.");
+            ? settings.showPane(slot, parts[1]) : QString("Unknown widget or pane.");
         if (!problem.isEmpty()) {
             std::fprintf(stderr, "--pane %s: %s\n", qPrintable(assignment), qPrintable(problem));
             return 2;

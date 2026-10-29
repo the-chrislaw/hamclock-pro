@@ -177,6 +177,8 @@ public:
     QStringList panes() const;
     // Returns an empty string or a user-facing error.
     Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
+    // Shows a widget in a pane for this run only (the --pane screenshot option); nothing is saved.
+    QString showPane(int slot, const QString& widget_id);
     Q_INVOKABLE void resetPanes();
     QList<int> paneRotations() const;
     static constexpr int kDemoSeconds = 10;
@@ -280,6 +282,7 @@ signals:
     void demoModeChanged();
 
 private:
+    QString assignPane(int slot, const QString& widget_id, bool persist);
     void loadOptions();
     std::unique_ptr<CredentialStore> secrets_;
     QString secretKey(const QString& store_key) const;

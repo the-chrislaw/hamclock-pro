@@ -315,6 +315,13 @@ int main(int argc, char** argv) {
         check(panes.setPane(2, "none").isEmpty() && panes.panes()[2] == "none", "pane can be left empty");
         AppSettings again({}, pane_dir.path());
         check(again.panes().mid(0, 3) == QStringList({"spaceweather", "weather", "none"}), "pane choices survive restart");
+        {
+            // --pane (screenshots) shows a widget for this run only.
+            AppSettings shown({}, pane_dir.path());
+            check(shown.showPane(0, "quakes").isEmpty() && shown.panes()[0] == "quakes", "shown pane applied");
+            check(!shown.showPane(AppSettings::kPaneSlots, "quakes").isEmpty(), "shown pane slot validated");
+            check(AppSettings({}, pane_dir.path()).panes()[0] == "spaceweather", "shown pane not saved");
+        }
         check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "rotation off by default");
         check(!again.setPaneRotation(AppSettings::kPaneSlots, 10).isEmpty() && !again.setPaneRotation(0, 7).isEmpty(), "bad rotation rejected");
         check(again.setPaneRotation(1, 30).isEmpty() && again.paneRotations().mid(0, 3) == QList<int>({0, 30, 0}), "rotation applied");
