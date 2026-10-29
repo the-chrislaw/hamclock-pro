@@ -10,6 +10,7 @@
 namespace hamclock {
 
 class AppSettings;
+class SatAlertService;
 
 // "Passes over you": the next 48 h of passes of every satellite with fresh elements at DE, from
 // the same CelesTrak elements as the Satellites pane (fed by it), propagated offline with SGP4.
@@ -18,7 +19,7 @@ class PassesModel : public WidgetModel {
     Q_PROPERTY(bool hasData READ hasData NOTIFY changed)
     // {name, aos (unix s), day, utc, local, maxEl, from, to, duration, visible, live} soonest first.
     Q_PROPERTY(QVariantList rows READ rows NOTIFY changed)
-    Q_PROPERTY(QString filter READ filter NOTIFY changed)   // "all", "amateur", "visible" or "starred"
+    Q_PROPERTY(QString filter READ filter NOTIFY changed)   // "all", "amateur", "visible", "starred" or "alerts" (pass alert selection)
     Q_PROPERTY(QString emptyReason READ emptyReason NOTIFY changed)
 public:
     explicit PassesModel(const WidgetContext& context, QObject* parent = nullptr);
@@ -42,6 +43,7 @@ signals:
 
 private:
     AppSettings* settings_;
+    SatAlertService* alerts_;
     std::vector<Tle> tles_;
     std::set<int> amateur_;
     QString filter_ = "all";

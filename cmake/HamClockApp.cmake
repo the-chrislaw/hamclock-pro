@@ -19,6 +19,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
     src/platform/apple_passreminder.cpp
+    src/platform/apple_notifications.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -36,6 +37,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(hamclock-widget-core PUBLIC ${HC_APPKIT})
 endif()
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
+# Satellite pass alerts: UNUserNotificationCenter on iPhone, iPad and the Mac app.
+if(APPLE)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_notifications.mm)
+    set_source_files_properties(src/platform/apple_notifications.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    if(NOT IOS)
+        find_library(HC_MAC_USERNOTIFICATIONS UserNotifications REQUIRED)
+        target_link_libraries(hamclock-widget-core PUBLIC ${HC_MAC_USERNOTIFICATIONS})
+    endif()
+endif()
 if(IOS)
     target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
@@ -79,7 +89,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)

@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "updated": "2026-10-29",
+  "sources": [
+    "https://www.amsat.org/status/",
+    "https://www.amsat.org/fm-satellite-frequency-summary/",
+    "https://www.amsat.org/linear-satellite-frequency-summary/",
+    "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle"
+  ],
+  "how_to_update": "Matched by NORAD id, never by name. status is active (heard on the AMSAT status page in recent weeks), intermittent (on by schedule, sunlight only or unreliable) or inactive (not heard recently; kept so a revival is one edit). All workable = active + intermittent. Frequencies in MHz; a two-number list is a linear passband [low, high]. Run ctest -R sat-catalog after editing.",
+  "satellites": [
+    {
+      "norad": 25544, "name": "ISS", "tle_name": "ISS (ZARYA)", "status": "active",
+      "note": "Crossband FM repeater; voice with the crew on 145.800 when scheduled (ARISS).",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.990, "downlink_mhz": 437.800, "ctcss_hz": 67.0, "label": "FM repeater" },
+        { "mode": "APRS", "uplink_mhz": 145.825, "downlink_mhz": 145.825, "label": "APRS digipeater (path ARISS)" }
+      ]
+    },
+    {
+      "norad": 27607, "name": "SO-50", "tle_name": "SAUDISAT 1C (SO-50)", "status": "active",
+      "note": "Arm the 10-minute timer with a 2 s carrier and 74.4 Hz tone, then use 67 Hz.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.850, "downlink_mhz": 436.795, "ctcss_hz": 67.0, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 61781, "name": "AO-123", "tle_name": "ASRTU-1 (AO-123)", "status": "active",
+      "note": "",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.850, "downlink_mhz": 435.400, "ctcss_hz": 67.0, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 43017, "name": "AO-91", "tle_name": "RADFXSAT (FOX-1B)", "status": "intermittent",
+      "note": "Battery-limited: sunlit passes only, may cut out.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 435.250, "downlink_mhz": 145.960, "ctcss_hz": 67.0, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 43678, "name": "PO-101", "tle_name": "DIWATA-2B", "status": "intermittent",
+      "note": "FM repeater on by schedule only; AMSAT reports it is failing.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 437.500, "downlink_mhz": 145.900, "ctcss_hz": 141.3, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 40931, "name": "IO-86", "tle_name": "LAPAN-A2", "status": "intermittent",
+      "note": "By schedule; equatorial orbit, only reaches stations within about 30 degrees of the equator.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.880, "downlink_mhz": 435.880, "ctcss_hz": 88.5, "label": "FM repeater" },
+        { "mode": "APRS", "uplink_mhz": 145.825, "downlink_mhz": 145.825, "label": "APRS digipeater" }
+      ]
+    },
+    {
+      "norad": 40908, "name": "CAS-3H", "tle_name": "LILACSAT-2", "status": "intermittent",
+      "note": "FM transponder has no set schedule; telemetry on 437.200 when it is off.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 144.350, "downlink_mhz": 437.200, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 63214, "name": "TEVEL2-5", "tle_name": "TEVEL2-5", "status": "intermittent",
+      "note": "Owner reports software restarts that switch the transponder off.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.970, "downlink_mhz": 436.400, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 44909, "name": "RS-44", "tle_name": "RS-44 & BREEZE-KM R/B", "status": "active",
+      "note": "Inverting; CW beacon 435.605.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [145.935, 145.995], "downlink_mhz": [435.610, 435.670], "label": "V/u linear (LSB up, USB down)" }
+      ]
+    },
+    {
+      "norad": 7530, "name": "AO-7", "tle_name": "OSCAR 7 (AO-7)", "status": "intermittent",
+      "note": "No batteries: sunlight only; mode A and B swap every 24 h.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [432.125, 432.175], "downlink_mhz": [145.925, 145.975], "label": "Mode B U/v (inverting)" },
+        { "mode": "Linear", "uplink_mhz": [145.850, 145.950], "downlink_mhz": [29.400, 29.500], "label": "Mode A V/a" }
+      ]
+    },
+    {
+      "norad": 24278, "name": "FO-29", "tle_name": "JAS-2 (FO-29)", "status": "intermittent",
+      "note": "Switched on by schedule, runs until the voltage drops.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [145.900, 146.000], "downlink_mhz": [435.800, 435.900], "label": "V/u linear (inverting)" }
+      ]
+    },
+    {
+      "norad": 39444, "name": "AO-73", "tle_name": "FUNCUBE-1 (AO-73)", "status": "active",
+      "note": "Transponder on in eclipse; telemetry 145.935 BPSK.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [435.130, 435.150], "downlink_mhz": [145.950, 145.970], "label": "U/v linear (inverting)" }
+      ]
+    },
+    {
+      "norad": 43803, "name": "JO-97", "tle_name": "JY1SAT (JO-97)", "status": "active",
+      "note": "Telemetry inoperative; transponder heard.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [435.100, 435.120], "downlink_mhz": [145.855, 145.875], "label": "U/v linear (inverting)" }
+      ]
+    },
+    {
+      "norad": 44881, "name": "TO-108", "tle_name": "TIANYAN 01", "status": "intermittent",
+      "note": "CAS-6. Transponder pulses about 2 s on, 5 s off.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [435.270, 435.290], "downlink_mhz": [145.915, 145.935], "label": "U/v linear (inverting)" }
+      ]
+    },
+    {
+      "norad": 59112, "name": "SONATE-2", "tle_name": "SONATE-2", "status": "active",
+      "note": "",
+      "transponders": [
+        { "mode": "APRS", "uplink_mhz": 145.825, "downlink_mhz": 145.825, "label": "APRS digipeater" }
+      ]
+    },
+    {
+      "norad": 26931, "name": "NO-44", "tle_name": "PCSAT (NO-44)", "status": "intermittent",
+      "note": "Sunlight only.",
+      "transponders": [
+        { "mode": "APRS", "uplink_mhz": 145.825, "downlink_mhz": 145.825, "label": "APRS digipeater" }
+      ]
+    },
+    {
+      "norad": 22825, "name": "AO-27", "tle_name": "EYESAT A (AO-27)", "status": "inactive",
+      "note": "Not on the AMSAT status page in 2026.",
+      "transponders": [
+        { "mode": "FM", "uplink_mhz": 145.850, "downlink_mhz": 436.795, "label": "FM repeater" }
+      ]
+    },
+    {
+      "norad": 50466, "name": "XW-3", "tle_name": "XW-3 (CAS-9)", "status": "inactive",
+      "note": "CAS-9. Not on the AMSAT status page in 2026.",
+      "transponders": [
+        { "mode": "Linear", "uplink_mhz": [435.180, 435.200], "downlink_mhz": [145.855, 145.875], "label": "U/v linear (inverting)" }
+      ]
+    },
+    {
+      "norad": 53109, "name": "IO-117", "tle_name": "GREENCUBE (IO-117)", "status": "inactive",
+      "note": "Medium orbit digipeater; not on the AMSAT status page in 2026.",
+      "transponders": [
+        { "mode": "Digital", "uplink_mhz": 435.310, "downlink_mhz": 435.310, "label": "UHF digipeater (1k2 GMSK)" }
+      ]
+    }
+  ]
+}
