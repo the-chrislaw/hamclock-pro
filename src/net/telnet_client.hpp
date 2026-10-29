@@ -43,7 +43,9 @@ public:
 
     // `commands` are sent one per line, once, right after the cluster's first post-login output.
     // A non-empty `password` (printable ASCII, no spaces) is sent once, when a "password:" prompt follows the
-    // login; the client counts as online only after that. It is never logged or exposed.
+    // login; the client counts as online only after the first non-blank line that follows. It is never logged or
+    // exposed. A failure line after it (looks_like_login_rejected), or a close before that line, stops the client
+    // (Idle, no retry) and emits loginRejected(); call start() again with other credentials.
     void start(const QString& host, int port, const QString& login, const QStringList& commands = {},
                const QString& password = {});
     void stop();
@@ -55,6 +57,8 @@ public:
     static QByteArray strip_negotiation(QByteArray& pending, QByteArray& replies);
     static bool looks_like_login_prompt(const QString& partial_line);
     static bool looks_like_password_prompt(const QString& partial_line);
+    // "Login failed, check username and password" (HamAlert) and similar refusals.
+    static bool looks_like_login_rejected(const QString& line);
     // Keeps the commands that are safe to send unattended: printable ASCII, <= 80 chars, at most 8, and
     // none that publish to the cluster (dx, announce, talk, say, ...); this client is receive-only.
     static QStringList sanitize_commands(const QStringList& commands);
@@ -62,6 +66,7 @@ public:
 signals:
     void stateChanged(State state);
     void lineReceived(const QString& line);
+    void loginRejected();
 
 private:
     void connect_now();
@@ -71,6 +76,7 @@ private:
     void on_data(const QByteArray& data);
     void on_closed(const QString& error);
     void set_state(State state);
+    void reject_login();
 
     TelnetSocketFactory factory_;
     TelnetSocket* socket_ = nullptr;
