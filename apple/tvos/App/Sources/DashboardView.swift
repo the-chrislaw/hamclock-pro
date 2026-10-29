@@ -1,545 +1,187 @@
 import SwiftUI
 
-struct DashboardView: View {
-    @EnvironmentObject var weather: SpaceWeatherStore
-    @EnvironmentObject var quakes: QuakeStore
-    @EnvironmentObject var panes: PaneStore
-    @State private var showSettings = false
-    @State private var showWeather = false
-    @State private var page: Page = .overview
-    @State private var lastInput = Date()
-    private let rotation = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
+/// What the Siri Remote focus can rest on.
+enum DashFocus: Hashable { case settings, station, pane(Int), map }
 
-    private func show(_ pane: Pane) -> Bool {
-        panes.isOn(pane) && (panes.pages.contains(page) ? page : panes.pages[0]).panes.contains(pane)
-    }
+/// Modal layers over the dashboard; Menu closes the top one.
+enum DashOverlay: Equatable { case chooser(Int), options(Int), mapMenu }
+
+/// One page, like Main.qml: header, station column on the left, a row of pane slots over the
+/// world map on the right (or two rows of panes when the map is hidden).
+struct DashboardView: View {
+    @EnvironmentObject var settings: AppSettings
+    @FocusState private var focus: DashFocus?
+    @State private var overlay: DashOverlay?
+    @State private var showSettings = false
+    @State private var setupMode = false
+    @State private var bannerMode = 0
+    @State private var showLocal = false
+    @State private var map = MapView()
+    @State private var lastInput = Date()
+
+    private var theme: Theme { Theme(dark: settings.dark, accentStyle: settings.accentStyle) }
+    private var paneCount: Int { settings.mapSize == "hidden" ? 6 : 3 }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            VStack(alignment: .leading, spacing: 40) {
-                ClockBar(now: ctx.date)
-                if show(.map) { MapCard(now: ctx.date) }
-                if show(.spaceWeather) {
-                HStack(alignment: .top, spacing: 40) {
-                    Card(onSelect: { showWeather = true }, title: "Kp index", sample: weather.kp, now: ctx.date,
-                         big: { String(format: "%.1f", $0) },
-                         detail: { SpaceWeatherStore.kpDescription($0) })
-                    Card(onSelect: { showWeather = true }, title: "Solar flux", sample: weather.flux, now: ctx.date,
-                         big: { String(format: "%.0f sfu", $0) }, detail: { _ in "10.7 cm" })
-                    Card(onSelect: { showWeather = true }, title: "X-ray", sample: weather.xray, now: ctx.date,
-                         big: { SpaceWeatherStore.xrayClass($0) }, detail: { _ in "GOES 0.1–0.8 nm" })
+            ZStack {
+                theme.canvas.ignoresSafeArea()
+                page(ctx.date)
+                    .offset(BurnInShift.offset(at: ctx.date))
+                    .disabled(overlay != nil || showSettings)
+                    .opacity(DimPolicy.opacity(idle: ctx.date.timeIntervalSince(lastInput), afterHours: settings.dimAfterHours))
+                if let overlay { overlayView(overlay) }
+                if showSettings {
+                    SettingsView(setup: setupMode) { closeSettings() }
+                        .transition(.opacity)
                 }
-                HStack(alignment: .top, spacing: 40) {
-                    Card(onSelect: { showWeather = true }, title: "Solar wind", sample: weather.windSpeed, now: ctx.date,
-                         big: { String(format: "%.0f km/s", $0) },
-                         detail: { SpaceWeatherStore.windSpeedDescription($0) })
-                    Card(onSelect: { showWeather = true }, title: "IMF Bz (GSM)", sample: weather.bz, now: ctx.date,
-                         big: { String(format: "%+.1f nT", $0) },
-                         detail: { SpaceWeatherStore.bzDescription($0) })
-                }
-                }
-                if show(.bands) { BandsCard(now: ctx.date) }
-                HStack(alignment: .top, spacing: 40) {
-                    if show(.sun) { SunCard(now: ctx.date) }
-                    if show(.station) { StationSunCard(now: ctx.date) }
-                }
-                if show(.satellites) { SatelliteCard(now: ctx.date) }
-                if show(.quakes) { QuakeCard(now: ctx.date) }
-                if show(.weather) { LocalWeatherCard(now: ctx.date) }
-                if show(.storms) { StormCard(now: ctx.date) }
-                // The map page has no spacer: the map itself takes the spare height.
-                if !show(.map) { Spacer(minLength: 0) }
-                Button("Panes…") { showSettings = true }
-                Text("Data: NOAA Space Weather Prediction Center; USGS Earthquake Hazards Program; NOAA National Hurricane Center; Open-Meteo; CelesTrak; Natural Earth")
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true) // the credit line never gives up height
             }
-            .offset(BurnInShift.offset(at: ctx.date)) // slow pixel shift of static chrome
-            .padding(.horizontal, 90).padding(.vertical, 60) // tvOS title-safe area
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color.black)
-            .opacity(DimPolicy.opacity(idle: ctx.date.timeIntervalSince(lastInput), afterHours: panes.dimAfterHours))
         }
-        .onAppear { UIApplication.shared.isIdleTimerDisabled = true } // dashboard is meant to stay on
+        .environment(\.theme, theme)
+        .preferredColorScheme(settings.dark ? .dark : .light)
+        .onAppear {
+            UIApplication.shared.isIdleTimerDisabled = true // the dashboard is meant to stay on
+            if !settings.configured { setupMode = true; showSettings = true }
+        }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
-        .onPlayPauseCommand { lastInput = Date(); page = panes.next(after: page) }
+        .onPlayPauseCommand { lastInput = Date(); playPause() }
         .onMoveCommand { _ in lastInput = Date() }
-        .onExitCommand { lastInput = Date() }
-        .onReceive(rotation) { _ in if panes.autoRotate { page = panes.next(after: page) } }
-        .sheet(isPresented: $showSettings) { PaneSettingsView() }
-        .sheet(isPresented: $showWeather) { SpaceWeatherDetailView() }
+        // Menu closes an open overlay; with none open the system handles it (back to the Home Screen).
+        .onExitCommand(perform: overlay == nil || showSettings ? nil : { closeOverlay() })
+        .onChange(of: overlay) { _, _ in lastInput = Date() }
+    }
+
+    // MARK: layout
+
+    private func page(_ now: Date) -> some View {
+        VStack(alignment: .leading, spacing: Theme.gap) {
+            HStack {
+                Text("HamClock Pro").font(.system(size: Theme.fontTitle * 1.15, weight: .bold)).foregroundStyle(theme.ink)
+                Spacer()
+                Button("Settings") { openSettings() }
+                    .buttonStyle(ChipStyle())
+                    .focused($focus, equals: .settings)
+                    .accessibilityIdentifier("settingsButton")
+            }
+            .frame(height: 70)
+            HStack(alignment: .top, spacing: Theme.gap) {
+                RemoteTile(select: { settings.configured ? showLocal.toggle() : openSettings() }, hold: openSettings) {
+                    StationCardView(now: now, focused: focus == .station, bannerMode: bannerMode,
+                                    showLocal: showLocal, longPath: map.longPath)
+                }
+                .frame(width: 400)
+                .focused($focus, equals: .station)
+                VStack(spacing: Theme.gap) {
+                    paneGrid(now)
+                    if settings.mapSize != "hidden" { mapCard(now) }
+                }
+            }
+        }
+        .focusSection()
+    }
+
+    private func paneGrid(_ now: Date) -> some View {
+        let rows = paneCount / 3
+        return VStack(spacing: Theme.gap) {
+            ForEach(0..<rows, id: \.self) { r in
+                HStack(spacing: Theme.gap) {
+                    ForEach(0..<3, id: \.self) { c in pane(r * 3 + c, now) }
+                }
+            }
+        }
+        .frame(height: settings.mapSize == "hidden" ? nil : 390)
+    }
+
+    private func pane(_ i: Int, _ now: Date) -> some View {
+        RemoteTile(select: { overlay = .chooser(i) }, hold: { overlay = .options(i) }) {
+            PaneWidget(id: shownWidget(i, now), now: now, focused: focus == .pane(i))
+        }
+        .focused($focus, equals: .pane(i))
+        .accessibilityIdentifier("pane\(i)")
+        .accessibilityValue(settings.panes[i])
+    }
+
+    private func mapCard(_ now: Date) -> some View {
+        RemoteTile(select: { overlay = .mapMenu }, hold: { overlay = .mapMenu }) {
+            Card(title: "World map" + (map.centre == .world ? "" : map.centre == .de ? " · DE" : " · DX"), chooser: true,
+                 focused: focus == .map) {
+                WorldMapView(now: now, view: map)
+            }
+        }
+        .focused($focus, equals: .map)
+        .accessibilityLabel("World map")
+        .accessibilityIdentifier("mapCard")
+    }
+
+
+    /// The saved widget, or the current stop of the slot's automatic rotation (never saved).
+    private func shownWidget(_ i: Int, _ now: Date) -> String {
+        let saved = settings.panes[i]
+        let seconds = settings.paneRotations[i]
+        guard seconds > 0 else { return saved }
+        let list = WidgetCatalog.onTV.map(\.id)
+        let start = list.firstIndex(of: saved) ?? 0
+        return list[(start + Int(now.timeIntervalSince1970) / seconds) % list.count]
+    }
+
+    // MARK: overlays
+
+    @ViewBuilder private func overlayView(_ o: DashOverlay) -> some View {
+        switch o {
+        case .chooser(let slot):
+            PaneChooserView(slot: slot) { overlay = nil; focus = .pane(slot) }
+        case .options(let slot):
+            PaneOptionsView(slot: slot, change: { overlay = .chooser(slot) }) { overlay = nil; focus = .pane(slot) }
+        case .mapMenu:
+            MapMenuView(view: $map) { overlay = nil; focus = .map }
+        }
+    }
+
+    /// Closes the overlay and puts the focus back where it was opened from.
+    private func closeOverlay() {
+        switch overlay {
+        case .chooser(let i), .options(let i): focus = .pane(i)
+        case .mapMenu: focus = .map
+        case nil: break
+        }
+        overlay = nil
+    }
+
+    private func playPause() {
+        guard overlay == nil, !showSettings else { return }
+        switch focus {
+        case .pane(let i): overlay = .options(i)
+        case .station: bannerMode += 1
+        case .map: overlay = .mapMenu
+        default: break
+        }
+    }
+
+    private func openSettings() { setupMode = !settings.configured; showSettings = true }
+
+    private func closeSettings() {
+        showSettings = false
+        setupMode = false
+        focus = .station
     }
 }
 
 /// Burn-in protection: the whole layout drifts one point per minute around a 9-point square
-/// ring (max 4 pt from centre, well inside the 60/90 pt title-safe margins).
+/// ring (max 4 pt from centre, well inside the title-safe margins).
 enum BurnInShift {
     static func offset(at date: Date) -> CGSize {
-        let ring: [(CGFloat, CGFloat)] = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (4, 1), (4, 2), (4, 3), (4, 4),
-                                          (3, 4), (2, 4), (1, 4), (0, 4), (-1, 4), (-2, 4), (-3, 4), (-4, 4),
-                                          (-4, 3), (-4, 2), (-4, 1), (-4, 0), (-4, -1), (-4, -2), (-4, -3), (-4, -4),
-                                          (-3, -4), (-2, -4), (-1, -4), (0, -4), (1, -4), (2, -4), (3, -4), (4, -4),
-                                          (4, -3), (4, -2), (4, -1)]
         let minute = Int(date.timeIntervalSince1970 / 60)
-        let p = ring[((minute % ring.count) + ring.count) % ring.count]
-        return CGSize(width: p.0, height: p.1)
+        let side = 8, step = minute % (side * 4)
+        let (x, y): (Int, Int) = step < side ? (step, 0) : step < 2 * side ? (side, step - side)
+            : step < 3 * side ? (3 * side - step, side) : (0, 4 * side - step)
+        return CGSize(width: x / 2 - 2, height: y / 2 - 2)
     }
 }
 
-/// Optional night dimming: after `afterHours` without remote input the whole dashboard drops to
-/// 25 % brightness; any remote press restores it. 0 disables it.
+/// Optional night dimming: after `afterHours` without remote input the dashboard drops to 25 %.
 enum DimPolicy {
     static let dimmedOpacity = 0.25
     static func opacity(idle: TimeInterval, afterHours: Int) -> Double {
         afterHours > 0 && idle >= Double(afterHours) * 3600 ? dimmedOpacity : 1
-    }
-}
-
-private struct PaneSettingsView: View {
-    @EnvironmentObject var panes: PaneStore
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Text("Panes").font(.system(size: 48, weight: .bold))
-            ForEach(Pane.allCases) { pane in
-                Toggle(pane.title, isOn: Binding(get: { panes.isOn(pane) },
-                                                 set: { panes.set(pane, on: $0) }))
-            }
-            Toggle("Auto-rotate pages every 20 s", isOn: Binding(get: { panes.autoRotate },
-                                                                 set: { panes.setAutoRotate($0) }))
-            Picker("Dim after no remote input", selection: Binding(get: { panes.dimAfterHours },
-                                                                   set: { panes.setDimAfterHours($0) })) {
-                Text("Never").tag(0)
-                Text("2 hours").tag(2)
-                Text("4 hours").tag(4)
-                Text("8 hours").tag(8)
-            }
-            Text("Play/Pause on the remote steps to the next page.").font(.system(size: 29)).foregroundStyle(.secondary)
-            Text("Saved to iCloud when available.").font(.system(size: 29)).foregroundStyle(.secondary)
-        }
-        .padding(90)
-    }
-}
-
-private struct ClockBar: View {
-    let now: Date
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 40) {
-            Text(now.formatted(Date.FormatStyle(timeZone: TimeZone(identifier: "UTC")!)
-                .hour(.twoDigits(amPM: .omitted)).minute().second()) + " UTC")
-                .font(.system(size: 96, weight: .semibold, design: .monospaced))
-            Text(now.formatted(Date.FormatStyle(timeZone: TimeZone(identifier: "UTC")!)
-                .weekday(.wide).day().month(.wide).year()))
-                .font(.system(size: 48)).foregroundStyle(.secondary)
-        }
-    }
-}
-
-private struct Card: View {
-    var onSelect: () -> Void = {}
-    let title: String
-    let sample: Sample?
-    let now: Date
-    let big: (Double) -> String
-    let detail: (Double) -> String
-
-    var body: some View {
-        let state = SpaceWeatherStore.freshness(sample, now: now)
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if let s = sample {
-                Text(big(s.value)).font(.system(size: 96, weight: .bold, design: .rounded))
-                Text(detail(s.value)).font(.system(size: 29))
-                Text("as of " + s.observed.formatted(date: .omitted, time: .shortened))
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-            } else {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-            if state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-        .onTapGesture { onSelect() } // Siri Remote Select opens the space weather detail sheet
-    }
-}
-
-/// HF day/night outlook from the shared band_outlook heuristic (not VOACAP), driven by the live
-/// SFI and Kp. The A index is not fetched on TV, so only the Kp storm rule applies. Without
-/// both inputs, or when they are offline, no outlook is shown rather than a guess.
-private struct BandsCard: View {
-    @EnvironmentObject var weather: SpaceWeatherStore
-    let now: Date
-
-    private static func color(_ c: Int32) -> Color { c == 2 ? .green : c == 1 ? .yellow : .red }
-    private static func outlook(sfi: Double, kp: Double) -> [HcpBand] {
-        var bands = [HcpBand](repeating: HcpBand(), count: 8)
-        let n = Int(hcp_hf_outlook(sfi, kp, 0, &bands, bands.count))
-        return Array(bands.prefix(n))
-    }
-    private static func name(_ c: Int32) -> String { c == 2 ? "Good" : c == 1 ? "Fair" : "Poor" }
-
-    var body: some View {
-        let inputs = [weather.flux, weather.kp].compactMap { $0 }
-        let oldest = inputs.map(\.fetched).min()
-        let state = SpaceWeatherStore.freshness(oldest.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
-        VStack(alignment: .leading, spacing: 12) {
-            Text("HF band outlook").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if let flux = weather.flux, let kp = weather.kp, state != .offline {
-                let bands = Self.outlook(sfi: flux.value, kp: kp.value)
-                HStack(alignment: .top, spacing: 28) {
-                    ForEach(0..<bands.count, id: \.self) { i in
-                        let b = bands[i]
-                        VStack(spacing: 6) {
-                            Text(withUnsafeBytes(of: b.band) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) })
-                                .font(.system(size: 36, weight: .bold))
-                            Text("Day " + Self.name(b.day)).font(.system(size: 29)).foregroundStyle(Self.color(b.day))
-                            Text("Night " + Self.name(b.night)).font(.system(size: 29)).foregroundStyle(Self.color(b.night))
-                        }
-                    }
-                }
-                Text(String(format: "From SFI %.0f and Kp %.1f. Rough heuristic, not VOACAP.", flux.value, kp.value))
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-            } else {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-            if state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-    }
-}
-
-/// Open-Meteo conditions at the operator's locator, same Stale/Offline rule as the other fetched cards.
-/// Without a valid locator there is nothing to show, and the card says so.
-private struct LocalWeatherCard: View {
-    @EnvironmentObject var wx: LocalWeatherStore
-    @EnvironmentObject var station: StationStore
-    let now: Date
-
-    var body: some View {
-        let state = SpaceWeatherStore.freshness(wx.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Weather at your station").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if station.position == nil {
-                Text("Set your locator in Panes").font(.system(size: 48)).foregroundStyle(.secondary)
-            } else if let c = wx.current, state != .offline {
-                Text(String(format: "%.1f °C  %@", c.temperatureC, c.description))
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                Text(String(format: "Wind %.0f km/h from %@, humidity %d%%", c.windKmh, c.windFrom, c.humidity)
-                     + (c.dewPointC.map { String(format: ", dew point %.1f °C", $0) } ?? ""))
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-                if let p = c.pressureHpa {
-                    Text(String(format: "Pressure %.0f hPa", p) + (c.trend.map { ", " + $0.lowercased() } ?? ""))
-                        .font(.system(size: 29)).foregroundStyle(.secondary)
-                }
-            } else {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-            if station.position != nil, state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-    }
-}
-
-/// NHC active tropical cyclones, strongest first. "No active storms" is shown only after a
-/// successful fetch; with no data the card says so, and Stale/Offline follows the fetch age.
-private struct StormCard: View {
-    @EnvironmentObject var store: StormStore
-    let now: Date
-    var body: some View {
-        let state = SpaceWeatherStore.freshness(store.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Tropical storms (Atlantic, E/C Pacific)").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if store.fetched == nil || state == .offline {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-            } else if store.storms.isEmpty {
-                Text("No active storms").font(.system(size: 48, weight: .bold, design: .rounded))
-            } else {
-                ForEach(store.storms.prefix(4)) { s in
-                    let cat = s.category > 0 ? " cat \(s.category)" : ""
-                    Text("\(s.name)  \(s.classification)\(cat), \(s.windKt) kt")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                    Text(String(format: "%.1f° %@, %.1f° %@", abs(s.lat), s.lat < 0 ? "S" : "N", abs(s.lon), s.lon < 0 ? "W" : "E")
-                         + (s.pressureMb > 0 ? ", \(s.pressureMb) mb" : "")
-                         + (s.speedKt >= 0 && !s.heading.isEmpty ? ", moving \(s.heading) at \(s.speedKt) kt" : ""))
-                        .font(.system(size: 29)).foregroundStyle(.secondary)
-                }
-            }
-            if state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-    }
-}
-
-/// Computed offline by the shared C++ solar_position code from the device clock:
-/// no network involved, so there is no Stale/Offline state (it is exact for `now`).
-private struct SunCard: View {
-    let now: Date
-    var body: some View {
-        var lat = 0.0, lon = 0.0
-        let t = Int64(now.timeIntervalSince1970)
-        let ok = hcp_subsolar_point(t, &lat, &lon) != 0
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sun").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if ok {
-                Text(String(format: "Overhead %.1f°%@ %.1f°%@",
-                            abs(lat), lat >= 0 ? "N" : "S", abs(lon), lon >= 0 ? "E" : "W"))
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                Text("Subsolar point, computed on device from the clock")
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-            } else {
-                Text("Unavailable").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-    }
-}
-
-/// Sun elevation at the operator's locator, computed on device (no network, never stale).
-private struct StationSunCard: View {
-    @EnvironmentObject var station: StationStore
-    let now: Date
-
-    /// Next rise (0) / set (1) as UTC HH:mm, computed on device; "none" when the body does not rise/set soon.
-    static func event(_ kind: Int32, _ t: Int64, _ p: (lat: Double, lon: Double), sun: Bool) -> String {
-        var out: Int64 = 0
-        let ok = sun ? hcp_next_sun_event(t, kind, p.lat, p.lon, &out) : hcp_next_moon_event(t, kind, p.lat, p.lon, &out)
-        guard ok != 0 else { return "none" }
-        return Date(timeIntervalSince1970: TimeInterval(out)).formatted(
-            Date.FormatStyle(timeZone: TimeZone(identifier: "UTC")!).hour(.twoDigits(amPM: .omitted)).minute()) + "Z"
-    }
-
-    static func moon(_ t: Int64) -> String {
-        var buf = [CChar](repeating: 0, count: 32)
-        var ill = 0.0
-        guard hcp_moon_phase(t, &buf, buf.count, &ill) != 0 else { return "" }
-        return String(format: "Moon: %@, %.0f%% lit", String(cString: buf), ill * 100)
-    }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sun at your station").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if let p = station.position {
-                var el = 0.0
-                if hcp_sun_elevation(Int64(now.timeIntervalSince1970), p.lat, p.lon, &el) != 0 {
-                    Text(String(format: "%+.1f°", el))
-                        .font(.system(size: 64, weight: .bold, design: .rounded))
-                    Text(el > 0 ? "Daylight" : (el > -6 ? "Civil twilight" : "Night"))
-                        .font(.system(size: 29))
-                    let t = Int64(now.timeIntervalSince1970)
-                    Text("Sunrise " + Self.event(0, t, p, sun: true) + "  Sunset " + Self.event(1, t, p, sun: true))
-                        .font(.system(size: 29))
-                    Text("Moonrise " + Self.event(0, t, p, sun: false) + "  Moonset " + Self.event(1, t, p, sun: false))
-                        .font(.system(size: 29))
-                    Text(Self.moon(t)).font(.system(size: 29)).foregroundStyle(.secondary)
-                }
-            } else {
-                Text("Enter your locator").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-            TextField("Locator, e.g. JN58td", text: $station.locator)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-            TextField("DX target locator (map DX view)", text: $station.dxLocator)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-    }
-}
-
-/// USGS M2.5+ past day: strongest quake and the five most recent, with the same Stale/Offline rule.
-private struct QuakeCard: View {
-    @EnvironmentObject var quakes: QuakeStore
-    let now: Date
-    @State private var showDetail = false
-    var body: some View {
-        let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Earthquakes M2.5+, past day").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if let top = quakes.strongest {
-                Text(String(format: "M%.1f %@", top.magnitude, QuakeStore.magnitudeClass(top.magnitude)))
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                Text(top.place).font(.system(size: 29))
-                ForEach(quakes.recent) { q in
-                    Text(String(format: "M%.1f  ", q.magnitude) + q.place)
-                        .font(.system(size: 29)).foregroundStyle(.secondary).lineLimit(1)
-                }
-            } else {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-            }
-            if state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-        .onTapGesture { showDetail = true } // Siri Remote Select; Menu closes the sheet
-        .sheet(isPresented: $showDetail) { QuakeDetailView(now: now) }
-    }
-}
-
-/// Full-screen list of every quake in the USGS feed (strongest first), with the same age label.
-private struct QuakeDetailView: View {
-    @EnvironmentObject var quakes: QuakeStore
-    let now: Date
-    var body: some View {
-        let state = SpaceWeatherStore.freshness(quakes.fetched.map { Sample(value: 0, observed: $0, fetched: $0) }, now: now)
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Earthquakes M2.5+, past day (\(quakes.all.count))").font(.system(size: 48, weight: .bold))
-            if state != .live {
-                Text(state == .stale ? "STALE" : "OFFLINE")
-                    .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(quakes.all.sorted { $0.magnitude > $1.magnitude }.prefix(40)) { q in
-                        let ago = Int(now.timeIntervalSince1970 - Double(q.time) / 1000) / 60
-                        Text(String(format: "M%.1f  %@  (%dh%02dm ago)", q.magnitude, q.place, ago / 60, ago % 60))
-                            .font(.system(size: 29)).lineLimit(1).focusable()
-                    }
-                }
-            }
-            if let f = quakes.fetched {
-                Text("Feed fetched " + f.formatted(date: .omitted, time: .shortened) + " - USGS Earthquake Hazards Program")
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-            }
-        }
-        .padding(90)
-    }
-}
-
-/// Amateur satellites currently above the horizon at the station, from CelesTrak elements
-/// propagated on device. Labelled by element age (stale after 14 days) and by fetch freshness.
-private struct SatelliteCard: View {
-    @EnvironmentObject var sats: SatelliteStore
-    @EnvironmentObject var station: StationStore
-    let now: Date
-    @State private var showDetail = false
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Amateur satellites overhead").font(.system(size: 36, weight: .medium)).foregroundStyle(.secondary)
-            if sats.tle != nil, let p = station.position {
-                let up = sats.visibleCached(at: now, lat: p.lat, lon: p.lon)
-                if up.isEmpty {
-                    Text("None above the horizon").font(.system(size: 48)).foregroundStyle(.secondary)
-                }
-                ForEach(up) { s in
-                    Text(String(format: "%@  az %.0f°  el %.0f°  %.0f km", s.name, s.azimuth, s.elevation, s.rangeKm)
-                         + (s.sunlit ? "" : "  eclipsed"))
-                        .font(.system(size: 29)).lineLimit(1)
-                }
-                if let oldest = up.map({ SatelliteStore.tleAgeDays($0, now: now) }).max(), oldest > 14 {
-                    Text("STALE ELEMENTS").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-                }
-                if let f = sats.fetched, now.timeIntervalSince(f) > 86400 * 2 {
-                    Text("OFFLINE, using cached elements").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-                }
-            } else if station.position == nil {
-                Text("Enter your locator").font(.system(size: 48)).foregroundStyle(.secondary)
-            } else {
-                Text("No data").font(.system(size: 48)).foregroundStyle(.secondary)
-                Text("OFFLINE").font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-            }
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 24).fill(Color(white: 0.12)))
-        .focusable()
-        .onTapGesture { showDetail = true } // Siri Remote Select; Menu closes the sheet
-        .sheet(isPresented: $showDetail) { SatelliteDetailView(now: now) }
-    }
-}
-
-/// Every satellite currently above the horizon (up to 40), highest first, with TLE age.
-private struct SatelliteDetailView: View {
-    @EnvironmentObject var sats: SatelliteStore
-    @EnvironmentObject var station: StationStore
-    let now: Date
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Amateur satellites above the horizon").font(.system(size: 48, weight: .bold))
-            if sats.tle != nil, let p = station.position {
-                let up = sats.visibleCached(at: now, lat: p.lat, lon: p.lon, limit: 40)
-                if let f = sats.fetched, now.timeIntervalSince(f) > 86400 * 2 {
-                    Text("OFFLINE, using cached elements")
-                        .font(.system(size: 29, weight: .bold)).foregroundStyle(.orange)
-                }
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if up.isEmpty { Text("None above the horizon").font(.system(size: 36)).foregroundStyle(.secondary) }
-                        ForEach(up) { s in
-                            let age = SatelliteStore.tleAgeDays(s, now: now)
-                            Text(String(format: "%@  az %.0f°  el %.0f°  %.0f km  TLE %.1f d", s.name, s.azimuth, s.elevation, s.rangeKm, age)
-                                 + (s.sunlit ? "" : "  eclipsed") + (age > 14 ? "  STALE" : ""))
-                                .font(.system(size: 29)).lineLimit(1).focusable()
-                        }
-                    }
-                }
-            } else {
-                Text(station.position == nil ? "Enter your locator" : "No data").font(.system(size: 36)).foregroundStyle(.secondary)
-            }
-            Text("Elements: CelesTrak, propagated on this device (SGP4)")
-                .font(.system(size: 29)).foregroundStyle(.secondary)
-        }
-        .padding(90)
-    }
-}
-
-/// All five NOAA SWPC readings in one list: value, observation time, fetch time and age label.
-private struct SpaceWeatherDetailView: View {
-    @EnvironmentObject var weather: SpaceWeatherStore
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Space weather").font(.system(size: 48, weight: .bold))
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        row("Kp index", weather.kp, ctx.date) { String(format: "%.1f  ", $0) + SpaceWeatherStore.kpDescription($0) }
-                        row("Solar flux", weather.flux, ctx.date) { String(format: "%.0f sfu (10.7 cm)", $0) }
-                        row("X-ray", weather.xray, ctx.date) { SpaceWeatherStore.xrayClass($0) + " (GOES 0.1–0.8 nm)" }
-                        row("Solar wind", weather.windSpeed, ctx.date) { String(format: "%.0f km/s  ", $0) + SpaceWeatherStore.windSpeedDescription($0) }
-                        row("IMF Bz (GSM)", weather.bz, ctx.date) { String(format: "%+.1f nT  ", $0) + SpaceWeatherStore.bzDescription($0) }
-                    }
-                }
-                Text("Data: NOAA Space Weather Prediction Center, refreshed every 2 minutes")
-                    .font(.system(size: 29)).foregroundStyle(.secondary)
-            }
-            .padding(90)
-        }
-    }
-
-    private func row(_ title: String, _ s: Sample?, _ now: Date, _ fmt: (Double) -> String) -> some View {
-        let state = SpaceWeatherStore.freshness(s, now: now)
-        let label = s.map { fmt($0.value) + "  observed " + $0.observed.formatted(date: .omitted, time: .shortened)
-            + ", fetched " + $0.fetched.formatted(date: .omitted, time: .shortened) } ?? "No data"
-        return Text(title + ": " + label + (state == .live ? "" : (state == .stale ? "  STALE" : "  OFFLINE")))
-            .font(.system(size: 29)).foregroundStyle(state == .live ? Color.primary : Color.orange)
-            .lineLimit(2).focusable()
     }
 }

@@ -18,16 +18,13 @@ final class SatelliteStore: ObservableObject {
     @Published var tle: Data?
     @Published var fetched: Date?
 
-    private static let url = URL(string: "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle")!
+    /// CelesTrak first; AMSAT's bare two-line set when CelesTrak fails or rate-limits.
+    private static let urls = [URL(string: "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle")!,
+                               URL(string: "https://www.amsat.org/tle/current/nasabare.txt")!]
+    @Published var source = "CelesTrak"
     private let interval: TimeInterval = 12 * 3600
     private static let cacheURL = FileManager.default
         .urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("amateur.tle")
-    private let session: URLSession = {
-        let cfg = URLSessionConfiguration.default
-        cfg.timeoutIntervalForRequest = 30
-        cfg.httpAdditionalHeaders = ["User-Agent": SpaceWeatherStore.userAgent]
-        return URLSession(configuration: cfg)
-    }()
 
     init() {
         // The cache may be purged by tvOS at any time; absence just means "No data".
@@ -41,19 +38,22 @@ final class SatelliteStore: ObservableObject {
     func run() async {
         while !Task.isCancelled {
             if fetched.map({ Date().timeIntervalSince($0) > interval }) ?? true { await refresh() }
-            try? await Task.sleep(nanoseconds: 600 * 1_000_000_000)
+            try? await Task.sleep(nanoseconds: (failedOnce && tle == nil ? 120 : 600) * 1_000_000_000)
         }
     }
 
     private func refresh() async {
-        guard let (data, resp) = try? await session.data(from: Self.url),
-              (resp as? HTTPURLResponse)?.statusCode == 200,
-              data.withUnsafeBytes({ hcp_tle_count($0.bindMemory(to: CChar.self).baseAddress, data.count) }) > 0
-        else { return }
-        try? data.write(to: Self.cacheURL, options: .atomic)
-        tle = data
-        fetched = Date()
+        for (i, url) in Self.urls.enumerated() {
+            guard let data = await Net.get(url), data.withC(hcp_tle_count) > 0 else { continue }
+            try? data.write(to: Self.cacheURL, options: .atomic)
+            tle = data
+            fetched = Date()
+            source = i == 0 ? "CelesTrak" : "AMSAT"
+            return
+        }
+        failedOnce = true
     }
+    @Published var failedOnce = false
 
     private var cache: (bucket: Int64, lat: Double, lon: Double, tle: Int, limit: Int, passes: [SatPass])?
 
