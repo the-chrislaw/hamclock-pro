@@ -20,10 +20,11 @@ Item {
             Layout.alignment: Qt.AlignHCenter
             Layout.preferredHeight: visible ? Math.min(root.height * 0.42, root.width * 0.5) : 0
             Layout.preferredWidth: Layout.preferredHeight
+            // parseInt, not Number: in 12-hour mode the seconds read "18 PM".
             property var parts: station.utcTime.split(":")
-            property real hh: parts.length > 2 ? Number(parts[0]) : 0
-            property real mm: parts.length > 2 ? Number(parts[1]) : 0
-            property real ss: parts.length > 2 ? Number(parts[2]) : 0
+            property real hh: parts.length > 2 ? parseInt(parts[0], 10) : 0
+            property real mm: parts.length > 2 ? parseInt(parts[1], 10) : 0
+            property real ss: parts.length > 2 ? parseInt(parts[2], 10) : 0
             onPartsChanged: requestPaint()
             onWidthChanged: requestPaint()
             Accessible.ignored: true
@@ -31,6 +32,7 @@ Item {
                 var ctx = getContext("2d");
                 ctx.reset();
                 var r = Math.min(width, height) / 2 - 2;
+                if (r <= 0) return;  // hidden (digital face) or not laid out yet
                 var cx = width / 2, cy = height / 2;
                 ctx.strokeStyle = Theme.secondary;
                 ctx.lineWidth = 2;
