@@ -134,10 +134,7 @@ ApplicationWindow {
                 y: stationCard.height + Theme.gap
                 width: parent.width
                 height: Math.max(0, parent.height - y)
-                onChooseRequested: function (slotIndex) {
-                    paneChooser.slot = slotIndex
-                    paneChooser.open()
-                }
+                onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
                 onSetupRequested: settingsLayer.visible = true
                 onOptionsRequested: function (slotIndex) {
                     paneOptions.slot = slotIndex
@@ -186,10 +183,7 @@ ApplicationWindow {
                         y: Math.floor(index / paneRow.cols) * (paneRow.slotHeight + Theme.gap)
                         width: paneRow.slotWidth
                         height: paneRow.slotHeight
-                        onChooseRequested: function (slotIndex) {
-                            paneChooser.slot = slotIndex
-                            paneChooser.open()
-                        }
+                        onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
                         onSetupRequested: settingsLayer.visible = true
                         onOptionsRequested: function (slotIndex) {
                             paneOptions.slot = slotIndex
@@ -302,7 +296,7 @@ ApplicationWindow {
     PaneOptions {
         id: paneOptions
         parent: window.contentItem
-        onChangeRequested: function (slotIndex) { paneChooser.slot = slotIndex; paneChooser.open() }
+        onChangeRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
         onStepRequested: function (slotIndex, direction) { paneRow.slotAt(slotIndex).step(direction) }
     }
 

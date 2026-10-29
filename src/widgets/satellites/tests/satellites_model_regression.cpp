@@ -63,6 +63,29 @@ int main(int argc, char** argv) {
           satellite_short_name("RS-44 & BREEZE-KM R/B") == "RS-44" && satellite_short_name("  FOO  ") == "FOO",
           "short names");
 
+    {
+        // CelesTrak unreachable: the same elements come from AMSAT's mirror instead.
+        QStringList asked;
+        const Transport flaky = [&](const QUrl& url, FetchDone done) {
+            asked << url.host();
+            FetchResult r;
+            if (url.host() == "celestrak.org") r.error = "Operation canceled";
+            else { r.http_status = 200; r.body = "AO-07\n1 07530U\n2 07530\n"; }
+            done(r);
+        };
+        FetchResult got;
+        with_fallback(flaky, QUrl("https://www.amsat.org/tle/current/nasabare.txt"))(
+            QUrl("https://celestrak.org/x"), [&](FetchResult r) { got = r; });
+        check(got.error.isEmpty() && got.body.startsWith("AO-07") && asked == QStringList({"celestrak.org", "www.amsat.org"}),
+              "falls back to the mirror when the primary fails");
+        asked.clear();
+        with_fallback(flaky, QUrl("https://www.amsat.org/x"))(QUrl("https://www.amsat.org/y"), [&](FetchResult r) { got = r; });
+        check(asked == QStringList({"www.amsat.org"}), "no second request when the primary answers");
+        check(is_tracked_satellite("AO-07") && is_tracked_satellite("ISS") && is_tracked_satellite("ISS (ZARYA)") &&
+              is_tracked_satellite("OSCAR 7 (AO-7)") && !is_tracked_satellite("MISSION X"),
+              "tracked birds match CelesTrak and AMSAT names");
+    }
+
     QTemporaryDir dir;
     AppSettings settings(dir.filePath("station.conf"), dir.path());
     WidgetContext context;

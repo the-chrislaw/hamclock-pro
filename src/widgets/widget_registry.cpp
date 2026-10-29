@@ -68,4 +68,10 @@ QObject* WidgetRegistry::model(const QString& id) const {
     return nullptr;
 }
 
+QStringList WidgetRegistry::ids() const {
+    QStringList out;
+    for (const auto& entry : entries_) out << entry.info.id;
+    return out;
+}
+
 } // namespace hamclock
