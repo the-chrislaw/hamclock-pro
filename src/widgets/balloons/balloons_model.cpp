@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 constexpr PollPolicy kPolicy{10min, 1h, 1h};
 constexpr char kUrl[] = "https://api.v2.sondehub.org/sondes/telemetry?duration=1h";
 constexpr int kMaxAgeS = 30 * 60;
-constexpr int kLaterRows = 3;
+constexpr int kLaterRows = 10;  // a tall pane lists as many as fit; regular layouts show three
 constexpr int kMaxMarkers = 300;
 
 QString compass(double deg) {

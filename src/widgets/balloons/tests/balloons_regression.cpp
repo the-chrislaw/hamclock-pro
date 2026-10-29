@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     check(settings.saveStation("W0TST", 39.74, -104.99, 0, 0, "").isEmpty(), "station saved");
     check(model.nearest().endsWith("NE") || model.nearest().endsWith("E"), "nearest is north-east/east of Denver");
     check(model.nearestDetail().startsWith("RS41 V1710894 · 18.5 km up · climbing"), "detail line");
-    check(model.later().size() == 3, "three later rows");
+    check(model.later().size() >= 3 && model.later().size() <= 10, "later rows: at least three, capped at ten");
     {
         bool found = false;
         for (const auto& l : MapOverlays::instance().layers())
