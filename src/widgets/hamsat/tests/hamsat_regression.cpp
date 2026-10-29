@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasNext(), "fresh -> live");
     check(model.nextTitle() == "KB5FHK on RS-44" && model.nextWhen() == "in 4m", "next activation");
     check(model.nextDetail() == "SSB · CM96 · 01:04Z-01:26Z", "detail line without frequency");
-    check(model.later().size() == 3, "three later rows");
+    check(model.later().size() >= 3 && model.later().size() <= 10, "later rows: at least three, capped at ten");
 
     fail_all = true;
     clock = clock.addSecs(8 * 3600);

@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasNext(), "fresh -> live");
     check(model.nextName().contains("USSF-481") && model.nextCountdown() == "T-27h 44m", "next launch");
     check(model.nextDetail() == "SpaceX · Vandenberg SFB, CA, USA · Go", "detail line");
-    check(model.later().size() == 3, "three later rows");
+    check(model.later().size() >= 3 && model.later().size() <= 9, "later rows: at least three, capped at nine");
     {
         bool found = false;
         for (const auto& l : MapOverlays::instance().layers())

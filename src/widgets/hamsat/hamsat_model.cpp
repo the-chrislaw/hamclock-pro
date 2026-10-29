@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 // Public read endpoint; alerts are posted by people, so a 10 minute poll is plenty.
 constexpr PollPolicy kPolicy{10min, 1h, 1h};
 constexpr char kUrl[] = "https://hams.at/api/alerts/upcoming";
-constexpr int kLaterRows = 3;
+constexpr int kLaterRows = 10;  // a tall pane lists as many as fit; regular layouts show three
 
 QString title_text(const hamsat::Activation& a) { return a.callsign + " on " + a.satellite; }
 } // namespace

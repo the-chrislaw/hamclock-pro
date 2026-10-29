@@ -14,7 +14,7 @@ using namespace std::chrono_literals;
 // than that; every 5 minutes is plenty for a dashboard.
 constexpr PollPolicy kPolicy{5min, 30min, 30min};
 constexpr char kUrl[] = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson";
-constexpr int kRecentRows = 6;
+constexpr int kRecentRows = 15;  // a tall pane lists as many as fit; regular layouts show six
 } // namespace
 
 QuakesModel::QuakesModel(const WidgetContext& context, QObject* parent)
