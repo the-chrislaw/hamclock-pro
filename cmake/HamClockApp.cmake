@@ -277,6 +277,15 @@ if(BUILD_TESTING)
     endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.
+    foreach(size 1512x982 2560x1440)
+        add_test(NAME qml-app-weather-long-place-${size} COMMAND hamclock-pro --config-dir ${CMAKE_CURRENT_BINARY_DIR}/weather-place-config-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf --pane 1=weather
+            --fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/weather/tests/fixtures-long-place
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/weather-place-${size}.png --size ${size})
+        set_tests_properties(qml-app-weather-long-place-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/weather-place-cache-${size}")
+    endforeach()
     # Widget panes only report truncation (widget layouts belong to other areas); the app smokes above enforce it.
     # Every registered widget renders in the first pane at the smallest size without QML warnings.
     foreach(id ${widget_ids})
