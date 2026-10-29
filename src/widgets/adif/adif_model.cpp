@@ -11,7 +11,10 @@
 
 namespace hamclock {
 
-namespace { constexpr qint64 kMaxFileBytes = 64LL * 1024 * 1024; }
+namespace {
+constexpr qint64 kMaxFileBytes = 64LL * 1024 * 1024;
+constexpr size_t kRecentRows = 30; // the card shows as many as fit
+}
 
 AdifModel::AdifModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("adif", "Log", parent), settings_(context.settings) {
@@ -129,7 +132,7 @@ bool AdifModel::bandSlotNeeded(const QString& call, const QString& band) const {
 
 QVariantList AdifModel::recent() const {
     QVariantList out;
-    for (size_t i = 0; i < qsos_.size() && i < 8; ++i) {
+    for (size_t i = 0; i < qsos_.size() && i < kRecentRows; ++i) {
         const auto& q = qsos_[i];
         out.push_back(QVariantMap{{"call", q.call}, {"band", q.band}, {"mode", q.mode}, {"grid", q.grid},
                                   {"age", q.time.isValid() ? formatAge(q.time, now()) : QString()}});
