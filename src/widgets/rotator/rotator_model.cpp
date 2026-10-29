@@ -119,8 +119,8 @@ void register_widget_rotator(WidgetRegistry& registry, const WidgetContext& cont
         ep = rotator::parse_endpoint(ini.value("rotator/host").toString(), ini.value("rotator/port").toString(), ep);
     }
     auto* model = new RotatorModel(context, ep.host, ep.port);
-    registry.add({"rotator", "Rotator", QUrl("qrc:/widgets/rotator/RotatorCard.qml"), "strip", 76}, model);
-    QTimer::singleShot(0, model, &RotatorModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"rotator", "Rotator", QUrl("qrc:/widgets/rotator/RotatorCard.qml"), "strip", 76}, model)) QTimer::singleShot(0, model, &RotatorModel::start);
 }
 
 } // namespace hamclock

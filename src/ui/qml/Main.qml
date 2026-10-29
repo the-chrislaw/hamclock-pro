@@ -41,6 +41,15 @@ ApplicationWindow {
     readonly property bool phoneWide: height < 440 && width > height
     Binding { target: Theme; property: "phone"; value: window.phone }
 
+    // Settings, timers and the big clock cover the page. On iOS a tap arrives as a
+    // touch and then again as a synthesized mouse click, so the page stays disabled
+    // while one is open and for a moment after it closes; otherwise the second copy
+    // of the tap that closed it lands on whatever is underneath (e.g. the gear).
+    readonly property bool overlayOpen: settingsLayer.visible || timersLayer.visible || bigClockLayer.visible
+    property bool pageInputBlocked: false
+    onOverlayOpenChanged: if (overlayOpen) { pageInputBlocked = true; unblockTimer.stop() } else unblockTimer.restart()
+    Timer { id: unblockTimer; interval: 350; onTriggered: window.pageInputBlocked = false }
+
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
@@ -51,6 +60,7 @@ ApplicationWindow {
 
     header: Rectangle {
         visible: !Theme.dense
+        enabled: !window.pageInputBlocked
         color: Theme.canvas
         implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
         RowLayout {
@@ -79,6 +89,7 @@ ApplicationWindow {
     // holds as many panes as fit (at least three; a second row when Map size allows).
     GridLayout {
         id: page
+        enabled: !window.pageInputBlocked
         columns: window.phone ? 1 : 2
         rowSpacing: Theme.gap
         columnSpacing: Theme.gap
@@ -267,6 +278,8 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 9
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
         TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false; onBigClockRequested: bigClockLayer.visible = true }
     }
 
@@ -276,6 +289,8 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 10
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
         BigClockPage { anchors.fill: parent; onCloseRequested: bigClockLayer.visible = false }
     }
 
@@ -319,7 +334,9 @@ ApplicationWindow {
         visible: false
         color: Theme.canvas
         z: 10
-        onVisibleChanged: if (visible) settingsPage.forceActiveFocus()
+        // Swallow taps and wheel events so they never reach the page underneath.
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
+        onVisibleChanged: if (visible) { settingsPage.reload(); settingsPage.forceActiveFocus() }
         SettingsPage { id: settingsPage; anchors.fill: parent; onCloseRequested: settingsLayer.visible = false }
     }
 }

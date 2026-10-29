@@ -60,8 +60,8 @@ void register_widget_adsb(WidgetRegistry& registry, const WidgetContext& context
         url = adsb::aircraft_url(ini.value("adsb/host").toString(), ini.value("adsb/port").toString());
     }
     auto* model = new AdsbModel(context, url);
-    registry.add({"adsb", "ADS-B", QUrl("qrc:/widgets/adsb/AdsbCard.qml"), "strip", 76}, model);
-    QTimer::singleShot(0, model, &AdsbModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"adsb", "ADS-B", QUrl("qrc:/widgets/adsb/AdsbCard.qml"), "strip", 76}, model)) QTimer::singleShot(0, model, &AdsbModel::start);
 }
 
 } // namespace hamclock

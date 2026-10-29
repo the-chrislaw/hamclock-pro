@@ -148,8 +148,8 @@ void register_widget_radio(WidgetRegistry& registry, const WidgetContext& contex
         ep = radio::parse_endpoint(ini.value("radio/host").toString(), ini.value("radio/port").toString(), ep);
     }
     auto* model = new RadioModel(context, ep.host, ep.port);
-    registry.add({"radio", "Radio", QUrl("qrc:/widgets/radio/RadioCard.qml"), "strip", 76}, model);
-    QTimer::singleShot(0, model, &RadioModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"radio", "Radio", QUrl("qrc:/widgets/radio/RadioCard.qml"), "strip", 76}, model)) QTimer::singleShot(0, model, &RadioModel::start);
 }
 
 } // namespace hamclock

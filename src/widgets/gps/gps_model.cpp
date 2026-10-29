@@ -161,8 +161,8 @@ void register_widget_gps(WidgetRegistry& registry, const WidgetContext& context)
         const auto cfg = gps::parse_serial_config(ini.value("gps/device").toString(), ini.value("gps/baud").toString(), {});
         if (!cfg.device.isEmpty()) model->useSerial(cfg);
     }
-    registry.add({"gps", "GPS", QUrl("qrc:/widgets/gps/GpsCard.qml"), "strip", 75}, model);
-    QTimer::singleShot(0, model, &GpsModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"gps", "GPS", QUrl("qrc:/widgets/gps/GpsCard.qml"), "strip", 75}, model)) QTimer::singleShot(0, model, &GpsModel::start);
 }
 
 } // namespace hamclock
