@@ -317,7 +317,7 @@ jobs:
           path: ipad.png
           if-no-files-found: ignore
 
-  # TestFlight upload of the iPad device build (issue #269). Main pushes only;
+  # TestFlight upload of the iPhone + iPad device build (issue #269). Main pushes only;
   # every step skips cleanly while the App Store Connect secrets or APPLE_TEAM_ID
   # are absent. Cloud signing uses the API key, so no certificate or profile is
   # stored in the repo. The key file is deleted at the end; nothing is echoed.
@@ -381,7 +381,7 @@ jobs:
             -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="$TEAM" \
             -DCMAKE_XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Automatic \
-            -DCMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY=2
+            -DCMAKE_XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY="1,2"
       - name: Import Apple Distribution certificate
         if: steps.gate.outputs.go == 'true'
         env:
