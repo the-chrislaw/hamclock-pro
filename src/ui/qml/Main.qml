@@ -269,7 +269,7 @@ ApplicationWindow {
                         lastScale = scale
                     }
                 }
-                // Zoom 1-4x and reset (drag pans when zoomed; a tap opens Set DE / Set DX).
+                // Zoom 1-4x and reset (drag pans when zoomed or when a tall pane crops longitude; a tap opens Set DE / Set DX).
                 Row {
                     anchors.top: parent.top
                     anchors.right: parent.right

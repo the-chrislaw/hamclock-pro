@@ -71,6 +71,20 @@ int main(int argc, char** argv) {
     v = MapViewport::fill(0, 0, 0);
     check(v.scale == 0, "empty size is harmless");
 
+    // iPad portrait (map card ~1:0.9): longitude is cropped at zoom 1, so it can pan sideways.
+    v = MapViewport::fill(820, 760, -72.7);
+    check(v.longitude_cropped(), "tall pane crops longitude at zoom 1");
+    check(!MapViewport::fill(1440, 555, 0).longitude_cropped(), "very wide pane wraps instead of cropping");
+    // W1AW to Tokyo: DE-centred crop hides Tokyo; the auto centre shows both.
+    check(std::fabs(v.x_of(139.69) - 410) > 410, "DE-centred tall crop hides a far DX");
+    const double c = MapViewport::auto_center_lon(820, 760, -72.7, 139.69);
+    v = MapViewport::fill(820, 760, c);
+    check(v.x_of(-72.7) > 0 && v.x_of(-72.7) < 820 && v.x_of(139.69) > 0 && v.x_of(139.69) < 820, "auto centre shows DE and DX");
+    check(near(MapViewport::auto_center_lon(820, 760, -72.7, std::nullopt), -72.7), "no DX centres on DE");
+    // DE and Jakarta (~180 degrees apart) cannot both fit with a margin: stay on DE.
+    check(near(MapViewport::auto_center_lon(820, 760, -72.7, 106.8), -72.7), "DX too far to fit keeps DE centred");
+    check(near(MapViewport::auto_center_lon(1440, 555, -72.7, 139.69), -72.7), "uncropped pane keeps DE centre");
+
     // Zoom about a point: the location under the gesture stays under it, at several sizes and zooms.
     for (const QSize size : {QSize(1024, 600), QSize(800, 480), QSize(1920, 1080)}) {
         for (const double z : {1.5, 2.0, 4.0}) {
