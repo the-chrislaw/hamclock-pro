@@ -32,18 +32,22 @@ Popup {
     // Scrolls when the map card is shorter than the menu (Pi panel, phone, MacBook
     // window), so every control stays reachable.
     contentItem: Flickable {
+        id: menuFlick
         implicitWidth: menuColumn.implicitWidth
         implicitHeight: menuColumn.implicitHeight
+        // Content is exactly as wide as the popup: never derived from the column (width loop).
+        contentWidth: width
         contentHeight: menuColumn.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         ScrollIndicator.vertical: ScrollIndicator { }
     ColumnLayout {
         id: menuColumn
-        width: parent.width
+        width: menuFlick.width
         spacing: Theme.gap
         Text { text: "Map view"; color: Theme.ink; font.pixelSize: Theme.fontBody; font.weight: Font.Bold }
         GridLayout {
+            id: layerGrid
             columns: 2
             columnSpacing: Theme.gap
             rowSpacing: Theme.gap / 2
@@ -66,7 +70,7 @@ Popup {
             Repeater {
                 model: menu.map ? menu.map.layerIds : []
                 Toggle {
-                    label: modelData
+                    label: menu.map.layerName(modelData)
                     on: menu.map.layerVisible(modelData)
                     // layerVisible is a function, so re-evaluate when the layer list changes.
                     Connections { target: menu.map; function onLayersChanged() { on = menu.map.layerVisible(modelData) } }
@@ -78,13 +82,16 @@ Popup {
                visible: menu.map && menu.map.styleIds.length > 0 }
         Flow {
             Layout.fillWidth: true
+            // A Flow's implicit width follows its own width; a fixed preference stops it feeding
+            // back into the popup width (binding loop). It still fills and wraps.
+            Layout.preferredWidth: layerGrid.implicitWidth
             spacing: Theme.gap / 2
             visible: menu.map && menu.map.styleIds.length > 0
             Toggle { label: "Plain"; on: menu.map && menu.map.style === "" && menu.map.rotation === 0
                      onClicked: { menu.map.rotation = 0; menu.map.style = "" } }
             Repeater {
                 model: menu.map ? menu.map.styleIds : []
-                Toggle { label: modelData; on: menu.map.style === modelData && menu.map.rotation === 0
+                Toggle { label: menu.map.styleName(modelData); on: menu.map.style === modelData && menu.map.rotation === 0
                          onClicked: { menu.map.rotation = 0; menu.map.style = modelData } }
             }
         }

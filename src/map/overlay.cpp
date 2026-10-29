@@ -1,4 +1,5 @@
 #include "overlay.hpp"
+#include <QHash>
 #include "../domain/geometry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -61,6 +62,16 @@ int overlay_label_priority(const QString& id) {
     if (id.startsWith(QLatin1String("sat"))) return 0;
     if (id == QLatin1String("quakes") || id == QLatin1String("fires") || id == QLatin1String("storms")) return 2;
     return 1;
+}
+QString overlay_layer_name(const QString& id) {
+    static const QHash<QString, QString> kNames{
+        {"dx-cluster", "DX cluster"}, {"psk", "PSK Reporter"}, {"aprs", "APRS"}, {"ota", "POTA/SOTA"},
+        {"adif", "ADIF log"},         {"hamalert", "HamAlert"}};
+    if (const auto it = kNames.constFind(id); it != kNames.cend()) return *it;
+    QString name = id;
+    name.replace('-', ' ');
+    if (!name.isEmpty()) name[0] = name[0].toUpper();
+    return name;
 }
 std::vector<QRectF> line_obstacles(const std::vector<QPointF>& px, double max_gap, double pad) {
     std::vector<QRectF> out;

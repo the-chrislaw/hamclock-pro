@@ -127,5 +127,11 @@ int main(int argc, char** argv) {
         const auto second = place_label(view, mercury, 4, QSizeF(48, 12), used);
         check(!second || !second->intersects(*first), "second planet label never overprints the first");
     }
+    // Map menu chips show names in the same sentence case as "Night shade", never raw ids.
+    check(overlay_layer_name("beacons") == "Beacons" && overlay_layer_name("balloons") == "Balloons", "layer names capitalised");
+    check(overlay_layer_name("dx-cluster") == "DX cluster" && overlay_layer_name("psk") == "PSK Reporter" &&
+          overlay_layer_name("aprs") == "APRS" && overlay_layer_name("ota") == "POTA/SOTA" && overlay_layer_name("adif") == "ADIF log",
+          "acronym layer names");
+    check(overlay_layer_name("new-layer") == "New layer", "unknown ids become sentence case");
     return failures == 0 ? 0 : 1;
 }
