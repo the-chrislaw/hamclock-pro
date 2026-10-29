@@ -1,11 +1,13 @@
 // PiAware aircraft.json client against a loopback fake HTTP server. Offline.
 #include "../adsb_model.hpp"
 #include "../adsb_parse.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QTemporaryDir>
 #include <iostream>
 
 namespace {
@@ -77,5 +79,28 @@ int main(int argc, char** argv) {
     body = "<html>";
     QMetaObject::invokeMethod(&model, "poll");
     check(waitFor([&] { return model.state() == "error"; }), "garbage -> error");
+
+    {
+        // Settings change: the registered model polls the new receiver address, no restart.
+        QTemporaryDir dir;
+        AppSettings settings({}, dir.path());
+        QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);
+        const quint16 dead = probe.serverPort(); probe.close();
+        check(settings.saveAdsb("127.0.0.1", dead).isEmpty(), "unreachable PiAware address saved");
+        WidgetContext sctx;
+        sctx.settings = &settings;
+        WidgetRegistry registry;
+        register_widget_adsb(registry, sctx);
+        auto* registered = qobject_cast<AdsbModel*>(registry.model("adsb"));
+        check(registered != nullptr, "adsb widget registered");
+        const QString expected = QString("No PiAware receiver at 127.0.0.1:%1 — set the address in Settings").arg(dead);
+        check(waitFor([&] { return registered && registered->statusText() == expected; }), "unreachable message names the address and Settings");
+        body = QByteArray(R"({"now":)") + QByteArray::number(static_cast<double>(QDateTime::currentSecsSinceEpoch()), 'f', 1)
+             + R"(,"aircraft":[{"hex":"a1","seen":1}]})";
+        request.clear();
+        check(settings.saveAdsb("127.0.0.1", server.serverPort()).isEmpty(), "working PiAware address saved");
+        check(waitFor([&] { return registered && registered->state() == "live"; }) && registered->tracked() == "1",
+              "settings change polls the new receiver");
+    }
     return failures ? 1 : 0;
 }

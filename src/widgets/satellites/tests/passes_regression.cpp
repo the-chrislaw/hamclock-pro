@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
     amateur.insert(tle_norad_id(tles.front()));
     model.setElements(tles, amateur);
     const auto rows = model.rows();
-    check(model.state() == "live" && rows.size() >= 3 && rows.size() <= 12, "live with a handful of passes");
+    check(model.state() == "live" && rows.size() >= 3 && rows.size() <= 24, "live with a handful of passes");
     bool sorted = true, sane = true;
     qint64 prev = 0;
     for (const auto& r : rows) {

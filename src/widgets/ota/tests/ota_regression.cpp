@@ -10,6 +10,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
+#include <algorithm>
 #include <QTimeZone>
 #include <QTimer>
 #include <iostream>
@@ -139,7 +140,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "live" && model.hasData() && model.count() == static_cast<int>(all3.size()), "fresh -> live");
     check(model.statusText() == "POTA + SOTA + WWFF", "all sources named");
-    check(model.recent().size() == 6, "recent capped at 6");
+    check(model.recent().size() == std::min<int>(30, static_cast<int>(all3.size())), "recent capped at 30");
     {
         size_t positioned = 0;
         for (const auto& sp : all3) positioned += sp.has_position ? 1 : 0;

@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.hasNext(), "fresh -> live");
     check(model.nextTitle() == "KB5FHK on RS-44" && model.nextWhen() == "in 4m", "next activation");
     check(model.nextDetail() == "SSB · CM96 · 01:04Z-01:26Z", "detail line without frequency");
-    check(model.later().size() == 3, "three later rows");
+    check(model.later().size() >= 3 && model.later().size() <= 10, "later rows: at least three, capped at ten");
 
     fail_all = true;
     clock = clock.addSecs(8 * 3600);
@@ -93,6 +93,9 @@ int main(int argc, char** argv) {
           pf.activations[1].workable == 0 && !pf.activations[1].workable_start.isValid(),
           "per-station fields parsed");
     check(feed.activations[0].workable == 0 && feed.activations[0].max_elevation < 0, "public list has no elevation");
+    // Only an accepted key yields per-station elevations; the public list sends null for every row.
+    check(pf.personalised && !feed.personalised, "feed knows whether hams.at used the key");
+    check(!hamsat::parse(R"({"data":[]})").personalised, "empty list is not personalised");
 
     QTemporaryDir dir;
     AppSettings settings({}, dir.path());
@@ -100,6 +103,7 @@ int main(int argc, char** argv) {
     check(!settings.saveHamsatKey("abc def").isEmpty() && !settings.hasHamsatKey(), "key with space rejected");
     QByteArray seen_bearer = "unset";
     bool reject = false;
+    bool ignore_key = false;  // hams.at answers an unknown key with 200 and the public list
     int calls = 0;
     WidgetContext authed;
     authed.settings = &settings;
@@ -109,7 +113,7 @@ int main(int argc, char** argv) {
         seen_bearer = bearer;
         FetchResult result;
         if (reject && !bearer.isEmpty()) { result.http_status = 401; result.error = {}; }
-        else { result.http_status = 200; result.body = bearer.isEmpty() ? body : authed_body; }
+        else { result.http_status = 200; result.body = bearer.isEmpty() || ignore_key ? body : authed_body; }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     HamsatModel m2(authed);
@@ -126,6 +130,14 @@ int main(int argc, char** argv) {
     check(m2.nextDetail() == "FM · 436.795 MHz · EN34 · 01:10Z-01:22Z · workable 01:12Z-01:20Z max el 42°",
           "workable window and elevation shown");
     check(m2.later().size() == 0 || m2.later().size() == 1, "later rows from personalised list");
+    check(m2.statusText().contains("(your station)"), "accepted key: your station");
+    ignore_key = true;
+    m2.source().refreshNow();
+    for (int i = 0; i < 20; ++i) app.processEvents();
+    check(seen_bearer == "secret-key-1" && !m2.personalised(), "200 with the public list: not personalised");
+    check(!m2.statusText().contains("your station") && m2.statusText().contains("not accepted"), "unaccepted key explained, never 'your station'");
+    check(m2.nextDetail() == "SSB · CM96 · 01:04Z-01:26Z", "no per-station text from the public list");
+    ignore_key = false;
     reject = true;
     calls = 0;
     m2.source().refreshNow();

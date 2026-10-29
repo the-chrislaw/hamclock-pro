@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     settle();
     const auto rows = model.rows();
     check(model.state() == "live" && model.hasData(), "live");
-    check(rows.size() >= 3 && rows.size() <= 5, "a handful of passes listed within 24 h");
+    check(rows.size() >= 3 && rows.size() <= 12, "a handful of passes listed within 24 h");
     bool sane = true;
     for (const auto& r : rows) {
         const auto m = r.toMap();

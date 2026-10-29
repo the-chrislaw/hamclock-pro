@@ -17,17 +17,21 @@ struct Activation {
     double mhz = 0;     // 0 when not announced
     QDateTime aos;      // UTC
     QDateTime los;      // UTC
-    // Per-station values; hams.at fills them only for requests with an API key.
+    // Per-station values; hams.at fills them only for requests with an accepted API key. The public list
+    // (no key, or a key hams.at does not know: still HTTP 200) sends is_workable false and null for the rest.
     int workable = -1;            // 1 workable, 0 not, -1 not given
     double max_elevation = -1;    // degrees; -1 when not given
     QDateTime workable_start;     // UTC; invalid when not given
     QDateTime workable_end;
-    bool personalised() const { return workable >= 0; }
+    bool personalised() const { return max_elevation >= 0; }
 };
 
 struct Feed {
     bool ok = false;
     std::vector<Activation> activations;  // soonest AOS first
+    // True when some row carries a per-station max elevation: hams.at used the API key. An empty
+    // list cannot tell, so it is false.
+    bool personalised = false;
 };
 
 // Rows without a callsign, satellite or readable AOS/LOS are skipped. A body

@@ -1,18 +1,37 @@
 import QtQuick
+import QtQuick.Layouts
 import HamClock
 
 Card {
     id: root
+    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
+    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
+    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
+                                                     && root.width >= 240 * Theme.scale)
     readonly property bool ok: root.widget && root.widget.hasData
     readonly property int level: ok ? root.widget.dst : 0
     readonly property color tone: level <= -100 ? Theme.bad : level <= -50 ? Theme.warn : level <= -30 ? Theme.warn : Theme.good
-    // Plain Column/Item (no Layout) as in the other compact cards.
-    Column {
+    // Desktop panes (not the tuned 7-inch dense layout): the Dst line takes the leftover height.
+    readonly property bool fillPlot: root.stacked || !Theme.dense
+    readonly property bool showDetail: root.ok && (!root.compact || root.stacked)
+    ColumnLayout {
         width: parent.width
+        height: root.fillPlot ? parent.height : implicitHeight
         spacing: Theme.gap * 0.6
+        // Tall pane: value with its label and storm word as caption.
+        Metric {
+            visible: root.stacked
+            label: "Dst index"
+            available: root.ok
+            value: available ? root.level + " nT" : ""
+            caption: available ? root.widget.word : ""
+            valueColor: root.tone
+            Layout.fillWidth: true
+        }
         Item {
-            width: parent.width
-            height: Math.round(Theme.fontBody * 1.3)
+            visible: !root.stacked
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.round(Theme.fontBody * 1.3)
             Text {
                 id: value
                 text: root.ok ? root.level + " nT" : "—"
@@ -30,18 +49,29 @@ Card {
         }
         DstLine {
             visible: root.ok
-            width: parent.width
-            height: root.compact ? 28 * Theme.scale : 56 * Theme.scale
+            pixelScale: root.fit
             values: root.ok ? root.widget.history : []
             lineColor: root.tone
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.compact && !root.stacked ? 28 * Theme.scale : 56 * Theme.scale
+            Layout.fillHeight: root.fillPlot
         }
         Text {
-            visible: root.ok && !root.compact
-            width: parent.width
+            visible: root.showDetail
+            text: "48 h · lines at 0 and −50 nT (storm)"
+            color: Theme.secondary
+            font.pixelSize: Theme.fontCaption
+            wrapMode: Text.WordWrap
+            Layout.fillWidth: true
+        }
+        Text {
+            visible: root.showDetail
             text: "24 h low " + (root.ok ? root.widget.min24 : 0) + " nT · observed " + (root.ok ? root.widget.observed : "")
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
+            wrapMode: root.stacked ? Text.WordWrap : Text.NoWrap
             elide: Text.ElideRight
+            Layout.fillWidth: true
         }
     }
 }

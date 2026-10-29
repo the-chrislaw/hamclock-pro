@@ -38,11 +38,11 @@ Areas: A UI · B space weather/solar · C spots · D astronomy/satellites · E w
 | Rotator (rotctld, track sat/DX) | gimbal.cpp:1-40, 1031, 1157 | PARTIAL | "rotator later" | E |
 | ENV temp/press/humid/dew (2× BME280) | HamClock.h:424-427; BME280.cpp | PARTIAL | sensors planned | E |
 | Countdown as a pane | HamClock.h:431; stopwatch.cpp:2471 | PARTIAL | dialog only | A |
-| Contests | contests.cpp:20-22 | COVERED | E3 | E |
+| Contests | contests.cpp:20-22 | MISSING (no widget; contest calendar parked, ROADMAP #200; re-checked Oct 29) | E3 | E |
 | Live_Spots PSK/WSPR/RBN | pskreporter.cpp:662-727 | PARTIAL | PSKReporter only | C |
 | On_The_Air (POTA, SOTA, WWFF, IOTA, GMA, LLOTA, WWTOTA, TOWERS, WWBOTA) | ontheair.cpp:66-76, 191-290 | PARTIAL | POTA/SOTA only | C |
 | ADIF log pane (watch, sort, map, set_adif) | adif.cpp; webserver.cpp:4980 | PARTIAL | roadmap only | C |
-| DXPeditions (hide list, current only, Set DX) | dxpeds.cpp:363, 476 | COVERED | hide/Set DX unmentioned | E |
+| DXPeditions (hide list, current only, Set DX) | dxpeds.cpp:363, 476 | MISSING (no widget; re-checked Oct 29) | hide/Set DX unmentioned | E |
 | Storms, Nets, Marine_Wx, Fire_Wx, Quakes | hurricane.cpp, activenets.cpp, marinewarnings.cpp, firewx.cpp, quakes.cpp | MISSING | — | E |
 | Launches, Eclipse, Balloons | launches.cpp, eclipsepane.cpp, balloons.cpp | MISSING | — | D |
 | HF_Bands / VHF_Cond (HamQSL) | hamqsl.cpp:1-6 | PARTIAL / MISSING | own model instead of feed | B |
@@ -126,7 +126,7 @@ Areas: A UI · B space weather/solar · C spots · D astronomy/satellites · E w
 |---|---|---|---|
 | Call, lat/lng (DMS), grid | setup.cpp:369-372 | PARTIAL | A |
 | gpsd/NMEA (time + location), IP geolocation | setup.cpp:373-374, 607-613 | PARTIAL/MISSING | E |
-| Wi-Fi | setup.cpp:376-377 | COVERED (M5 first run) | A |
+| Wi-Fi | setup.cpp:376-377 | MISSING (the Pi image does not configure Wi-Fi; set it in Raspberry Pi Imager; re-checked Oct 29) | A |
 | Units, list scroll direction | setup.cpp:664-676 | MISSING | A |
 | Colour editor | setup.cpp:1134-1300 | PARTIAL | A |
 | Brightness, light sensor, on/off schedule, idle | brightness.cpp | PARTIAL | A |

@@ -8,6 +8,7 @@ on:
       - "apple/tvos/**"
       - "cmake/TvOS*.cmake"
       - "cmake/TvOSCore/**"
+      - "packaging/apple/asc_profile.py"
       - "src/domain/**"
       - "src/providers/**"
       - "tests/**"
@@ -100,7 +101,7 @@ jobs:
           xcrun simctl boot "$udid"
           app=$(find "$RUNNER_TEMP/dd" -name HamClockTV.app -type d | head -1)
           xcrun simctl install "$udid" "$app"
-          xcrun simctl launch "$udid" com.chrislaw.hamclockpro.tv
+          xcrun simctl launch "$udid" com.chrislaw.hamclockpro
           sleep 20
           mkdir -p shots
           xcrun simctl io "$udid" screenshot shots/tvos-dashboard.png
@@ -108,3 +109,139 @@ jobs:
         with:
           name: tvos-simulator-screenshot
           path: shots/tvos-dashboard.png
+
+  # TestFlight upload of the Apple TV device build. Same gate, secrets and signing
+  # route as "iPad TestFlight upload" in apple.yml: main pushes only, and only while
+  # the owner's repository variable TESTFLIGHT_UPLOADS is 'true' (don't remove or
+  # bypass that condition). Manual signing with the imported Apple Distribution
+  # certificate and a tvOS App Store profile created through the API, because the
+  # key's App Manager role cannot use cloud-managed distribution certificates.
+  # The bundle id is the iOS one (universal purchase, docs/apple-tv.md section 10).
+  testflight:
+    name: Apple TV TestFlight upload
+    needs: app
+    runs-on: macos-15
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.TESTFLIGHT_UPLOADS == 'true'
+    continue-on-error: true
+    timeout-minutes: 45
+    env:
+      BUNDLE_ID: com.chrislaw.hamclockpro
+    steps:
+      - uses: actions/checkout@v4
+      # App Store Connect only accepts builds from the 26 SDKs (Xcode 26).
+      - name: Select Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$X" ] || { echo "no Xcode 26 on this runner"; ls /Applications | grep -i xcode; exit 1; }
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+      - name: Check secrets
+        id: gate
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ] && [ -n "$TEAM" ] && [ -n "$DIST" ] && [ -n "$DIST_PW" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect or Apple Distribution secrets or APPLE_TEAM_ID absent; skipping TestFlight"; fi
+      - name: Install tools
+        if: steps.gate.outputs.go == 'true'
+        run: brew install ninja xcodegen
+      - name: Build core for Apple TV devices (appletvos arm64)
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          cmake -S cmake/TvOSCore -B build-tvos -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_SYSROOT=appletvos -DCMAKE_TOOLCHAIN_FILE="$PWD/cmake/TvOSToolchain.cmake"
+          cmake --build build-tvos --target hamclock-core
+          lipo -info build-tvos/libhamclock-core.a
+      - name: Import Apple Distribution certificate
+        if: steps.gate.outputs.go == 'true'
+        env:
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/tv-signing.keychain-db"
+          KCPW="$(uuidgen)"
+          echo "KC=$KC" >> "$GITHUB_ENV"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$DIST" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_PW" -A -t cert -f pkcs12 -k "$KC" >/dev/null
+          rm -f "$RUNNER_TEMP/dist.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+          security find-identity -v -p codesigning "$KC" | grep -c 'Apple Distribution' || { echo "No Apple Distribution identity in the p12"; exit 1; }
+      - name: Archive, export and upload
+        if: steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          KEYFILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+          printf '%s' "$KEY" | base64 --decode > "$KEYFILE"
+          trap 'rm -f "$KEYFILE"' EXIT
+          python3 -m venv "$RUNNER_TEMP/asc"
+          "$RUNNER_TEMP/asc/bin/pip" install --quiet pyjwt cryptography
+          export ASC_KEY_FILE="$KEYFILE" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER"
+          security find-certificate -c "Apple Distribution" -p "$KC" > "$RUNNER_TEMP/dist.pem"
+          PROFILE_NAME="HamClockPro tvOS AppStore ${{ github.run_id }}"
+          read -r PROFILE_ID PROFILE_UUID < <("$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py \
+            create "$BUNDLE_ID" "$RUNNER_TEMP/dist.pem" "$PROFILE_NAME" "$RUNNER_TEMP/profile.mobileprovision" TVOS_APP_STORE)
+          echo "PROFILE_ID=$PROFILE_ID" >> "$GITHUB_ENV"
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/profile.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          # Build number must rise on every tvOS upload: use this workflow's run number.
+          BUILD="${{ github.run_number }}"
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>$TEAM</string>
+            <key>destination</key><string>upload</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>signingCertificate</key><string>Apple Distribution</string>
+            <key>provisioningProfiles</key><dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+          </dict></plist>
+          PLIST
+          cd apple/tvos
+          xcodegen generate
+          set -o pipefail
+          # Same version as the iPhone/iPad/Mac app (CMakeLists.txt project version):
+          # TestFlight on the Apple TV offers the newest version of the app, and an
+          # older tvOS version number left it showing the iPhone-only 1.0.0 instead.
+          VERSION=$(sed -nE 's/^project\(HamClockPro VERSION ([0-9.]+).*/\1/p' "$GITHUB_WORKSPACE/CMakeLists.txt")
+          [ -n "$VERSION" ] || { echo "No project version in CMakeLists.txt"; exit 1; }
+          xcodebuild archive -project HamClockTV.xcodeproj -scheme HamClockTV \
+            -configuration Release -sdk appletvos -archivePath "$RUNNER_TEMP/tv.xcarchive" \
+            DEVELOPMENT_TEAM="$TEAM" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" \
+            MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KC" \
+            2>&1 | tee "$GITHUB_WORKSPACE/tv-archive.log" | tail -5 \
+            || { grep -E "error:|BUILD FAILED" "$GITHUB_WORKSPACE/tv-archive.log" | head -30; exit 1; }
+          /usr/libexec/PlistBuddy -c Print "$RUNNER_TEMP/tv.xcarchive/Info.plist" | grep -v -i "signing" || true
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/tv.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" -exportPath "$RUNNER_TEMP/export" \
+            -authenticationKeyPath "$KEYFILE" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            2>&1 | tee "$GITHUB_WORKSPACE/tv-export.log" | tail -15 \
+            || { grep -E "error:|rror Domain" "$GITHUB_WORKSPACE/tv-export.log" | head -30; exit 1; }
+      - name: Remove signing keychain and temporary profile
+        if: always() && steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          if [ -n "$PROFILE_ID" ] && [ -x "$RUNNER_TEMP/asc/bin/python" ]; then
+            printf '%s' "$KEY" | base64 --decode > "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+            ASC_KEY_FILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER" \
+              "$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py delete "$PROFILE_ID" || true
+          fi
+          security delete-keychain "$KC" || true
+          rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP"/AuthKey_*.p8

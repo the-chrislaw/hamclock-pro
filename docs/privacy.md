@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # HamClock Pro privacy policy
 
-_Last updated: 27 October 2026_
+_Last updated: 28 October 2026_
 
 HamClock Pro is a free, open-source amateur-radio dashboard for Raspberry Pi, macOS, iPhone, iPad and Apple TV. It is developed independently by Christopher Law (KM7IBM). This policy covers all versions of the app.
 
@@ -19,8 +19,8 @@ HamClock Pro is a free, open-source amateur-radio dashboard for Raspberry Pi, ma
 
 - **Station settings:** callsign, home and DX location, time zone, display choices. Stored only on your device (and, on Apple TV, synced between your own devices through your iCloud account if you enable it).
 - **Account details for optional services** (for example QRZ.com, HamQTH, HamAlert or hams.at): stored in the system's secure storage (Keychain on Apple devices, a file readable only by you on Raspberry Pi) and sent **only** to the service they belong to.
-- **Location:** if you use "Use my location" or the satellite finder, your position is read from the device and used on the device only, for calculations such as pass times and pointing directions. It is never sent to us.
-- **Camera and motion sensors:** used only while the satellite finder is open, on the device, to show where a satellite is. Nothing is recorded or uploaded.
+- **Location:** HamClock Pro doesn't read your device's location. You type in your station's location yourself, and it's used on the device for things like satellite pass times and local weather.
+- **Camera, microphone and motion sensors:** not used.
 
 ## Who the app talks to, and what they see
 
@@ -31,13 +31,11 @@ To show live information, the app connects directly to public data providers. Li
 - CelesTrak and SatNOGS (satellite orbits and frequencies), Launch Library (launches), SondeHub (weather balloons)
 - Amateur-radio services: PSKReporter, the Reverse Beacon Network, POTA, SOTA, WWFF, hams.at, HamQSL, the DX cluster node you choose, and the callsign lookup service you choose
 
+Some requests include your station's approximate coordinates, because the answer depends on where you are (for example local weather from Open-Meteo, or the place you look up with **Find**).
+
 Some of these connections, by their nature, include your callsign: for example, logging in to a DX cluster or the Reverse Beacon Network, or asking PSKReporter who has heard you. These are features you turn on, and the data goes only to that service.
 
 Each provider has its own privacy policy. HamClock Pro sends them only what is needed for the feature you are using.
-
-## Notifications
-
-Satellite pass reminders are scheduled **on your device**. No notification server is involved.
 
 ## Children
 

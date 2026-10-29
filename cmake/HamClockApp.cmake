@@ -9,9 +9,11 @@ add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
     src/platform/apple_lifecycle.cpp
     src/platform/apple_safearea.cpp
+    src/platform/apple_orientation.cpp
     src/platform/apple_textentry.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
+    src/platform/apple_camerafov.cpp
     src/platform/apple_skyattitude.cpp
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
@@ -19,17 +21,29 @@ add_library(hamclock-widget-core STATIC
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
+    src/ui/pane_grid.cpp
     src/platform/settings.cpp)
-target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core Qt6::Core Qt6::Gui Qt6::Network)
+target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core hamclock-credential-store Qt6::Core Qt6::Gui Qt6::Network)
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
+# "Find it in the sky" (#573) has no screen yet. Until it does, iOS builds leave
+# out its sensor code, frameworks and permission prompts (see AppleBundle.cmake)
+# so App Review doesn't ask about camera/location use it can't find.
+option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_skysensor_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
-    find_library(HC_COREMOTION CoreMotion REQUIRED)
-    find_library(HC_CORELOCATION CoreLocation REQUIRED)
-    target_link_libraries(hamclock-widget-core PUBLIC ${HC_USERNOTIFICATIONS} ${HC_GAMECONTROLLER} ${HC_COREMOTION} ${HC_CORELOCATION} ${HC_UIKIT})
+    target_link_libraries(hamclock-widget-core PUBLIC ${HC_USERNOTIFICATIONS} ${HC_GAMECONTROLLER} ${HC_UIKIT})
+    if(HAMCLOCK_SKY_FINDER)
+        target_sources(hamclock-widget-core PRIVATE src/platform/apple_skysensor_ios.mm src/platform/apple_camera_ios.mm)
+        target_compile_definitions(hamclock-widget-core PRIVATE HAMCLOCK_SKY_FINDER)
+        find_library(HC_COREMOTION CoreMotion REQUIRED)
+        find_library(HC_CORELOCATION CoreLocation REQUIRED)
+        find_library(HC_AVFOUNDATION AVFoundation REQUIRED)
+        find_library(HC_COREMEDIA CoreMedia REQUIRED)
+        target_link_libraries(hamclock-widget-core PUBLIC ${HC_COREMOTION} ${HC_CORELOCATION} ${HC_AVFOUNDATION} ${HC_COREMEDIA})
+    endif()
 endif()
 
 # All widget models are compiled into this library by hamclock_add_widget().
@@ -142,6 +156,9 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
+    target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
+    add_test(NAME pane-grid-regression COMMAND pane-grid-regression)
     add_executable(safe-area-regression tests/safe_area_regression.cpp)
     target_link_libraries(safe-area-regression PRIVATE hamclock-widget-core)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
@@ -161,6 +178,10 @@ if(BUILD_TESTING)
     target_link_libraries(sky-project-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-project-regression COMMAND sky-project-regression)
     set_tests_properties(sky-project-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(camera-fov-regression tests/camera_fov_regression.cpp)
+    target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
+    add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
+    set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
     target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
@@ -237,15 +258,17 @@ if(BUILD_TESTING)
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
-    # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary and TV.
-    foreach(size 800x480 1024x600 1920x1080 390x844 844x390)
+    # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary,
+    # TV, phones and the adaptive pane grid on desktops (MacBook window, 1440p two rows, Retina full resolution).
+    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 600x1024 820x1180 1180x820 1512x982 2560x1440 3024x1964)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
-    foreach(size 800x480 1024x600)
+    # 1920x1080 and 2560x1440 add the adaptive grid with a station (#638: all slots were 0x0; exit 4 reports an empty pane slot).
+    foreach(size 800x480 1024x600 1920x1080 2560x1440)
         add_test(NAME qml-app-station-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-station-${size}
             --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})

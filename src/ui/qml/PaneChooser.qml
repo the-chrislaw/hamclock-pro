@@ -26,6 +26,11 @@ Popup {
         sensors: 5, station: 5, gps: 5, radio: 5, rotator: 5, adsb: 5
     })
     property int category: 0
+    // A tab shows only when it has panes on this device (iPhone/iPad have no Station panes).
+    function hasPanes(index) {
+        if (index === 0 || index === 6) return true
+        return Object.keys(categoryOf).some(id => categoryOf[id] === index && widgetRegistry.model(id) !== null)
+    }
     function inCategory(id) {
         return category === 0 || (categoryOf[id] !== undefined ? categoryOf[id] : 6) === category
     }
@@ -37,7 +42,8 @@ Popup {
     }
     onOpened: {
         const current = appSettings.panes[slot]
-        category = current in categoryOf ? categoryOf[current] : 0
+        // A pane saved by another device may sit in a tab this device hides; show All then.
+        category = current in categoryOf && hasPanes(categoryOf[current]) ? categoryOf[current] : 0
         list.currentIndex = 0
         for (let i = 0; i < widgetRegistry.count; ++i) {
             const row = list.itemAtIndex(i)
@@ -65,6 +71,7 @@ Popup {
                     required property int index
                     required property string modelData
                     text: modelData
+                    visible: chooser.hasPanes(index)
                     primary: chooser.category === index
                     onClicked: chooser.category = index
                 }

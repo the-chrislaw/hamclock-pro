@@ -495,3 +495,43 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 87391b1 (only my run 85 log #625 merged since 2f9220c). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi since run 68 (builds, passes 176/176 tests, renders correctly at all three sizes). Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 87
+- Last reviewed commit: 10aea08 (merged since 87391b1: my run 86 log #626 and #627, pure-maths camera AR projection for Find-in-the-sky, #573). Reviewed #627: projection, roll direction, zenith and behind-camera handling are correct, new test is not weakened, no QtWidgets/new Qt APIs or network code. Main builds and passes 177/177 tests. No QML or Linux-visible UI change, so screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 88
+- Last reviewed commit: 00eb867 (only my run 87 log #630 merged since 10aea08). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 89
+- Last reviewed commit: 9f704d0 (only my run 88 log #631 merged since 00eb867). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 90
+- Last reviewed commit: 43db071 (merged since 9f704d0: my run 89 log #632 and #633, aspect-fill camera preview FOV maths, #573). Reviewed #633: focal length, portrait rotation and aspect-fill crop are correct, invalid input falls back to defaults, new test is not weakened, no QtWidgets/new Qt APIs/network code. Main builds and passes 178/178 tests. No QML or Linux-visible UI change, so screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi since run 68. Remaining risk is iOS code Linux CI cannot exercise (the camera layer that will consume #627/#633), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-28 (UTC) QA run 91
+- Last reviewed commit: 3f7f9cc (merged since 43db071: #628 adaptive pane grid, #634 sky finder left out of iOS builds, #635 privacy policy, my run 90 log). Main builds and passes 182/182 tests; #628 extends the pane tests rather than weakening them, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480, 1024x600 and 1280x720 are correct.
+- Opened: #638 ([A] pane grid renders empty at 1920x1080). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: the Pi sizes are fine, but #628 left the pane area blank at 1920x1080 in both themes, the first visible regression since run 68. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 92
+- Last reviewed commit: 8507bee (merged since 3f7f9cc: #637 AVFoundation camera FOV reader, #640 phone Settings fit, #641 phone layout with two panes and compact station card, #644 version 1.0.0, #642 tvOS TestFlight upload, #646 pane grid 1920x1080 fix, my run 91 log). Main builds and passes 184/184 tests; diffs add no QtWidgets, scrolling containers, password exposure or network code, and the one test change is an added assertion. Screenshots at 800x480, 1024x600 and 1920x1080 in light and dark are correct, with no clipping beyond known truncation of stale footers at 800x480.
+- Opened: none. Closed: none (#638 was already closed by #646; verified fixed on main, 1920x1080 now shows five panes plus the map). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and the 1080p regression is resolved. Remaining risk is iOS/tvOS code Linux CI cannot exercise (phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 93
+- Last reviewed commit: 1df00d0 (merged since 8507bee: #645 iPhone/iPad parity pass, my run 92 log #647). Main builds and passes 187/187 tests. Reviewed #645: Keychain secret store is only set on Apple builds (Pi still uses owner-only credentials.ini), writeAccounts leaves the file alone if the store refuses, passwords are not exposed to QML or logs, per-config-dir keys keep scratch profiles from touching real ones; tall-area pane grid only affects height > width so Pi sizes are unchanged, pane tests gained assertions, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480 and 1024x600 in light and dark are unchanged and correct, with only the known truncation of stale footers at 800x480.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 94
+- Last reviewed commit: 0572e03 (only my run 93 log #649 merged since 1df00d0). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.

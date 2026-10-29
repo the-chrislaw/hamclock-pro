@@ -21,7 +21,7 @@ public:
     void setMapVisible(bool visible);
     int count() const { return int(nodes_.size()); }
     QVariantList nearest() const; // closest to DE first, at most kShown rows
-    static constexpr int kCapacity = 300, kShown = 6;
+    static constexpr int kCapacity = 300, kShown = 30;
     static constexpr qint64 kMaxAgeSec = 2 * 86400;
 signals:
     void changed();
