@@ -29,7 +29,8 @@ Card {
             font.pixelSize: Theme.fontBody
         }
         Text {
-            anchors { left: parent.left; bottom: parent.bottom; margins: Theme.gap * 0.5 }
+            // Top-left: NASA burns its own caption into the bottom of the image.
+            anchors { left: parent.left; top: parent.top; margins: Theme.gap * 0.5 }
             text: root.widget ? root.widget.channelName + (root.compact ? "" : " · " + root.widget.channelCaption) : ""
             color: "#ffffff"
             style: Text.Outline
