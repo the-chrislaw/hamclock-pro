@@ -31,3 +31,25 @@ targets:
         OTHER_LDFLAGS: ["-lhamclock-core", "-lc++"]
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGN_IDENTITY: ""
+  # Siri Remote walk-through (XCUIRemote) on the tvOS Simulator: first-run setup,
+  # pane chooser, pane options, a settings change that must survive a relaunch.
+  HamClockTVUITests:
+    type: bundle.ui-testing
+    platform: tvOS
+    sources: [UITests]
+    dependencies:
+      - target: HamClockTV
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.chrislaw.hamclockpro.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: HamClockTV
+        TARGETED_DEVICE_FAMILY: "3"
+schemes:
+  HamClockTV:
+    build:
+      targets:
+        HamClockTV: all
+        HamClockTVUITests: [test]
+    test:
+      targets: [HamClockTVUITests]

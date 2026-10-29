@@ -24,14 +24,27 @@ add_library(hamclock-core STATIC
     ${D}/astro_sgp4/SGP4.cpp
     ${D}/geometry.cpp
     ${D}/locator_input.cpp
+    ${D}/astro_planets.cpp
+    ${D}/astro_eclipse.cpp
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
+    ${HCP_ROOT}/apple/tvos/Core/text_util.cpp
     ${HCP_ROOT}/apple/tvos/Core/swpc.cpp
     ${HCP_ROOT}/apple/tvos/Core/solarwind.cpp
     ${HCP_ROOT}/apple/tvos/Core/quakes.cpp
     ${HCP_ROOT}/apple/tvos/Core/bands.cpp
     ${HCP_ROOT}/apple/tvos/Core/weather.cpp
     ${HCP_ROOT}/apple/tvos/Core/storms.cpp
-    ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp)
+    ${HCP_ROOT}/apple/tvos/Core/scales.cpp
+    ${HCP_ROOT}/apple/tvos/Core/aurora.cpp
+    ${HCP_ROOT}/apple/tvos/Core/drap.cpp
+    ${HCP_ROOT}/apple/tvos/Core/launches.cpp
+    ${HCP_ROOT}/apple/tvos/Core/ota.cpp
+    ${HCP_ROOT}/apple/tvos/Core/fires.cpp
+    ${HCP_ROOT}/apple/tvos/Core/places.cpp
+    ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp
+    ${HCP_ROOT}/apple/tvos/Core/hcpcore_space.cpp
+    ${HCP_ROOT}/apple/tvos/Core/hcpcore_feeds.cpp
+    ${HCP_ROOT}/apple/tvos/Core/hcpcore_geo.cpp)
 # Vendored Vallado SGP4: third-party code, not ours to reformat; silence its warnings only.
 set_source_files_properties(${D}/astro_sgp4/SGP4.cpp PROPERTIES COMPILE_OPTIONS "-w")
 target_include_directories(hamclock-core PUBLIC ${HCP_ROOT}/src)
@@ -97,3 +110,24 @@ target_compile_definitions(core-storms-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/storms/tests/fixtures")
 set_target_properties(core-storms-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-storms-regression COMMAND core-storms-regression)
+
+# Ports added for tvOS parity: one regression per area, the Qt widget's fixtures are the oracle.
+function(hcp_core_test name fixture_dir)
+    add_executable(core-${name}-regression ${HCP_ROOT}/apple/tvos/Core/tests/${name}_regression.cpp)
+    target_link_libraries(core-${name}-regression PRIVATE hamclock-core)
+    target_compile_definitions(core-${name}-regression PRIVATE
+        HCP_FIXTURE_DIR="${HCP_ROOT}/src/widgets/${fixture_dir}/tests/fixtures"
+        HCP_WIDGET_FIXTURES="${HCP_ROOT}/src/widgets")
+    set_target_properties(core-${name}-regression PROPERTIES MACOSX_BUNDLE OFF)
+    add_test(NAME core-${name}-regression COMMAND core-${name}-regression)
+endfunction()
+hcp_core_test(series spaceweather)
+hcp_core_test(scales solarscales)
+hcp_core_test(aurora solaraurora)
+hcp_core_test(drap solardrap)
+hcp_core_test(launches launches)
+hcp_core_test(ota ota)
+hcp_core_test(fires fires)
+hcp_core_test(places weather)
+hcp_core_test(astro eclipse)
+hcp_core_test(geo eclipse)

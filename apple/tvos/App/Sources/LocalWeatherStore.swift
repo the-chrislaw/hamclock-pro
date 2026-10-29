@@ -20,12 +20,6 @@ final class LocalWeatherStore: ObservableObject {
     private var fetchedFor: String?
 
     private let interval: TimeInterval = 900
-    private let session: URLSession = {
-        let cfg = URLSessionConfiguration.default
-        cfg.timeoutIntervalForRequest = 20
-        cfg.httpAdditionalHeaders = ["User-Agent": SpaceWeatherStore.userAgent]
-        return URLSession(configuration: cfg)
-    }()
 
     /// Same query as the Qt app's weather_parse::request_url (coordinates to 2 decimals).
     static func url(lat: Double, lon: Double) -> URL? {
@@ -35,33 +29,32 @@ final class LocalWeatherStore: ObservableObject {
             lat, lon))
     }
 
-    func run(station: StationStore) async {
+    @Published var failed = false
+    /// Station position the loop fetches for; set by the app when settings change.
+    func run(position: (lat: Double, lon: Double)?) async {
+        let key = position.map { String(format: "%.2f,%.2f", $0.lat, $0.lon) } ?? ""
         while !Task.isCancelled {
-            await refresh(station.position, locator: station.locator)
+            await refresh(position, locator: key)
             try? await Task.sleep(nanoseconds: UInt64(interval * 1e9))
         }
     }
 
     private func refresh(_ pos: (lat: Double, lon: Double)?, locator: String) async {
         guard let pos, let url = Self.url(lat: pos.lat, lon: pos.lon) else { return }
-        if fetchedFor != locator { current = nil; fetched = nil } // never show another place's weather
+        if fetchedFor != locator { current = nil; fetched = nil; failed = false } // never show another place's weather
         // A failed fetch keeps the previous reading; its age drives Stale/Offline.
-        guard let (data, resp) = try? await session.data(from: url),
-              (resp as? HTTPURLResponse)?.statusCode == 200 else { return }
+        guard let data = await Net.get(url) else { if !Task.isCancelled { failed = true }; return }
         var w = HcpWeather()
         let ok = data.withUnsafeBytes { hcp_weather_parse($0.bindMemory(to: CChar.self).baseAddress, data.count, &w) }
-        guard ok != 0 else { return }
-        func text<T>(_ v: T) -> String {
-            var v = v
-            return withUnsafePointer(to: &v) { $0.withMemoryRebound(to: CChar.self, capacity: MemoryLayout<T>.size) { String(cString: $0) } }
-        }
+        guard ok != 0 else { failed = true; return }
         current = LocalWeather(
             temperatureC: w.temperature_c, humidity: Int(w.humidity_pct), windKmh: w.wind_kmh,
-            windFrom: text(w.wind_from), description: text(w.description),
+            windFrom: cText(w.wind_from), description: cText(w.description),
             dewPointC: w.has_dew_point != 0 ? w.dew_point_c : nil,
             pressureHpa: w.has_pressure != 0 ? w.pressure_hpa : nil,
-            trend: w.has_pressure_change != 0 ? text(w.trend) : nil)
+            trend: w.has_pressure_change != 0 ? cText(w.trend) : nil)
         fetched = Date()
         fetchedFor = locator
+        failed = false
     }
 }
