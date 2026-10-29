@@ -303,3 +303,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-26 (hourly run, 72)
 - No code change. No open PR of mine; the open `[A]` qa issues (#527, #532, #546, #526, #574) are covered by earlier entries. Remaining area-A work needs a device or belongs to area G. Nothing invented.
 - Open: #73 (stale docs, conflicting, not mine); left alone.
+
+## 2026-10-29 (hourly run, 73)
+- QA #638 (blank pane grid at 1920x1080): root cause was the inner `GridLayout` in `Main.qml`: when the fitted column count changed while the layout settled (6 -> 5), every slot stayed at 0x0 at (0,0) although the row itself was sized correctly (measured with a temporary slot-geometry log). `paneRow` is now a plain `Item` with explicit slot x/y/width/height from `grid.columns/rows`. Regression: PaneSlot has `objectName: paneSlot` and the screenshot guard (exit 4) reports visible slots with no size (it fired 5x on the old layout); `qml-app-station` now also runs at 1920x1080 and 2560x1440. Sun & Moon "Next season" (area B file, one-number change, minimumPixelSize 0.85 -> 0.7 like its neighbours) was truncated at 1920x1080 once the panes drew. Rendered dark 800x480, 1024x600, 1280x720, 1920x1080: all panes visible, exit 0. Not validated on a device.

@@ -111,14 +111,19 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            GridLayout {
+            // Plain Item with explicit slot geometry: a GridLayout whose column count
+            // changes while the layout settles can leave every slot at 0x0 (#638).
+            Item {
                 id: paneRow
                 readonly property real minPaneWidth: (Theme.dense ? 250 : 260) * Theme.scale
                 readonly property real minPaneHeight: (Theme.dense ? 190 : 220) * Theme.scale
                 // Phones show two stacked swipeable panes; mapSize is read so a Map size change re-fits.
                 readonly property var grid: (window.phone || window.phoneWide) ? ({ columns: 1, rows: 2 })
                     : (appSettings.mapSize, appSettings.paneGrid(paneAndMap.width, page.height, Theme.gap, minPaneWidth, minPaneHeight))
-                columns: grid.columns
+                readonly property int cols: Math.max(1, grid.columns)
+                readonly property int rowCount: Math.max(1, grid.rows)
+                readonly property real slotWidth: Math.max(0, (width - (cols - 1) * Theme.gap) / cols)
+                readonly property real slotHeight: Math.max(0, (height - (rowCount - 1) * Theme.gap) / rowCount)
                 Layout.fillWidth: !window.phoneWide
                 Layout.fillHeight: window.phoneWide
                 Layout.preferredWidth: window.phoneWide ? page.width * 0.32 : -1
@@ -126,8 +131,6 @@ ApplicationWindow {
                     : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
-                rowSpacing: Theme.gap
-                columnSpacing: Theme.gap
                 function slotAt(i) { return paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
@@ -135,10 +138,10 @@ ApplicationWindow {
                     PaneSlot {
                         index: modelData
                         paused: paneChooser.visible || paneOptions.visible
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.preferredWidth: 1
-                        Layout.preferredHeight: 1
+                        x: (index % paneRow.cols) * (paneRow.slotWidth + Theme.gap)
+                        y: Math.floor(index / paneRow.cols) * (paneRow.slotHeight + Theme.gap)
+                        width: paneRow.slotWidth
+                        height: paneRow.slotHeight
                         onChooseRequested: function (slotIndex) {
                             paneChooser.slot = slotIndex
                             paneChooser.open()

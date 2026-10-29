@@ -104,7 +104,7 @@ Card {
             visible: root.showRiseSet
             text: root.widget && root.widget.nextSeason ? root.widget.nextSeason : "—"
             color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.columnSpan: 2
-            fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.85
+            fontSizeMode: Text.HorizontalFit; minimumPixelSize: Theme.fontCaption * 0.7
             elide: Text.ElideRight; Layout.fillWidth: true
         }
         Text { visible: root.showNow; text: "Now"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
