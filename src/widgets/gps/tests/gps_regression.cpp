@@ -3,7 +3,9 @@
 #include "../gps_nmea.hpp"
 #include "../gps_parse.hpp"
 #include "../../../platform/apple_lifecycle.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
+#include <QTemporaryDir>
 #include <QElapsedTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -142,5 +144,32 @@ int main(int argc, char** argv) {
         check(missing.state() == "unconfigured" && !missing.hasFix(), "absent serial device -> unconfigured");
     }
 #endif
+    {
+        // Settings change: the registered model drops the old gpsd and connects to the new address, no restart.
+        QTemporaryDir dir;
+        AppSettings settings({}, dir.path());
+        QTcpServer first, second;
+        check(first.listen(QHostAddress::LocalHost, 0) && second.listen(QHostAddress::LocalHost, 0), "two fake gpsd servers listen");
+        check(settings.saveGps("127.0.0.1", first.serverPort(), "", 9600).isEmpty(), "first gpsd address saved");
+        WidgetContext sctx;
+        sctx.settings = &settings;
+        WidgetRegistry registry;
+        register_widget_gps(registry, sctx);
+        auto* registered = qobject_cast<GpsModel*>(registry.model("gps"));
+        check(registered != nullptr, "gps widget registered");
+        check(waitFor([&] { return first.hasPendingConnections(); }), "connects to the saved gpsd address");
+        QTcpSocket* old_peer = first.nextPendingConnection();
+        check(settings.saveGps("127.0.0.1", second.serverPort(), "", 9600).isEmpty(), "new gpsd address saved");
+        check(waitFor([&] { return second.hasPendingConnections(); }), "settings change connects to the new gpsd address");
+        check(waitFor([&] { return old_peer->state() != QAbstractSocket::ConnectedState; }), "old gpsd link closed");
+        QTcpServer probe; probe.listen(QHostAddress::LocalHost, 0);
+        const quint16 dead = probe.serverPort(); probe.close();
+        check(settings.saveGps("127.0.0.1", dead, "", 9600).isEmpty(), "unreachable gpsd address saved");
+        const QString expected = QString("gpsd not reachable at 127.0.0.1:%1 — set the address in Settings").arg(dead);
+        check(waitFor([&] { return registered && registered->statusText() == expected; }), "unreachable gpsd message names the address and Settings");
+        check(settings.saveGps("127.0.0.1", dead, "/dev/ttyNOPE9", 4800).isEmpty(), "serial GPS saved");
+        check(waitFor([&] { return registered && registered->statusText().contains("/dev/ttyNOPE9") && registered->statusText().contains("Settings"); }),
+              "settings change switches to the serial device");
+    }
     return failures ? 1 : 0;
 }

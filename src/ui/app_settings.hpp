@@ -41,6 +41,17 @@ class AppSettings : public QObject {
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
     Q_PROPERTY(QString meshHost READ meshHost NOTIFY optionsChanged)
     Q_PROPERTY(int meshPort READ meshPort NOTIFY optionsChanged)
+    // Station hardware on this computer or the LAN (not on iOS): rigctld, rotctld, PiAware, gpsd / serial GPS.
+    Q_PROPERTY(QString radioHost READ radioHost NOTIFY optionsChanged)
+    Q_PROPERTY(int radioPort READ radioPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString rotatorHost READ rotatorHost NOTIFY optionsChanged)
+    Q_PROPERTY(int rotatorPort READ rotatorPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString adsbHost READ adsbHost NOTIFY optionsChanged)
+    Q_PROPERTY(int adsbPort READ adsbPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString gpsHost READ gpsHost NOTIFY optionsChanged)
+    Q_PROPERTY(int gpsPort READ gpsPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString gpsDevice READ gpsDevice NOTIFY optionsChanged)
+    Q_PROPERTY(int gpsBaud READ gpsBaud NOTIFY optionsChanged)
     Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
     Q_PROPERTY(QString pskMatch READ pskMatch NOTIFY optionsChanged)
     Q_PROPERTY(bool pskWspr READ pskWspr NOTIFY optionsChanged)
@@ -152,6 +163,17 @@ public:
     // Local Meshtastic node (TCP API, receive-only). Empty host = off (opt-in, nothing is contacted).
     QString meshHost() const { return mesh_host_; }
     int meshPort() const { return mesh_port_; }
+    // Station hardware endpoints; hosts default to this computer (127.0.0.1).
+    QString radioHost() const { return radio_host_; }
+    int radioPort() const { return radio_port_; }
+    QString rotatorHost() const { return rotator_host_; }
+    int rotatorPort() const { return rotator_port_; }
+    QString adsbHost() const { return adsb_host_; }
+    int adsbPort() const { return adsb_port_; }
+    QString gpsHost() const { return gps_host_; }
+    int gpsPort() const { return gps_port_; }
+    QString gpsDevice() const { return gps_device_; }   // serial NMEA receiver; empty = use gpsd
+    int gpsBaud() const { return gps_baud_; }
     int pskMaxKm() const { return psk_max_km_; }
     QString pskMatch() const { return psk_match_; }
     bool pskRbn() const { return psk_rbn_; }  // also listen to the Reverse Beacon Network telnet feed (off by default)
@@ -207,6 +229,12 @@ public:
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
     // host letters/digits/dots/hyphens, empty = off; port 1-65535 (node default 4403).
     Q_INVOKABLE QString saveMesh(const QString& host, int port);
+    // Station hardware: host letters/digits/dots/hyphens/colons (empty = this computer); port 1-65535.
+    Q_INVOKABLE QString saveRadio(const QString& host, int port);
+    Q_INVOKABLE QString saveRotator(const QString& host, int port);
+    Q_INVOKABLE QString saveAdsb(const QString& host, int port);
+    // device: empty (use gpsd) or a /dev/tty* or /dev/serial/* path; baud 4800-115200 (usual NMEA rates).
+    Q_INVOKABLE QString saveGps(const QString& host, int port, const QString& device, int baud);
     // PSKReporter display limit: only receivers within max_km of DE (0-20000, 0 = any).
     Q_INVOKABLE QString savePskMaxKm(int max_km);
     // Receiver call/grid prefixes to keep ("VK, JA, PM95"); empty = all. Max 8 tokens.
@@ -274,6 +302,11 @@ signals:
     void stationChanged();
     void meshChanged(); // only when the Meshtastic node host or port actually changed
     void aprsChanged(); // only when the APRS-IS server, port or radius actually changed
+    // Each only when that device's endpoint actually changed.
+    void radioChanged();
+    void rotatorChanged();
+    void adsbChanged();
+    void gpsChanged();
     void appearanceChanged();
     void optionsChanged();
     void configsChanged();
@@ -309,6 +342,11 @@ private:
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     QString mesh_host_;
     int mesh_port_ = 4403;
+    QString radio_host_ = "127.0.0.1", rotator_host_ = "127.0.0.1", adsb_host_ = "127.0.0.1", gps_host_ = "127.0.0.1";
+    int radio_port_ = 4532, rotator_port_ = 4533, adsb_port_ = 8080, gps_port_ = 2947;
+    QString gps_device_;
+    int gps_baud_ = 9600;
+    QString saveEndpoint(const char* group, const char* name, const QString& host, int port, QString& host_out, int& port_out, bool& changed);
     int udp_port_ = 0;
     bool udp_lan_ = false;
     QString udp_group_;
