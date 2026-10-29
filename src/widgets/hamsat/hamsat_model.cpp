@@ -110,7 +110,11 @@ void HamsatModel::refreshState() {
     const auto fetched = source_->fetchedAt();
     if (source_->isStale(now())) setState("stale", "hams.at (out of date)", fetched);
     else if (key_rejected_) setState("live", "hams.at public list (the API key was rejected; check Settings)", fetched);
-    else setState("live", personalised() ? "hams.at activation alerts (your station)" : "hams.at activation alerts", fetched);
+    else if (personalised()) setState("live", "hams.at activation alerts (your station)", fetched);
+    // hams.at answers a key it does not know with 200 and the public list, not 401.
+    else if (fetched_with_key_ && !feed_.activations.empty())
+        setState("live", "hams.at public list (the API key was not accepted; check it in Settings)", fetched);
+    else setState("live", "hams.at activation alerts", fetched);
 }
 
 void register_widget_hamsat(WidgetRegistry& registry, const WidgetContext& context) {
