@@ -24,17 +24,23 @@ Item {
             title: "Stopwatch"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.preferredHeight: 1   // the two timers share the height equally
             ColumnLayout {
                 width: parent.width
+                height: parent.height
                 spacing: Theme.gap
+                // The digits take the card's spare height, as large as the width allows.
                 Text {
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: Theme.fontClock * 1.6
                     horizontalAlignment: Text.AlignHCenter
-                    fontSizeMode: Text.HorizontalFit
+                    verticalAlignment: Text.AlignVCenter
+                    fontSizeMode: Text.Fit
                     minimumPixelSize: Theme.fontValue
                     text: timers.stopwatchText
                     color: Theme.ink
-                    font.pixelSize: Theme.fontClock * 1.4
+                    font.pixelSize: Theme.fontClock * 6
                     font.weight: Font.Light
                     Accessible.name: "Stopwatch " + text
                 }
@@ -50,17 +56,23 @@ Item {
             title: "Countdown"
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.preferredHeight: 1   // the two timers share the height equally
             ColumnLayout {
                 width: parent.width
+                height: parent.height
                 spacing: Theme.gap
+                // The digits take the card's spare height, as large as the width allows.
                 Text {
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: Theme.fontClock * 1.6
                     horizontalAlignment: Text.AlignHCenter
-                    fontSizeMode: Text.HorizontalFit
+                    verticalAlignment: Text.AlignVCenter
+                    fontSizeMode: Text.Fit
                     minimumPixelSize: Theme.fontValue
                     text: timers.countdownExpired ? "Time!" : timers.countdownText
                     color: timers.countdownExpired ? Theme.accent : Theme.ink
-                    font.pixelSize: Theme.fontClock * 1.4
+                    font.pixelSize: Theme.fontClock * 6
                     font.weight: Font.Light
                     Accessible.name: "Countdown " + text
                 }
@@ -80,11 +92,14 @@ Item {
         }
     }
 
+    // Alarms sit left of Big Clock / Close on wide screens and above them on narrow
+    // ones (a phone), where one row would run under the two buttons.
+    readonly property bool narrowAlarms: width < 760 * Theme.scale
     Column {
       id: alarmArea
       anchors.left: parent.left
-      anchors.right: parent.right
-      anchors.bottom: parent.bottom
+      anchors.right: root.narrowAlarms ? parent.right : bigClockButton.left
+      anchors.bottom: root.narrowAlarms ? closeButton.top : parent.bottom
       anchors.margins: Theme.pad
       spacing: Theme.gap
       Flow {
@@ -95,15 +110,16 @@ Item {
             AppButton { text: modelData; onClicked: alarms.remove(index); Accessible.description: "Tap to delete" }
         }
       }
-      Row {
+      Flow {
+        width: parent.width
         spacing: Theme.gap
-        Text { anchors.verticalCenter: parent.verticalCenter; text: "Alarm (UTC)"; color: Theme.secondary; font.pixelSize: Theme.fontBody }
+        Text { height: Theme.touch; verticalAlignment: Text.AlignVCenter; text: "Alarm (UTC)"; color: Theme.secondary; font.pixelSize: Theme.fontBody }
         AppButton { text: "-"; onClicked: alarmMinutes = (alarmMinutes + 1440 - 15) % 1440 }
-        Text { anchors.verticalCenter: parent.verticalCenter; text: Qt.formatTime(new Date(2000, 0, 1, Math.floor(alarmMinutes / 60), alarmMinutes % 60), "HH:mm"); color: Theme.ink; font.pixelSize: Theme.fontBody + 4 }
+        Text { height: Theme.touch; verticalAlignment: Text.AlignVCenter; text: Qt.formatTime(new Date(2000, 0, 1, Math.floor(alarmMinutes / 60), alarmMinutes % 60), "HH:mm"); color: Theme.ink; font.pixelSize: Theme.fontBody + 4 }
         AppButton { text: "+"; onClicked: alarmMinutes = (alarmMinutes + 15) % 1440 }
         AppButton { text: "Daily"; onClicked: alarms.add(Math.floor(alarmMinutes / 60), alarmMinutes % 60, true) }
         AppButton { text: "Once"; onClicked: alarms.add(Math.floor(alarmMinutes / 60), alarmMinutes % 60, false) }
-        Text { anchors.verticalCenter: parent.verticalCenter; visible: alarms.items.length > 0; text: "tap an alarm to delete"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+        Text { height: Theme.touch; verticalAlignment: Text.AlignVCenter; visible: alarms.items.length > 0; text: "tap an alarm to delete"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
       }
     }
 
@@ -116,6 +132,7 @@ Item {
         onClicked: root.closeRequested()
     }
     AppButton {
+        id: bigClockButton
         anchors.right: closeButton.left
         anchors.rightMargin: Theme.gap
         anchors.bottom: closeButton.bottom
