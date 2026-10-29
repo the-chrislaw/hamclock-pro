@@ -22,13 +22,13 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(callsign.waitForExistence(timeout: 10), "first-run setup is shown")
         shot("tvos-first-run")
         moveFocus(to: callsign)
-        enter("N0CALL")
+        enter("W1AW")
         let grid = app.textFields["gridField"]
         moveFocus(to: grid)
-        enter("CN85pm")
+        enter("FN31pr")
         let dxGrid = app.textFields["dxGridField"]
         moveFocus(to: dxGrid)
-        enter("JN58td")
+        enter("PM95uq")
         let save = app.buttons["saveStation"]
         moveFocus(to: save)
         remote.press(.select)
@@ -36,8 +36,8 @@ final class RemoteWalkthroughTests: XCTestCase {
         // Dashboard with the station configured.
         XCTAssertTrue(app.descendants(matching: .any)["pane0"].waitForExistence(timeout: 10), "dashboard is shown")
         let station = app.descendants(matching: .any)["stationCard"]
-        XCTAssertTrue(station.label.contains("N0CALL"), "station card shows the saved call: \(station.label)")
-        XCTAssertTrue(station.label.contains("CN85pm"), "station card shows the DE grid")
+        XCTAssertTrue(station.label.contains("W1AW"), "station card shows the saved call: \(station.label)")
+        XCTAssertTrue(station.label.contains("FN31pr"), "station card shows the DE grid")
         sleep(6) // let the feeds arrive for the screenshot
         shot("tvos-dashboard")
 
@@ -207,6 +207,111 @@ final class RemoteWalkthroughTests: XCTestCase {
         menuExits("while dimmed")
     }
 
+    /// Every TV widget, six at a time in the no-map layout (two rows of panes), with the test
+    /// station W1AW at FN31pr and DX PM95uq (Tokyo). The focus must reach every pane and get back to Settings with the arrows alone.
+    func testEveryWidgetInSixPaneLayout() {
+        let pages = [["spaceweather", "solarwind", "bands", "solarscales", "solaraurora", "solardrap"],
+                     ["solarimage", "ota", "weather", "quakes", "storms", "fires"],
+                     ["sunmoon", "satellites", "planets", "eclipse", "launches", "none"]]
+        for (n, page) in pages.enumerated() {
+            app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
+                                   "-hcpMapSize", "hidden", "-hcpPanes", page.joined(separator: ",")]
+            app.launch()
+            let last = app.descendants(matching: .any)["pane5"]
+            XCTAssertTrue(last.waitForExistence(timeout: 10), "six panes without the map")
+            XCTAssertFalse(app.descendants(matching: .any)["mapCard"].exists, "no map in the six-pane layout")
+            for (i, id) in page.enumerated() {
+                XCTAssertEqual(app.descendants(matching: .any)["pane\(i)"].value as? String, id)
+            }
+            sleep(12) // feeds arrive
+            shot("tvos-widgets-\(n + 1)")
+            // Focus visits every pane and comes back up to Settings: no traps.
+            for i in [0, 1, 2, 5, 4, 3] { moveFocus(to: app.descendants(matching: .any)["pane\(i)"]) }
+            moveFocus(to: app.buttons["settingsButton"])
+            app.terminate()
+        }
+    }
+
+    /// Pane options (rotate, previous, empty, reset), the map menu (centre, zoom, long path) and
+    /// the Settings sections: each change shows on the dashboard and survives a relaunch.
+    func testOptionsMapAndSettingsPersist() {
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York"]
+        app.launch()
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        let station = app.descendants(matching: .any)["stationCard"]
+        let map = app.descendants(matching: .any)["mapCard"]
+        XCTAssertTrue(pane0.waitForExistence(timeout: 10))
+
+        // Pane options: rotation steps off -> 5 s, Previous wraps to an empty pane, Reset restores.
+        openOptions(pane0)
+        moveFocus(to: app.buttons["optRotate"])
+        remote.press(.select)
+        XCTAssertTrue(waitFor { self.app.buttons["optRotate"].label.contains("5 s") }, "rotation steps to 5 s")
+        moveFocus(to: app.buttons["optPrevious"])
+        remote.press(.select)
+        XCTAssertTrue(waitFor { (pane0.value as? String) == "none" }, "Previous before the first widget is the empty pane")
+        openOptions(pane0)
+        moveFocus(to: app.buttons["optReset"])
+        remote.press(.select)
+        XCTAssertTrue(waitFor { (pane0.value as? String) == "spaceweather" }, "Reset all panes restores the defaults")
+        openOptions(pane0)
+        XCTAssertTrue(app.buttons["optRotate"].label.contains("off"), "reset also stops rotation")
+        moveFocus(to: app.buttons["optEmpty"])
+        remote.press(.select)
+        XCTAssertTrue(waitFor { (pane0.value as? String) == "none" }, "Empty pane")
+
+        // Map menu: DE centre, 2x, long path; the card and the station path follow.
+        moveFocus(to: map)
+        remote.press(.select)
+        for id in ["centre_de", "zoom_2", "path_long"] {
+            moveFocus(to: app.buttons[id])
+            remote.press(.select)
+        }
+        XCTAssertTrue(app.buttons["centre_de"].isSelected && app.buttons["zoom_2"].isSelected)
+        moveFocus(to: app.buttons["layer_aurora"])
+        remote.press(.select)
+        XCTAssertTrue(waitFor { self.app.buttons["layer_aurora"].label.contains("✓") }, "aurora overlay switched on")
+        shot("tvos-map-menu-changed")
+        remote.press(.menu)
+        XCTAssertTrue(waitFor { (map.value as? String) == "de 2x long" }, "map shows DE, 2x, long path: \(String(describing: map.value))")
+        XCTAssertTrue(station.label.contains("Long path"), "station card shows the long path")
+
+        // Settings: light, amber accent, 12 h clock, dimming, no map.
+        moveFocus(to: app.buttons["settingsButton"])
+        remote.press(.select)
+        for id in ["appearance_1", "accent_2", "clock_1", "dim_1", "mapSize_1"] {
+            moveFocus(to: app.buttons[id])
+            remote.press(.select)
+            XCTAssertTrue(waitFor { self.app.buttons[id].isSelected }, "\(id) selected")
+        }
+        shot("tvos-settings-light")
+        remote.press(.menu)
+        XCTAssertTrue(app.descendants(matching: .any)["pane5"].waitForExistence(timeout: 5), "six panes once the map is off")
+        XCTAssertFalse(map.exists, "map hidden")
+        XCTAssertTrue(station.label.contains("AM") || station.label.contains("PM"), "12 h clock: \(station.label)")
+        sleep(8)
+        shot("tvos-light-six-panes")
+
+        // Relaunch: everything above was kept.
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["pane5"].waitForExistence(timeout: 10), "no-map layout kept")
+        XCTAssertEqual(pane0.value as? String, "none", "empty pane kept")
+        XCTAssertTrue(station.label.contains("AM") || station.label.contains("PM"), "12 h clock kept")
+        moveFocus(to: app.buttons["settingsButton"])
+        remote.press(.select)
+        for id in ["appearance_1", "accent_2", "clock_1", "dim_1", "mapSize_1"] {
+            XCTAssertTrue(app.buttons[id].waitForExistence(timeout: 5) && app.buttons[id].isSelected, "\(id) kept")
+        }
+        moveFocus(to: app.buttons["mapSize_0"])
+        remote.press(.select)
+        remote.press(.menu)
+        XCTAssertTrue(map.waitForExistence(timeout: 5), "map back")
+        XCTAssertEqual(map.value as? String, "de 2x long", "map centre, zoom and path kept across relaunch")
+        XCTAssertTrue(station.label.contains("Long path"), "long path kept")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard
@@ -224,6 +329,13 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground, "in the app before Menu (\(when))", file: file, line: line)
         remote.press(.menu)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 5), "Menu at the root exits (\(when))", file: file, line: line)
+    }
+
+    /// Hold Select on a pane: its options open.
+    private func openOptions(_ pane: XCUIElement) {
+        moveFocus(to: pane)
+        remote.press(.select, forDuration: 1.2)
+        XCTAssertTrue(app.buttons["optRotate"].waitForExistence(timeout: 5), "pane options open")
     }
 
     /// Types into the focused text field through the tvOS keyboard, then returns.

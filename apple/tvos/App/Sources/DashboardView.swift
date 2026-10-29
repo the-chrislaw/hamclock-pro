@@ -16,7 +16,6 @@ struct DashboardView: View {
     @State private var setupMode = false
     @State private var bannerMode = 0
     @State private var showLocal = false
-    @State private var map = MapView()
     @State private var lastInput = Date()
     /// When each rotating slot was last stepped by hand (its rotation restarts from there).
     @State private var rotationRestart: [Int: Date] = [:]
@@ -80,7 +79,7 @@ struct DashboardView: View {
             HStack(alignment: .top, spacing: Theme.gap) {
                 RemoteTile(select: { woke(); settings.configured ? showLocal.toggle() : openSettings() }, hold: { woke(); openSettings() }) {
                     StationCardView(now: now, focused: focus == .station, bannerMode: bannerMode,
-                                    showLocal: showLocal, longPath: map.longPath)
+                                    showLocal: showLocal, longPath: settings.mapView.longPath)
                 }
                 .frame(width: 400)
                 .focused($focus, equals: .station)
@@ -124,16 +123,22 @@ struct DashboardView: View {
 
     private func mapCard(_ now: Date) -> some View {
         RemoteTile(select: { overlay = .mapMenu }, hold: { overlay = .mapMenu }) {
-            Card(title: "World map" + (map.centre == .world ? "" : map.centre == .de ? " · DE" : " · DX"), chooser: true,
-                 focused: focus == .map) {
-                WorldMapView(now: now, view: map)
+            Card(title: "World map" + mapTitleSuffix, chooser: true, focused: focus == .map) {
+                WorldMapView(now: now, view: settings.mapView)
             }
         }
         .focused($focus, equals: .map)
         .accessibilityLabel("World map")
+        .accessibilityValue("\(settings.mapView.centre.rawValue) \(Int(settings.mapView.zoom))x\(settings.mapView.longPath ? " long" : "")")
         .accessibilityIdentifier("mapCard")
     }
 
+
+    private var mapTitleSuffix: String {
+        let v = settings.mapView
+        let centre = v.centre == .world ? "" : v.centre == .de ? " · DE" : " · DX"
+        return centre + (v.zoom > 1 ? " · \(Int(v.zoom))×" : "")
+    }
 
     /// The saved widget, or the current stop of the slot's automatic rotation (never saved).
     private func shownWidget(_ i: Int, _ now: Date) -> String {
@@ -167,7 +172,7 @@ struct DashboardView: View {
         case .options(let slot):
             PaneOptionsView(slot: slot, change: { overlay = .chooser(slot) }) { overlay = nil; focus = .pane(slot) }
         case .mapMenu:
-            MapMenuView(view: $map) { overlay = nil; focus = .map }
+            MapMenuView(view: $settings.mapView) { overlay = nil; focus = .map }
         }
     }
 
