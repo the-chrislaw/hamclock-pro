@@ -60,6 +60,7 @@ Rectangle {
         udpMe.me = Qt.binding(() => appSettings.udpSpotByMe)
         udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
         accountCard.service = Qt.binding(() => appSettings.lookupService)
+        accountCard.tested = false
         for (const message of [stationError, clusterError, hardwareError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
         flick.contentY = 0
     }
@@ -950,11 +951,14 @@ Rectangle {
                     width: parent.width
                     spacing: Theme.gap * 0.8
                     Text {
-                        text: "Optional. Used to look up names and locations for spotted callsigns. QRZ.com needs an XML subscription; HamQTH is free. Stored only on this device, readable by you alone."
+                        text: "Optional. Looks up names and locations for callsigns. HamQTH is free: register, then use your callsign and HamQTH password. QRZ.com needs a paid XML Logbook Data (or higher) subscription; use your QRZ user name and password. Kept in the system keychain (on the Pi: a file only you can read)."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
                     id: accountCard
                     property string service: appSettings.lookupService
+                    property bool tested: false
+                    readonly property var lookupModel: typeof widgetRegistry !== "undefined" ? widgetRegistry.model("lookup") : null
+                    onServiceChanged: tested = false
                     function save() {
                         if (service === appSettings.lookupService && !lookupUser.edited && !lookupPassword.text.length) return true
                         accountError.text = appSettings.saveAccount(service, lookupUser.text, lookupPassword.text)
@@ -978,9 +982,39 @@ Rectangle {
                     FormField { id: lookupPassword; visible: parent.service !== "none"; label: "Password"
                                 echoMode: TextInput.Password
                                 placeholder: appSettings.hasLookupPassword ? "Saved — leave empty to keep" : "" }
-                    RowLayout {
-                        Text { id: accountError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    Text {
+                        id: accountTestResult
+                        visible: accountCard.tested && accountCard.lookupModel !== null && text.length > 0
+                        text: !accountCard.lookupModel ? ""
+                              : !accountCard.lookupModel.configured ? "Enter the user name and password, then test again."
+                              : accountCard.lookupModel.busy ? "Testing…" : accountCard.lookupModel.message
+                        color: accountCard.lookupModel && (accountCard.lookupModel.state === "error" || !accountCard.lookupModel.configured) ? Theme.bad
+                               : accountCard.lookupModel && accountCard.lookupModel.subscriptionWarning ? Theme.warn : Theme.good
+                        font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    Text { id: accountError; visible: text.length > 0; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                    // A Flow so the three buttons wrap on a phone instead of being cut.
+                    Flow {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap * 0.6
+                        layoutDirection: Qt.RightToLeft
                         AppButton { text: "Save"; primary: true; onClicked: accountCard.save() }
+                        AppButton {
+                            visible: accountCard.service !== "none"
+                            text: accountCard.service === "qrz" ? "Get QRZ.com XML" : "Register at HamQTH"
+                            onClicked: Qt.openUrlExternally(accountCard.service === "qrz" ? "https://shop.qrz.com/collections/subscriptions"
+                                                                                           : "https://www.hamqth.com/register")
+                        }
+                        AppButton {
+                            visible: accountCard.service !== "none" && accountCard.lookupModel !== null
+                            text: "Save and test"
+                            enabled: accountCard.lookupModel !== null && !accountCard.lookupModel.busy
+                            onClicked: {
+                                if (!accountCard.save()) return
+                                accountCard.tested = true
+                                accountCard.lookupModel.checkLogin()
+                            }
+                        }
                     }
                 }
             }

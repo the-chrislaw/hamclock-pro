@@ -25,6 +25,8 @@ class LookupModel : public WidgetModel {
     Q_PROPERTY(QString country READ country NOTIFY resultChanged)
     Q_PROPERTY(QString message READ message NOTIFY resultChanged)
     Q_PROPERTY(QString path READ path NOTIFY resultChanged)
+    // True after a QRZ login reported "non-subscriber": lookups work but return a reduced record.
+    Q_PROPERTY(bool subscriptionWarning READ subscriptionWarning NOTIFY resultChanged)
 public:
     explicit LookupModel(const WidgetContext& context, QObject* parent = nullptr);
 
@@ -40,7 +42,11 @@ public:
     QString path() const;
     static QString pathText(double de_lat, double de_lon, const QString& grid);
 
+    bool subscriptionWarning() const { return !lookup::has_xml_subscription(subscription_); }
+
     Q_INVOKABLE void lookup(const QString& call);
+    // Settings "Test connection": logs in afresh (no lookup) and puts the outcome in message().
+    Q_INVOKABLE void checkLogin();
 
 signals:
     void accountChanged();
@@ -54,6 +60,8 @@ private:
     lookup::Reply parse(const QByteArray& body) const;
     void finish(const QString& call, const lookup::Reply& reply);
     void fail(const QString& text);
+    void loginSucceeded();
+    QString serviceName() const;
     void refreshState();
 
     WidgetContext context_;
@@ -62,7 +70,9 @@ private:
     QHash<QString, lookup::Record> cache_;
     std::optional<lookup::Record> current_;
     QString message_;
+    QString subscription_; // QRZ <SubExp> of the current session
     bool busy_ = false;
+    bool error_ = false; // message_ reports a failure (not a check result)
 };
 
 void register_widget_lookup(WidgetRegistry& registry, const WidgetContext& context);
