@@ -73,7 +73,8 @@ namespace {
         double x = 0;
         if (align == Qt::AlignRight) x = item->width() - w;
         else if (align == Qt::AlignHCenter) x = (item->width() - w) / 2;
-        const QRectF content(item->mapToScene(QPointF(x, 0)), QSizeF(w, h));
+        // Mapped as a rectangle so a scaled ancestor (an adaptive pane's stage) scales the text too.
+        const QRectF content = item->mapRectToScene(QRectF(x, 0, w, h));
         constexpr double tol = 1.5;
         QRectF bound = item->window() ? QRectF(0, 0, item->window()->width(), item->window()->height()) : QRectF();
         for (auto* a = item->parentItem(); a; a = a->parentItem()) {
@@ -155,7 +156,6 @@ int main(int argc, char** argv) {
             settings.setSecretStore(std::move(keychain));
     }
 #endif
-    if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
     hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));
     hamclock::WidgetContext context;
@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
         bool number_ok = false;
         const int slot = parts.value(0).toInt(&number_ok) - 1;
         const auto problem = parts.size() == 2 && number_ok && registry.model(parts[1])
-            ? settings.setPane(slot, parts[1]) : QString("Unknown widget or pane.");
+            ? settings.showPane(slot, parts[1]) : QString("Unknown widget or pane.");
         if (!problem.isEmpty()) {
             std::fprintf(stderr, "--pane %s: %s\n", qPrintable(assignment), qPrintable(problem));
             return 2;

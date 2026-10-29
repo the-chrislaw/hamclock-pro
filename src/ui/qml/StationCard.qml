@@ -12,7 +12,6 @@ Card {
     // DE/DX summaries, so the panes and map get the room.
     property bool compact: false
     showTitle: !compact || !station.configured
-    signal setupRequested()
     signal settingsRequested()
     signal timersRequested()
 

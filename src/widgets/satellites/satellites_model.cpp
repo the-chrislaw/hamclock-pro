@@ -20,7 +20,7 @@ constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amate
 constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json&service=Amateur&alive=true";
 constexpr double kMinElevation = 10.0;
 constexpr double kHorizonSeconds = 24 * 3600;
-constexpr int kMaxRows = 5;
+constexpr int kMaxRows = 12;  // tall panes list as many as fit; other layouts show the first five
 // Popular FM/linear birds; matched against the TLE name.
 const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "FO-29", "AO-73", "RS-44", "AO-91", "AO-85"};
 } // namespace

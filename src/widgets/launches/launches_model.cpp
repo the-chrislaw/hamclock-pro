@@ -8,7 +8,7 @@ using namespace std::chrono_literals;
 // Launch Library 2 free tier allows 15 requests per hour per IP; one an hour.
 constexpr PollPolicy kPolicy{60min, 6h, 6h};
 constexpr char kUrl[] = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list";
-constexpr int kLaterRows = 3;
+constexpr int kLaterRows = 9;  // the feed asks for ten; a tall pane lists as many as fit, regular layouts three
 
 QString when_text(const launches::Launch& l, const QDateTime& now) {
     return launches::countdown_text(l.net, now) + (l.precise ? "" : " (approx)");

@@ -2,13 +2,12 @@
 #include "../../platform/apple_lifecycle.hpp"
 #include "rotator_parse.hpp"
 #include "../../ui/app_settings.hpp"
-#include <QSettings>
 
 namespace hamclock {
 
 RotatorModel::RotatorModel(const WidgetContext&, QString host, quint16 port, QObject* parent)
     : WidgetModel("rotator", "Rotator", parent), host_(std::move(host)), port_(port) {
-    setState("unconfigured", "rotctld not running on this device");
+    setState("unconfigured", unreachableText());
     retry_.setInterval(15000);
     poll_.setInterval(1000);
     connect(&retry_, &QTimer::timeout, this, &RotatorModel::connectNow);
@@ -40,6 +39,28 @@ void RotatorModel::onResumed() {
     retry_.start();
 }
 
+QString RotatorModel::unreachableText() const {
+    const QString where = host_.contains(':') ? "[" + host_ + "]" : host_;
+    return QString("rotctld not reachable at %1:%2 — set the address in Settings").arg(where).arg(port_);
+}
+
+void RotatorModel::setEndpoint(const QString& host, quint16 port) {
+    if (host == host_ && port == port_) return;
+    retry_.stop();
+    poll_.stop();
+    socket_.abort();
+    host_ = host;
+    port_ = port;
+    wait_ = Wait::Idle;
+    az_.reset(); el_.reset();
+    setState("unconfigured", unreachableText());
+    emit changed();
+    // Not started (or suspended on iPad): start() / onResumed() connect to the new address.
+    if (!started_ || AppLifecycle::instance().isSuspended()) return;
+    connectNow();
+    retry_.start();
+}
+
 void RotatorModel::connectNow() {
     if (socket_.state() != QAbstractSocket::UnconnectedState) return;
     socket_.connectToHost(host_, port_);
@@ -58,7 +79,7 @@ void RotatorModel::onDisconnected() {
     poll_.stop();
     wait_ = Wait::Idle;
     az_.reset(); el_.reset();
-    setState("unconfigured", had && state() != "unconfigured" ? "rotctld connection lost" : "rotctld not running on this device");
+    setState("unconfigured", had && state() != "unconfigured" ? "rotctld connection lost" : unreachableText());
     emit changed();
 }
 
@@ -113,12 +134,11 @@ QString RotatorModel::azimuth() const { return az_ ? rotator::format_degrees(*az
 QString RotatorModel::elevation() const { return el_ ? rotator::format_degrees(*el_) : QString(); }
 
 void register_widget_rotator(WidgetRegistry& registry, const WidgetContext& context) {
-    rotator::Endpoint ep{"127.0.0.1", 4533};
-    if (context.settings) {
-        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
-        ep = rotator::parse_endpoint(ini.value("rotator/host").toString(), ini.value("rotator/port").toString(), ep);
-    }
-    auto* model = new RotatorModel(context, ep.host, ep.port);
+    AppSettings* settings = context.settings;
+    auto* model = settings ? new RotatorModel(context, settings->rotatorHost(), quint16(settings->rotatorPort())) : new RotatorModel(context);
+    if (settings) QObject::connect(settings, &AppSettings::rotatorChanged, model, [model, settings] {
+        model->setEndpoint(settings->rotatorHost(), quint16(settings->rotatorPort()));
+    });
     // Not listed on iOS (no local station hardware there): never started.
     if (registry.add({"rotator", "Rotator", QUrl("qrc:/widgets/rotator/RotatorCard.qml"), "strip", 76}, model)) QTimer::singleShot(0, model, &RotatorModel::start);
 }

@@ -7,20 +7,23 @@ Item {
     id: slot
     objectName: "paneSlot"
     property int index: 0
-    readonly property string saved: appSettings.panes[index]
-    readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index]
+    readonly property string saved: appSettings.panes[index] || "none"
+    readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index] || 0
     // What is on screen: the saved choice, or the current stop of an automatic
     // rotation (never written to settings, so a rotation does not wear the SD card).
     property string rotated: ""
     readonly property string choice: rotateSeconds > 0 && rotated !== "" ? rotated : saved
     // Widgets the rotation cycles through (empty = every widget).
-    readonly property var rotationSet: appSettings.demoMode ? [] : appSettings.paneRotationSets[index]
+    readonly property var rotationSet: appSettings.demoMode ? [] : appSettings.paneRotationSets[index] || []
     // Pause rotation while the user is interacting or a menu is open.
     property bool paused: false
     onSavedChanged: rotated = ""
     onRotateSecondsChanged: rotated = ""
     onRotationSetChanged: rotated = ""
     signal chooseRequested(int slot)
+    signal setupRequested()
+    // Phone: the page dots get their own strip under the card instead of covering its footer.
+    readonly property real dotsRoom: Theme.phone && ids().length > 1 ? 12 * Theme.scale : 0
     signal optionsRequested(int slot)
 
     // Step to the next (+1) or previous (-1) widget in registry order; "none" sits
@@ -57,13 +60,16 @@ Item {
         delegate: Loader {
             readonly property string wid: widgetId
             anchors.fill: parent
+            anchors.bottomMargin: slot.dotsRoom
             active: widgetId === slot.choice
             visible: active
             source: card
             onLoaded: {
                 item.widget = widgetModel
                 item.chooser = true
+                item.adaptive = true
                 item.titleActivated.connect(function () { slot.chooseRequested(slot.index) })
+                item.setupRequested.connect(slot.setupRequested)
             }
         }
     }
@@ -106,7 +112,7 @@ Item {
         visible: Theme.phone && slot.ids().length > 1
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 2 * Theme.scale
+        anchors.bottomMargin: 0
         spacing: 5 * Theme.scale
         readonly property var all: slot.ids()
         readonly property int at: Math.max(0, all.indexOf(slot.choice))
@@ -128,6 +134,7 @@ Item {
     // Empty slot, or a saved choice whose widget no longer exists.
     Card {
         anchors.fill: parent
+        anchors.bottomMargin: slot.dotsRoom
         title: "Empty pane"
         chooser: true
         visible: slot.choice === "none" || !widgetRegistry.model(slot.choice)

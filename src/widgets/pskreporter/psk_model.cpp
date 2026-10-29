@@ -10,7 +10,7 @@ namespace hamclock {
 namespace {
 using namespace std::chrono_literals;
 constexpr PollPolicy kPolicy{5min, 20min, 30min};  // PSKReporter: at most every 5 minutes
-constexpr int kRecentRows = 6;
+constexpr int kRecentRows = 30; // the card shows as many as fit
 constexpr int kRbnMaxReports = 200;
 constexpr int kRbnWindowSecs = 15 * 60;  // same window as the PSKReporter query
 constexpr int kRbnPort = 7000;           // CW/RTTY skimmers; 7001 (FT8/FT4) would be a second connection

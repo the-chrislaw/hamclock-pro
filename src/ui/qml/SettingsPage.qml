@@ -13,7 +13,7 @@ Rectangle {
     // Saves every section with changes, in page order. On the first error the page
     // stays open and scrolls to that section so the message is visible.
     function saveAndClose() {
-        for (const section of [stationCard, clusterCard, hamAlertCard, hamsatCard, accountCard]) {
+        for (const section of [stationCard, clusterCard, hardwareCard, hamAlertCard, hamsatCard, accountCard]) {
             if (!section.save()) {
                 flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
                                                       section.mapToItem(column, 0, 0).y - Theme.pad))
@@ -37,7 +37,12 @@ Rectangle {
             [adifPath, () => appSettings.adifPath], [otaProgram, () => appSettings.otaProgram], [otaBand, () => appSettings.otaBand],
             [otaMode, () => appSettings.otaMode], [otaSort, () => appSettings.otaSort], [otaAge, () => appSettings.otaMaxAgeMin],
             [watchList, () => appSettings.watchListText], [hamAlertUser, () => appSettings.hamAlertUser],
-            [lookupUser, () => appSettings.lookupUser], [bannerTitle, () => appSettings.bannerTitle]
+            [lookupUser, () => appSettings.lookupUser], [bannerTitle, () => appSettings.bannerTitle],
+            [radioHost, () => appSettings.radioHost], [radioPort, () => appSettings.radioPort],
+            [rotatorHost, () => appSettings.rotatorHost], [rotatorPort, () => appSettings.rotatorPort],
+            [adsbHost, () => appSettings.adsbHost], [adsbPort, () => appSettings.adsbPort],
+            [gpsHost, () => appSettings.gpsHost], [gpsPort, () => appSettings.gpsPort],
+            [gpsDevice, () => appSettings.gpsDevice], [gpsBaud, () => appSettings.gpsBaud]
         ]
         for (const [field, value] of bound) {
             field.text = Qt.binding(value)
@@ -55,7 +60,7 @@ Rectangle {
         udpMe.me = Qt.binding(() => appSettings.udpSpotByMe)
         udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
         accountCard.service = Qt.binding(() => appSettings.lookupService)
-        for (const message of [stationError, clusterError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
+        for (const message of [stationError, clusterError, hardwareError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
         flick.contentY = 0
     }
 
@@ -310,13 +315,6 @@ Rectangle {
                 ColumnLayout {
                     width: parent.width
                     spacing: Theme.gap * 0.6
-                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
-                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
-                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
-                    AppButton { id: pskRbn; property bool on: appSettings.pskRbn; checkable: false
-                                text: on ? "PSKReporter card: include RBN skimmers (telnet) on" : "PSKReporter card: include RBN skimmers (telnet) off"; primary: on
-                                onClicked: { on = !on; clusterError.text = appSettings.savePskRbn(on) } }
-                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Theme.gap * 0.6
@@ -705,10 +703,11 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
-                    // Five controls: one row on wide screens, two columns on a phone.
+                    // Five controls: one row on wide screens, two columns below ~1100 px (a 1024x600
+                    // panel cannot fit the five labels on one line without cutting them).
                     GridLayout {
                         Layout.fillWidth: true
-                        columns: width < 600 * Theme.scale ? 2 : 5
+                        columns: width < 1100 * Theme.scale ? 2 : 5
                         columnSpacing: Theme.gap
                         rowSpacing: Theme.gap * 0.8
                         FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
@@ -746,6 +745,13 @@ Rectangle {
                     }
                     FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
                                 field.inputMethodHints: Qt.ImhDigitsOnly }
+                    AppButton { id: pskWspr; property bool on: appSettings.pskWspr; checkable: false
+                                text: on ? "PSKReporter card: include WSPR (wspr.live) on" : "PSKReporter card: include WSPR (wspr.live) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskWspr(on) } }
+                    AppButton { id: pskRbn; property bool on: appSettings.pskRbn; checkable: false
+                                text: on ? "PSKReporter card: include RBN skimmers (telnet) on" : "PSKReporter card: include RBN skimmers (telnet) off"; primary: on
+                                onClicked: { on = !on; clusterError.text = appSettings.savePskRbn(on) } }
+                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
                     Flow {
                         Layout.fillWidth: true
                         spacing: Theme.gap
@@ -794,6 +800,87 @@ Rectangle {
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                         AppButton { text: "Save"; primary: true; onClicked: clusterCard.save() }
+                    }
+                }
+            }
+
+            // Local station hardware. iPhone and iPad have none and do not list these panes
+            // (widget_available), so the section is hidden there, like the ADIF path.
+            Card {
+                title: "On this computer: station hardware"
+                Layout.fillWidth: true
+                visible: Qt.platform.os !== "ios"
+                ColumnLayout {
+                    id: hardwareCard
+                    width: parent.width
+                    spacing: Theme.gap * 0.8
+                    readonly property var fields: [radioHost, radioPort, rotatorHost, rotatorPort, adsbHost, adsbPort,
+                        gpsHost, gpsPort, gpsDevice, gpsBaud]
+                    function changed() { return fields.some(f => f.edited) }
+                    // Returns false with the message in hardwareError when something can't be saved.
+                    function save() {
+                        if (Qt.platform.os === "ios" || !changed()) return true
+                        const steps = [
+                            () => appSettings.saveRadio(radioHost.text, parseInt(radioPort.text) || 0),
+                            () => appSettings.saveRotator(rotatorHost.text, parseInt(rotatorPort.text) || 0),
+                            () => appSettings.saveAdsb(adsbHost.text, parseInt(adsbPort.text) || 0),
+                            () => appSettings.saveGps(gpsHost.text, parseInt(gpsPort.text) || 0, gpsDevice.text, parseInt(gpsBaud.text) || 0)
+                        ]
+                        for (const step of steps) {
+                            const message = step()
+                            if (message.length) { hardwareError.text = message; return false }
+                        }
+                        hardwareError.text = ""
+                        fields.forEach(f => f.edited = false)
+                        return true
+                    }
+                    Text {
+                        text: "Programs that read your radio, rotator, ADS-B receiver and GPS. Read-only: nothing is sent that could change the rig or move the rotator. Use 127.0.0.1 when they run on this computer; changes apply at once."
+                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: radioHost; label: "Radio: rigctld (Hamlib) address"; text: appSettings.radioHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: radioPort; label: "Port"; text: appSettings.radioPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: rotatorHost; label: "Rotator: rotctld (Hamlib) address"; text: appSettings.rotatorHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: rotatorPort; label: "Port"; text: appSettings.rotatorPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: adsbHost; label: "ADS-B: PiAware / dump1090 address"; text: appSettings.adsbHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: adsbPort; label: "Port"; text: appSettings.adsbPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: gpsHost; label: "GPS: gpsd address"; text: appSettings.gpsHost; Layout.preferredWidth: 3
+                                    placeholder: "127.0.0.1"; field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: gpsPort; label: "Port"; text: appSettings.gpsPort; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        FormField { id: gpsDevice; label: "Or a serial GPS instead of gpsd (e.g. /dev/ttyACM0; empty = gpsd)"; text: appSettings.gpsDevice; Layout.preferredWidth: 3
+                                    field.inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase }
+                        FormField { id: gpsBaud; label: "Baud"; text: appSettings.gpsBaud; Layout.preferredWidth: 1
+                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    }
+                    RowLayout {
+                        Text { id: hardwareError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
+                        AppButton { text: "Save"; primary: true; onClicked: hardwareCard.save() }
                     }
                 }
             }

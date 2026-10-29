@@ -106,6 +106,13 @@ bool TelnetClient::looks_like_password_prompt(const QString& partial_line) {
     return partial_line.trimmed().toLower().endsWith("password:");
 }
 
+bool TelnetClient::looks_like_login_rejected(const QString& line) {
+    const QString s = line.trimmed().toLower();
+    return s.contains("login failed") || s.contains("login incorrect") || s.contains("authentication failed") ||
+           s.contains("invalid password") || s.contains("wrong password") || s.contains("incorrect password") ||
+           s.contains("access denied");
+}
+
 void TelnetClient::start(const QString& host, int port, const QString& login, const QStringList& commands,
                          const QString& password) {
     stop();
@@ -171,7 +178,13 @@ void TelnetClient::on_data(const QByteArray& data) {
         QByteArray line = text_.left(newline);
         text_.remove(0, newline + 1);
         if (line.endsWith('\r')) line.chop(1);
-        if (state_ == State::LoggingIn && login_sent_ && (password_.isEmpty() || password_sent_)) {
+        const bool awaiting = state_ == State::LoggingIn && login_sent_ && (password_.isEmpty() || password_sent_);
+        if (awaiting && password_sent_ && looks_like_login_rejected(QString::fromLatin1(line))) {
+            reject_login();
+            return;
+        }
+        // After a password, a blank line (the end of the prompt line) does not show the login worked yet.
+        if (awaiting && !(password_sent_ && line.trimmed().isEmpty())) {
             failures_ = 0;
             set_state(State::Online);
             for (const QString& cmd : commands_) socket_->write(cmd.toLatin1() + "\r\n");
@@ -193,7 +206,15 @@ void TelnetClient::on_data(const QByteArray& data) {
     }
 }
 
+void TelnetClient::reject_login() {
+    wanted_ = false;
+    drop_socket();
+    emit loginRejected();
+}
+
 void TelnetClient::on_closed(const QString&) {
+    // Closed after the password, before any reply: the server refused the login. Retrying would only repeat it.
+    if (state_ == State::LoggingIn && password_sent_) { reject_login(); return; }
     if (socket_) { socket_->disconnect(this); socket_->deleteLater(); socket_ = nullptr; }
     ++failures_;
     set_state(State::Waiting);
