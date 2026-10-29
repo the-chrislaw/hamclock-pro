@@ -139,3 +139,74 @@ App Store validation: `App/Info.plist` sets `ITSAppUsesNonExemptEncryption` to f
 4. HamClock Pro then appears on the Home Screen like any app. TestFlight builds expire after 90 days; upload a new one to keep it installed.
 
 If HamClock Pro isn't in TestFlight on the TV, check that the build finished processing, that the TV is signed in as the tester's Apple ID, and that the tester's group includes the tvOS build.
+
+## 12. Parity rebuild (2026-10-29)
+
+The first TestFlight build used system glass cards, a bare UTC clock, inline locator fields and a "Panes…" on/off sheet. It did not look or work like the main app. The SwiftUI front end was rebuilt to mirror the Qt layout and behaviour, still over the Qt-free core.
+
+### Layout and look
+
+- Same structure as `Main.qml` on a wide screen: a "HamClock Pro" header with a Settings button, then the station card on the left and, on the right, a row of three pane slots over the world map. With **Settings > Map > No map** there are two rows of panes instead.
+- Colours come from `Theme.qml` (`Theme.swift`): canvas, surface, ink, secondary, divider, accent (five styles), focus, good/warn/bad. Dark is the default; Light is offered as in the main app. Map colours come from `src/map/map_renderer.cpp` (sea, land, coast, route).
+- Card chrome follows `Card.qml`: title with ▾ when Select changes the widget, a Live/Stale/Loading/Offline/Set up badge (dot and word), the body, then the source and the data age ("just now", "5 min ago"). The body never sizes the card; content that does not fit is clipped, not spilled.
+- The station card follows `StationCard.qml`: callsign banner (colour, background and custom title from Settings), big clock (UTC or local first, 12/24 h, date order), the other clock, time zone, DE and DX grid, coordinates, local time at DX, sunrise/sunset countdowns, short or long path.
+- Type: 29 pt minimum for body text; the band table uses 26 pt so both halves fit in a pane.
+
+### Siri Remote
+
+| Where the focus is | Select | Hold Select | Play/Pause | Menu |
+|---|---|---|---|---|
+| Station card | swap UTC / local clock (opens setup when no station) | Settings | cycle banner (call, ON AIR, 73 DE, custom title) | leave the app |
+| Pane | pane chooser | pane options | pane options | leave the app |
+| Map | map menu | map menu | map menu | leave the app |
+| Settings button | Settings | – | – | leave the app |
+| Any overlay or Settings | choose | – | – | close it |
+
+- The **pane chooser** has the main app's category tabs (All, Space Wx, DX & Contest, Weather, Sky & Space; Station has no TV widgets so its tab is hidden) and lists only widgets with a TV data source. Empty pane is at the bottom.
+- **Pane options** follow `PaneOptions.qml`: Change widget, Next/Previous widget (registry order, "none" between last and first), Rotate (off, 5, 10, 30, 60 s; the rotation is never saved as the pane's choice), Empty pane, Reset all panes.
+- The **map menu** sets the centre (World, DE, DX), zoom 1–4×, short or long path, and the overlays: day/night, lat/lon grid, borders, DE–DX path, Sun, earthquakes, tropical storms, satellites, POTA/SOTA/WWFF, fires, launch pads, planets, aurora, D-RAP. Overlays draw only while their source is Live or Stale, never from Offline data.
+- No text fields on the dashboard and no sheets: overlays are centred panels over the dimmed dashboard; Settings is a full-screen layer.
+
+### First run and Settings
+
+With no station the app opens **Set up HamClock Pro**: callsign, home by place search (OpenStreetMap Nominatim, sent only when Find is pressed, as in the main app) or Maidenhead grid, optional DX grid, and the time zone (suggested from Open-Meteo for the coordinates, falling back to the main app's reference-city table; changeable from a region list). "Later" leaves it unset; the station card then says so and Select reopens it.
+
+Settings has the main app's Station, Appearance, Distance units, Clock format (date order, 12/24 h, UTC or local big clock), Callsign banner (colour, background, custom title), Accent colour and Map sections, plus Panes (reset), Screen (dim after 2/4/8 h without remote input) and Data sources. Display choices apply and save at once; the station saves with "Save station".
+
+### Persistence and iCloud
+
+Settings are flat `hcp.*` keys with plain property-list values (`AppSettings.swift`, `AppSettings.Key`): `hcp.station.*` (callsign, DE/DX latitude and longitude, zones, place name), `hcp.display.*`, `hcp.panes.slots` (12 widget ids), `hcp.panes.rotations`, `hcp.map.size`, `hcp.map.layers`, `hcp.tv.dimAfterHours`. Each write goes to `UserDefaults` and to `NSUbiquitousKeyValueStore`; external KVS changes are adopted. Builds before this one stored only `station.locator`; it is migrated to DE coordinates on first launch.
+
+**Next step for iCloud sync (not done here):** the app does not carry the `com.apple.developer.ubiquity-kvstore-identifier` entitlement yet, so the KVS writes stay on the device. Signing only happens in the TestFlight job on main, so a PR cannot show that the entitlement signs with the API-created tvOS profile. To turn it on: add `App/HamClockTV.entitlements` with `com.apple.developer.ubiquity-kvstore-identifier` = `$(TeamIdentifierPrefix)com.chrislaw.hamclockpro`, set `CODE_SIGN_ENTITLEMENTS` in `project.yml`, and check the next TestFlight archive. The iPhone/iPad app (Qt, `QSettings`) would also have to mirror the same `hcp.*` keys to KVS before settings typed on the phone reach the TV.
+
+### Widgets on TV
+
+Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple/tvos/Core` with regression tests against the Qt widget fixtures.
+
+| Widget | Source | Core |
+|---|---|---|
+| Space weather (Kp, SFI, X-ray, 6 h X-ray plot) | NOAA SWPC | `swpc` |
+| Solar wind (speed, Bz, sparklines) | NOAA SWPC RTSW | `solarwind` |
+| Band conditions (day/night, 80–10 m) | SFI and Kp (band_outlook heuristic, not VOACAP) | `bands` |
+| NOAA scales (R/S/G, 24 h max, today's probabilities) | NOAA SWPC | `scales` |
+| Aurora (hemisphere peaks; map overlay) | NOAA SWPC OVATION | `aurora` |
+| D-RAP (highest affected frequency; map overlay) | NOAA SWPC | `drap` |
+| Sun (SDO) | NASA SDO AIA 193 Å image | – |
+| Sun & Moon (DE/DX rise and set, Moon phase) | computed on device | `astro_sun`, `astro_moon` |
+| Satellites (above the horizon at DE; map overlay) | CelesTrak amateur TLEs, AMSAT `nasabare.txt` when CelesTrak fails; SGP4 on device | `astro_satellite` |
+| Planets (up/below, next rise/set; map overlay) | computed on device | `astro_planets` |
+| Next eclipse (type, date, visibility from DE) | computed on device | `astro_eclipse` |
+| Launches (countdown, provider, ham hint; pads on map) | Launch Library 2 | `launches` |
+| Weather (temperature, wind, humidity, pressure trend) | Open-Meteo | `weather` |
+| Earthquakes (strongest, latest; map overlay) | USGS M2.5+ day | `quakes` |
+| Tropical storms (map overlay) | NOAA NHC | `storms` |
+| Active fires (US, 24 h; map overlay) | NASA FIRMS VIIRS | `fires` |
+| On the air (POTA/SOTA/WWFF spots; map overlay) | POTA, SOTA, WWFF | `ota` |
+
+Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), Passes (needs a pass predictor over the TLE set; Satellites shows what is up now), Space alerts, HamQSL, HF path reliability, Solar trend, Dst and Space weather impact (parsers not ported yet), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
+
+### Verification
+
+- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (21 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- App: `apple/tvos/UITests/RemoteWalkthroughTests.swift` drives the Siri Remote (`XCUIRemote`) through first-run setup, the pane chooser, pane options (hold Select and Play/Pause), the map menu and a settings change, then relaunches and checks that the station, the pane choice and the units were kept. Locally: `xcodebuild test -project apple/tvos/HamClockTV.xcodeproj -scheme HamClockTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation) (at 1080p)'`; set `TEST_RUNNER_HCP_SHOT_DIR=<dir>` to also write the screenshots. `tvos.yml` runs the same test and uploads the screenshots as the `tvos-simulator-screenshots` artifact.
+- Screenshots in `docs/images/tvos/` are tvOS Simulator captures with the live data of the moment they were taken, not photos of a TV. Nothing here has been checked on an Apple TV yet.
