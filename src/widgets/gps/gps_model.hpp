@@ -25,7 +25,10 @@ public:
     explicit GpsModel(const WidgetContext& context, QString host = "127.0.0.1", quint16 port = 2947, QObject* parent = nullptr);
     void start();
     // Serial NMEA receiver instead of gpsd (read-only). Call before start().
-    void useSerial(const gps::SerialConfig& cfg) { serial_cfg_ = cfg; }
+    void useSerial(const gps::SerialConfig& cfg) { serial_cfg_ = cfg; setState("unconfigured", unreachableText()); }
+    // Settings changed the source: close the current gpsd link or serial device and open the new
+    // one (an empty serial device means gpsd at host:port).
+    void setSource(const QString& host, quint16 port, const gps::SerialConfig& cfg);
     bool hasFix() const { return fix_.has_position(); }
     QString fixText() const;
     QString position() const;
@@ -45,6 +48,7 @@ private slots:
     void refreshSerial();
 private:
     void apply(const QByteArray& line);
+    QString unreachableText() const;
     QString host_;
     quint16 port_;
     QTcpSocket socket_;

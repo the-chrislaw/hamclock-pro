@@ -11,6 +11,7 @@
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
+#include <QSettings>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimeZone>
@@ -338,6 +339,50 @@ int main(int argc, char** argv) {
         check(again.paneRotationSets()[0].toStringList().isEmpty(), "reset clears rotation sets");
         check(again.panes() == defaults, "panes reset to default");
         check(again.paneRotations() == QList<int>(AppSettings::kPaneSlots, 0), "reset turns rotation off");
+    }
+
+    // Station hardware endpoints (rigctld, rotctld, PiAware, gpsd / serial GPS): validated, saved, reloaded.
+    {
+        QTemporaryDir hw_dir;
+        AppSettings hw({}, hw_dir.path());
+        check(hw.radioHost() == "127.0.0.1" && hw.radioPort() == 4532 && hw.rotatorHost() == "127.0.0.1" && hw.rotatorPort() == 4533,
+              "rigctld and rotctld default to this computer");
+        check(hw.adsbHost() == "127.0.0.1" && hw.adsbPort() == 8080 && hw.gpsHost() == "127.0.0.1" && hw.gpsPort() == 2947 &&
+                  hw.gpsDevice().isEmpty() && hw.gpsBaud() == 9600, "PiAware and gpsd default to this computer");
+        int radio = 0, rotator = 0, adsb = 0, gps = 0;
+        QObject::connect(&hw, &AppSettings::radioChanged, [&] { ++radio; });
+        QObject::connect(&hw, &AppSettings::rotatorChanged, [&] { ++rotator; });
+        QObject::connect(&hw, &AppSettings::adsbChanged, [&] { ++adsb; });
+        QObject::connect(&hw, &AppSettings::gpsChanged, [&] { ++gps; });
+        check(!hw.saveRadio("shack pc;rm", 4532).isEmpty() && !hw.saveRadio("shack-pc", 0).isEmpty() &&
+                  !hw.saveRadio("shack-pc", 70000).isEmpty() && !hw.saveRadio(QString(254, 'a'), 4532).isEmpty(),
+              "bad rigctld host or port rejected");
+        check(hw.radioHost() == "127.0.0.1" && radio == 0, "rejected radio input changes nothing");
+        check(hw.saveRadio(" shack-pc.local ", 4540).isEmpty() && hw.radioHost() == "shack-pc.local" && hw.radioPort() == 4540 && radio == 1,
+              "rigctld endpoint saved, change signalled");
+        check(hw.saveRadio("shack-pc.local", 4540).isEmpty() && radio == 1, "unchanged radio endpoint not signalled");
+        check(hw.saveRotator("", 4533).isEmpty() && rotator == 0, "empty rotctld host means this computer");
+        check(hw.saveRotator("fe80::1", 4555).isEmpty() && hw.rotatorHost() == "fe80::1" && rotator == 1, "IPv6 rotctld host saved");
+        check(!hw.saveAdsb("piaware/x", 8080).isEmpty() && hw.saveAdsb("piaware", 8081).isEmpty() && adsb == 1, "PiAware endpoint validated and saved");
+        check(!hw.saveGps("127.0.0.1", 2947, "/etc/passwd", 9600).isEmpty() && !hw.saveGps("127.0.0.1", 2947, "/dev/ttyUSB0/../x", 9600).isEmpty() &&
+                  !hw.saveGps("127.0.0.1", 2947, "/dev/ttyUSB0", 1234).isEmpty() && gps == 0, "bad serial GPS device or baud rejected");
+        check(hw.saveGps("gps-pi", 2948, "/dev/ttyACM0", 4800).isEmpty() && hw.gpsHost() == "gps-pi" && hw.gpsPort() == 2948 &&
+                  hw.gpsDevice() == "/dev/ttyACM0" && hw.gpsBaud() == 4800 && gps == 1, "gpsd and serial GPS saved");
+        AppSettings reloaded({}, hw_dir.path());
+        check(reloaded.radioHost() == "shack-pc.local" && reloaded.radioPort() == 4540 && reloaded.rotatorHost() == "fe80::1" &&
+                  reloaded.rotatorPort() == 4555 && reloaded.adsbHost() == "piaware" && reloaded.adsbPort() == 8081,
+              "hardware endpoints survive restart");
+        check(reloaded.gpsHost() == "gps-pi" && reloaded.gpsPort() == 2948 && reloaded.gpsDevice() == "/dev/ttyACM0" && reloaded.gpsBaud() == 4800,
+              "GPS settings survive restart");
+        {
+            QSettings ini(hw.optionsPath(), QSettings::IniFormat);
+            ini.setValue("radio/host", "bad host;rm");
+            ini.setValue("radio/port", "99999");
+            ini.setValue("gps/device", "/tmp/evil");
+        }
+        AppSettings tampered({}, hw_dir.path());
+        check(tampered.radioHost() == "127.0.0.1" && tampered.radioPort() == 4532 && tampered.gpsDevice().isEmpty(),
+              "hand-edited bad values fall back to defaults");
     }
 
     std::cout << "Widget core: " << checks << " checks, " << failures << " failures\n";

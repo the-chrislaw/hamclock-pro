@@ -33,6 +33,32 @@ bool valid_orientation_lock(const QString& lock) {
     return lock == "auto" || lock == "portrait" || lock == "landscape";
 }
 
+// Station hardware host: a plain name or address (IPv6 literals included), the same rule the
+// rigctld / rotctld / PiAware / gpsd clients apply when they read options.ini.
+bool valid_station_host(const QString& host) {
+    if (host.isEmpty() || host.size() > kMaxHostLength) return false;
+    return std::all_of(host.begin(), host.end(), [](QChar c) {
+        return (c.isLetterOrNumber() && c.unicode() < 128) || c == '.' || c == '-' || c == ':';
+    });
+}
+constexpr const char* kThisComputer = "127.0.0.1";
+// Serial GPS: a /dev/tty* or /dev/serial/* path, never "..", and one of the usual NMEA rates.
+bool valid_gps_device(const QString& device) {
+    static const QRegularExpression re(R"(^/dev/(tty|serial/)[A-Za-z0-9_./-]{1,64}$)");
+    return re.match(device).hasMatch() && !device.contains("..");
+}
+bool valid_gps_baud(int baud) {
+    return baud == 4800 || baud == 9600 || baud == 19200 || baud == 38400 || baud == 57600 || baud == 115200;
+}
+// Host and port from options.ini; each invalid field keeps its default.
+void load_endpoint(const QSettings& ini, const QString& group, QString& host, int& port) {
+    const QString h = ini.value(group + "/host").toString().trimmed();
+    if (valid_station_host(h)) host = h;
+    bool ok = false;
+    const int p = ini.value(group + "/port").toString().trimmed().toInt(&ok);
+    if (ok && p > 0 && p < 65536) port = p;
+}
+
 // Share of the pane-and-map height the map keeps at each map size; -1 for unknown names.
 double map_share(const QString& size) {
     if (size == "large") return 0.55;
@@ -128,6 +154,14 @@ void AppSettings::loadOptions() {
     if (aprs_host_re.match(mh).hasMatch()) mesh_host_ = mh;
     const int mp = ini.value("mesh/port", 4403).toInt();
     mesh_port_ = mp > 0 && mp < 65536 ? mp : 4403;
+    load_endpoint(ini, "radio", radio_host_, radio_port_);
+    load_endpoint(ini, "rotator", rotator_host_, rotator_port_);
+    load_endpoint(ini, "adsb", adsb_host_, adsb_port_);
+    load_endpoint(ini, "gps", gps_host_, gps_port_);
+    const QString gd = ini.value("gps/device").toString().trimmed();
+    if (valid_gps_device(gd)) gps_device_ = gd;
+    const int gb = ini.value("gps/baud", 9600).toInt();
+    if (valid_gps_baud(gb)) gps_baud_ = gb;
     const int pk = ini.value("psk/max_km", 0).toInt();
     psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
     psk_match_ = ini.value("psk/match").toString().left(120);
@@ -559,6 +593,76 @@ QString AppSettings::saveMesh(const QString& host, int port) {
     mesh_port_ = port;
     emit optionsChanged();
     if (changed) emit meshChanged();
+    return {};
+}
+
+// Validates and writes one hardware endpoint ([group] host / port). `name` starts the user-facing errors.
+QString AppSettings::saveEndpoint(const char* group, const char* name, const QString& host, int port,
+                                  QString& host_out, int& port_out, bool& changed) {
+    changed = false;
+    QString h = host.trimmed();
+    if (h.isEmpty()) h = kThisComputer;
+    if (!valid_station_host(h)) return QString("%1 address may contain only letters, digits, dots, hyphens and colons.").arg(name);
+    if (port <= 0 || port >= 65536) return QString("%1 port must be 1-65535.").arg(name);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue(QString(group) + "/host", h);
+    ini.setValue(QString(group) + "/port", port);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return QString("Could not save the %1 settings.").arg(name);
+    changed = h != host_out || port != port_out;
+    host_out = h;
+    port_out = port;
+    return {};
+}
+
+QString AppSettings::saveRadio(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("radio", "rigctld", host, port, radio_host_, radio_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit radioChanged();
+    return {};
+}
+
+QString AppSettings::saveRotator(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("rotator", "rotctld", host, port, rotator_host_, rotator_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit rotatorChanged();
+    return {};
+}
+
+QString AppSettings::saveAdsb(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("adsb", "PiAware", host, port, adsb_host_, adsb_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit adsbChanged();
+    return {};
+}
+
+QString AppSettings::saveGps(const QString& host, int port, const QString& device, int baud) {
+    const QString d = device.trimmed();
+    if (!d.isEmpty() && !valid_gps_device(d)) return "GPS serial device must be a /dev/tty… or /dev/serial/… path.";
+    if (!valid_gps_baud(baud)) return "GPS baud rate must be 4800, 9600, 19200, 38400, 57600 or 115200.";
+    // Check the gpsd address before writing anything, so a bad one leaves the device untouched too.
+    const QString h = host.trimmed().isEmpty() ? QString(kThisComputer) : host.trimmed();
+    if (!valid_station_host(h)) return "gpsd address may contain only letters, digits, dots, hyphens and colons.";
+    if (port <= 0 || port >= 65536) return "gpsd port must be 1-65535.";
+    bool changed = false;
+    const QString error = saveEndpoint("gps", "gpsd", h, port, gps_host_, gps_port_, changed);
+    if (!error.isEmpty()) return error;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("gps/device", d);
+    ini.setValue("gps/baud", baud);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the GPS settings.";
+    changed = changed || d != gps_device_ || baud != gps_baud_;
+    gps_device_ = d;
+    gps_baud_ = baud;
+    emit optionsChanged();
+    if (changed) emit gpsChanged();
     return {};
 }
 

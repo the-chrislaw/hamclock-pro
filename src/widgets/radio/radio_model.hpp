@@ -24,6 +24,8 @@ class RadioModel : public WidgetModel {
 public:
     explicit RadioModel(const WidgetContext& context, QString host = "127.0.0.1", quint16 port = 4532, QObject* parent = nullptr);
     void start();
+    // Settings changed the rigctld address: drop the current link and connect to the new one.
+    void setEndpoint(const QString& host, quint16 port);
     bool hasRig() const { return hz_.has_value(); }
     QString frequency() const;
     QString band() const;
@@ -44,6 +46,7 @@ private:
     void sendNext(const char* cmd, Wait w);
     void handleLine(const QString& line);
     void fail(const QString& text);
+    QString unreachableText() const;
     QString host_;
     quint16 port_;
     QTcpSocket socket_;
