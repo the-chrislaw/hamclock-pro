@@ -5,29 +5,86 @@ import HamClock
 Card {
     id: root
     readonly property bool bzSouth: widget && widget.hasBz && widget.bz <= -5
-    // Compact slot: speed and Bz as one row each (label, value, sparkline).
-    Column {
-        visible: root.compact
+    // Desktop panes (not the tuned 7-inch dense layout): the sparklines take the leftover height.
+    readonly property bool fillPlots: !Theme.dense
+    readonly property bool hasSpeed: widget !== null && widget.hasSpeed
+    readonly property bool hasBz: widget !== null && widget.hasBz
+    readonly property color speedColor: hasSpeed && widget.speed >= 800 ? Theme.bad
+                                      : hasSpeed && widget.speed >= 600 ? Theme.warn : Theme.ink
+    readonly property color bzColor: hasBz && widget.bz <= -10 ? Theme.bad
+                                   : hasBz && widget.bz <= -5 ? Theme.warn : Theme.ink
+    readonly property string speedCaption: hasSpeed ? widget.speedText + (widget.hasDensity
+                                           ? " · " + widget.density.toFixed(1) + " p/cm³" : "") : ""
+    readonly property string bzCaption: hasBz ? widget.bzText + (widget.hasBt
+                                        ? " · Bt " + widget.bt.toFixed(1) + " nT" : "") : ""
+    // Tall pane: both values with captions, each sparkline sharing the leftover height.
+    ColumnLayout {
+        visible: root.tall
         width: parent.width
+        height: parent.height
+        spacing: Theme.gap * 0.6
+        Metric {
+            label: "Wind speed"
+            available: root.hasSpeed
+            value: available ? Math.round(root.widget.speed) + " km/s" : ""
+            caption: root.speedCaption
+            valueColor: root.speedColor
+            Layout.fillWidth: true
+        }
+        Sparkline {
+            values: root.widget ? root.widget.speedHistory : []
+            pixelScale: root.fit
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 24 * Theme.scale
+        }
+        Metric {
+            label: "IMF Bz"
+            available: root.hasBz
+            value: available ? root.widget.bz.toFixed(1) + " nT" : ""
+            caption: root.bzCaption
+            valueColor: root.bzColor
+            Layout.topMargin: Theme.gap * 0.4
+            Layout.fillWidth: true
+        }
+        Sparkline {
+            values: root.widget ? root.widget.bzHistory : []
+            pixelScale: root.fit
+            zeroLine: true
+            lineColor: root.bzSouth ? Theme.warn : Theme.accent
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 24 * Theme.scale
+        }
+    }
+    // Widest compact value ("1888 km/s"): the value column never elides a real reading.
+    TextMetrics {
+        id: widestValue
+        text: "1888 km/s"
+        font.pixelSize: Math.round(Theme.fontValue * 0.62)
+        font.weight: Font.DemiBold
+    }
+    // Compact slot: speed and Bz as one row each (label, value, sparkline).
+    ColumnLayout {
+        visible: root.compact && !root.tall
+        width: parent.width
+        height: root.fillPlots ? parent.height : implicitHeight
         spacing: Theme.gap * 0.4
         Repeater {
             model: [
-                { label: "Wind", ok: root.widget && root.widget.hasSpeed,
-                  value: root.widget && root.widget.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
-                  color: root.widget && root.widget.hasSpeed && root.widget.speed >= 800 ? Theme.bad
-                       : root.widget && root.widget.hasSpeed && root.widget.speed >= 600 ? Theme.warn : Theme.ink,
-                  history: root.widget ? root.widget.speedHistory : [], zero: false },
-                { label: "Bz", ok: root.widget && root.widget.hasBz,
-                  value: root.widget && root.widget.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
-                  color: root.widget && root.widget.hasBz && root.widget.bz <= -10 ? Theme.bad
-                       : root.widget && root.widget.hasBz && root.widget.bz <= -5 ? Theme.warn : Theme.ink,
-                  history: root.widget ? root.widget.bzHistory : [], zero: true }
+                { label: "Wind", ok: root.hasSpeed,
+                  value: root.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
+                  color: root.speedColor, history: root.widget ? root.widget.speedHistory : [], zero: false },
+                { label: "Bz", ok: root.hasBz,
+                  value: root.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
+                  color: root.bzColor, history: root.widget ? root.widget.bzHistory : [], zero: true }
             ]
             Item {
                 required property var modelData
-                readonly property real textWidth: 84 * Theme.scale
-                width: parent.width
-                height: 36 * Theme.scale
+                readonly property real textWidth: Math.max(84 * Theme.scale, Math.ceil(widestValue.advanceWidth) + 2)
+                Layout.fillWidth: true
+                Layout.preferredHeight: 36 * Theme.scale
+                Layout.fillHeight: root.fillPlots
                 Text {
                     id: rowLabel
                     text: modelData.label
@@ -49,56 +106,59 @@ Card {
                     x: parent.textWidth + Theme.gap * 0.6
                     width: parent.width - x
                     height: parent.height
+                    pixelScale: root.fit
                     values: modelData.history
                     zeroLine: modelData.zero
                 }
             }
         }
     }
+    // Full layout: side by side when wide, stacked otherwise; sparklines fill the height.
     GridLayout {
         visible: !root.compact
         width: parent.width
+        height: parent.height
         columns: width < 360 * Theme.scale ? 1 : 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
+            Layout.fillHeight: true
             Metric {
                 label: "Wind speed"
-                available: root.widget && root.widget.hasSpeed
+                available: root.hasSpeed
                 value: available ? Math.round(root.widget.speed) + " km/s" : ""
-                caption: available ? root.widget.speedText + (root.widget.hasDensity
-                                     ? " · " + root.widget.density.toFixed(1) + " p/cm³" : "") : ""
-                valueColor: available && root.widget.speed >= 800 ? Theme.bad
-                          : available && root.widget.speed >= 600 ? Theme.warn : Theme.ink
+                caption: root.speedCaption
+                valueColor: root.speedColor
                 Layout.fillWidth: true
             }
             Sparkline {
                 values: root.widget ? root.widget.speedHistory : []
+                pixelScale: root.fit
                 Layout.topMargin: Theme.gap * 0.5
                 Layout.fillWidth: true
+                Layout.fillHeight: true
             }
         }
         ColumnLayout {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignTop
+            Layout.fillHeight: true
             Metric {
                 label: "IMF Bz"
-                available: root.widget && root.widget.hasBz
+                available: root.hasBz
                 value: available ? root.widget.bz.toFixed(1) + " nT" : ""
-                caption: available ? root.widget.bzText + (root.widget.hasBt
-                                     ? " · Bt " + root.widget.bt.toFixed(1) + " nT" : "") : ""
-                valueColor: available && root.widget.bz <= -10 ? Theme.bad
-                          : available && root.widget.bz <= -5 ? Theme.warn : Theme.ink
+                caption: root.bzCaption
+                valueColor: root.bzColor
                 Layout.fillWidth: true
             }
             Sparkline {
                 values: root.widget ? root.widget.bzHistory : []
+                pixelScale: root.fit
                 Layout.topMargin: Theme.gap * 0.5
                 zeroLine: true
                 lineColor: root.bzSouth ? Theme.warn : Theme.accent
                 Layout.fillWidth: true
+                Layout.fillHeight: true
             }
         }
     }
