@@ -28,7 +28,7 @@ public:
     TelnetClient& client() { return client_; }
     static constexpr const char* kHost = "hamalert.org";
     static constexpr int kPort = 7300;
-    static constexpr int kCapacity = 30, kShown = 8;
+    static constexpr int kCapacity = 30, kShown = 30;
 signals:
     void changed();
 private:
@@ -37,9 +37,12 @@ private:
     dxcluster::EntityResolver resolver_ = dxcluster::bundled_entity_resolver();
     void on_line(const QString& line);
     void on_state(TelnetClient::State state);
+    void on_rejected();
+    static QByteArray credentialsDigest(const QString& user, const QString& password);
     AppSettings* settings_;
     TelnetClient client_;
     std::deque<dxcluster::DxSpot> spots_;
+    QByteArray tried_, rejected_;  // SHA-256 of the user and password tried last / refused by HamAlert
 };
 
 void register_widget_hamalert(WidgetRegistry& registry, const WidgetContext& context);

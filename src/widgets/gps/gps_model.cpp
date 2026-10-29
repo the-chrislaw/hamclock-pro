@@ -2,14 +2,13 @@
 #include "../../platform/apple_lifecycle.hpp"
 #include "../../domain/geometry.hpp"
 #include "../../ui/app_settings.hpp"
-#include <QSettings>
 #include <cmath>
 
 namespace hamclock {
 
 GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* parent)
     : WidgetModel("gps", "GPS", parent), host_(std::move(host)), port_(port) {
-    setState("unconfigured", "gpsd not running on this device");
+    setState("unconfigured", unreachableText());
     retry_.setInterval(15000);
     connect(&retry_, &QTimer::timeout, this, &GpsModel::connectNow);
     auto& lifecycle = AppLifecycle::instance();
@@ -19,7 +18,7 @@ GpsModel::GpsModel(const WidgetContext&, QString host, quint16 port, QObject* pa
     connect(&serial_, &gps::SerialPort::closed, this, [this] {
         const bool had = serial_seen_;
         serial_seen_ = false; fix_ = {}; haveTpv_ = false;
-        setState("unconfigured", had ? "GPS serial device lost" : "GPS serial device unavailable");
+        setState("unconfigured", had ? "GPS serial device lost" : unreachableText());
         emit changed();
     });
     serial_tick_.setInterval(2000);
@@ -53,6 +52,32 @@ void GpsModel::onResumed() {
     retry_.start();
 }
 
+QString GpsModel::unreachableText() const {
+    if (!serial_cfg_.device.isEmpty())
+        return QString("GPS serial device %1 unavailable — check it in Settings").arg(serial_cfg_.device);
+    const QString where = host_.contains(':') ? "[" + host_ + "]" : host_;
+    return QString("gpsd not reachable at %1:%2 — set the address in Settings").arg(where).arg(port_);
+}
+
+void GpsModel::setSource(const QString& host, quint16 port, const gps::SerialConfig& cfg) {
+    if (host == host_ && port == port_ && cfg.device == serial_cfg_.device && cfg.baud == serial_cfg_.baud) return;
+    retry_.stop();
+    serial_tick_.stop();
+    serial_.close();
+    socket_.abort();
+    host_ = host;
+    port_ = port;
+    serial_cfg_ = cfg;
+    buffer_.clear();
+    fix_ = {}; sky_ = {}; haveTpv_ = false; serial_seen_ = false;
+    setState("unconfigured", unreachableText());
+    emit changed();
+    // Not started (or suspended on iPad): start() / onResumed() open the new source.
+    if (!started_ || AppLifecycle::instance().isSuspended()) return;
+    connectNow();
+    retry_.start();
+}
+
 void GpsModel::connectNow() {
     if (!serial_cfg_.device.isEmpty()) {
         if (serial_.is_open()) return;
@@ -61,7 +86,7 @@ void GpsModel::connectNow() {
             setState("loading", "Waiting for a GPS fix");
             serial_tick_.start();
         } else {
-            setState("unconfigured", "GPS serial device unavailable");
+            setState("unconfigured", unreachableText());
         }
         return;
     }
@@ -78,7 +103,7 @@ void GpsModel::onConnected() {
 void GpsModel::onDisconnected() {
     const bool had = haveTpv_;
     fix_ = {}; sky_ = {}; haveTpv_ = false;
-    setState("unconfigured", had ? "gpsd connection lost" : "gpsd not running on this device");
+    setState("unconfigured", had ? "gpsd connection lost" : unreachableText());
     emit changed();
 }
 
@@ -155,14 +180,18 @@ QString GpsModel::satellites() const {
 }
 
 void register_widget_gps(WidgetRegistry& registry, const WidgetContext& context) {
-    auto* model = new GpsModel(context);
-    if (context.settings) {
-        QSettings ini(context.settings->optionsPath(), QSettings::IniFormat);
-        const auto cfg = gps::parse_serial_config(ini.value("gps/device").toString(), ini.value("gps/baud").toString(), {});
-        if (!cfg.device.isEmpty()) model->useSerial(cfg);
+    AppSettings* settings = context.settings;
+    auto* model = settings ? new GpsModel(context, settings->gpsHost(), quint16(settings->gpsPort())) : new GpsModel(context);
+    if (settings) {
+        // AppSettings already applied the serial device and baud rules when it loaded or saved them.
+        const auto serial = [settings] { return gps::SerialConfig{settings->gpsDevice(), settings->gpsBaud()}; };
+        if (!settings->gpsDevice().isEmpty()) model->useSerial(serial());
+        QObject::connect(settings, &AppSettings::gpsChanged, model, [model, settings, serial] {
+            model->setSource(settings->gpsHost(), quint16(settings->gpsPort()), serial());
+        });
     }
-    registry.add({"gps", "GPS", QUrl("qrc:/widgets/gps/GpsCard.qml"), "strip", 75}, model);
-    QTimer::singleShot(0, model, &GpsModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"gps", "GPS", QUrl("qrc:/widgets/gps/GpsCard.qml"), "strip", 75}, model)) QTimer::singleShot(0, model, &GpsModel::start);
 }
 
 } // namespace hamclock

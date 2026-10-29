@@ -6,6 +6,9 @@
 namespace hamclock {
 namespace {
 constexpr int kMinColumns = 3;
+// A tall, narrow area (iPad in portrait) gets two wider panes rather than three
+// that clip; wide areas, the Pi's 800x480 panel among them, keep at least three.
+constexpr int kMinColumnsTall = 2;
 constexpr int kMaxRows = 2;
 constexpr double kSingleRowShare = 0.4;
 constexpr PaneGrid kClassic{kMinColumns, 1, 0};
@@ -19,8 +22,9 @@ PaneGrid fit_pane_grid(const PaneGridInput& in) {
         !std::isfinite(in.min_map_share) || in.max_panes < 1)
         return kClassic;
 
+    const int min_columns = in.height > in.width ? kMinColumnsTall : kMinColumns;
     const int fit = static_cast<int>(std::floor((in.width + in.gap) / (in.min_pane_width + in.gap)));
-    const int columns = std::max(kMinColumns, std::min(fit, in.max_panes));
+    const int columns = std::max(min_columns, std::min(fit, in.max_panes));
 
     // Add a row only while the map below keeps its share and the slots last.
     int rows = 1;
@@ -28,7 +32,7 @@ PaneGrid fit_pane_grid(const PaneGridInput& in) {
         const double panes_height = candidate * in.min_pane_height + (candidate - 1) * in.gap;
         const double map_height = in.height - panes_height - in.gap;
         if (map_height < in.min_map_share * in.height) break;
-        if (std::min(columns, in.max_panes / candidate) < kMinColumns) break;
+        if (std::min(columns, in.max_panes / candidate) < min_columns) break;
         rows = candidate;
     }
     const double height = rows == 1

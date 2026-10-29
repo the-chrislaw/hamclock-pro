@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
     check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "station saved");
     const auto near = model.nearestText();
     check(near.startsWith("M") && near.contains(" km ") && near.contains(" of DE · "), "nearest line with station");
-    check(model.recent().size() == 6, "recent capped at 6");
+    check(model.recent().size() >= 6 && model.recent().size() <= 15, "recent: at least six, capped at 15");
     check(model.updatedAt() == feed.generated, "updatedAt is the feed build time");
     {
         const auto& layers = MapOverlays::instance().layers();

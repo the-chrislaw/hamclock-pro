@@ -11,10 +11,16 @@ ColumnLayout {
     property alias echoMode: field.echoMode
     property alias inputMethodHints: field.inputMethodHints
     property alias field: field
+    // True once the user types here; Settings > Done saves only the sections they changed.
+    property bool edited: false
     spacing: 4 * Theme.scale
     Layout.fillWidth: true
+    // Share the row's width instead of asking for the caption's full length, so a
+    // long label wraps rather than pushing the field off a phone screen.
+    Layout.preferredWidth: 0
 
-    Text { id: caption; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+    Text { id: caption; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
+           wrapMode: Text.WordWrap; Layout.fillWidth: true }
     TextField {
         id: field
         Layout.fillWidth: true
@@ -23,6 +29,7 @@ ColumnLayout {
         color: Theme.ink
         placeholderTextColor: Theme.secondary
         selectByMouse: true
+        onTextEdited: parent.edited = true
         Accessible.name: caption.text
         background: Rectangle {
             radius: 10 * Theme.scale

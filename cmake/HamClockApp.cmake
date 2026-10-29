@@ -9,6 +9,7 @@ add_library(hamclock-widget-core STATIC
     src/net/polled_source.cpp
     src/platform/apple_lifecycle.cpp
     src/platform/apple_safearea.cpp
+    src/platform/apple_orientation.cpp
     src/platform/apple_textentry.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
@@ -36,7 +37,7 @@ set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 # so App Review doesn't ask about camera/location use it can't find.
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
@@ -266,14 +267,15 @@ if(BUILD_TESTING)
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
     # Exit code 4 = a visible Text is elided or clipped by its card/window (issues #152, #532; objectName clipOk exempts); sizes cover small, primary,
     # TV, phones and the adaptive pane grid on desktops (MacBook window, 1440p two rows, Retina full resolution).
-    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 1512x982 2560x1440 3024x1964)
+    foreach(size 800x480 1024x600 1920x1080 390x844 844x390 600x1024 820x1180 1180x820 1512x982 2560x1440 3024x1964)
         add_test(NAME qml-app-truncation-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${size}
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
-    foreach(size 800x480 1024x600)
+    # 1920x1080 and 2560x1440 add the adaptive grid with a station (#638: all slots were 0x0; exit 4 reports an empty pane slot).
+    foreach(size 800x480 1024x600 1920x1080 2560x1440)
         add_test(NAME qml-app-station-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-station-${size}
             --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})

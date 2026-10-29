@@ -12,6 +12,8 @@
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
 #include "../platform/apple_lifecycle.hpp"
+#include "../platform/apple_orientation.hpp"
+#include "../platform/credential_store.hpp"
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include <QEventLoop>
@@ -40,6 +42,11 @@ namespace {
     int count_truncated(QQuickItem* item) {
         if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
         int found = 0;
+        // A visible pane slot with no size is a blank hole in the grid (#638).
+        if (item->objectName() == "paneSlot" && (item->width() <= 0 || item->height() <= 0)) {
+            std::fprintf(stderr, "EMPTY PANE SLOT: %.0fx%.0f\n", item->width(), item->height());
+            ++found;
+        }
         const QVariant truncated = item->property("truncated");
         if (truncated.isValid() && truncated.toBool() && item->objectName() != "elideOk" &&
             !item->property("text").toString().isEmpty() && item->width() > 0 && item->height() > 0) {
@@ -66,7 +73,8 @@ namespace {
         double x = 0;
         if (align == Qt::AlignRight) x = item->width() - w;
         else if (align == Qt::AlignHCenter) x = (item->width() - w) / 2;
-        const QRectF content(item->mapToScene(QPointF(x, 0)), QSizeF(w, h));
+        // Mapped as a rectangle so a scaled ancestor (an adaptive pane's stage) scales the text too.
+        const QRectF content = item->mapRectToScene(QRectF(x, 0, w, h));
         constexpr double tol = 1.5;
         QRectF bound = item->window() ? QRectF(0, 0, item->window()->width(), item->window()->height()) : QRectF();
         for (auto* a = item->parentItem(); a; a = a->parentItem()) {
@@ -116,7 +124,7 @@ int main(int argc, char** argv) {
     QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
     QGuiApplication::setApplicationName("hamclock-pro");
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QGuiApplication::setApplicationVersion("0.1.0");
+    QGuiApplication::setApplicationVersion("1.0.0");
     hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
 
     QCommandLineParser parser;
@@ -141,11 +149,13 @@ int main(int argc, char** argv) {
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
 #ifdef Q_OS_DARWIN
-    // Account passwords live in the Keychain on Apple platforms. A --config-dir run
-    // (tests, smoke screenshots, second profiles) keeps them in its own folder.
-    if (!parser.isSet(config)) settings.setSecretStore(hamclock::makeDefaultCredentialStore());
+    // Passwords and API keys live in the Keychain on Mac, iPhone and iPad. Screenshot
+    // runs (CI) leave the Keychain alone; their config directories hold no accounts.
+    if (!parser.isSet(screenshot)) {
+        if (auto keychain = std::make_unique<hamclock::KeychainCredentialStore>("org.hamclockpro.app"); keychain->available())
+            settings.setSecretStore(std::move(keychain));
+    }
 #endif
-    if (parser.isSet(theme)) settings.setAppearance(parser.value(theme));
 
     hamclock::set_telnet_network_enabled(!parser.isSet(fixtures) && !parser.isSet(offline));
     hamclock::WidgetContext context;
@@ -164,7 +174,7 @@ int main(int argc, char** argv) {
         bool number_ok = false;
         const int slot = parts.value(0).toInt(&number_ok) - 1;
         const auto problem = parts.size() == 2 && number_ok && registry.model(parts[1])
-            ? settings.setPane(slot, parts[1]) : QString("Unknown widget or pane.");
+            ? settings.showPane(slot, parts[1]) : QString("Unknown widget or pane.");
         if (!problem.isEmpty()) {
             std::fprintf(stderr, "--pane %s: %s\n", qPrintable(assignment), qPrintable(problem));
             return 2;
@@ -227,6 +237,14 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+    // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
+    QString orientation_lock = settings.orientationLock();
+    hamclock::applyOrientationLock(orientation_lock);
+    QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &app, [&settings, &orientation_lock] {
+        if (settings.orientationLock() == orientation_lock) return;
+        orientation_lock = settings.orientationLock();
+        hamclock::applyOrientationLock(orientation_lock);
+    });
 
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());

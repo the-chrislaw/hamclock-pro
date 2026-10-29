@@ -84,8 +84,8 @@ QString SensorsModel::cpuPeak() const {
 
 void register_widget_sensors(WidgetRegistry& registry, const WidgetContext& context) {
     auto* model = new SensorsModel(context);
-    registry.add({"sensors", "Host sensors", QUrl("qrc:/widgets/sensors/SensorsCard.qml"), "strip", 70}, model);
-    QTimer::singleShot(0, model, &SensorsModel::start);
+    // Not listed on iOS (no local station hardware there): never started.
+    if (registry.add({"sensors", "Host sensors", QUrl("qrc:/widgets/sensors/SensorsCard.qml"), "strip", 70}, model)) QTimer::singleShot(0, model, &SensorsModel::start);
 }
 
 } // namespace hamclock

@@ -41,7 +41,7 @@ jobs:
       - name: Build package in ${{ matrix.release }} ${{ matrix.arch }} container
         run: |
           # Date AND time so same-day builds upgrade cleanly (hash alone sorts arbitrarily).
-          version="0.1.0~git$(date -u +%Y%m%d%H%M%S).${GITHUB_SHA::7}"
+          version="1.0.0~git$(date -u +%Y%m%d%H%M%S).${GITHUB_SHA::7}"
           [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF_NAME#v}"
           platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
           docker run --rm --platform "$platform" -v "$PWD":/src -w /src debian:${{ matrix.release }} bash -euxc "

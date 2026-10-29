@@ -1,5 +1,7 @@
 #include <algorithm>
 #include "app_settings.hpp"
+#include "../platform/credential_store.hpp"
+#include <QCryptographicHash>
 #include "banner_text.hpp"
 #include "blanking.hpp"
 #include "config_store.hpp"
@@ -24,13 +26,40 @@ constexpr int kMaxHostLength = 253;
 constexpr int kMaxUserLength = 64;
 constexpr int kMaxPasswordLength = 128;
 
-// INI key in credentials.ini (also the secret store key) for each account secret.
-const QStringList kSecretKeys = {"lookup/password", "hamalert/password", "hamsat/key"};
-
 QString default_config_dir() {
     auto dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     return dir.isEmpty() ? QDir::homePath() + "/.config/hamclock-pro" : dir;
 }
+bool valid_orientation_lock(const QString& lock) {
+    return lock == "auto" || lock == "portrait" || lock == "landscape";
+}
+
+// Station hardware host: a plain name or address (IPv6 literals included), the same rule the
+// rigctld / rotctld / PiAware / gpsd clients apply when they read options.ini.
+bool valid_station_host(const QString& host) {
+    if (host.isEmpty() || host.size() > kMaxHostLength) return false;
+    return std::all_of(host.begin(), host.end(), [](QChar c) {
+        return (c.isLetterOrNumber() && c.unicode() < 128) || c == '.' || c == '-' || c == ':';
+    });
+}
+constexpr const char* kThisComputer = "127.0.0.1";
+// Serial GPS: a /dev/tty* or /dev/serial/* path, never "..", and one of the usual NMEA rates.
+bool valid_gps_device(const QString& device) {
+    static const QRegularExpression re(R"(^/dev/(tty|serial/)[A-Za-z0-9_./-]{1,64}$)");
+    return re.match(device).hasMatch() && !device.contains("..");
+}
+bool valid_gps_baud(int baud) {
+    return baud == 4800 || baud == 9600 || baud == 19200 || baud == 38400 || baud == 57600 || baud == 115200;
+}
+// Host and port from options.ini; each invalid field keeps its default.
+void load_endpoint(const QSettings& ini, const QString& group, QString& host, int& port) {
+    const QString h = ini.value(group + "/host").toString().trimmed();
+    if (valid_station_host(h)) host = h;
+    bool ok = false;
+    const int p = ini.value(group + "/port").toString().trimmed().toInt(&ok);
+    if (ok && p > 0 && p < 65536) port = p;
+}
+
 // Share of the pane-and-map height the map keeps at each map size; -1 for unknown names.
 double map_share(const QString& size) {
     if (size == "large") return 0.55;
@@ -130,6 +159,14 @@ void AppSettings::loadOptions() {
     if (aprs_host_re.match(mh).hasMatch()) mesh_host_ = mh;
     const int mp = ini.value("mesh/port", 4403).toInt();
     mesh_port_ = mp > 0 && mp < 65536 ? mp : 4403;
+    load_endpoint(ini, "radio", radio_host_, radio_port_);
+    load_endpoint(ini, "rotator", rotator_host_, rotator_port_);
+    load_endpoint(ini, "adsb", adsb_host_, adsb_port_);
+    load_endpoint(ini, "gps", gps_host_, gps_port_);
+    const QString gd = ini.value("gps/device").toString().trimmed();
+    if (valid_gps_device(gd)) gps_device_ = gd;
+    const int gb = ini.value("gps/baud", 9600).toInt();
+    if (valid_gps_baud(gb)) gps_baud_ = gb;
     const int pk = ini.value("psk/max_km", 0).toInt();
     psk_max_km_ = pk >= 0 && pk <= 20000 ? pk : 0;
     psk_match_ = ini.value("psk/match").toString().left(120);
@@ -170,6 +207,8 @@ void AppSettings::loadOptions() {
     if (accent_style_ < 0 || accent_style_ > 4) accent_style_ = 0;
     map_size_ = ini.value("display/map_size", "large").toString();
     if (map_share(map_size_) < 0) map_size_ = "large";
+    orientation_lock_ = ini.value("display/orientation_lock", "auto").toString();
+    if (!valid_orientation_lock(orientation_lock_)) orientation_lock_ = "auto";
     big_clock_face_ = ini.value("display/bigClockFace", 0).toInt();
     if (big_clock_face_ < 0 || big_clock_face_ > 1) big_clock_face_ = 0;
     text_scale_ = ini.value("display/text_scale", 100).toInt();
@@ -275,13 +314,23 @@ QString AppSettings::clearPaneRotationSet(int slot) {
 }
 
 QString AppSettings::setPane(int slot, const QString& widget_id) {
+    return assignPane(slot, widget_id, true);
+}
+
+QString AppSettings::showPane(int slot, const QString& widget_id) {
+    return assignPane(slot, widget_id, false);
+}
+
+QString AppSettings::assignPane(int slot, const QString& widget_id, bool persist) {
     static const QRegularExpression valid_id("^[a-z][a-z0-9_]*$");
     if (slot < 0 || slot >= kPaneSlots) return "No such pane.";
     if (!valid_id.match(widget_id).hasMatch()) return "Unknown widget.";
-    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
-    ini.setValue(QString("panes/slot%1").arg(slot), widget_id);
-    ini.sync();
-    if (ini.status() != QSettings::NoError) return "Could not save the pane choice.";
+    if (persist) {
+        QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+        ini.setValue(QString("panes/slot%1").arg(slot), widget_id);
+        ini.sync();
+        if (ini.status() != QSettings::NoError) return "Could not save the pane choice.";
+    }
     while (panes_.size() < kPaneSlots) panes_ << QString();
     panes_[slot] = widget_id;
     emit panesChanged();
@@ -331,62 +380,87 @@ QString AppSettings::saveClusterLogin(int ssid, const QString& commands) {
     return {};
 }
 
-void AppSettings::loadAccounts() {
-    QSettings ini(config_dir_ + "/credentials.ini", QSettings::IniFormat);
-    const auto service = ini.value("lookup/service", "none").toString();
-    lookup_service_ = service == "qrz" || service == "hamqth" ? service : "none";
-    lookup_user_ = ini.value("lookup/user").toString().left(kMaxUserLength);
-    lookup_password_ = ini.value("lookup/password").toString().left(kMaxPasswordLength);
-    hamalert_user_ = ini.value("hamalert/user").toString().left(kMaxUserLength);
-    hamalert_password_ = ini.value("hamalert/password").toString().left(kMaxPasswordLength);
-    hamsat_key_ = ini.value("hamsat/key").toString().left(kMaxPasswordLength);
-}
+AppSettings::~AppSettings() = default;
 
-QString* AppSettings::secretField(const QString& key) {
-    if (key == "lookup/password") return &lookup_password_;
-    if (key == "hamalert/password") return &hamalert_password_;
-    if (key == "hamsat/key") return &hamsat_key_;
-    return nullptr;
+namespace {
+// credentials.ini key -> secret store key, for every password and API key.
+const QList<QPair<QString, QString>> kSecretKeys{
+    {"lookup/password", "lookup.password"}, {"hamalert/password", "hamalert.password"}, {"hamsat/key", "hamsat.key"}};
+} // namespace
+
+// One set of secrets per settings directory, so a scratch profile (-c DIR) never
+// reads, overwrites or deletes the passwords of the real one.
+QString AppSettings::secretKey(const QString& store_key) const {
+    const auto dir = QFileInfo(config_dir_).absoluteFilePath().toUtf8();
+    return store_key + "@" + QCryptographicHash::hash(dir, QCryptographicHash::Sha1).toHex().left(16);
 }
 
 void AppSettings::setSecretStore(std::unique_ptr<CredentialStore> store) {
     secrets_ = std::move(store);
     if (!secrets_) return;
-    bool migrate = false;
-    for (const auto& key : kSecretKeys) {
-        QString* field = secretField(key);
-        if (!field->isEmpty()) migrate = true; // still in credentials.ini: move it to the store
-        else *field = secrets_->get(key).left(kMaxPasswordLength);
+    // Move secrets saved by an earlier version out of the file. A value only leaves
+    // the file once the store holds one; if the store refuses, it stays where it is.
+    QSettings ini(config_dir_ + "/credentials.ini", QSettings::IniFormat);
+    bool moved = false;
+    for (const auto& [ini_key, store_key] : kSecretKeys) {
+        const auto value = ini.value(ini_key).toString();
+        if (value.isEmpty()) continue;
+        if (secrets_->get(secretKey(store_key)).isEmpty() && !secrets_->set(secretKey(store_key), value)) continue;
+        ini.remove(ini_key);
+        moved = true;
     }
-    if (migrate && !writeAccounts().isEmpty()) qWarning("Could not move account secrets to the secure store");
+    if (moved) ini.sync();
+    loadAccounts();
     emit accountsChanged();
+}
+
+void AppSettings::loadAccounts() {
+    QSettings ini(config_dir_ + "/credentials.ini", QSettings::IniFormat);
+    // From the store when there is one; the file is the fallback (the Pi, or a value
+    // the store refused to take during migration).
+    const auto secret = [&](const QString& ini_key) {
+        QString value;
+        for (const auto& [key, store_key] : kSecretKeys)
+            if (key == ini_key && secrets_) value = secrets_->get(secretKey(store_key));
+        if (value.isEmpty()) value = ini.value(ini_key).toString();
+        return value.left(kMaxPasswordLength);
+    };
+    const auto service = ini.value("lookup/service", "none").toString();
+    lookup_service_ = service == "qrz" || service == "hamqth" ? service : "none";
+    lookup_user_ = ini.value("lookup/user").toString().left(kMaxUserLength);
+    lookup_password_ = secret("lookup/password");
+    hamalert_user_ = ini.value("hamalert/user").toString().left(kMaxUserLength);
+    hamalert_password_ = secret("hamalert/password");
+    hamsat_key_ = secret("hamsat/key");
 }
 
 QString AppSettings::writeAccounts() {
     const auto path = config_dir_ + "/credentials.ini";
-    bool store_failed = false;
+    const QHash<QString, QString> secrets{
+        {"lookup/password", lookup_password_}, {"hamalert/password", hamalert_password_}, {"hamsat/key", hamsat_key_}};
+    // Store first: if it refuses, the file (which may still hold a fallback copy) is left alone.
+    if (secrets_) {
+        for (const auto& [ini_key, store_key] : kSecretKeys) {
+            const auto& value = secrets.value(ini_key);
+            const auto key = secretKey(store_key);
+            if (!(value.isEmpty() ? secrets_->remove(key) : secrets_->set(key, value)))
+                return "Could not save the password in the Keychain.";
+        }
+    }
     {
         QSettings ini(path, QSettings::IniFormat);
         ini.clear();
         ini.setValue("lookup/service", lookup_service_);
         ini.setValue("lookup/user", lookup_user_);
         ini.setValue("hamalert/user", hamalert_user_);
-        if (secrets_)
-            for (const auto& key : kSecretKeys) {
-                const QString& value = *secretField(key);
-                store_failed |= !(value.isEmpty() ? secrets_->remove(key) : secrets_->set(key, value));
-            }
-        // No store, or it refused: keep every secret in the INI so nothing is lost
-        // (the next start with a working store moves them over).
-        if (!secrets_ || store_failed)
-            for (const auto& key : kSecretKeys) ini.setValue(key, *secretField(key));
+        if (!secrets_)
+            for (const auto& keys : kSecretKeys) ini.setValue(keys.first, secrets.value(keys.first));
         ini.sync();
         if (ini.status() != QSettings::NoError) return "Could not save account settings.";
     }
     // Owner read/write only; credentials must not be readable by other users.
     if (!QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner))
         return "Saved, but could not restrict credentials file permissions.";
-    if (store_failed) return "Could not save to the Keychain; kept in the settings file instead.";
     return {};
 }
 
@@ -543,6 +617,76 @@ QString AppSettings::saveMesh(const QString& host, int port) {
     mesh_port_ = port;
     emit optionsChanged();
     if (changed) emit meshChanged();
+    return {};
+}
+
+// Validates and writes one hardware endpoint ([group] host / port). `name` starts the user-facing errors.
+QString AppSettings::saveEndpoint(const char* group, const char* name, const QString& host, int port,
+                                  QString& host_out, int& port_out, bool& changed) {
+    changed = false;
+    QString h = host.trimmed();
+    if (h.isEmpty()) h = kThisComputer;
+    if (!valid_station_host(h)) return QString("%1 address may contain only letters, digits, dots, hyphens and colons.").arg(name);
+    if (port <= 0 || port >= 65536) return QString("%1 port must be 1-65535.").arg(name);
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue(QString(group) + "/host", h);
+    ini.setValue(QString(group) + "/port", port);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return QString("Could not save the %1 settings.").arg(name);
+    changed = h != host_out || port != port_out;
+    host_out = h;
+    port_out = port;
+    return {};
+}
+
+QString AppSettings::saveRadio(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("radio", "rigctld", host, port, radio_host_, radio_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit radioChanged();
+    return {};
+}
+
+QString AppSettings::saveRotator(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("rotator", "rotctld", host, port, rotator_host_, rotator_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit rotatorChanged();
+    return {};
+}
+
+QString AppSettings::saveAdsb(const QString& host, int port) {
+    bool changed = false;
+    const QString error = saveEndpoint("adsb", "PiAware", host, port, adsb_host_, adsb_port_, changed);
+    if (!error.isEmpty()) return error;
+    emit optionsChanged();
+    if (changed) emit adsbChanged();
+    return {};
+}
+
+QString AppSettings::saveGps(const QString& host, int port, const QString& device, int baud) {
+    const QString d = device.trimmed();
+    if (!d.isEmpty() && !valid_gps_device(d)) return "GPS serial device must be a /dev/tty… or /dev/serial/… path.";
+    if (!valid_gps_baud(baud)) return "GPS baud rate must be 4800, 9600, 19200, 38400, 57600 or 115200.";
+    // Check the gpsd address before writing anything, so a bad one leaves the device untouched too.
+    const QString h = host.trimmed().isEmpty() ? QString(kThisComputer) : host.trimmed();
+    if (!valid_station_host(h)) return "gpsd address may contain only letters, digits, dots, hyphens and colons.";
+    if (port <= 0 || port >= 65536) return "gpsd port must be 1-65535.";
+    bool changed = false;
+    const QString error = saveEndpoint("gps", "gpsd", h, port, gps_host_, gps_port_, changed);
+    if (!error.isEmpty()) return error;
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("gps/device", d);
+    ini.setValue("gps/baud", baud);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the GPS settings.";
+    changed = changed || d != gps_device_ || baud != gps_baud_;
+    gps_device_ = d;
+    gps_baud_ = baud;
+    emit optionsChanged();
+    if (changed) emit gpsChanged();
     return {};
 }
 
@@ -896,6 +1040,17 @@ QString AppSettings::saveMapSize(const QString& size) {
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the map size.";
     map_size_ = size;
+    emit optionsChanged();
+    return {};
+}
+
+QString AppSettings::saveOrientationLock(const QString& lock) {
+    if (!valid_orientation_lock(lock)) return "Screen rotation must be auto, portrait or landscape.";
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    ini.setValue("display/orientation_lock", lock);
+    ini.sync();
+    if (ini.status() != QSettings::NoError) return "Could not save the screen rotation.";
+    orientation_lock_ = lock;
     emit optionsChanged();
     return {};
 }

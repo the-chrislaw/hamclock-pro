@@ -37,8 +37,10 @@ public:
     enum Role { IdRole = Qt::UserRole + 1, TitleRole, CardRole, AreaRole, ModelRole };
     explicit WidgetRegistry(QObject* parent = nullptr);
 
-    // Takes ownership of model (reparented to the registry).
-    void add(WidgetInfo info, WidgetModel* model);
+    // Takes ownership of model (reparented to the registry). Returns false when the
+    // widget is not offered on this platform (see widget_available); the model is
+    // kept alive but never listed, so callers should not start it.
+    bool add(WidgetInfo info, WidgetModel* model);
     int rowCount(const QModelIndex& parent = {}) const override;
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -51,6 +53,12 @@ private:
     struct Entry { WidgetInfo info; WidgetModel* model; };
     std::vector<Entry> entries_;
 };
+
+// Panes that read the station's own hardware or files: rigctld/rotctld/flrig,
+// gpsd or a serial GPS, a local ADS-B receiver, Linux sensors and a typed ADIF
+// log path. iPhone and iPad have none of these and no way to point the panes at
+// them, so the registry leaves them out there instead of offering dead panes.
+bool widget_available(const QString& id, bool ios);
 
 // Generated from every hamclock_add_widget() call (widgets_generated.cpp).
 void register_all_widgets(WidgetRegistry& registry, const WidgetContext& context);

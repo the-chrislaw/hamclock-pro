@@ -29,8 +29,8 @@ public:
     QString nextTitle() const;   // "KB5FHK on RS-44"
     QString nextDetail() const;  // "SSB · 436.795 MHz · FN00oi · 01:04Z-01:26Z"
     QVariantList later() const;  // {when, title}
-    // True while the last list was fetched with the user's API key and so carries per-station values.
-    bool personalised() const { return feed_.ok && fetched_with_key_; }
+    // True while the last list was fetched with the user's API key and hams.at accepted it (per-station values).
+    bool personalised() const { return feed_.ok && fetched_with_key_ && feed_.personalised; }
     PolledSource& source() { return *source_; }
 
 signals:

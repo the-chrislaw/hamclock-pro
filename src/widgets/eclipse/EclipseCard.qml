@@ -4,31 +4,58 @@ import HamClock
 
 Card {
     id: root
-    // Lower rows are dropped (not clipped) when the body is short.
+    // Labels and values. When the body is short the least important rows are dropped (not
+    // clipped); a tall pane shows every row, values wrapping, rows spread over the height.
     readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
-    readonly property int rowsFit: Math.floor((grid.parent ? grid.parent.height : 0) / rowH)
+    readonly property int rowsFit: tall ? 99 : Math.floor((grid.parent ? grid.parent.height : 0) / rowH)
     function v(s) { return s ? s : "—" }
+    // Display order; `rank` is the order in which rows are kept when space runs out.
+    readonly property var allRows: {
+        const w = root.widget
+        if (!w) return []
+        return [
+            { label: "Next", value: v(w.kind), bold: true, rank: 0 },
+            { label: "Greatest", value: v(w.when), rank: 1 },
+            { label: "In", value: v(w.countdown), rank: 2 },
+            { label: "At DE", value: w.visibility, bold: true, rank: 3, hide: w.visibility === "" },
+            { label: "Local", value: w.local, rank: 5, hide: w.local === "" },
+            { label: "Partial", value: w.contacts, rank: 6, hide: w.contacts === "" },
+            { label: w.centralLabel, value: w.central, bold: true, rank: 7, hide: w.central === "" },
+            { label: "Path", value: v(w.detail), rank: 4 }
+        ].filter(r => !r.hide)
+    }
+    readonly property var rows: {
+        const keep = allRows.slice().sort((a, b) => a.rank - b.rank).slice(0, Math.max(0, rowsFit)).map(r => r.rank)
+        return allRows.filter(r => keep.indexOf(r.rank) >= 0)
+    }
     GridLayout {
         id: grid
         width: parent.width
+        height: root.tall ? parent.height : implicitHeight
         columns: 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
-        Text { text: "Next"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { text: root.v(root.widget ? root.widget.kind : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { text: "Greatest"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { text: root.v(root.widget ? root.widget.when : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 3; text: "In"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 3; text: root.v(root.widget ? root.widget.countdown : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 3 && root.widget && root.widget.visibility !== ""; text: "At DE"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 3 && root.widget && root.widget.visibility !== ""; text: root.widget ? root.widget.visibility : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 4 && root.widget && root.widget.local !== ""; text: "Local"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 4 && root.widget && root.widget.local !== ""; text: root.widget ? root.widget.local : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 5 && root.widget && root.widget.contacts !== ""; text: "Partial"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 5 && root.widget && root.widget.contacts !== ""; text: root.widget ? root.widget.contacts : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 6 && root.widget && root.widget.central !== ""; text: root.widget ? root.widget.centralLabel : ""; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 6 && root.widget && root.widget.central !== ""; text: root.widget ? root.widget.central : ""; color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; font.weight: Font.DemiBold; Layout.fillWidth: true; elide: Text.ElideRight }
-        Text { visible: root.rowsFit >= 4; text: "Path"; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-        Text { visible: root.rowsFit >= 4; text: root.v(root.widget ? root.widget.detail : ""); color: Theme.ink; font.pixelSize: Theme.fontCaption * 1.3; Layout.fillWidth: true; elide: Text.ElideRight }
+        Repeater {
+            model: root.rows.length * 2
+            Text {
+                required property int index
+                readonly property var row: root.rows[Math.floor(index / 2)] || ({})
+                readonly property bool isLabel: index % 2 === 0
+                text: (isLabel ? row.label : row.value) || ""
+                color: isLabel ? Theme.secondary : Theme.ink
+                font.pixelSize: isLabel ? Theme.fontCaption : Theme.fontCaption * 1.3
+                font.weight: !isLabel && row.bold ? Font.DemiBold : Font.Normal
+                // Long values shrink a little in a narrow slot and wrap in a tall one.
+                fontSizeMode: isLabel || root.tall ? Text.FixedSize : Text.HorizontalFit
+                minimumPixelSize: Theme.fontCaption * 0.85
+                wrapMode: root.tall && !isLabel ? Text.WordWrap : Text.NoWrap
+                elide: isLabel || root.tall ? Text.ElideNone : Text.ElideRight
+                verticalAlignment: Text.AlignVCenter
+                Layout.fillWidth: !isLabel
+                Layout.preferredWidth: isLabel ? implicitWidth : 0
+                Layout.fillHeight: root.tall
+                Layout.maximumHeight: root.tall ? Theme.fontBody * 4 : Number.POSITIVE_INFINITY
+            }
+        }
     }
 }

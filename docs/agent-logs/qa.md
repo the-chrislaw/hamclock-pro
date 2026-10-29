@@ -520,3 +520,18 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 3f7f9cc (merged since 43db071: #628 adaptive pane grid, #634 sky finder left out of iOS builds, #635 privacy policy, my run 90 log). Main builds and passes 182/182 tests; #628 extends the pane tests rather than weakening them, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480, 1024x600 and 1280x720 are correct.
 - Opened: #638 ([A] pane grid renders empty at 1920x1080). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: the Pi sizes are fine, but #628 left the pane area blank at 1920x1080 in both themes, the first visible regression since run 68. Remaining risk is iOS code Linux CI cannot exercise, data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 92
+- Last reviewed commit: 8507bee (merged since 3f7f9cc: #637 AVFoundation camera FOV reader, #640 phone Settings fit, #641 phone layout with two panes and compact station card, #644 version 1.0.0, #642 tvOS TestFlight upload, #646 pane grid 1920x1080 fix, my run 91 log). Main builds and passes 184/184 tests; diffs add no QtWidgets, scrolling containers, password exposure or network code, and the one test change is an added assertion. Screenshots at 800x480, 1024x600 and 1920x1080 in light and dark are correct, with no clipping beyond known truncation of stale footers at 800x480.
+- Opened: none. Closed: none (#638 was already closed by #646; verified fixed on main, 1920x1080 now shows five panes plus the map). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and the 1080p regression is resolved. Remaining risk is iOS/tvOS code Linux CI cannot exercise (phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 93
+- Last reviewed commit: 1df00d0 (merged since 8507bee: #645 iPhone/iPad parity pass, my run 92 log #647). Main builds and passes 187/187 tests. Reviewed #645: Keychain secret store is only set on Apple builds (Pi still uses owner-only credentials.ini), writeAccounts leaves the file alone if the store refuses, passwords are not exposed to QML or logs, per-config-dir keys keep scratch profiles from touching real ones; tall-area pane grid only affects height > width so Pi sizes are unchanged, pane tests gained assertions, no QtWidgets/new Qt APIs/network code. Screenshots at 800x480 and 1024x600 in light and dark are unchanged and correct, with only the known truncation of stale footers at 800x480.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.
+
+## 2026-10-29 (UTC) QA run 94
+- Last reviewed commit: 0572e03 (only my run 93 log #649 merged since 1df00d0). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise (Keychain store, phone layout, camera layer), data freshness on the real Pi (#150), and Passes pane tap targets on the real touchscreen.

@@ -6,9 +6,18 @@ Card {
     id: root
     // Next 48 h of passes at DE: satellite, when, peak elevation, rise -> set direction. Roomy
     // slots add local time, duration and a filter row; compact ones show the first rows only.
+    // Rows that fit the stage (stage units: the card scales the stage by `fit`), never clipped.
+    FontMetrics { id: rowFont; font.pixelSize: Theme.fontCaption * 1.2 }
+    FontMetrics { id: filterFont; font.pixelSize: Theme.fontCaption }
+    readonly property real stageHeight: passColumn.parent ? passColumn.parent.height : 0
+    readonly property real pitch: Math.ceil(rowFont.height) + Theme.gap * 0.3
+    readonly property real headerHeight: compact ? 0 : Math.ceil(filterFont.height) + Theme.gap * 0.5
     readonly property int shown: Math.max(0, Math.min(widget ? widget.rows.length : 0,
-                                          Math.floor((height - Theme.touch * (compact ? 0.5 : 1.6)) / (Theme.fontCaption * 1.9))))
+        Math.floor((stageHeight - headerHeight + Theme.gap * 0.3) / pitch)))
+    // Narrow slots: today's passes show the UTC time alone so the direction column keeps its room.
+    function when(row) { return row.live ? "now" : compact && row.day === "Today" ? row.utc : row.day + " " + row.utc }
     ColumnLayout {
+        id: passColumn
         width: parent.width
         spacing: Theme.gap * 0.5
         Row {
@@ -42,10 +51,10 @@ Card {
                 Text {
                     required property int index
                     readonly property int cols: root.compact ? 3 : 5
-                    readonly property var row: root.widget.rows[Math.floor(index / cols)]
+                    readonly property var row: root.widget.rows[Math.floor(index / cols)] || ({})
                     readonly property int col: index % cols
                     text: col === 0 ? (row.starred ? "★ " : "") + row.name
-                        : col === 1 ? (row.live ? "now" : row.day + " " + row.utc)
+                        : col === 1 ? root.when(row)
                         : col === 2 ? row.maxEl + "° " + row.from + "→" + row.to
                         : col === 3 ? row.local + " loc" : row.duration + (row.visible ? " ★" : "") + (row.mag !== "" ? " ~" + row.mag + "m" : "")
                     color: row.live ? Theme.accent : col === 0 ? Theme.ink : Theme.secondary

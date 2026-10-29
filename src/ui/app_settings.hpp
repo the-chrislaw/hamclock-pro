@@ -4,7 +4,6 @@
 // in an INI file; account credentials in a separate owner-only (0600) file so
 // they never sit next to shareable settings. All files are under the per-user
 // config directory unless an explicit station path is given.
-#include "../platform/credential_store.hpp"
 #include "../platform/settings.hpp"
 #include <QHash>
 #include <QObject>
@@ -14,6 +13,8 @@
 #include <memory>
 
 namespace hamclock {
+
+class CredentialStore;
 
 class AppSettings : public QObject {
     Q_OBJECT
@@ -41,6 +42,17 @@ class AppSettings : public QObject {
     Q_PROPERTY(int aprsPort READ aprsPort NOTIFY optionsChanged)
     Q_PROPERTY(QString meshHost READ meshHost NOTIFY optionsChanged)
     Q_PROPERTY(int meshPort READ meshPort NOTIFY optionsChanged)
+    // Station hardware on this computer or the LAN (not on iOS): rigctld, rotctld, PiAware, gpsd / serial GPS.
+    Q_PROPERTY(QString radioHost READ radioHost NOTIFY optionsChanged)
+    Q_PROPERTY(int radioPort READ radioPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString rotatorHost READ rotatorHost NOTIFY optionsChanged)
+    Q_PROPERTY(int rotatorPort READ rotatorPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString adsbHost READ adsbHost NOTIFY optionsChanged)
+    Q_PROPERTY(int adsbPort READ adsbPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString gpsHost READ gpsHost NOTIFY optionsChanged)
+    Q_PROPERTY(int gpsPort READ gpsPort NOTIFY optionsChanged)
+    Q_PROPERTY(QString gpsDevice READ gpsDevice NOTIFY optionsChanged)
+    Q_PROPERTY(int gpsBaud READ gpsBaud NOTIFY optionsChanged)
     Q_PROPERTY(int pskMaxKm READ pskMaxKm NOTIFY optionsChanged)
     Q_PROPERTY(QString pskMatch READ pskMatch NOTIFY optionsChanged)
     Q_PROPERTY(bool pskWspr READ pskWspr NOTIFY optionsChanged)
@@ -59,6 +71,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(int textScalePercent READ textScalePercent NOTIFY optionsChanged)
     Q_PROPERTY(int accentStyle READ accentStyle NOTIFY optionsChanged)
     Q_PROPERTY(QString mapSize READ mapSize NOTIFY optionsChanged)
+    Q_PROPERTY(QString orientationLock READ orientationLock NOTIFY optionsChanged)
     Q_PROPERTY(int bigClockFace READ bigClockFace NOTIFY optionsChanged)
     Q_PROPERTY(int blankIdleMinutes READ blankIdleMinutes NOTIFY optionsChanged)
     Q_PROPERTY(int blankOffHour READ blankOffHour NOTIFY optionsChanged)
@@ -85,8 +98,10 @@ class AppSettings : public QObject {
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
-    // Keeps account passwords and keys in `store` (the Keychain on Apple platforms)
-    // instead of credentials.ini; secrets already in the INI move over once.
+    ~AppSettings() override;
+    // Keeps passwords and API keys in `store` (the Keychain on Apple devices)
+    // instead of credentials.ini, moving any already in the file there. Without
+    // one they stay in the owner-only credentials.ini (the Pi).
     void setSecretStore(std::unique_ptr<CredentialStore> store);
 
     QString callsign() const { return QString::fromStdString(station_.callsign); }
@@ -119,6 +134,8 @@ public:
     int accentStyle() const { return accent_style_; }
     // "large" (default), "medium" or "small": how much height the map keeps; a smaller map leaves room for a second row of panes.
     QString mapSize() const { return map_size_; }
+    // "auto" (follow the device), "portrait" or "landscape". Applied on iPhone/iPad only.
+    QString orientationLock() const { return orientation_lock_; }
     int bigClockFace() const { return big_clock_face_; }
     int blankIdleMinutes() const { return blank_idle_; }
     int blankOffHour() const { return blank_off_; }
@@ -129,7 +146,12 @@ public:
     bool dxOverrideActive() const { return dx_override_; }
     bool udpSpotByMe() const { return udp_by_me_; }                    // true = only spots from my own call/programs
     QString udpSpotGroup() const { return udp_group_; }               // IPv4 multicast group, empty = unicast
-    bool udpSpotLan() const { return udp_lan_; }                       // false = 127.0.0.1 only
+    // false = 127.0.0.1 only. Always true on iOS: WSJT-X never runs on the phone itself.
+#ifdef Q_OS_IOS
+    bool udpSpotLan() const { return true; }
+#else
+    bool udpSpotLan() const { return udp_lan_; }
+#endif
     // On-the-air display filter; empty / 0 = no restriction.
     QString otaProgram() const { return ota_program_; }  // "POTA", "SOTA", "WWFF" or empty
     QString otaBand() const { return ota_band_; }        // e.g. "20m"
@@ -142,6 +164,17 @@ public:
     // Local Meshtastic node (TCP API, receive-only). Empty host = off (opt-in, nothing is contacted).
     QString meshHost() const { return mesh_host_; }
     int meshPort() const { return mesh_port_; }
+    // Station hardware endpoints; hosts default to this computer (127.0.0.1).
+    QString radioHost() const { return radio_host_; }
+    int radioPort() const { return radio_port_; }
+    QString rotatorHost() const { return rotator_host_; }
+    int rotatorPort() const { return rotator_port_; }
+    QString adsbHost() const { return adsb_host_; }
+    int adsbPort() const { return adsb_port_; }
+    QString gpsHost() const { return gps_host_; }
+    int gpsPort() const { return gps_port_; }
+    QString gpsDevice() const { return gps_device_; }   // serial NMEA receiver; empty = use gpsd
+    int gpsBaud() const { return gps_baud_; }
     int pskMaxKm() const { return psk_max_km_; }
     QString pskMatch() const { return psk_match_; }
     bool pskRbn() const { return psk_rbn_; }  // also listen to the Reverse Beacon Network telnet feed (off by default)
@@ -167,6 +200,8 @@ public:
     QStringList panes() const;
     // Returns an empty string or a user-facing error.
     Q_INVOKABLE QString setPane(int slot, const QString& widget_id);
+    // Shows a widget in a pane for this run only (the --pane screenshot option); nothing is saved.
+    QString showPane(int slot, const QString& widget_id);
     Q_INVOKABLE void resetPanes();
     QList<int> paneRotations() const;
     static constexpr int kDemoSeconds = 10;
@@ -198,6 +233,12 @@ public:
     Q_INVOKABLE QString saveAprs(const QString& host, int port, int radius_km);
     // host letters/digits/dots/hyphens, empty = off; port 1-65535 (node default 4403).
     Q_INVOKABLE QString saveMesh(const QString& host, int port);
+    // Station hardware: host letters/digits/dots/hyphens/colons (empty = this computer); port 1-65535.
+    Q_INVOKABLE QString saveRadio(const QString& host, int port);
+    Q_INVOKABLE QString saveRotator(const QString& host, int port);
+    Q_INVOKABLE QString saveAdsb(const QString& host, int port);
+    // device: empty (use gpsd) or a /dev/tty* or /dev/serial/* path; baud 4800-115200 (usual NMEA rates).
+    Q_INVOKABLE QString saveGps(const QString& host, int port, const QString& device, int baud);
     // PSKReporter display limit: only receivers within max_km of DE (0-20000, 0 = any).
     Q_INVOKABLE QString savePskMaxKm(int max_km);
     // Receiver call/grid prefixes to keep ("VK, JA, PM95"); empty = all. Max 8 tokens.
@@ -227,6 +268,7 @@ public:
     Q_INVOKABLE QString saveTextScale(int percent);
     Q_INVOKABLE QString saveAccentStyle(int style);
     Q_INVOKABLE QString saveMapSize(const QString& size);
+    Q_INVOKABLE QString saveOrientationLock(const QString& lock);
     // Pane columns and rows that fit the pane area at the current map size, and the area's height: {columns, rows, height}.
     Q_INVOKABLE QVariantMap paneGrid(double width, double height, double gap, double min_pane_width, double min_pane_height) const;
     /// Big Clock page face: 0 digital, 1 analog dial above the digital lines.
@@ -264,6 +306,11 @@ signals:
     void stationChanged();
     void meshChanged(); // only when the Meshtastic node host or port actually changed
     void aprsChanged(); // only when the APRS-IS server, port or radius actually changed
+    // Each only when that device's endpoint actually changed.
+    void radioChanged();
+    void rotatorChanged();
+    void adsbChanged();
+    void gpsChanged();
     void appearanceChanged();
     void optionsChanged();
     void configsChanged();
@@ -272,10 +319,12 @@ signals:
     void demoModeChanged();
 
 private:
+    QString assignPane(int slot, const QString& widget_id, bool persist);
     void loadOptions();
+    std::unique_ptr<CredentialStore> secrets_;
+    QString secretKey(const QString& store_key) const;
     void loadAccounts();
     QString writeAccounts();
-    QString* secretField(const QString& key);
 
     QString config_dir_, station_path_, load_error_;
     StationSettings station_{};  // value-init: coordinates are 0, never indeterminate, when no station file exists
@@ -297,6 +346,11 @@ private:
     int aprs_port_ = 14580, aprs_radius_km_ = 100;
     QString mesh_host_;
     int mesh_port_ = 4403;
+    QString radio_host_ = "127.0.0.1", rotator_host_ = "127.0.0.1", adsb_host_ = "127.0.0.1", gps_host_ = "127.0.0.1";
+    int radio_port_ = 4532, rotator_port_ = 4533, adsb_port_ = 8080, gps_port_ = 2947;
+    QString gps_device_;
+    int gps_baud_ = 9600;
+    QString saveEndpoint(const char* group, const char* name, const QString& host, int port, QString& host_out, int& port_out, bool& changed);
     int udp_port_ = 0;
     bool udp_lan_ = false;
     QString udp_group_;
@@ -320,6 +374,7 @@ private:
     int text_scale_ = 100;
     int accent_style_ = 0;
     QString map_size_ = "large";
+    QString orientation_lock_ = "auto";
     int big_clock_face_ = 0;
     int blank_idle_ = 0;
     int blank_off_ = -1;
@@ -332,7 +387,6 @@ private:
     QString lookup_service_ = "none", lookup_user_, lookup_password_;
     QString hamalert_user_, hamalert_password_;
     QString hamsat_key_;
-    std::unique_ptr<CredentialStore> secrets_; // null = passwords stay in credentials.ini
 };
 
 } // namespace hamclock

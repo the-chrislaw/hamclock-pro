@@ -10,7 +10,7 @@ namespace hamclock {
 namespace {
 constexpr double kHorizonS = 48 * 3600;
 constexpr double kMinEl = 10.0;
-constexpr int kMaxPasses = 12;
+constexpr int kMaxPasses = 24;  // enough to fill a tall pane; the card shows the rows that fit
 }
 
 QString pass_day_label(qint64 unix_time, qint64 now) {
