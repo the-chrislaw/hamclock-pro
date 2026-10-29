@@ -41,6 +41,11 @@ namespace {
     int count_truncated(QQuickItem* item) {
         if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
         int found = 0;
+        // A visible pane slot with no size is a blank hole in the grid (#638).
+        if (item->objectName() == "paneSlot" && (item->width() <= 0 || item->height() <= 0)) {
+            std::fprintf(stderr, "EMPTY PANE SLOT: %.0fx%.0f\n", item->width(), item->height());
+            ++found;
+        }
         const QVariant truncated = item->property("truncated");
         if (truncated.isValid() && truncated.toBool() && item->objectName() != "elideOk" &&
             !item->property("text").toString().isEmpty() && item->width() > 0 && item->height() > 0) {

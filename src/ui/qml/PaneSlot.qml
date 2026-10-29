@@ -5,6 +5,7 @@ import HamClock
 // or a placeholder when the slot is empty. Tapping anywhere asks to change it; swiping steps.
 Item {
     id: slot
+    objectName: "paneSlot"
     property int index: 0
     readonly property string saved: appSettings.panes[index]
     readonly property int rotateSeconds: appSettings.demoMode ? 10 : appSettings.paneRotations[index]

@@ -267,7 +267,8 @@ if(BUILD_TESTING)
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
-    foreach(size 800x480 1024x600)
+    # 1920x1080 and 2560x1440 add the adaptive grid with a station (#638: all slots were 0x0; exit 4 reports an empty pane slot).
+    foreach(size 800x480 1024x600 1920x1080 2560x1440)
         add_test(NAME qml-app-station-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-station-${size}
             --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})
