@@ -33,6 +33,10 @@ int main(int argc, char** argv) {
     check(g.mhz.size() == 90u * 90u, "full grid");
     check(solardrap::peak(g) > 3.9 && solardrap::peak(g) < 4.1, "peak 4.0 MHz");
     check(g.mhz[0] == 0.0f, "north pole row is zero");
+    // Quiet days: no cell reaches 1 MHz, so say so instead of "Max 0.0 MHz".
+    check(solardrap::peak_text(0.0) == "No HF absorption" && solardrap::peak_text(0.6) == "No HF absorption",
+          "quiet day reads as no absorption");
+    check(solardrap::peak_text(4.04) == "Max 4.0 MHz", "peak text");
 
     const auto img = solardrap::to_image(g);
     check(img.size() == QSize(360, 180), "image size");
@@ -68,6 +72,7 @@ int main(int argc, char** argv) {
     settle();
     check(model.state() == "live" && model.hasData() && model.observed() == "06:07Z", "live");
     check(model.peakMhz() > 3.9 && has_style(), "D-RAP map style published");
+    check(model.peakText() == "Max 4.0 MHz", "model peak text");
     check(model.message().contains("Normal X-ray Background"), "message");
 
     now = now.addSecs(4500);
