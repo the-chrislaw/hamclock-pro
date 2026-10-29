@@ -9,8 +9,11 @@ Card {
     readonly property color xrayColor: widget && widget.xrayClass[0] === "X" ? Theme.bad
                                      : widget && widget.xrayClass[0] === "M" ? Theme.warn : Theme.ink
     // Tall pane: the three values stacked with their captions, the X-ray plot takes the rest.
+    // The stacked values need real height: a barely-tall pane (1024x768) keeps the one-line rows.
+    readonly property bool stackTall: root.tall && compactColumn.parent !== null
+                                      && compactColumn.parent.height >= 250 * Theme.scale
     ColumnLayout {
-        visible: root.tall
+        visible: root.stackTall
         width: parent.width
         height: parent.height
         spacing: Theme.gap
@@ -48,7 +51,8 @@ Card {
     }
     // Compact slot: one line per value (label left, value right) so nothing is clipped.
     Column {
-        visible: root.compact && !root.tall
+        id: compactColumn
+        visible: root.compact && !root.stackTall
         width: parent.width
         spacing: Theme.gap * 0.4
         Repeater {
@@ -91,7 +95,8 @@ Card {
         XrayPlot {
             visible: root.widget && root.widget.hasXrayHistory
             width: parent.width
-            height: 34 * Theme.scale
+            // Desktop panes: the plot takes the height left under the values (the 7-inch layout keeps 34).
+            height: Theme.dense ? 34 * Theme.scale : Math.max(34 * Theme.scale, compactColumn.parent.height - y)
             values: root.widget ? root.widget.xrayHistory : []
         }
     }

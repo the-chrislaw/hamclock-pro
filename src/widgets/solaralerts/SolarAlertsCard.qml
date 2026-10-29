@@ -3,8 +3,14 @@ import HamClock
 
 Card {
     id: root
+    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
+    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
+    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
+                                                     && root.width >= 240 * Theme.scale)
     readonly property var list: root.widget ? root.widget.alerts : []
-    readonly property int maxRows: root.compact ? 2 : 5
+    // A tall pane shows the full layout (kind, issue time) for as many alerts as the full card.
+    readonly property bool brief: root.compact && !root.stacked
+    readonly property int maxRows: brief ? 2 : 5
     // Plain Column/Item rows (no Layout) as in the other compact cards.
     Column {
         width: parent.width
@@ -40,15 +46,17 @@ Card {
                         color: Theme.ink
                         font.pixelSize: Theme.fontBody
                         wrapMode: Text.WordWrap
-                        maximumLineCount: 2
+                        maximumLineCount: root.stacked ? 3 : 2
                         elide: Text.ElideRight
                     }
                     Text {
-                        visible: !root.compact
+                        visible: !root.brief
                         width: parent.width
                         text: modelData.kind + " " + modelData.issued + (modelData.until.length ? " · " + modelData.until : "")
                         color: Theme.secondary
                         font.pixelSize: Theme.fontCaption
+                        wrapMode: root.stacked ? Text.WordWrap : Text.NoWrap
+                        maximumLineCount: 2
                         elide: Text.ElideRight
                     }
                 }
