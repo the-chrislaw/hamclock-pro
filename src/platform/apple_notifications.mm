@@ -39,8 +39,12 @@ bool bundled() {
     return main.bundleIdentifier.length > 0 && [main.bundlePath hasSuffix:@".app"];
 }
 
-Permission from_status(UNAuthorizationStatus status) {
-    switch (status) {
+Permission from_settings(UNNotificationSettings* settings) {
+    // Allowed, but with alerts switched off for the app: nothing would appear.
+    if (settings.alertSetting == UNNotificationSettingDisabled &&
+        settings.authorizationStatus != UNAuthorizationStatusNotDetermined)
+        return Permission::Denied;
+    switch (settings.authorizationStatus) {
     case UNAuthorizationStatusAuthorized:
     case UNAuthorizationStatusProvisional:
         return Permission::Granted;
@@ -88,7 +92,7 @@ void query_permission(std::function<void(Permission)> done) {
     if (!bundled()) { if (done) done(Permission::Unsupported); return; }
     [UNUserNotificationCenter.currentNotificationCenter
         getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings* settings) {
-            const Permission p = from_status(settings.authorizationStatus);
+            const Permission p = from_settings(settings);
             on_main([done, p] { if (done) done(p); });
         }];
 }

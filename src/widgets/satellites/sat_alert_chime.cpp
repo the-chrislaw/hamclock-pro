@@ -59,9 +59,14 @@ void play_alert_chime() {
     if (dir.isEmpty() || !QDir().mkpath(dir)) return;
     const QString path = QDir(dir).filePath("pass-alert.wav");
     if (!QFile::exists(path)) {
-        QFile file(path);
-        if (!file.open(QIODevice::WriteOnly) || file.write(alert_chime_wav()) < 0) {
+        // Written beside and renamed into place, so a full disk never leaves a half file behind.
+        QFile file(path + ".tmp");
+        const QByteArray wav = alert_chime_wav();
+        const bool written = file.open(QIODevice::WriteOnly) && file.write(wav) == wav.size();
+        file.close();
+        if (!written || !file.rename(path)) {
             qWarning("Pass alert chime: cannot write %s", qPrintable(path));
+            file.remove();
             return;
         }
     }

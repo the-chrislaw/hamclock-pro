@@ -16,7 +16,9 @@ namespace hamclock {
 
 namespace {
 constexpr double kHorizonS = 48 * 3600;
-constexpr double kLookBackS = 900;      // a pass already in progress still counts (banner "up now")
+// Search from 3 h back so a pass in progress (banner "up now") is found from its real AOS;
+// a pass already up at the search start has a clipped AOS and an unstable id, so it is dropped.
+constexpr double kLookBackS = 3 * 3600;
 constexpr int kTickMs = 15 * 1000;      // banner countdown resolution
 constexpr qint64 kRepredictS = 30 * 60; // the 48 h window slides; refresh the passes this often
 constexpr int kUpcomingRows = 5;
@@ -24,6 +26,13 @@ constexpr int kTestDelayS = 5;
 constexpr qint64 kTestBannerS = 60;
 constexpr int kMaxDismissed = 64;
 const QString kTestIdPrefix = QStringLiteral("satalerttest."); // not under kSatAlertIdPrefix: replans keep it
+const QString kOffSignature = QStringLiteral("off");
+
+bool same_elements(const std::vector<Tle>& a, const std::vector<Tle>& b) {
+    return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](const Tle& x, const Tle& y) {
+        return x.name == y.name && x.line1 == y.line1 && x.line2 == y.line2;
+    });
+}
 
 QString day_label(qint64 unix_time, qint64 now, const QTimeZone& zone) {
     const QDateTime t = QDateTime::fromSecsSinceEpoch(unix_time, zone);
@@ -47,6 +56,42 @@ std::vector<notify::LocalAlert> to_local(const std::vector<PlannedAlert>& plan, 
         out.push_back({a.id, QDateTime::fromSecsSinceEpoch(a.fire, QTimeZone::utc()), a.title, a.body, sound});
     return out;
 }
+// Every pass (horizon to horizon) of the selected satellites in the 48 h window.
+std::vector<AlertPass> predict_alert_passes(const std::vector<Tle>& fresh, const std::function<bool(int)>& selected,
+                                            const SatCatalog& catalog, const Observer& obs, qint64 now) {
+    std::vector<SatellitePropagator> props;
+    std::vector<int> norads; // parallel to props
+    std::map<int, QString> names;
+    props.reserve(fresh.size());
+    for (const Tle& tle : fresh) {
+        const int norad = tle_norad_id(tle);
+        if (!selected(norad) || names.count(norad)) continue;
+        const CatalogEntry* entry = catalog.find(norad);
+        names[norad] = entry ? entry->name : satellite_short_name(QString::fromStdString(tle.name));
+        props.emplace_back(tle);
+        norads.push_back(norad);
+    }
+    // Keyed by NORAD id so two birds with the same short name never mix.
+    std::vector<std::pair<std::string, const SatellitePropagator*>> sats;
+    for (std::size_t i = 0; i < props.size(); ++i) sats.push_back({std::to_string(norads[i]), &props[i]});
+    std::vector<AlertPass> all;
+    for (const ScheduledPass& s : pass_schedule(sats, obs, static_cast<double>(now) - kLookBackS,
+                                                kHorizonS + kLookBackS, 0.0, PassFilter::All, 0)) {
+        if (static_cast<double>(s.pass.pass.aos) <= static_cast<double>(now) - kLookBackS + 1) continue;
+        AlertPass p;
+        p.norad = std::stoi(s.name);
+        p.name = names[p.norad];
+        p.aos = s.pass.pass.aos;
+        p.tca = s.pass.pass.tca;
+        p.los = s.pass.pass.los;
+        p.max_el_deg = s.pass.pass.max_el_deg;
+        p.aos_compass = QString::fromStdString(s.pass.aos_compass);
+        p.los_compass = QString::fromStdString(s.pass.los_compass);
+        p.sun_el_deg = s.pass.sun_el_at_tca_deg;
+        all.push_back(p);
+    }
+    return all;
+}
 } // namespace
 
 SatAlertService::SatAlertService(AppSettings* settings, SatCatalog catalog, QObject* parent)
@@ -56,6 +101,8 @@ SatAlertService::SatAlertService(AppSettings* settings, SatCatalog catalog, QObj
     if (settings_) {
         QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
         prefs_ = load_sat_alert_prefs(ini);
+        // Nothing to cancel at launch when alerts are off: never touch the system centre then.
+        if (!prefs_.enabled) pushed_signature_ = kOffSignature;
         connect(settings_, &AppSettings::stationChanged, this, &SatAlertService::predict);
         // A restored saved configuration may carry different alert choices.
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
@@ -74,18 +121,16 @@ SatAlertService::SatAlertService(AppSettings* settings, SatCatalog catalog, QObj
 }
 
 void SatAlertService::start() {
-    connect(&AppLifecycle::instance(), &AppLifecycle::resumed, this, [this] {
+    // Reschedule on launch and on every return to the foreground: the last plan may have run out.
+    const auto reschedule = [this] {
+        if (prefs_.enabled) pushed_signature_.clear();
         predict();
-        pushToSystem(true);
-        refreshSystemState();
-    });
+        if (prefs_.enabled) refreshSystemState();
+    };
+    connect(&AppLifecycle::instance(), &AppLifecycle::resumed, this, reschedule);
     timer_.start();
     if (prefs_.enabled && notify::supported()) notify::install_foreground_presenter();
-    predict();
-    if (prefs_.enabled) {
-        pushToSystem(true); // reschedule on launch: the last plan may have run out
-        refreshSystemState();
-    }
+    reschedule();
 }
 
 qint64 SatAlertService::nowSecs() const {
@@ -102,6 +147,8 @@ QTimeZone SatAlertService::zone() const {
 }
 
 void SatAlertService::setElements(const std::vector<Tle>& tles) {
+    // elementsChanged also fires for transmitter updates; skip the 48 h prediction when nothing moved.
+    if (same_elements(tles, tles_)) return;
     tles_ = tles;
     emit selectionChanged(); // the "other" list follows the TLE set
     predict();
@@ -126,6 +173,7 @@ void SatAlertService::predict() {
     passes_.clear();
     const qint64 now = nowSecs();
     predicted_at_ = now;
+    predicted_ = false;
     status_.clear();
     const std::vector<Tle> fresh = fresh_tles(tles_, static_cast<double>(now));
     if (!prefs_.enabled) {
@@ -137,38 +185,11 @@ void SatAlertService::predict() {
     }
     if (!status_.isEmpty()) { replan(); return; }
 
-    std::vector<SatellitePropagator> props;
-    std::vector<int> norads; // parallel to props
-    std::map<int, QString> names;
-    props.reserve(fresh.size());
-    for (const Tle& tle : fresh) {
-        const int norad = tle_norad_id(tle);
-        if (!isSelected(norad) || names.count(norad)) continue;
-        const CatalogEntry* entry = catalog_.find(norad);
-        names[norad] = entry ? entry->name : satellite_short_name(QString::fromStdString(tle.name));
-        props.emplace_back(tle);
-        norads.push_back(norad);
-    }
-    // Keyed by NORAD id so two birds with the same short name never mix.
-    std::vector<std::pair<std::string, const SatellitePropagator*>> sats;
-    for (std::size_t i = 0; i < props.size(); ++i) sats.push_back({std::to_string(norads[i]), &props[i]});
     const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
-    std::vector<AlertPass> all;
-    for (const ScheduledPass& s : pass_schedule(sats, obs, static_cast<double>(now) - kLookBackS,
-                                                kHorizonS + kLookBackS, 0.0, PassFilter::All, 0)) {
-        AlertPass p;
-        p.norad = std::stoi(s.name);
-        p.name = names[p.norad];
-        p.aos = s.pass.pass.aos;
-        p.tca = s.pass.pass.tca;
-        p.los = s.pass.pass.los;
-        p.max_el_deg = s.pass.pass.max_el_deg;
-        p.aos_compass = QString::fromStdString(s.pass.aos_compass);
-        p.los_compass = QString::fromStdString(s.pass.los_compass);
-        p.sun_el_deg = s.pass.sun_el_at_tca_deg;
-        all.push_back(p);
-    }
+    const auto selected = [this](int norad) { return isSelected(norad); };
+    const std::vector<AlertPass> all = predict_alert_passes(fresh, selected, catalog_, obs, now);
     passes_ = alert_passes(all, prefs_, catalog_, zone(), now);
+    predicted_ = true;
     replan();
 }
 
@@ -183,35 +204,47 @@ void SatAlertService::replan() {
                   .arg(passes_.size()).arg(day_label(plan_.back().aos, now, zone()));
     }
     emit planChanged();
-    pushToSystem(false);
+    pushToSystem();
     updateBanner();
 }
 
-void SatAlertService::pushToSystem(bool force) {
+// One system update at a time: the notification centre answers on background
+// queues in no particular order, so a newer plan waits for the one in flight.
+void SatAlertService::pushToSystem() {
     if (!notify::supported()) return;
+    // Waiting for elements or a station is not a reason to drop alerts already scheduled.
+    if (prefs_.enabled && !predicted_) return;
+    const QString signature = prefs_.enabled ? plan_signature(plan_, prefs_.sound) : kOffSignature;
+    if (signature == pushed_signature_) return;
+    if (push_in_flight_) { push_queued_ = true; return; }
+    pushed_signature_ = signature;
+    push_in_flight_ = true;
     QPointer<SatAlertService> self(this);
-    const auto counted = [self](int pending) {
+    const auto finished = [self](int pending) {
         if (!self) return;
         self->scheduled_count_ = pending;
+        self->push_in_flight_ = false;
         emit self->nativeChanged();
+        if (self->push_queued_) {
+            self->push_queued_ = false;
+            self->pushToSystem();
+        }
     };
     if (!prefs_.enabled) {
-        if (pushed_signature_.isEmpty() && !force) return;
-        pushed_signature_.clear();
-        notify::cancel_alerts(kSatAlertIdPrefix, counted);
+        notify::cancel_alerts(kSatAlertIdPrefix, finished);
         return;
     }
-    const QString signature = plan_signature(plan_, prefs_.sound);
-    if (!force && signature == pushed_signature_) return;
-    pushed_signature_ = signature;
     const std::vector<notify::LocalAlert> alerts = to_local(plan_, prefs_.sound);
     // Asks the first time only; afterwards the system answers at once without a prompt.
-    notify::request_permission([self, alerts, counted](notify::Permission p) {
+    notify::request_permission([self, alerts, finished](notify::Permission p) {
         if (!self) return;
         self->permission_ = notify::permission_name(p);
-        emit self->nativeChanged();
-        if (p == notify::Permission::Granted) notify::replace_alerts(kSatAlertIdPrefix, alerts, counted);
-        else self->pushed_signature_.clear(); // try again once the user allows notifications
+        if (p == notify::Permission::Granted) {
+            notify::replace_alerts(kSatAlertIdPrefix, alerts, finished);
+            return;
+        }
+        self->pushed_signature_.clear(); // try again once the user allows notifications
+        finished(-1);
     });
 }
 
@@ -322,17 +355,17 @@ QVariantList SatAlertService::groups() const {
 }
 
 QVariantList SatAlertService::others() const {
-    std::map<QString, int> by_name;
+    std::map<std::pair<QString, int>, int> by_name;
     QSet<int> seen;
     for (const Tle& tle : tles_) {
         const int norad = tle_norad_id(tle);
         if (norad <= 0 || catalog_.find(norad) || seen.contains(norad)) continue;
         seen.insert(norad);
-        by_name[satellite_short_name(QString::fromStdString(tle.name)) + '#' + QString::number(norad)] = norad;
+        by_name[{satellite_short_name(QString::fromStdString(tle.name)), norad}] = norad;
     }
     QVariantList out;
     for (const auto& [key, norad] : by_name)
-        out.append(QVariantMap{{"norad", norad}, {"name", key.section('#', 0, 0)}, {"selected", isSelected(norad)}});
+        out.append(QVariantMap{{"norad", norad}, {"name", key.first}, {"selected", isSelected(norad)}});
     return out;
 }
 

@@ -34,6 +34,19 @@ QString write_ids(const QList<int>& ids) {
     return parts.join(',');
 }
 
+// Hand-edited junk falls back to the default instead of becoming 0 / false.
+int int_or(const QSettings& ini, const char* key, int fallback) {
+    bool ok = false;
+    const int v = ini.value(key).toInt(&ok);
+    return ok ? v : fallback;
+}
+bool bool_or(const QSettings& ini, const char* key, bool fallback) {
+    const QString v = ini.value(key).toString().trimmed().toLower();
+    if (v == "true" || v == "1") return true;
+    if (v == "false" || v == "0") return false;
+    return fallback;
+}
+
 QList<int> without(QList<int> ids, int id) {
     ids.removeAll(id);
     return ids;
@@ -69,17 +82,17 @@ SatAlertPrefs load_sat_alert_prefs(QSettings& ini) {
     const SatAlertPrefs d;
     SatAlertPrefs p;
     ini.beginGroup("satalerts");
-    p.enabled = ini.value("enabled", d.enabled).toBool();
-    p.all_workable = ini.value("allWorkable", d.all_workable).toBool();
+    p.enabled = bool_or(ini, "enabled", d.enabled);
+    p.all_workable = bool_or(ini, "allWorkable", d.all_workable);
     p.muted = read_ids(ini.value("muted"));
     p.picked = read_ids(ini.value("picked"));
-    p.min_elevation_deg = ini.value("minElevation", d.min_elevation_deg).toInt();
-    p.lead_minutes = ini.value("leadMinutes", d.lead_minutes).toInt();
-    p.quiet_start_hour = ini.value("quietStart", d.quiet_start_hour).toInt();
-    p.quiet_end_hour = ini.value("quietEnd", d.quiet_end_hour).toInt();
-    p.daylight_only = ini.value("daylightOnly", d.daylight_only).toBool();
-    p.sound = ini.value("sound", d.sound).toBool();
-    p.announce_start = ini.value("announceStart", d.announce_start).toBool();
+    p.min_elevation_deg = int_or(ini, "minElevation", d.min_elevation_deg);
+    p.lead_minutes = int_or(ini, "leadMinutes", d.lead_minutes);
+    p.quiet_start_hour = int_or(ini, "quietStart", d.quiet_start_hour);
+    p.quiet_end_hour = int_or(ini, "quietEnd", d.quiet_end_hour);
+    p.daylight_only = bool_or(ini, "daylightOnly", d.daylight_only);
+    p.sound = bool_or(ini, "sound", d.sound);
+    p.announce_start = bool_or(ini, "announceStart", d.announce_start);
     ini.endGroup();
     return sanitized(p);
 }

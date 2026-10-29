@@ -116,6 +116,13 @@ void test_persistence() {
     check(clamped.min_elevation_deg == 90 && clamped.lead_minutes == 0, "out-of-range values clamped");
     check(clamped.quiet_start_hour == -1 && clamped.quiet_end_hour == -1, "half a quiet window is none");
     check(clamped.picked == QList<int>({12}), "junk ids dropped");
+    again.setValue("satalerts/minElevation", "lots");
+    again.setValue("satalerts/quietStart", "abc");
+    again.setValue("satalerts/quietEnd", 7);
+    again.setValue("satalerts/sound", "maybe");
+    const SatAlertPrefs junk = load_sat_alert_prefs(again);
+    check(junk.min_elevation_deg == kDefaultAlertMinElevation && junk.quiet_start_hour == -1 && junk.sound,
+          "non-numeric values fall back to defaults, not 0");
 }
 
 void test_filtering(const SatCatalog& cat) {

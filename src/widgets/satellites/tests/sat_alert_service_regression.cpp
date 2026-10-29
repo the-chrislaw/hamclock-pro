@@ -131,6 +131,11 @@ int main(int argc, char** argv) {
     service.setLeadMinutes(5);
     service.setSound(true); // any change re-evaluates the banner
     check(service.bannerLive() && service.bannerText().contains("up now"), "banner at AOS");
+    const QString up_id = service.bannerId();
+    now = now.addSecs(120);
+    service.setMinElevation(16); // re-predicts with the pass already in progress
+    service.setMinElevation(15);
+    check(service.bannerId() == up_id, "a pass in progress keeps its id across predictions");
 
     // Passes pane "Alerts" filter shows only alert satellites.
     WidgetContext context;

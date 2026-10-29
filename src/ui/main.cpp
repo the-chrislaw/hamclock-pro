@@ -175,9 +175,11 @@ int main(int argc, char** argv) {
     context.sat_alerts = &sat_alerts;
     hamclock::WidgetRegistry registry;
     hamclock::register_all_widgets(registry, context);
-    if (auto* sats = qobject_cast<hamclock::SatellitesModel*>(registry.model("satellites")))
+    if (auto* sats = qobject_cast<hamclock::SatellitesModel*>(registry.model("satellites"))) {
         QObject::connect(sats, &hamclock::SatellitesModel::elementsChanged, &sat_alerts,
                          [&sat_alerts, sats] { sat_alerts.setElements(sats->elements()); });
+        sat_alerts.setElements(sats->elements()); // a cached set may already be loaded
+    }
     QTimer::singleShot(0, &sat_alerts, &hamclock::SatAlertService::start);
     for (const auto& assignment : parser.values(pane)) {
         const auto parts = assignment.split('=');

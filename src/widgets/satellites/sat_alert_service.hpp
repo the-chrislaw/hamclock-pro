@@ -112,7 +112,7 @@ private:
     void apply(const SatAlertPrefs& next);
     void predict();
     void replan();
-    void pushToSystem(bool force);
+    void pushToSystem();
     void tick();
     void updateBanner();
 
@@ -125,6 +125,9 @@ private:
     QString pushed_signature_;
     qint64 predicted_at_ = 0;
     qint64 test_banner_until_ = 0;
+    bool predicted_ = false;      // a prediction ran (not just "waiting for elements")
+    bool push_in_flight_ = false;
+    bool push_queued_ = false;
     QString status_;
     QString permission_;
     int scheduled_count_ = -1;

@@ -17,7 +17,7 @@ class SatAlertService;
 class PassesModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(bool hasData READ hasData NOTIFY changed)
-    // {name, aos (unix s), day, utc, local, maxEl, from, to, duration, visible, live} soonest first.
+    // {name, aos (unix s), day, utc, local, maxEl, from, to, duration, visible, live, alert} soonest first.
     Q_PROPERTY(QVariantList rows READ rows NOTIFY changed)
     Q_PROPERTY(QString filter READ filter NOTIFY changed)   // "all", "amateur", "visible", "starred" or "alerts" (pass alert selection)
     Q_PROPERTY(QString emptyReason READ emptyReason NOTIFY changed)
