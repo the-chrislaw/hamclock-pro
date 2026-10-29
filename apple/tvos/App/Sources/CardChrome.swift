@@ -174,7 +174,12 @@ struct RemoteTile<Content: View>: View {
             if held { held = false } else { select() }
         } label: { content() }
             .buttonStyle(BareStyle())
-            .simultaneousGesture(LongPressGesture(minimumDuration: 0.6).onEnded { _ in held = true; hold() })
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                held = true
+                hold()
+                // If the release never reaches the (now disabled) tile, do not swallow the next Select.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { held = false }
+            })
     }
 
     private struct BareStyle: ButtonStyle {

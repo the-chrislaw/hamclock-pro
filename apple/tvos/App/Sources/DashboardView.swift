@@ -49,6 +49,7 @@ struct DashboardView: View {
         // Menu closes an open overlay; with none open the system handles it (back to the Home Screen).
         .onExitCommand(perform: overlay == nil || showSettings ? nil : { closeOverlay() })
         .onChange(of: overlay) { _, _ in lastInput = Date() }
+        .onChange(of: showSettings) { _, _ in lastInput = Date() }
     }
 
     // MARK: layout
@@ -65,7 +66,7 @@ struct DashboardView: View {
             }
             .frame(height: 70)
             HStack(alignment: .top, spacing: Theme.gap) {
-                RemoteTile(select: { settings.configured ? showLocal.toggle() : openSettings() }, hold: openSettings) {
+                RemoteTile(select: { woke(); settings.configured ? showLocal.toggle() : openSettings() }, hold: { woke(); openSettings() }) {
                     StationCardView(now: now, focused: focus == .station, bannerMode: bannerMode,
                                     showLocal: showLocal, longPath: map.longPath)
                 }
@@ -118,7 +119,7 @@ struct DashboardView: View {
     private func shownWidget(_ i: Int, _ now: Date) -> String {
         let saved = settings.panes[i]
         let seconds = settings.paneRotations[i]
-        guard seconds > 0 else { return saved }
+        guard seconds > 0, saved != "none" else { return saved }
         let list = WidgetCatalog.onTV.map(\.id)
         let start = list.firstIndex(of: saved) ?? 0
         return list[(start + Int(now.timeIntervalSince1970) / seconds) % list.count]
@@ -136,6 +137,9 @@ struct DashboardView: View {
             MapMenuView(view: $map) { overlay = nil; focus = .map }
         }
     }
+
+    /// Any remote press counts as activity (restores a dimmed screen).
+    private func woke() { lastInput = Date() }
 
     /// Closes the overlay and puts the focus back where it was opened from.
     private func closeOverlay() {

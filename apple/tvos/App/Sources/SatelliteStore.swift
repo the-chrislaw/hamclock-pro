@@ -54,6 +54,8 @@ final class SatelliteStore: ObservableObject {
         failedOnce = true
     }
     @Published var failedOnce = false
+    /// Without a successful fetch for this long the elements are not shown at all.
+    static let offlineAfter: TimeInterval = 7 * 86400
 
     private var cache: (bucket: Int64, lat: Double, lon: Double, tle: Int, limit: Int, passes: [SatPass])?
 

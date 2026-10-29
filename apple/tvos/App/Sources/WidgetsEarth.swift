@@ -103,7 +103,7 @@ struct FiresWidget: View {
         Card(title: "Active fires", chooser: true, state: feeds.fires.state(now), status: "NASA FIRMS · VIIRS, US 24 h",
              age: Age.text(feeds.fires.status.fetched, now: now), focused: focused) {
             if feeds.fires.value == nil { Note(text: "No data") } else {
-                Metric(label: "Detections", value: "\(list.count)",
+                Metric(label: "Detections", value: (list.count >= Feeds.fireCap ? "≥ " : "") + "\(list.count)",
                        caption: "\(list.filter { $0.high_confidence != 0 }.count) high confidence")
                 ForEach(Array(list.prefix(3).enumerated()), id: \.offset) { _, f in
                     Text(String(format: "%.0f MW at %.2f°, %.2f°", f.frp_mw, f.lat, f.lon))
@@ -121,10 +121,16 @@ struct OtaWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        let spots = feeds.otaSpots
-        let state = combined([feeds.pota.state(now), feeds.sota.state(now)])
-        Card(title: "On the air", chooser: true, state: state, status: "POTA · SOTA · WWFF",
-             age: Age.text(feeds.pota.status.fetched, now: now), focused: focused) {
+        let spots = feeds.otaSpots(now)
+        let all = [feeds.pota, feeds.sota, feeds.wwff]
+        let states = all.map { $0.state(now) }
+        // Spots come only from Live/Stale feeds, so the card is as good as its best feed;
+        // the status line names the feeds that are out.
+        let state = [WidgetState.live, .stale, .loading].first { states.contains($0) } ?? .offline
+        let out = all.filter { $0.state(now) == .offline }.map(\.source)
+        Card(title: "On the air", chooser: true, state: state,
+             status: out.isEmpty || out.count == 3 ? "POTA · SOTA · WWFF" : "No " + out.joined(separator: ", "),
+             age: Age.text(all.compactMap(\.status.fetched).min(), now: now), focused: focused) {
             if spots.isEmpty { Note(text: state == .loading ? "Loading…" : "No spots") }
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
                 ForEach(spots.prefix(7)) { s in

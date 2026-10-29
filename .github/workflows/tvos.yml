@@ -52,7 +52,6 @@ jobs:
           test -n "$udid"
           xcrun simctl boot "$udid"
           fail=0
-          ls -R build-tvos | head -40
           tests=$(find "$PWD/build-tvos" -type f -perm -u+x -name 'core-*-regression')
           test -n "$tests"
           for t in $tests; do

@@ -1,14 +1,31 @@
 import SwiftUI
 
+/// Small memo for values that are expensive to rebuild every clock tick (formatters, astronomy
+/// event searches). Keys carry everything the value depends on (place, minute). Main thread only.
+enum Memo {
+    nonisolated(unsafe) private static var store: [String: Any] = [:]
+    private static let limit = 400
+
+    static func get<T>(_ key: String, _ make: () -> T) -> T {
+        if let hit = store[key] as? T { return hit }
+        if store.count > limit { store.removeAll(keepingCapacity: true) }
+        let value = make()
+        store[key] = value
+        return value
+    }
+}
+
 /// Station card text, ported from src/ui/clock_text.hpp, sun_text.hpp, path_text.hpp,
 /// banner_text.hpp and aux_time so the TV station card says exactly what the main app says.
 enum StationText {
-    private static func formatter(_ format: String, _ zone: TimeZone) -> DateFormatter {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = zone
-        f.dateFormat = format
-        return f
+    static func formatter(_ format: String, _ zone: TimeZone) -> DateFormatter {
+        Memo.get("fmt|\(format)|\(zone.identifier)") {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.timeZone = zone
+            f.dateFormat = format
+            return f
+        }
     }
     static let utc = TimeZone(identifier: "UTC")!
 
@@ -58,6 +75,12 @@ enum StationText {
 
     /// "Rise in 3h 12m · Set in 14h 5m", soonest first (sun_line).
     static func sunLine(_ now: Date, lat: Double, lon: Double) -> String {
+        // The event search is iterative; the text only changes once a minute.
+        let minute = Int64(now.timeIntervalSince1970) / 60
+        return Memo.get("sun|\(minute)|\(lat)|\(lon)") { sunLineUncached(Date(timeIntervalSince1970: TimeInterval(minute * 60 + 30)), lat: lat, lon: lon) }
+    }
+
+    private static func sunLineUncached(_ now: Date, lat: Double, lon: Double) -> String {
         let t = Int64(now.timeIntervalSince1970)
         var rise: Int64 = 0, set: Int64 = 0
         let hasRise = hcp_next_sun_event(t, 0, lat, lon, &rise) != 0

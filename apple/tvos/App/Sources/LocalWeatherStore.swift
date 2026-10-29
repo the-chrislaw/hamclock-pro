@@ -41,12 +41,12 @@ final class LocalWeatherStore: ObservableObject {
 
     private func refresh(_ pos: (lat: Double, lon: Double)?, locator: String) async {
         guard let pos, let url = Self.url(lat: pos.lat, lon: pos.lon) else { return }
-        if fetchedFor != locator { current = nil; fetched = nil } // never show another place's weather
+        if fetchedFor != locator { current = nil; fetched = nil; failed = false } // never show another place's weather
         // A failed fetch keeps the previous reading; its age drives Stale/Offline.
-        guard let data = await Net.get(url) else { failed = true; return }
+        guard let data = await Net.get(url) else { if !Task.isCancelled { failed = true }; return }
         var w = HcpWeather()
         let ok = data.withUnsafeBytes { hcp_weather_parse($0.bindMemory(to: CChar.self).baseAddress, data.count, &w) }
-        guard ok != 0 else { return }
+        guard ok != 0 else { failed = true; return }
         current = LocalWeather(
             temperatureC: w.temperature_c, humidity: Int(w.humidity_pct), windKmh: w.wind_kmh,
             windFrom: cText(w.wind_from), description: cText(w.description),

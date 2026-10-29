@@ -19,79 +19,122 @@ struct WorldMapView: View {
     let now: Date
     let view: MapView
 
+
+    private var centre: MapCentre? {
+        let c = view.centre == .de ? settings.de : view.centre == .dx ? settings.dx : nil
+        return c.map { MapCentre(lat: $0.lat, lon: $0.lon) }
+    }
+
     var body: some View {
-        Canvas { ctx, size in draw(&ctx, size) }
-            .background(theme.sea)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-            .accessibilityIdentifier("worldMap")
+        ZStack {
+            // Land, coast, borders and grid only change with the view or the theme: drawn once,
+            // not on every clock tick.
+            BaseMap(centre: centre, zoom: view.zoom, theme: theme, borders: settings.isOn(.borders), grid: settings.isOn(.grid))
+                .equatable()
+            Canvas { ctx, size in draw(&ctx, size) }
+        }
+        .background(theme.sea)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityIdentifier("worldMap")
     }
 
     private func usable(_ s: WidgetState) -> Bool { s == .live || s == .stale }
 
+    /// Time-dependent layers: rasters, night side, markers.
     private func draw(_ ctx: inout GraphicsContext, _ size: CGSize) {
-        let centre: (lat: Double, lon: Double)? = view.centre == .de ? settings.de : view.centre == .dx ? settings.dx : nil
-        let win = MapGeometry.window(centre: centre, zoom: view.zoom, aspect: size.width / max(size.height, 1))
-        let sx = size.width / (win.e - win.w), sy = size.height / (win.n - win.s)
-        let mid = (win.w + win.e) / 2
-        func transform(_ off: Double) -> CGAffineTransform {
-            CGAffineTransform(a: sx, b: 0, c: 0, d: sy, tx: (off - win.w) * sx, ty: win.n * sy)
-        }
-        func pt(_ lon: Double, _ lat: Double) -> CGPoint {
-            var x = lon
-            while x - mid > 180 { x -= 360 }
-            while x - mid < -180 { x += 360 }
-            return CGPoint(x: (x - win.w) * sx, y: (win.n - lat) * sy)
-        }
-        let offsets = [-360.0, 0, 360]
-
-        for off in offsets {
-            let t = transform(off)
-            ctx.fill(Path(MapGeometry.land).applying(t), with: .color(theme.land), style: FillStyle(eoFill: false))
-        }
+        let proj = MapProjection(size: size, centre: centre, zoom: view.zoom)
         if settings.isOn(.drap), let d = feeds.drap.value, usable(feeds.drap.state(now)) {
-            drawImage(&ctx, MapRaster.drap(d.grid), lonW: -180, transform: transform)
+            drawImage(&ctx, MapRaster.drap(d.grid), lonW: -180, transform: proj.transform)
         }
         if settings.isOn(.aurora), let a = feeds.aurora.value, usable(feeds.aurora.state(now)) {
-            drawImage(&ctx, MapRaster.aurora(a.grid), lonW: -180, transform: transform)
+            drawImage(&ctx, MapRaster.aurora(a.grid), lonW: -180, transform: proj.transform)
         }
         var sub = (lat: 0.0, lon: 0.0)
         let hasSun = hcp_subsolar_point(Int64(now.timeIntervalSince1970), &sub.lat, &sub.lon) != 0
         if settings.isOn(.night), hasSun {
             let night = MapGeometry.night(subLat: sub.lat, subLon: sub.lon)
-            for off in offsets { ctx.fill(Path(night).applying(transform(off)), with: .color(.black.opacity(theme.dark ? 0.36 : 0.22))) }
-        }
-        for off in offsets {
-            let t = transform(off)
-            ctx.stroke(Path(MapGeometry.coast).applying(t), with: .color(theme.coast), lineWidth: 1.5)
-            if settings.isOn(.borders) {
-                ctx.stroke(Path(MapGeometry.borders).applying(t), with: .color(theme.coast.opacity(0.55)), lineWidth: 1)
+            for off in MapProjection.offsets {
+                ctx.fill(Path(night).applying(proj.transform(off)), with: .color(.black.opacity(theme.dark ? 0.36 : 0.22)))
             }
         }
-        if settings.isOn(.grid) { drawGrid(&ctx, size, win: win, pt: pt) }
-        var markers = MapMarkers(ctx: ctx, theme: theme, now: now, pt: pt, settings: settings, feeds: feeds, sats: sats,
+        var markers = MapMarkers(ctx: ctx, theme: theme, now: now, pt: proj.point, settings: settings, feeds: feeds, sats: sats,
                                  sub: hasSun ? sub : nil, longPath: view.longPath)
         markers.draw()
     }
 
+
     private func drawImage(_ ctx: inout GraphicsContext, _ image: CGImage?, lonW: Double,
                            transform: (Double) -> CGAffineTransform) {
         guard let image else { return }
-        for off in [-360.0, 0, 360] {
+        for off in MapProjection.offsets {
             let rect = CGRect(x: lonW, y: -90, width: 360, height: 180).applying(transform(off))
             ctx.draw(Image(decorative: image, scale: 1), in: rect)
         }
     }
+}
 
-    private func drawGrid(_ ctx: inout GraphicsContext, _ size: CGSize, win: (w: Double, e: Double, s: Double, n: Double),
-                          pt: (Double, Double) -> CGPoint) {
+struct MapCentre: Equatable { var lat: Double; var lon: Double }
+
+/// Equirectangular projection of the visible window onto a canvas of `size`.
+struct MapProjection {
+    static let offsets = [-360.0, 0, 360]
+    let win: (w: Double, e: Double, s: Double, n: Double)
+    let size: CGSize
+    private let sx: Double, sy: Double
+
+    init(size: CGSize, centre: MapCentre?, zoom: Double) {
+        self.size = size
+        win = MapGeometry.window(centre: centre.map { ($0.lat, $0.lon) }, zoom: zoom, aspect: size.width / max(size.height, 1))
+        sx = size.width / (win.e - win.w)
+        sy = size.height / (win.n - win.s)
+    }
+
+    /// Degree space (x = lon, y = -lat) shifted by `off` degrees of longitude, to screen.
+    func transform(_ off: Double) -> CGAffineTransform {
+        CGAffineTransform(a: sx, b: 0, c: 0, d: sy, tx: (off - win.w) * sx, ty: win.n * sy)
+    }
+
+    /// A point, wrapped in longitude into the window.
+    func point(_ lon: Double, _ lat: Double) -> CGPoint {
+        let mid = (win.w + win.e) / 2
+        var x = lon
+        while x - mid > 180 { x -= 360 }
+        while x - mid < -180 { x += 360 }
+        return CGPoint(x: (x - win.w) * sx, y: (win.n - lat) * sy)
+    }
+}
+
+/// The static map: land, coastline, borders, grid. Equatable, so the 1 Hz clock does not redraw it.
+struct BaseMap: View, Equatable {
+    let centre: MapCentre?
+    let zoom: Double
+    let theme: Theme
+    let borders: Bool
+    let grid: Bool
+
+    var body: some View {
+        Canvas { ctx, size in
+            let proj = MapProjection(size: size, centre: centre, zoom: zoom)
+            for off in MapProjection.offsets {
+                let t = proj.transform(off)
+                ctx.fill(Path(MapGeometry.land).applying(t), with: .color(theme.land))
+                ctx.stroke(Path(MapGeometry.coast).applying(t), with: .color(theme.coast), lineWidth: 1.5)
+                if borders { ctx.stroke(Path(MapGeometry.borders).applying(t), with: .color(theme.coast.opacity(0.55)), lineWidth: 1) }
+            }
+            if grid { drawGrid(&ctx, proj) }
+        }
+    }
+
+    private func drawGrid(_ ctx: inout GraphicsContext, _ proj: MapProjection) {
         var p = Path()
         for lat in stride(from: -60.0, through: 60, by: 30) {
-            p.move(to: CGPoint(x: 0, y: pt(0, lat).y)); p.addLine(to: CGPoint(x: size.width, y: pt(0, lat).y))
+            let y = proj.point(0, lat).y
+            p.move(to: CGPoint(x: 0, y: y)); p.addLine(to: CGPoint(x: proj.size.width, y: y))
         }
-        var lon = (win.w / 30).rounded(.up) * 30
-        while lon <= win.e {
-            let x = (lon - win.w) * size.width / (win.e - win.w)
-            p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: size.height))
+        var lon = (proj.win.w / 30).rounded(.up) * 30
+        while lon <= proj.win.e {
+            let x = (lon - proj.win.w) * proj.size.width / (proj.win.e - proj.win.w)
+            p.move(to: CGPoint(x: x, y: 0)); p.addLine(to: CGPoint(x: x, y: proj.size.height))
             lon += 30
         }
         ctx.stroke(p, with: .color(theme.mapInk.opacity(0.3)), lineWidth: 1)

@@ -6,6 +6,12 @@ func combined(_ states: [WidgetState]) -> WidgetState {
     return order.first { states.contains($0) } ?? .live
 }
 
+/// Stale when the newest observation is older than `staleAfter`, whatever the fetch time.
+func observed(_ time: Date?, _ now: Date, staleAfter: TimeInterval) -> WidgetState {
+    guard let time else { return .live } // no data yet: the fetch state already says so
+    return now.timeIntervalSince(time) > staleAfter ? .stale : .live
+}
+
 /// Simple line plot of a series (Sparkline.qml).
 struct Sparkline: View {
     @Environment(\.theme) private var theme
@@ -37,7 +43,9 @@ struct SpaceWeatherWidget: View {
     let focused: Bool
     var body: some View {
         let kp = feeds.kp.value?.last, flux = feeds.flux.value, xray = feeds.xray.value?.last
-        let state = combined([feeds.kp.state(now), feeds.flux.state(now), feeds.xray.state(now)])
+        // A product can keep answering with frozen rows: the observation time counts too.
+        let state = combined([feeds.kp.state(now), feeds.flux.state(now), feeds.xray.state(now),
+                              observed(kp?.time, now, staleAfter: 6 * 3600), observed(xray?.time, now, staleAfter: 1800)])
         let oldest = [feeds.kp.status.fetched, feeds.flux.status.fetched, feeds.xray.status.fetched].compactMap { $0 }.min()
         Card(title: "Space weather", chooser: true, state: state, status: "NOAA SWPC",
              age: Age.text(oldest, now: now), focused: focused) {
@@ -69,7 +77,8 @@ struct SolarWindWidget: View {
     let focused: Bool
     var body: some View {
         let speed = feeds.wind.value?[0], bz = feeds.mag.value?[1]
-        let state = combined([feeds.wind.state(now), feeds.mag.state(now)])
+        let state = combined([feeds.wind.state(now), feeds.mag.state(now),
+                              observed(speed?.last?.time, now, staleAfter: 1800), observed(bz?.last?.time, now, staleAfter: 1800)])
         let observed = [speed?.last?.time, bz?.last?.time].compactMap { $0 }.min()
         Card(title: "Solar wind", chooser: true, state: state, status: "NOAA SWPC",
              age: Age.text(observed, now: now), focused: focused) {

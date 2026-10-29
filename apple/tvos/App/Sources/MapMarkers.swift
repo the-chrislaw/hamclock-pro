@@ -31,13 +31,12 @@ struct MapMarkers {
         if settings.isOn(.fires), live(feeds.fires.state(now)) {
             for f in (feeds.fires.value ?? []).prefix(1500) { dot(pt(f.lon, f.lat), 3, Self.fire.opacity(0.8)) }
         }
-        if settings.isOn(.ota), live(feeds.pota.state(now)) {
-            for s in feeds.otaSpots.prefix(60) { if let p = s.position { diamond(pt(p.lon, p.lat), 8, Self.ota) } }
-            for s in feeds.otaSpots.filter({ $0.position != nil }).prefix(12) {
-                label(s.call, at: pt(s.position!.lon, s.position!.lat), dx: 12)
-            }
+        if settings.isOn(.ota) {
+            let spots = feeds.otaSpots(now).filter { $0.position != nil }
+            for s in spots.prefix(60) { diamond(pt(s.position!.lon, s.position!.lat), 8, Self.ota) }
+            for s in spots.prefix(12) { label(s.call, at: pt(s.position!.lon, s.position!.lat), dx: 12) }
         }
-        if settings.isOn(.satellites), sats.fetched.map({ now.timeIntervalSince($0) < 86400 * 7 }) == true {
+        if settings.isOn(.satellites), sats.fetched.map({ now.timeIntervalSince($0) < SatelliteStore.offlineAfter }) == true {
             for p in sats.subPointsCached(at: now) { triangle(pt(p.x, p.y), 5, Self.sat.opacity(0.85)) }
         }
         if settings.isOn(.launches), live(feeds.launches.state(now)) {

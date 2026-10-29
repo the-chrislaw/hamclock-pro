@@ -41,9 +41,11 @@ struct SunMoonWidget: View {
     }
 
     private func event(_ t: Int64, _ kind: Int32, _ p: (lat: Double, lon: Double), sun: Bool) -> String {
-        var out: Int64 = 0
-        let ok = sun ? hcp_next_sun_event(t, kind, p.lat, p.lon, &out) : hcp_next_moon_event(t, kind, p.lat, p.lon, &out)
-        return ok != 0 ? utcClock(out) : "—"
+        Memo.get("sm|\(t / 60)|\(kind)|\(sun)|\(p.lat)|\(p.lon)") {
+            var out: Int64 = 0
+            let ok = sun ? hcp_next_sun_event(t, kind, p.lat, p.lon, &out) : hcp_next_moon_event(t, kind, p.lat, p.lon, &out)
+            return ok != 0 ? utcClock(out) : "—"
+        }
     }
 
     private func moon(_ t: Int64) -> String {
@@ -62,13 +64,19 @@ struct SatellitesWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
+        let up = settings.de.map { sats.visibleCached(at: now, lat: $0.lat, lon: $0.lon, limit: 6) } ?? []
+        // Elements drift: older than 14 days (by TLE epoch, whatever the fetch time) is Stale;
+        // no successful fetch for a week hides them.
+        let oldestDays = up.map { SatelliteStore.tleAgeDays($0, now: now) }.max() ?? 0
+        let fetchAge = sats.fetched.map { now.timeIntervalSince($0) } ?? .infinity
         let state: WidgetState = !settings.configured ? .unconfigured
             : sats.tle == nil ? (sats.failedOnce ? .offline : .loading)
-            : (sats.fetched.map { now.timeIntervalSince($0) > 86400 * 2 } ?? true) ? .stale : .live
-        Card(title: "Satellites", chooser: true, state: state, status: "\(sats.source) elements, SGP4 on device",
+            : fetchAge > SatelliteStore.offlineAfter ? .offline
+            : (fetchAge > 86400 * 2 || oldestDays > 14) ? .stale : .live
+        Card(title: "Satellites", chooser: true, state: state,
+             status: oldestDays > 14 ? String(format: "Elements %.0f days old", oldestDays) : "\(sats.source) elements, SGP4 on device",
              age: Age.text(sats.fetched, now: now), focused: focused) {
-            if let de = settings.de, sats.tle != nil {
-                let up = sats.visibleCached(at: now, lat: de.lat, lon: de.lon, limit: 6)
+            if settings.de != nil, sats.tle != nil, state != .offline {
                 if up.isEmpty { Note(text: "None above the horizon now.") }
                 Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 4) {
                     ForEach(up) { s in
@@ -114,9 +122,11 @@ struct PlanetsWidget: View {
     }
 
     private func next(_ i: Int, _ t: Int64, _ de: (lat: Double, lon: Double), up: Bool) -> String {
-        var e: Int64 = 0
-        guard hcp_next_planet_event(Int32(i), t, up ? 1 : 0, de.lat, de.lon, &e) != 0 else { return "" }
-        return (up ? "set " : "rise ") + utcClock(e)
+        Memo.get("pl|\(t / 60)|\(i)|\(up)|\(de.lat)|\(de.lon)") {
+            var e: Int64 = 0
+            guard hcp_next_planet_event(Int32(i), t, up ? 1 : 0, de.lat, de.lon, &e) != 0 else { return "" }
+            return (up ? "set " : "rise ") + utcClock(e)
+        }
     }
 }
 

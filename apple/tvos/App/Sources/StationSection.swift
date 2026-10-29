@@ -42,7 +42,7 @@ struct StationSection: View {
             HStack(alignment: .bottom, spacing: Theme.gap) {
                 FormField(label: "Or grid square (fills the home coordinates)", placeholder: "e.g. FN31pr",
                           text: $grid, id: "gridField") { applyGrid() }
-                FormField(label: "DX target grid square (optional)", placeholder: "e.g. JN58td",
+                FormField(label: "DX target grid square (empty = same as home)", placeholder: "e.g. JN58td",
                           text: $dxGrid, id: "dxGridField")
             }
             Text(home.map { "Home: " + StationText.coordinates($0.lat, $0.lon) + " · " + StationText.grid($0.lat, $0.lon)
@@ -156,7 +156,7 @@ struct StationSection: View {
             guard hcp_locator_center(dxText, &lat, &lon) != 0 else { error = "\(dxText) is not a grid square."; return }
             dx = (lat, lon)
         }
-        if let message = settings.saveStation(callsign: callsign, de: de, dx: dx ?? (dxText.isEmpty && settings.dx == nil ? de : nil),
+        if let message = settings.saveStation(callsign: callsign, de: de, dx: dx ?? de,
                                               zone: zones.de, place: placeName) {
             error = message
             return

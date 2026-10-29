@@ -117,7 +117,7 @@ final class Feeds: ObservableObject {
     }
     let fires = PolledFeed(["https://firms.modaps.eosdis.nasa.gov/data/active_fire/noaa-20-viirs-c2/csv/J1_VIIRS_C2_USA_contiguous_and_Hawaii_24h.csv"],
                            source: "NASA FIRMS", policy: .init(interval: hours(1), staleAfter: hours(6), offlineAfter: hours(24))) { data -> [HcpFire]? in
-        var out = [HcpFire](repeating: HcpFire(), count: 4000)
+        var out = [HcpFire](repeating: HcpFire(), count: Feeds.fireCap)
         let n = data.withC { hcp_fires_parse($0, $1, &out, out.count) }
         return n >= 0 ? Array(out.prefix(Int(n))) : nil
     }
@@ -143,13 +143,23 @@ final class Feeds: ObservableObject {
         }
     }
 
-    /// All OTA spots merged, newest first, one per program+call+reference (Qt ota::merge).
-    var otaSpots: [OtaSpot] {
+    /// OTA spots from the feeds that are Live or Stale (never Offline), merged newest first,
+    /// one per program+call+reference (Qt ota::merge). Cached until a feed refreshes.
+    func otaSpots(_ now: Date) -> [OtaSpot] {
+        let feeds = [pota, sota, wwff].filter { [.live, .stale].contains($0.state(now)) }
+        let key = feeds.map { "\($0.source)\($0.status.fetched?.timeIntervalSince1970 ?? 0)" }.joined()
+        if let c = otaCache, c.key == key { return c.spots }
         var seen = Set<String>()
-        return ([pota.value, sota.value, wwff.value].compactMap { $0 }.flatMap { $0 })
+        let spots = feeds.compactMap(\.value).flatMap { $0 }
             .sorted { $0.time > $1.time }
             .filter { seen.insert($0.id).inserted }
+        otaCache = (key, spots)
+        return spots
     }
+    private var otaCache: (key: String, spots: [OtaSpot])?
+
+    /// Rows the fires parser keeps; a fuller file is reported as "at least" this many.
+    static let fireCap = 20000
 
     // MARK: parsers (thin wrappers over the C ABI)
 

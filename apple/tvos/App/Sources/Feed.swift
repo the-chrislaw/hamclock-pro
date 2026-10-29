@@ -143,10 +143,6 @@ enum Age {
     }
 
     static func utcClock(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "HH:mm'z'"
-        return f.string(from: date)
+        StationText.formatter("HH:mm'z'", StationText.utc).string(from: date)
     }
 }
