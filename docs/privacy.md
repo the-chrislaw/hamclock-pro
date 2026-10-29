@@ -21,6 +21,7 @@ HamClock Pro is a free, open-source amateur-radio dashboard for Raspberry Pi, ma
 - **Account details for optional services** (for example QRZ.com, HamQTH, HamAlert or hams.at): stored in the system's secure storage (Keychain on Apple devices, a file readable only by you on Raspberry Pi) and sent **only** to the service they belong to.
 - **Location:** HamClock Pro doesn't read your device's location. You type in your station's location yourself, and it's used on the device for things like satellite pass times and local weather.
 - **Camera, microphone and motion sensors:** not used.
+- **Satellite pass alerts:** computed on your device from public orbit data and scheduled as local notifications by your device's own notification system. No push service is used and nothing is sent anywhere.
 
 ## Who the app talks to, and what they see
 
