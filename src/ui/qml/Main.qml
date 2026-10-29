@@ -103,13 +103,15 @@ ApplicationWindow {
         // Station column. When the station card leaves room below it (tall desktop
         // windows), the room becomes one more pane instead of empty space: the next
         // saved slot after the grid's, so it never repeats a widget on screen.
-        ColumnLayout {
+        // Plain Item with explicit geometry (like the pane row): a layout that shows
+        // and hides the spill slot while it settles can leave the slot at 0x0 (#638).
+        Item {
             id: stationColumn
-            spacing: Theme.gap
             Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
-            Layout.preferredHeight: window.phone ? stationCard.Layout.preferredHeight : -1
+            Layout.preferredHeight: window.phone ? Math.min(stationCard.implicitHeight, page.height * 0.3) : -1
+            implicitHeight: stationCard.implicitHeight
             readonly property int spillIndex: paneRow.grid.columns * paneRow.grid.rows
             readonly property bool spill: !window.phone && !window.phoneWide && spillIndex < appSettings.panes.length
                 && width >= paneRow.minPaneWidth && height - stationCard.implicitHeight - Theme.gap >= paneRow.minPaneHeight
@@ -118,10 +120,8 @@ ApplicationWindow {
                 id: stationCard
                 wide: window.phone
                 compact: window.phone || window.phoneWide
-                Layout.fillWidth: true
-                Layout.fillHeight: !window.phone && !stationColumn.spill
-                Layout.preferredHeight: window.phone ? Math.min(implicitHeight, page.height * 0.3)
-                                                     : stationColumn.spill ? implicitHeight : -1
+                width: parent.width
+                height: stationColumn.spill ? implicitHeight : parent.height
                 onSetupRequested: settingsLayer.visible = true
                 onSettingsRequested: settingsLayer.visible = true
                 onTimersRequested: timersLayer.visible = true
@@ -131,8 +131,9 @@ ApplicationWindow {
                 visible: stationColumn.spill
                 index: stationColumn.spillIndex
                 paused: paneChooser.visible || paneOptions.visible
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                y: stationCard.height + Theme.gap
+                width: parent.width
+                height: Math.max(0, parent.height - y)
                 onChooseRequested: function (slotIndex) {
                     paneChooser.slot = slotIndex
                     paneChooser.open()
