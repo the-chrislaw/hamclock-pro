@@ -53,7 +53,10 @@ ApplicationWindow {
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
-    Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // F11 (Pi, Linux, Windows); Control-Command-F on the Mac, where F11 is Show Desktop.
+    Shortcut { sequences: ["F11", "Ctrl+Meta+F"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // Command-comma opens Settings on the Mac, as in every Mac app (Ctrl+comma elsewhere).
+    Shortcut { sequences: ["Ctrl+,"]; enabled: !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
