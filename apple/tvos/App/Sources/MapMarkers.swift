@@ -28,6 +28,11 @@ struct MapMarkers {
             placed.append(CGRect(x: at.x - 14, y: at.y - 16, width: 34 + CGFloat(text.count) * 18, height: 32))
         }
         if settings.isOn(.path), let de = settings.de, let dx = settings.dx { path(de, dx) }
+        drawFeeds()
+        drawSky()
+    }
+
+    private mutating func drawFeeds() {
         if settings.isOn(.fires), live(feeds.fires.state(now)) {
             for f in (feeds.fires.value ?? []).prefix(1500) { dot(pt(f.lon, f.lat), 3, Self.fire.opacity(0.8)) }
         }
@@ -56,6 +61,9 @@ struct MapMarkers {
                 if q.magnitude >= 5.5 { label(String(format: "M%.1f", q.magnitude), at: p, dx: 6 + 3.2 * (q.magnitude - 2.5)) }
             }
         }
+    }
+
+    private mutating func drawSky() {
         if settings.isOn(.planets), let de = settings.de { planets(de) }
         if settings.isOn(.sun), let sub {
             let p = pt(sub.lon, sub.lat)

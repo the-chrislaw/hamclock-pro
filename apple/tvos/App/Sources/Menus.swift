@@ -1,63 +1,84 @@
 import SwiftUI
 
 /// Widget list for one pane (PaneChooser.qml): category tabs, then every widget with a TV data
-/// source; the current one is in the accent colour. Select picks, Menu closes.
+/// source; the current one is ticked. Select picks, Menu closes.
 struct PaneChooserView: View {
     @EnvironmentObject var settings: AppSettings
-    @Environment(\.theme) private var theme
     let slot: Int
     let close: () -> Void
     @State private var category = 0
     @FocusState private var focused: String?
 
+    private var current: String { settings.panes[slot] }
+    private var startFocus: String { WidgetCatalog.onTV.contains { $0.id == current } ? current : "tab0" }
+
     var body: some View {
-        let current = settings.panes[slot]
-        let items = WidgetCatalog.onTV.filter { category == 0 || $0.category == category }
         Overlay(title: "Show in pane \(slot + 1)", width: 1260, close: close) {
-            HStack(spacing: 12) {
-                ForEach(WidgetCatalog.tabs, id: \.self) { c in
-                    Button(WidgetCatalog.categoryNames[c]) { category = c }
-                        .buttonStyle(ChipStyle(primary: category == c))
-                        .focused($focused, equals: "tab\(c)")
-                        .accessibilityIdentifier("tab\(c)")
-                        .accessibilityAddTraits(category == c ? .isSelected : [])
-                }
-            }
-            .focusSection()
-            ScrollView {
-                // Not lazy: every widget exists for the focus engine even below the fold.
-                Grid(horizontalSpacing: 16, verticalSpacing: 14) {
-                    ForEach(Array(stride(from: 0, to: items.count, by: 2)), id: \.self) { row in
-                        GridRow {
-                            ForEach(items[row..<min(row + 2, items.count)]) { w in
-                                Button { settings.setPane(slot, w.id); close() } label: {
-                                    Text((w.id == current ? "✓ " : "") + w.title)
-                                }
-                                .buttonStyle(ChipStyle(wide: true))
-                                .focused($focused, equals: w.id)
-                                .accessibilityIdentifier("choose_\(w.id)")
-                            }
-                        }
-                    }
-                }
-                .padding(12)
-            }
-            .frame(maxHeight: 620)
-            .focusSection()
-            Button("Empty pane") { settings.setPane(slot, "none"); close() }
+            tabs
+            list
+            Button("Empty pane") { pick("none") }
                 .buttonStyle(ChipStyle(wide: true))
                 .focused($focused, equals: "none")
         }
-        .defaultFocus($focused, WidgetCatalog.onTV.contains { $0.id == current } ? current : "tab0")
-        .onAppear {
-            // A pane saved by another device may sit in a hidden tab: show All then.
-            category = WidgetCatalog.info(current).map { WidgetCatalog.tabs.contains($0.category) && $0.tv ? $0.category : 0 } ?? 0
-            // Start on the pane's current widget, as PaneChooser.qml does.
-            let start = WidgetCatalog.onTV.contains { $0.id == current } ? current : "tab0"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { focused = start }
+        .defaultFocus($focused, startFocus)
+        .onAppear(perform: start)
+    }
+
+    private var tabs: some View {
+        HStack(spacing: 12) {
+            ForEach(WidgetCatalog.tabs, id: \.self) { c in tab(c) }
         }
+        .focusSection()
+    }
+
+    private func tab(_ c: Int) -> some View {
+        Button(WidgetCatalog.categoryNames[c]) { category = c }
+            .buttonStyle(ChipStyle(primary: category == c))
+            .focused($focused, equals: "tab\(c)")
+            .accessibilityIdentifier("tab\(c)")
+            .accessibilityAddTraits(category == c ? .isSelected : [])
+    }
+
+    private var list: some View {
+        let items = WidgetCatalog.onTV.filter { category == 0 || $0.category == category }
+        let rows: [Int] = Array(stride(from: 0, to: items.count, by: 2))
+        return ScrollView {
+            // Not lazy: every widget exists for the focus engine even below the fold.
+            Grid(horizontalSpacing: 16, verticalSpacing: 14) {
+                ForEach(rows, id: \.self) { row in
+                    GridRow {
+                        ForEach(items[row..<min(row + 2, items.count)]) { w in item(w) }
+                    }
+                }
+            }
+            .padding(12)
+        }
+        .frame(maxHeight: 620)
+        .focusSection()
+    }
+
+    private func item(_ w: WidgetInfo) -> some View {
+        Button((w.id == current ? "✓ " : "") + w.title) { pick(w.id) }
+            .buttonStyle(ChipStyle(wide: true))
+            .focused($focused, equals: w.id)
+            .accessibilityIdentifier("choose_\(w.id)")
+    }
+
+    private func pick(_ id: String) {
+        settings.setPane(slot, id)
+        close()
+    }
+
+    private func start() {
+        // A pane saved by another device may sit in a hidden tab: show All then.
+        let info = WidgetCatalog.info(current)
+        category = info.map { WidgetCatalog.tabs.contains($0.category) && $0.tv ? $0.category : 0 } ?? 0
+        // Start on the pane's current widget, as PaneChooser.qml does.
+        let first = startFocus
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { focused = first }
     }
 }
+
 
 /// Long-press / Play-Pause menu for one pane (PaneOptions.qml).
 struct PaneOptionsView: View {

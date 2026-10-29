@@ -22,13 +22,29 @@ struct StationSection: View {
     @State private var searching = false
     @State private var lastSearch = Date.distantPast
 
+    // Split into small pieces: one large builder exceeds Xcode 16's type-checking time limit.
     var body: some View {
         SettingsCard(title: "Station") {
             FormField(label: "Callsign", placeholder: "e.g. W1AW", text: $callsign, id: "callsignField")
+            placeSearch
+            gridFields
+            summary
+            zoneButtons
+            messages
+            saveRow
+        }
+        .onAppear(perform: loadFields)
+        .onChange(of: grid) { _, text in gridTyped(text) }
+    }
+
+    private var placeSearch: some View {
+        VStack(alignment: .leading, spacing: Theme.gap * 0.8) {
             HStack(alignment: .bottom, spacing: Theme.gap) {
                 FormField(label: "Find a place (city or address; sent to OpenStreetMap when you press Find)",
                           placeholder: "e.g. Portland, Oregon", text: $query, id: "placeField") { find() }
-                Button(searching ? "Searching…" : "Find") { find() }.buttonStyle(ChipStyle()).disabled(searching)
+                Button(searching ? "Searching…" : "Find") { find() }
+                    .buttonStyle(ChipStyle())
+                    .disabled(searching)
                     .accessibilityIdentifier("findButton")
             }
             if !results.isEmpty {
@@ -39,39 +55,64 @@ struct StationSection: View {
                 }
                 .focusSection()
             }
-            HStack(alignment: .bottom, spacing: Theme.gap) {
-                FormField(label: "Or grid square (fills the home coordinates)", placeholder: "e.g. FN31pr",
-                          text: $grid, id: "gridField") { applyGrid() }
-                FormField(label: "DX target grid square (empty = same as home)", placeholder: "e.g. JN58td",
-                          text: $dxGrid, id: "dxGridField")
-            }
-            Text(home.map { "Home: " + StationText.coordinates($0.lat, $0.lon) + " · " + StationText.grid($0.lat, $0.lon)
-                + (placeName.isEmpty ? "" : " · " + placeName) } ?? "Home: not set")
-                .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary)
-                .accessibilityIdentifier("homeSummary")
-            HStack(spacing: Theme.gap) {
-                Button("Time zone: " + (zones.de.isEmpty ? "not set" : zones.de)) { pickZone(.de) }.buttonStyle(ChipStyle())
-                Button("DX zone: " + (zones.dx.isEmpty ? "automatic" : zones.dx)) { pickZone(.dx) }.buttonStyle(ChipStyle())
-            }
-            if !status.isEmpty { Text(status).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary) }
-            if !error.isEmpty { Text(error).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.bad) }
-            HStack {
-                Spacer()
-                Button(setup ? "Save and start" : "Save station") { save() }.buttonStyle(ChipStyle(primary: true))
-                    .accessibilityIdentifier("saveStation")
-            }
-            .focusSection() // Down from any field above reaches Save
-        }
-        .onAppear(perform: loadFields)
-        .onChange(of: grid) { _, text in
-            // The tvOS keyboard returns with Menu as often as with Done: take a valid square as typed.
-            var lat = 0.0, lon = 0.0
-            let t = text.trimmingCharacters(in: .whitespaces)
-            guard hcp_locator_center(t, &lat, &lon) != 0,
-                  home.map({ StationText.grid($0.lat, $0.lon).lowercased() != t.lowercased() }) ?? true else { return }
-            applyGrid()
         }
     }
+
+    private var gridFields: some View {
+        HStack(alignment: .bottom, spacing: Theme.gap) {
+            FormField(label: "Or grid square (fills the home coordinates)", placeholder: "e.g. FN31pr",
+                      text: $grid, id: "gridField") { applyGrid() }
+            FormField(label: "DX target grid square (empty = same as home)", placeholder: "e.g. JN58td",
+                      text: $dxGrid, id: "dxGridField")
+        }
+    }
+
+    private var summaryText: String {
+        guard let home else { return "Home: not set" }
+        let place = placeName.isEmpty ? "" : " · " + placeName
+        return "Home: " + StationText.coordinates(home.lat, home.lon) + " · " + StationText.grid(home.lat, home.lon) + place
+    }
+
+    private var summary: some View {
+        Text(summaryText)
+            .font(.system(size: Theme.fontCaption))
+            .foregroundStyle(theme.secondary)
+            .accessibilityIdentifier("homeSummary")
+    }
+
+    private var zoneButtons: some View {
+        let de: String = zones.de.isEmpty ? "not set" : zones.de
+        let dx: String = zones.dx.isEmpty ? "automatic" : zones.dx
+        return HStack(spacing: Theme.gap) {
+            Button("Time zone: " + de) { pickZone(.de) }.buttonStyle(ChipStyle())
+            Button("DX zone: " + dx) { pickZone(.dx) }.buttonStyle(ChipStyle())
+        }
+    }
+
+    @ViewBuilder private var messages: some View {
+        if !status.isEmpty { Text(status).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary) }
+        if !error.isEmpty { Text(error).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.bad) }
+    }
+
+    private var saveRow: some View {
+        HStack {
+            Spacer()
+            Button(setup ? "Save and start" : "Save station") { save() }
+                .buttonStyle(ChipStyle(primary: true))
+                .accessibilityIdentifier("saveStation")
+        }
+        .focusSection() // Down from any field above reaches Save
+    }
+
+    /// The tvOS keyboard returns with Menu as often as with Done: take a valid square as typed.
+    private func gridTyped(_ text: String) {
+        var lat = 0.0, lon = 0.0
+        let t = text.trimmingCharacters(in: .whitespaces)
+        guard hcp_locator_center(t, &lat, &lon) != 0 else { return }
+        if let home, StationText.grid(home.lat, home.lon).lowercased() == t.lowercased() { return }
+        applyGrid()
+    }
+
 
     private func loadFields() {
         callsign = settings.callsign
