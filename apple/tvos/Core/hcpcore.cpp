@@ -4,6 +4,7 @@
 #include "storms.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "satpass.hpp"
 #include "weather.hpp"
 #include "map/coastline.hpp"
 #include "domain/locator_input.hpp"
@@ -11,6 +12,7 @@
 #include "domain/astro_sun.hpp"
 #include "domain/astro_satellite.hpp"
 #include "domain/solar_position.hpp"
+#include <cctype>
 #include <cmath>
 #include <stdexcept>
 #include <cstring>
@@ -233,5 +235,44 @@ int hcp_storms_parse(const char* b, size_t n, HcpStorm* out, size_t cap) {
         out[i].issued_ms = s.issued_ms;
     }
     return static_cast<int>(i);
+}
+}
+
+extern "C" {
+int hcp_sat_passes(const char* t, size_t n, int index, int64_t from_s, int64_t horizon_s,
+                   double obs_lat, double obs_lon, double min_el, HcpPass* out, size_t cap) {
+    if (!t || !out || obs_lat < -90 || obs_lat > 90 || obs_lon < -180 || obs_lon > 360 || horizon_s <= 0) return -1;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return -1;
+    const auto& tle = sets[static_cast<size_t>(index)];
+    if (!hamclock::SatellitePropagator(tle).valid()) return -1;
+    constexpr size_t kMaxPasses = 64;
+    const int want = static_cast<int>(cap < kMaxPasses ? cap : kMaxPasses);
+    const auto passes =
+        hcp::sats::next_passes(tle, hamclock::Observer{obs_lat, obs_lon, 0.0}, from_s, horizon_s, min_el, want);
+    size_t i = 0;
+    for (; i < passes.size() && i < cap; ++i) {
+        const auto& p = passes[i];
+        out[i] = HcpPass{p.aos, p.tca, p.los, p.max_el_deg, p.aos_az_deg, p.los_az_deg};
+    }
+    return static_cast<int>(i);
+}
+int hcp_tle_short_name(const char* t, size_t n, int index, char* buf, size_t cap) {
+    if (!t) return 0;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return 0;
+    return copy(hcp::sats::short_name(sets[static_cast<size_t>(index)].name), buf, cap);
+}
+int hcp_tle_find_short_name(const char* t, size_t n, const char* want) {
+    if (!t || !want || !*want) return -1;
+    const auto lower = [](std::string s) {
+        for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return s;
+    };
+    const std::string target = lower(want);
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    for (size_t i = 0; i < sets.size(); ++i)
+        if (lower(hcp::sats::short_name(sets[i].name)) == target) return static_cast<int>(i);
+    return -1;
 }
 }

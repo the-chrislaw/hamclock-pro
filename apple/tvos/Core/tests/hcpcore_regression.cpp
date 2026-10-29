@@ -70,6 +70,56 @@ int main() {
     check(std::abs(ss.epoch_s - 1221913538LL) < 5, "TLE epoch exposed");
     check(!hcp_sat_state(tle, sizeof tle - 1, 1, te, 48.1, 11.6, &ss), "index out of range");
     check(!hcp_sat_state(tle, sizeof tle - 1, 0, te, 95.0, 11.6, &ss), "bad latitude rejected");
+    // Pass search (iPhone widgets): the ISS passes over 48.1N several times a day.
+    HcpPass pp[8];
+    const int np = hcp_sat_passes(tle, sizeof tle - 1, 0, te, 86400, 48.1, 11.6, 0.0, pp, 8);
+    check(np >= 2 && np <= 8, "ISS passes found within a day");
+    bool ordered = np > 0;
+    for (int i = 0; i < np; ++i) {
+        ordered = ordered && pp[i].aos_s >= te && pp[i].aos_s <= pp[i].tca_s && pp[i].tca_s <= pp[i].los_s &&
+                  pp[i].los_s - pp[i].aos_s < 20 * 60 && pp[i].max_el_deg >= 0 && pp[i].max_el_deg <= 90 &&
+                  pp[i].aos_az_deg >= 0 && pp[i].aos_az_deg < 360 && pp[i].los_az_deg >= 0 && pp[i].los_az_deg < 360;
+        if (i > 0) ordered = ordered && pp[i].aos_s > pp[i - 1].los_s;
+    }
+    check(ordered, "passes ordered, short and with valid azimuths");
+    // During a pass the satellite is already up: the first pass then starts at `from`.
+    if (np > 0) {
+        const int64_t mid = pp[0].tca_s;
+        HcpPass up[1];
+        check(hcp_sat_passes(tle, sizeof tle - 1, 0, mid, 3600, 48.1, 11.6, 0.0, up, 1) == 1 && up[0].aos_s == mid &&
+                  up[0].los_s == pp[0].los_s, "pass in progress starts now and keeps its LOS");
+    }
+    HcpPass high[8];
+    const int nh = hcp_sat_passes(tle, sizeof tle - 1, 0, te, 86400, 48.1, 11.6, 30.0, high, 8);
+    bool high_ok = nh >= 0 && nh <= np;
+    for (int i = 0; i < nh; ++i) high_ok = high_ok && high[i].max_el_deg >= 30.0;
+    check(high_ok, "minimum elevation filters low passes");
+    check(hcp_sat_passes(tle, sizeof tle - 1, 0, te, 86400, 48.1, 11.6, 0.0, pp, 1) == 1, "cap respected");
+    check(hcp_sat_passes(tle, sizeof tle - 1, 1, te, 86400, 48.1, 11.6, 0.0, pp, 8) == -1, "pass index out of range");
+    check(hcp_sat_passes(tle, sizeof tle - 1, 0, te, 86400, 95.0, 11.6, 0.0, pp, 8) == -1, "pass bad latitude");
+    check(hcp_sat_passes(nullptr, 0, 0, te, 86400, 48.1, 11.6, 0.0, pp, 8) == -1 &&
+              hcp_sat_passes(tle, sizeof tle - 1, 0, te, 86400, 48.1, 11.6, 0.0, nullptr, 8) == -1 &&
+              hcp_sat_passes(tle, sizeof tle - 1, 0, te, 0, 48.1, 11.6, 0.0, pp, 8) == -1, "pass null/empty input");
+    // Short names follow satellite_short_name (src/widgets/satellites): the Qt app's tracked= form.
+    const char two[] =
+        "ISS (ZARYA)\n"
+        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
+        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
+        "SAUDISAT 1C (SO-50)\n"
+        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
+        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n"
+        "FUNCUBE-1 & AO-73\n"
+        "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927\n"
+        "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537\n";
+    char sn[32];
+    check(hcp_tle_short_name(two, sizeof two - 1, 0, sn, sizeof sn) && std::string(sn) == "ISS", "ISS short name");
+    check(hcp_tle_short_name(two, sizeof two - 1, 1, sn, sizeof sn) && std::string(sn) == "SO-50", "bracketed short name");
+    check(hcp_tle_short_name(two, sizeof two - 1, 2, sn, sizeof sn) && std::string(sn) == "FUNCUBE-1", "ampersand short name");
+    check(!hcp_tle_short_name(two, sizeof two - 1, 3, sn, sizeof sn), "short name index range");
+    check(hcp_tle_find_short_name(two, sizeof two - 1, "so-50") == 1 && hcp_tle_find_short_name(two, sizeof two - 1, "ISS") == 0,
+          "find by short name, case-insensitive");
+    check(hcp_tle_find_short_name(two, sizeof two - 1, "AO-7") == -1 && hcp_tle_find_short_name(two, sizeof two - 1, "") == -1 &&
+              hcp_tle_find_short_name(nullptr, 0, "ISS") == -1, "unknown or empty name not found");
     // Coastline table.
     const int parts = hcp_coast_part_count();
     size_t npts = 0;
