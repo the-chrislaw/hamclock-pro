@@ -698,10 +698,11 @@ Rectangle {
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
                         FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
-                    // Five controls: one row on wide screens, two columns on a phone.
+                    // Five controls: one row on wide screens, two columns below ~1100 px (a 1024x600
+                    // panel cannot fit the five labels on one line without cutting them).
                     GridLayout {
                         Layout.fillWidth: true
-                        columns: width < 600 * Theme.scale ? 2 : 5
+                        columns: width < 1100 * Theme.scale ? 2 : 5
                         columnSpacing: Theme.gap
                         rowSpacing: Theme.gap * 0.8
                         FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort; Layout.preferredWidth: 1
