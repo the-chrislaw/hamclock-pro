@@ -6,6 +6,7 @@ import HamClock
 Card {
     id: root
     readonly property bool ready: widget && widget.configured
+    readonly property var details: widget ? [widget.location, widget.grid, widget.path].filter(function (s) { return s.length > 0 }) : []
     ColumnLayout {
         width: parent.width
         spacing: Theme.gap
@@ -29,8 +30,18 @@ Card {
             label: root.widget ? root.widget.call : ""
             available: visible
             value: root.widget ? root.widget.name : ""
-            caption: root.widget ? [root.widget.location, root.widget.grid, root.widget.path].filter(function (s) { return s.length > 0 }).join(" · ") : ""
+            // Tall pane: the details get a line each below instead of one shortened caption.
+            caption: root.tall ? "" : root.details.join(" · ")
             Layout.fillWidth: true
+        }
+        Text {
+            visible: root.tall && root.ready && root.widget.call.length > 0 && root.details.length > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            lineHeight: 1.3
+            color: Theme.secondary
+            font.pixelSize: Theme.fontBody
+            text: root.details.join("\n")
         }
         Text {
             visible: root.ready && root.widget.message.length > 0

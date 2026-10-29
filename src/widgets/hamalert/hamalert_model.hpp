@@ -28,7 +28,7 @@ public:
     TelnetClient& client() { return client_; }
     static constexpr const char* kHost = "hamalert.org";
     static constexpr int kPort = 7300;
-    static constexpr int kCapacity = 30, kShown = 8;
+    static constexpr int kCapacity = 30, kShown = 30;
 signals:
     void changed();
 private:
