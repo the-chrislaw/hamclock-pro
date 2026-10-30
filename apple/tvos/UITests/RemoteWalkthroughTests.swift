@@ -123,7 +123,7 @@ final class RemoteWalkthroughTests: XCTestCase {
         // A pane that does not rotate: right moves the focus to the next pane, as before.
         moveFocus(to: pane0)
         remote.press(.right)
-        XCTAssertTrue(waitFor { pane1.hasFocus }, "right moves focus off a pane that does not rotate")
+        XCTAssertTrue(waitFor { pane1.hasFocus }, "right moves focus off a pane that does not rotate; focused: \(self.focused.exists ? self.focused.identifier : "nothing")")
 
         // Rotate pane 2 every 10 s.
         remote.press(.select, forDuration: 1.2)
@@ -262,7 +262,7 @@ final class RemoteWalkthroughTests: XCTestCase {
             shot("failure-focus")
             print("FOCUSED: \(focused.debugDescription)\nTREE: \(app.debugDescription)")
         }
-        XCTAssertTrue(target.hasFocus, "focus reached \(target)", file: file, line: line)
+        XCTAssertTrue(target.hasFocus, "focus reached \(target); focused: \(focused.exists ? focused.identifier + " " + focused.label : "nothing")", file: file, line: line)
     }
 
     private func waitFor(_ timeout: TimeInterval = 5, _ condition: @escaping () -> Bool) -> Bool {
