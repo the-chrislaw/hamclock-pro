@@ -118,7 +118,9 @@ Card {
         visible: !root.compact
         width: parent.width
         height: parent.height
-        columns: width < 360 * Theme.scale ? 1 : 2
+        // From the card's size and scale, not this layout's own width: a column count that flips
+        // while the grid is laying itself out made Qt's grid engine read a freed item (Linux CI crash).
+        columns: (root.width - 2 * Theme.pad) / root.fit < 360 * Theme.scale ? 1 : 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
         ColumnLayout {
