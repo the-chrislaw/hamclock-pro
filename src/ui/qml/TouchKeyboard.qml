@@ -20,6 +20,10 @@ Popup {
     closePolicy: Popup.NoAutoClose
     padding: Theme.gap
     width: parent ? parent.width : 0
+    // Explicit height from the key table: Qt 6.4 sized the popup from a stale implicit
+    // height and the last rows ran off the bottom of the window.
+    contentHeight: rows.length * keyHeight + (rows.length - 1) * keyGap
+    height: contentHeight + topPadding + bottomPadding
     x: 0
     y: parent ? parent.height - height : 0
     visible: wanted
@@ -81,7 +85,6 @@ Popup {
     }
 
     contentItem: Item {
-        implicitHeight: keyboard.rows.length * keyboard.keyHeight + (keyboard.rows.length - 1) * keyboard.keyGap
         Repeater {
             model: keyboard.rows.length
             Item {

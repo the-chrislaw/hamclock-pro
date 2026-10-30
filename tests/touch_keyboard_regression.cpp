@@ -115,6 +115,13 @@ int main(int argc, char** argv) {
     check(shown(), "shown for a focused text field");
     const qreal key_bottom = keyboard->property("y").toReal() + keyboard->property("height").toReal();
     check(qAbs(key_bottom - window->height()) < 1, "docked at the bottom of the window");
+    // Every row fits inside the keyboard and the window (Qt 6.4 once let the last rows run off the bottom).
+    for (const auto* label : {"1", "\u232b", "/", "@", "Hide"}) {  // one per row, case-independent
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+        auto* key = find_key(window->contentItem(), QString::fromUtf8(label));
+        const qreal bottom = key ? key->mapToScene(QPointF(0, key->height())).y() : 1e9;
+        check(key && bottom <= window->height() + 0.5, "key row inside the window");
+    }
 
     check(tap(window, "W") && tap(window, "1") && tap(window, "A") && tap(window, "W"), "letter and digit keys found");
     check(field->property("text").toString() == "W1AW", "upper-case field types capitals");
