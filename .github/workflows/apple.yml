@@ -3,7 +3,23 @@ name: Apple
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "design/**"
+      - "packaging/pi/**"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/image.yml"
+      - ".github/workflows/tvos.yml"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "design/**"
+      - "packaging/pi/**"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/image.yml"
+      - ".github/workflows/tvos.yml"
 
 permissions:
   contents: read
@@ -75,6 +91,9 @@ jobs:
     name: macOS universal build
     runs-on: macos-14
     # Produces the distributable dmg: universal (arm64+x86_64), signed/notarized when secrets exist.
+    # Nothing downstream consumes it and the `macos` job already covers build+tests,
+    # so it only runs on main — on PRs it doubled the macOS minutes for no signal.
+    if: github.event_name == 'push'
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -287,8 +306,9 @@ jobs:
   ios-simulator:
     name: iPad Simulator build
     needs: ios-widgets
-    # Runs (informational, like before) even when the widget job failed.
-    if: ${{ !cancelled() }}
+    # Informational only (continue-on-error below), so it runs on main pushes,
+    # not on every PR sync; still runs even when the widget job failed.
+    if: ${{ !cancelled() && github.event_name == 'push' }}
     runs-on: macos-14
     # Informational until the Qt Widgets dependency is removed (area A, QPainter
     # map renderer); a failure here does not block merges yet.

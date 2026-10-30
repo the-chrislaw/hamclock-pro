@@ -4,8 +4,7 @@
 #          sudo systemctl enable --now hamclock-pro-kiosk
 [Unit]
 Description=HamClock Pro dashboard (kiosk)
-After=network-online.target systemd-udevd.service
-Wants=network-online.target
+After=systemd-udevd.service
 
 [Service]
 Type=simple
