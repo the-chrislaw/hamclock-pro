@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <algorithm>
+#include <vector>
 #include <QTimeZone>
 #include <QTimer>
 #include <QVariantMap>
@@ -80,15 +82,39 @@ int main(int argc, char** argv) {
     WidgetContext context;
     bool fail_all = false;
     int requests = 0;
+    // Answers for URLs ending in one of these are held back, as when one
+    // product is slow at startup while the others have arrived.
+    QStringList hold;
+    std::vector<std::pair<FetchDone, QString>> held;
     context.transport = [&](const QUrl& url, FetchDone done) {
         ++requests;
+        if (std::any_of(hold.begin(), hold.end(), [&](const QString& h) { return url.path().endsWith(h); })) {
+            held.emplace_back(done, QFileInfo(url.path()).fileName());
+            return;
+        }
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
         else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
-    SolarTrendModel model(context);
     QDateTime now(QDate(2026, 10, 13), QTime(18, 0), QTimeZone::utc());
+    {
+        hold = {"observed-solar-cycle-indices.json"};
+        SolarTrendModel early(context);
+        early.setClock([&] { return now; });
+        for (auto* src : {&early.kpSource(), &early.fluxSource(), &early.sunspotSource()}) {
+            src->setClock([&] { return now; });
+            QFile::remove(src->cachePath());
+        }
+        early.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(early.state() == "loading" && !early.statusText().contains("missing"),
+              "sunspots still in flight -> loading, not missing");
+        hold.clear();
+        held.clear();
+        requests = 0;
+    }
+    SolarTrendModel model(context);
     auto set_clock = [&] {
         model.setClock([&] { return now; });
         for (auto* src : {&model.kpSource(), &model.fluxSource(), &model.sunspotSource()}) src->setClock([&] { return now; });

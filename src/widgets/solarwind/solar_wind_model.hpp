@@ -48,14 +48,18 @@ signals:
 
 private:
     using Series = std::vector<solarwind::Point>;
+    enum class Feed { Wind, Mag };
     static QVariantList toList(const Series& series);
     static Series lastHour(Series series);
-    void parse();
+    void parseInBackground(Feed feed);
+    void applyParsed(Feed feed, int generation, Series first, Series second);
     void refreshState();
 
     PolledSource* wind_source_;
     PolledSource* mag_source_;
     Series speed_, density_, bz_, bt_;
+    int wind_generation_ = 0; // newest queued parse per feed; older results are dropped
+    int mag_generation_ = 0;
 };
 
 void register_widget_solarwind(WidgetRegistry& registry, const WidgetContext& context);

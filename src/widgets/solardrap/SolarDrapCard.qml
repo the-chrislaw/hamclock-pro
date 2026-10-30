@@ -29,7 +29,7 @@ Card {
         Metric {
             label: "Max absorbed"
             available: root.ok
-            value: available ? root.mhz.toFixed(1) + " MHz" : ""
+            value: !available ? "" : root.widget.absorbing ? root.mhz.toFixed(1) + " MHz" : "None"
             valueColor: available ? root.tone(root.mhz) : Theme.ink
             Layout.fillWidth: true
         }
@@ -95,7 +95,7 @@ Card {
         spacing: Theme.gap * 0.6
         Text {
             width: parent.width
-            text: root.ok ? "Max " + root.mhz.toFixed(1) + " MHz" : "—"
+            text: root.ok ? root.widget.peakText : "—"
             color: root.ok ? root.tone(root.mhz) : Theme.secondary
             font.pixelSize: Theme.fontBody
             font.bold: true

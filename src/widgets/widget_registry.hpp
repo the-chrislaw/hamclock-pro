@@ -12,6 +12,7 @@
 namespace hamclock {
 
 class AppSettings;
+class SatAlertService;
 
 // Everything a widget may use. Widgets must not reach for globals.
 struct WidgetContext {
@@ -19,6 +20,7 @@ struct WidgetContext {
     Transport transport;   // HTTP GET; fake in tests
     AuthTransport auth_transport; // optional GET with a bearer token; unset in tests/fixtures
     QObject* owner = nullptr;
+    SatAlertService* sat_alerts = nullptr; // pass alert selection (Passes pane "Alerts" filter); may be null
 };
 
 // Placement hint for the layout: "strip" = instrument row (small cards),

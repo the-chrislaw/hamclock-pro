@@ -9,9 +9,12 @@
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
+#include "window_geometry.hpp"
 #include "../net/polled_source.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
+#include "../widgets/satellites/sat_alert_service.hpp"
+#include "../widgets/satellites/satellites_model.hpp"
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_orientation.hpp"
 #include "../platform/credential_store.hpp"
@@ -157,15 +160,23 @@ hamclock::Transport offline_transport() {
         QTimer::singleShot(0, [done] { done({0, {}, "Network disabled (--offline)"}); });
     };
 }
+// --help and --version only print text, so they must work with no display (SSH to a kiosk Pi).
+bool text_only_request(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const QByteArray arg(argv[i]);
+        if (arg == "--help" || arg == "-h" || arg == "--help-all" || arg == "--version" || arg == "-v") return true;
+    }
+    return false;
+}
+
+void set_identity() {
+    QCoreApplication::setApplicationName("hamclock-pro");
+    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
+    QCoreApplication::setApplicationVersion(HAMCLOCK_VERSION);
+}
 } // namespace
 
 int main(int argc, char** argv) {
-    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
-    QGuiApplication::setApplicationName("hamclock-pro");
-    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QGuiApplication::setApplicationVersion("1.0.0");
-    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
-
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");
     parser.addHelpOption();
@@ -185,6 +196,15 @@ int main(int argc, char** argv) {
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
     for (const auto& option : {check_fill, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
+    if (text_only_request(argc, argv)) {
+        QCoreApplication text_app(argc, argv);
+        set_identity();
+        parser.process(text_app); // prints and exits
+        return 0;
+    }
+    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
+    set_identity();
+    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
@@ -207,8 +227,17 @@ int main(int argc, char** argv) {
     if (!parser.isSet(fixtures) && !parser.isSet(offline))
         context.auth_transport = hamclock::make_authorized_transport(&app);
 
+    // Satellite pass alerts: fed by the Satellites pane's elements (downloaded once).
+    hamclock::SatAlertService sat_alerts(&settings, hamclock::shipped_sat_catalog());
+    context.sat_alerts = &sat_alerts;
     hamclock::WidgetRegistry registry;
     hamclock::register_all_widgets(registry, context);
+    if (auto* sats = qobject_cast<hamclock::SatellitesModel*>(registry.model("satellites"))) {
+        QObject::connect(sats, &hamclock::SatellitesModel::elementsChanged, &sat_alerts,
+                         [&sat_alerts, sats] { sat_alerts.setElements(sats->elements()); });
+        sat_alerts.setElements(sats->elements()); // a cached set may already be loaded
+    }
+    QTimer::singleShot(0, &sat_alerts, &hamclock::SatAlertService::start);
     for (const auto& assignment : parser.values(pane)) {
         const auto parts = assignment.split('=');
         bool number_ok = false;
@@ -282,6 +311,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timers", &timers);
     engine.rootContext()->setContextProperty("alarms", &alarms);
+    engine.rootContext()->setContextProperty("satAlerts", &sat_alerts);
     engine.rootContext()->setContextProperty("blanking", &blanking);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
@@ -294,6 +324,11 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+#if !defined(Q_OS_IOS)
+    // Desktop: reopen at the last window size and position (not for kiosk full screen or screenshots).
+    if (!parser.isSet(screenshot) && !start_fullscreen)
+        hamclock::remember_window_geometry(qobject_cast<QWindow*>(engine.rootObjects().first()), settings.optionsPath());
+#endif
     // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
     QString orientation_lock = settings.orientationLock();
     hamclock::applyOrientationLock(orientation_lock);
