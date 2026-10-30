@@ -575,3 +575,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: bfbef21 (merged since d47a0f6: #683 one Accounts section in Settings for HamQTH, QRZ, HamAlert, hams.at and DX cluster, #728 tvOS satellite pass banner, my run 101 log). Main builds and passes 224/224 tests. The #683 src diff adds no QtWidgets or scrolling container, and passwords and keys stay in C++ (`lookupPasswordFor`, `hamAlertPassword` are not Q_PROPERTY or Q_INVOKABLE getters; QML only calls the save methods). New regression tests cover the lookup, DX cluster, HamAlert and hams.at account paths and no assertions were removed. Settings is not covered by the widget fixture renders, so the Accounts layout was not inspected at 800x480.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy on the Pi sizes. Remaining risk is the unviewed Accounts layout on the 7-inch Pi and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-30 (UTC) QA run 103
+- Last reviewed commit: ce8afe7 (only my run 102 log #737 merged since bfbef21). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
