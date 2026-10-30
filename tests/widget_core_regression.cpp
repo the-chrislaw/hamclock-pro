@@ -239,6 +239,17 @@ int main(int argc, char** argv) {
         check(!stuck.saveHamsatKey("k").isEmpty() && ini_text(stuck_dir).contains("keepme"), "failed store write keeps the file intact");
     }
     {
+        // ADIF path: plain path off the sandbox (no bookmark needed to read it).
+        QTemporaryDir adif_dir;
+        AppSettings adif({}, adif_dir.path());
+        const QString log = adif_dir.filePath("log.adi");
+        { QFile f(log); f.open(QIODevice::WriteOnly); f.write("<eoh>"); }
+        check(adif.saveAdifPath(log).isEmpty() && adif.adifPath() == log, "ADIF path saved");
+        check(AppSettings({}, adif_dir.path()).adifPath() == QFileInfo(log).canonicalFilePath() ||
+              AppSettings({}, adif_dir.path()).adifPath() == log, "ADIF path survives restart");
+        check(adif.saveAdifPath("").isEmpty() && AppSettings({}, adif_dir.path()).adifPath().isEmpty(), "ADIF path cleared");
+    }
+    {
         QTemporaryDir ov_dir;
         AppSettings ov({}, ov_dir.path());
         check(ov.overscanPercent() == 0, "overscan off by default");

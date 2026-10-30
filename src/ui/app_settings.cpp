@@ -7,6 +7,7 @@
 #include "config_store.hpp"
 #include "pane_grid.hpp"
 #include "../net/telnet_client.hpp"
+#include "../platform/file_access.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
 #include <QDir>
@@ -131,6 +132,10 @@ void AppSettings::loadOptions() {
     cluster_commands_ = TelnetClient::sanitize_commands(ini.value("cluster/commands").toStringList());
     watch_list_ = watchlist::sanitize(ini.value("watch/list").toStringList());
     adif_path_ = ini.value("adif/path").toString().left(1024);
+    // Sandboxed build: the bookmark is what lets the app read the chosen log after a relaunch.
+    if (const QByteArray bookmark = ini.value("adif/bookmark").toByteArray(); !bookmark.isEmpty()) {
+        if (const QString resolved = file_access::openReadBookmark(bookmark); !resolved.isEmpty()) adif_path_ = resolved;
+    }
     ota_program_ = ini.value("ota/program").toString();
     if (ota_program_ != "POTA" && ota_program_ != "SOTA" && ota_program_ != "WWFF") ota_program_.clear();
     static const QRegularExpression band_re("^[0-9]{1,4}(\\.[0-9]+)?(m|cm|mm)$");
@@ -519,14 +524,23 @@ QString AppSettings::saveWatchList(const QString& entries) {
 
 QString AppSettings::saveAdifPath(const QString& path) {
     const QString kept = path.trimmed().left(1024);
+    const QByteArray bookmark = kept.isEmpty() ? QByteArray() : file_access::readBookmark(kept);
     QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
     ini.setValue("adif/path", kept);
+    if (bookmark.isEmpty()) ini.remove("adif/bookmark");
+    else ini.setValue("adif/bookmark", bookmark);
     ini.sync();
     if (ini.status() != QSettings::NoError) return "Could not save the log path.";
     adif_path_ = kept;
     emit optionsChanged();
+    if (!kept.isEmpty() && bookmark.isEmpty() && file_access::sandboxed())
+        return "Saved, but macOS only lets HamClock Pro read a log picked with Choose.";
     return {};
 }
+
+bool AppSettings::canChooseFiles() const { return file_access::canChooseFiles(); }
+
+QString AppSettings::chooseAdifFile() const { return file_access::chooseFileToRead("Choose your ADIF log (.adi)"); }
 
 QString AppSettings::saveOtaSort(const QString& sort) {
     const auto s = sort.trimmed().toLower();

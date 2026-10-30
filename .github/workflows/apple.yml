@@ -119,6 +119,20 @@ jobs:
           build-universal/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-universal" --offline --size 1024x600 --screenshot "$RUNNER_TEMP/smoke-universal.png"
           test -s "$RUNNER_TEMP/smoke-universal.png"
           mv build-universal/hamclock-pro.dmg hamclock-pro-macos-universal-unsigned.dmg
+      # The Mac App Store build runs in the App Sandbox. Sign a copy ad hoc with the
+      # same entitlements and prove it starts and writes only inside its container.
+      - name: App Sandbox smoke test
+        run: |
+          rm -rf sandbox && mkdir sandbox && cp -R build-universal/hamclock-pro.app sandbox/
+          APP=sandbox/hamclock-pro.app
+          BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")
+          find "$APP/Contents" \( -name '*.dylib' -o -name '*.framework' \) -print0 | xargs -0 -n1 codesign --force --sign -
+          codesign --force --sign - --entitlements packaging/apple/AppStore.entitlements "$APP"
+          codesign -d --entitlements - "$APP" | grep -q app-sandbox
+          C="$HOME/Library/Containers/$BID/Data"
+          "$APP/Contents/MacOS/hamclock-pro" --offline --size 1024x600 --screenshot "$C/tmp/smoke-sandbox.png"
+          test -s "$C/tmp/smoke-sandbox.png"
+          test -d "$C/Library/Preferences/hamclock-pro"
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-macos-universal-unsigned
@@ -468,3 +482,157 @@ jobs:
           fi
           security delete-keychain "$KC" || true
           rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP"/AuthKey_*.p8
+
+  # Mac App Store / TestFlight upload of the native macOS app (sandboxed, universal),
+  # on the same App Store record as the iPad app (universal purchase). Main pushes
+  # only, behind the same owner switch as the iPad upload: runs only while the
+  # repository variable TESTFLIGHT_UPLOADS is 'true'; don't remove or bypass it.
+  # Every step skips cleanly while a secret is absent. Apple Distribution signs the
+  # app (the IOS_DIST_CERT_* certificate works for every platform); the installer
+  # package needs a separate Mac Installer Distribution certificate.
+  mac-testflight:
+    name: macOS TestFlight upload
+    runs-on: macos-15
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.TESTFLIGHT_UPLOADS == 'true'
+    continue-on-error: true
+    timeout-minutes: 60
+    env:
+      QT_VER: "6.8.3"
+      BUNDLE_ID: com.chrislaw.hamclockpro
+    steps:
+      - uses: actions/checkout@v4
+      # App Store Connect only accepts builds from the current SDKs (Xcode 26).
+      - name: Select Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$X" ] || { echo "no Xcode 26 on this runner"; ls /Applications | grep -i xcode; exit 1; }
+          sudo xcode-select -s "$X"
+          xcodebuild -version
+      - name: Check secrets
+        id: gate
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          INST: ${{ secrets.MAC_INSTALLER_CERT_P12_BASE64 }}
+          INST_PW: ${{ secrets.MAC_INSTALLER_CERT_PASSWORD }}
+        run: |
+          if [ -n "$KEY" ] && [ -n "$KEY_ID" ] && [ -n "$ISSUER" ] && [ -n "$TEAM" ] && [ -n "$DIST" ] && [ -n "$DIST_PW" ] && [ -n "$INST" ] && [ -n "$INST_PW" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; else echo "App Store Connect, Apple Distribution or Mac Installer Distribution secrets or APPLE_TEAM_ID absent; skipping macOS TestFlight"; fi
+      - name: Cache Qt install
+        if: steps.gate.outputs.go == 'true'
+        id: qt-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/Qt
+          key: qt-${{ runner.os }}-${{ env.QT_VER }}-desktop-v1
+      - name: Install Qt (universal desktop)
+        if: steps.gate.outputs.go == 'true' && steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/aqt"
+          "$RUNNER_TEMP/aqt/bin/pip" install aqtinstall
+          "$RUNNER_TEMP/aqt/bin/aqt" install-qt mac desktop "$QT_VER" clang_64 --outputdir "$HOME/Qt"
+      - name: Build (arm64 + x86_64, App Store bundle id)
+        if: steps.gate.outputs.go == 'true'
+        run: |
+          brew install ninja
+          # Build number must rise on every upload: use the run number.
+          # Newer macOS SDKs drop AGL, which Qt 6.8.3 still links ("framework 'AGL'
+          # not found"); pointing its lookup at OpenGL.framework avoids that.
+          cmake -S . -B build-mas -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DWrapOpenGL_AGL="$(xcrun --show-sdk-path)/System/Library/Frameworks/OpenGL.framework" \
+            -DCMAKE_PREFIX_PATH="$HOME/Qt/$QT_VER/macos" \
+            -DHAMCLOCK_MACOS_BUNDLE_ID="$BUNDLE_ID" \
+            -DHAMCLOCK_BUILD_NUMBER="${{ github.run_number }}"
+          cmake --build build-mas
+          # -appstore-compliant leaves out Qt components that use private API.
+          "$HOME/Qt/$QT_VER/macos/bin/macdeployqt" build-mas/hamclock-pro.app -qmldir="$GITHUB_WORKSPACE/src" -appstore-compliant
+          test -d build-mas/hamclock-pro.app/Contents/Resources/qml/QtQuick
+          PL=build-mas/hamclock-pro.app/Contents/Info.plist
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PL")" = "$BUNDLE_ID"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PL")" = "${{ github.run_number }}"
+          /usr/libexec/PlistBuddy -c 'Print :LSApplicationCategoryType' "$PL"
+      - name: Import Apple Distribution and Mac Installer certificates
+        if: steps.gate.outputs.go == 'true'
+        env:
+          DIST: ${{ secrets.IOS_DIST_CERT_P12_BASE64 }}
+          DIST_PW: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          INST: ${{ secrets.MAC_INSTALLER_CERT_P12_BASE64 }}
+          INST_PW: ${{ secrets.MAC_INSTALLER_CERT_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/mac-signing.keychain-db"
+          KCPW="$(uuidgen)"
+          echo "KC=$KC" >> "$GITHUB_ENV"
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          printf '%s' "$DIST" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          printf '%s' "$INST" | base64 --decode > "$RUNNER_TEMP/inst.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_PW" -A -t cert -f pkcs12 -k "$KC" >/dev/null
+          security import "$RUNNER_TEMP/inst.p12" -P "$INST_PW" -A -t cert -f pkcs12 -k "$KC" >/dev/null
+          rm -f "$RUNNER_TEMP/dist.p12" "$RUNNER_TEMP/inst.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC" login.keychain-db
+          security find-identity -v -p codesigning "$KC" | grep -c 'Apple Distribution' || { echo "No Apple Distribution identity in IOS_DIST_CERT_P12_BASE64"; exit 1; }
+          # The Mac Installer Distribution certificate is named "3rd Party Mac Developer Installer: ..." (older) or "Mac Installer Distribution: ...".
+          INSTALLER="$(security find-identity -v "$KC" | grep -E '3rd Party Mac Developer Installer|Mac Installer Distribution' | head -1 | awk -F'"' '{print $2}')"
+          test -n "$INSTALLER" || { echo "No Mac Installer Distribution identity in MAC_INSTALLER_CERT_P12_BASE64"; exit 1; }
+          echo "INSTALLER=$INSTALLER" >> "$GITHUB_ENV"
+      - name: Sign, package and upload
+        if: steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          # altool finds the API key in ~/.appstoreconnect/private_keys.
+          KEYDIR="$HOME/.appstoreconnect/private_keys"
+          mkdir -p "$KEYDIR"
+          KEYFILE="$KEYDIR/AuthKey_$KEY_ID.p8"
+          printf '%s' "$KEY" | base64 --decode > "$KEYFILE"
+          trap 'rm -f "$KEYFILE"' EXIT
+          # Mac App Store profile through the API, embedded in the bundle.
+          python3 -m venv "$RUNNER_TEMP/asc"
+          "$RUNNER_TEMP/asc/bin/pip" install --quiet pyjwt cryptography
+          export ASC_KEY_FILE="$KEYFILE" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER"
+          security find-certificate -c "Apple Distribution" -p "$KC" > "$RUNNER_TEMP/dist.pem"
+          read -r PROFILE_ID PROFILE_UUID < <("$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py \
+            create "$BUNDLE_ID" "$RUNNER_TEMP/dist.pem" "HamClockPro MacAppStore ${{ github.run_id }}" \
+            "$RUNNER_TEMP/mac.provisionprofile" MAC_APP_STORE)
+          echo "PROFILE_ID=$PROFILE_ID" >> "$GITHUB_ENV"
+          APP=build-mas/hamclock-pro.app
+          cp "$RUNNER_TEMP/mac.provisionprofile" "$APP/Contents/embedded.provisionprofile"
+          # Sandbox entitlements plus the identifiers the profile grants.
+          ENT="$RUNNER_TEMP/mas.entitlements"
+          cp packaging/apple/AppStore.entitlements "$ENT"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $TEAM.$BUNDLE_ID" "$ENT"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $TEAM" "$ENT"
+          IDENTITY="$(security find-identity -v -p codesigning "$KC" | grep 'Apple Distribution' | head -1 | awk -F'"' '{print $2}')"
+          find "$APP/Contents" \( -name '*.dylib' -o -name '*.framework' -o -name '*.so' \) -print0 | \
+            xargs -0 -n1 codesign --force --timestamp --sign "$IDENTITY" --keychain "$KC"
+          codesign --force --timestamp --sign "$IDENTITY" --keychain "$KC" --entitlements "$ENT" "$APP"
+          codesign --verify --deep --strict "$APP"
+          codesign -d --entitlements - "$APP" | grep -q app-sandbox
+          productbuild --component "$APP" /Applications --sign "$INSTALLER" --keychain "$KC" hamclock-pro-mas.pkg
+          pkgutil --check-signature hamclock-pro-mas.pkg
+          set -o pipefail
+          xcrun altool --validate-app -f hamclock-pro-mas.pkg -t macos --apiKey "$KEY_ID" --apiIssuer "$ISSUER" 2>&1 | tail -20
+          xcrun altool --upload-app -f hamclock-pro-mas.pkg -t macos --apiKey "$KEY_ID" --apiIssuer "$ISSUER" 2>&1 | tail -20
+      - name: Remove signing keychain and temporary profile
+        if: always() && steps.gate.outputs.go == 'true'
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          if [ -n "$PROFILE_ID" ] && [ -x "$RUNNER_TEMP/asc/bin/python" ]; then
+            printf '%s' "$KEY" | base64 --decode > "$RUNNER_TEMP/AuthKey_$KEY_ID.p8"
+            ASC_KEY_FILE="$RUNNER_TEMP/AuthKey_$KEY_ID.p8" ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER" \
+              "$RUNNER_TEMP/asc/bin/python" packaging/apple/asc_profile.py delete "$PROFILE_ID" || true
+          fi
+          security delete-keychain "$KC" || true
+          rm -f "$RUNNER_TEMP"/*.p12 "$RUNNER_TEMP"/AuthKey_*.p8 "$HOME"/.appstoreconnect/private_keys/AuthKey_*.p8

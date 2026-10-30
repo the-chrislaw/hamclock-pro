@@ -32,6 +32,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString clusterCommandsText READ clusterCommandsText NOTIFY optionsChanged)
     Q_PROPERTY(QString watchListText READ watchListText NOTIFY optionsChanged)
     Q_PROPERTY(QString adifPath READ adifPath NOTIFY optionsChanged)
+    Q_PROPERTY(bool canChooseFiles READ canChooseFiles CONSTANT)
     Q_PROPERTY(QString otaProgram READ otaProgram NOTIFY optionsChanged)
     Q_PROPERTY(QString otaBand READ otaBand NOTIFY optionsChanged)
     Q_PROPERTY(QString otaMode READ otaMode NOTIFY optionsChanged)
@@ -222,6 +223,9 @@ public:
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
     Q_INVOKABLE QString saveAdifPath(const QString& path);
+    // Native open panel (macOS): the sandboxed build can only read a log chosen here.
+    bool canChooseFiles() const;
+    Q_INVOKABLE QString chooseAdifFile() const; // empty when cancelled
     // program: POTA, SOTA, WWFF or empty; band like 20m; mode letters/digits; age 0-1440 min (0 = any).
     Q_INVOKABLE QString saveOtaSort(const QString& sort);
     Q_INVOKABLE QString saveOtaFilter(const QString& program, const QString& band, const QString& mode, int max_age_min);

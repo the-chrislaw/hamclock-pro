@@ -808,8 +808,15 @@ Rectangle {
                                     onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
                     }
                     // A typed path can't reach a file inside the iOS sandbox; the log pane is off there too.
-                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true
-                                visible: Qt.platform.os !== "ios" }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: Theme.gap
+                        visible: Qt.platform.os !== "ios"
+                        FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
+                        // macOS open panel: the Mac App Store (sandboxed) build can only read a log picked here.
+                        AppButton { text: "Choose…"; visible: appSettings.canChooseFiles; Layout.alignment: Qt.AlignBottom
+                                    onClicked: { const p = appSettings.chooseAdifFile(); if (p !== "") adifPath.text = p } }
+                    }
                     // Five filters: one row on wide screens, two columns on a phone.
                     GridLayout {
                         Layout.fillWidth: true
