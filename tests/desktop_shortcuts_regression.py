@@ -40,4 +40,15 @@ for s in shortcuts:
         if key in seen and not (enabled and seen[key]):
             sys.exit("Main.qml: sequence bound twice without exclusive enabled: " + key)
         seen[key] = bool(enabled)
+# Native Mac menu bar: created at run time on macOS only (the Pi kiosk, Linux and iOS
+# get none and never load Qt.labs.platform), and its menus then own Command-comma
+# and Control-Command-F, so the window shortcuts step aside instead of firing twice.
+if re.search(r"^import Qt\.labs\.platform", qml, re.M) or not re.search(r"if \(nativeMenuBar\) createMacMenuBar\(\)", qml):
+    sys.exit("Main.qml: the Mac menu bar must be created only when nativeMenuBar is set")
+if not re.search(r"nativeMenuBar \? \[\] : \[\"Ctrl\+Meta\+F\"\]", full[0]) or "!nativeMenuBar" not in prefs[0]:
+    sys.exit("Main.qml: window shortcuts must step aside for the native menu bar")
+main_cpp = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/main.cpp").read_text()
+mac = re.search(r"#ifdef Q_OS_MACOS\s*\n(.*?)#else\s*\n(.*?)#endif", main_cpp, re.S)
+if not mac or '"nativeMenuBar", false' not in mac.group(2) or "nativeMenuBar" not in mac.group(1):
+    sys.exit("main.cpp: nativeMenuBar must be false off macOS")
 print("ok")

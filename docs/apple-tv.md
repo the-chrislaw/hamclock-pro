@@ -158,6 +158,7 @@ The first TestFlight build used system glass cards, a bare UTC clock, inline loc
 |---|---|---|---|---|
 | Station card | swap UTC / local clock (opens setup when no station) | Settings | cycle banner (call, ON AIR, 73 DE, custom title) | leave the app |
 | Pane | pane chooser | pane options | pane options | leave the app |
+| Rotating pane | pane chooser | pane options | pane options | leave the app; **left/right step the widget** (back and forward, wrapping), up/down move the focus |
 | Map | map menu | map menu | map menu | leave the app |
 | Settings button | Settings | – | – | leave the app |
 | Any overlay or Settings | choose | – | – | close it |
@@ -165,6 +166,8 @@ The first TestFlight build used system glass cards, a bare UTC clock, inline loc
 - The **pane chooser** has the main app's category tabs (All, Space Wx, DX & Contest, Weather, Sky & Space; Station has no TV widgets so its tab is hidden) and lists only widgets with a TV data source. Empty pane is at the bottom.
 - **Pane options** follow `PaneOptions.qml`: Change widget, Next/Previous widget (registry order, "none" between last and first), Rotate (off, 5, 10, 30, 60 s; the rotation is never saved as the pane's choice), Empty pane, Reset all panes.
 - The **map menu** sets the centre (World, DE, DX), zoom 1–4×, short or long path, and the overlays: day/night, lat/lon grid, borders, DE–DX path, Sun, earthquakes, tropical storms, satellites, POTA/SOTA/WWFF, fires, launch pads, planets, aurora, D-RAP. Overlays draw only while their source is Live or Stale, never from Offline data.
+- **Rotating panes** (owner request): while a rotating pane has the focus it shows "◀ ▶ change · rotates every N s". Left/right (click or swipe) step it like `PaneSlot.step` in the main app: the widget shown becomes the pane's choice and the rotation restarts from there, so it does not change again for a full interval. Up/down still move the focus (the header is a full-width focus section, so Up from any pane reaches Settings). Nothing else on the TV advances on its own.
+- **Menu at the root** (no overlay, no Settings) has no handler in the app, so tvOS goes back to the Home screen, also while dimmed and straight after closing a menu or Settings. With Settings or an overlay open, Menu closes it, even before the focus has moved into it. `testMenuAtRootExitsToHomeScreen` checks each case.
 - No text fields on the dashboard and no sheets: overlays are centred panels over the dimmed dashboard; Settings is a full-screen layer.
 
 ### First run and Settings
@@ -203,11 +206,11 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | Active fires (US, 24 h; map overlay) | NASA FIRMS VIIRS | `fires` |
 | On the air (POTA/SOTA/WWFF spots; map overlay) | POTA, SOTA, WWFF | `ota` |
 
-Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), Passes (needs a pass predictor over the TLE set; Satellites shows what is up now), Space alerts, HamQSL, HF path reliability, Solar trend, Dst and Space weather impact (parsers not ported yet), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
+Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), Passes (needs a pass predictor over the TLE set; Satellites shows what is up now), HF path reliability and Space weather impact (parsers not ported yet; Dst index, Space alerts, Solar trend and HamQSL are ported), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
 
 ### Verification
 
-- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (22 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (26 tests; `tvos.yml` also runs them inside the tvOS Simulator).
 - Threading: feed bodies are parsed (and written to the Caches copy) on a background task, never on the main actor, and satellite positions are computed every 5 s off the main actor with one batched core call. Parse times show up in Instruments as `parse` signpost intervals (subsystem `com.chrislaw.hamclockpro`).
 - App: `apple/tvos/UITests/RemoteWalkthroughTests.swift` drives the Siri Remote (`XCUIRemote`) through first-run setup, the pane chooser, pane options (hold Select and Play/Pause), the map menu and a settings change, then relaunches and checks that the station, the pane choice and the units were kept. Locally: `xcodebuild test -project apple/tvos/HamClockTV.xcodeproj -scheme HamClockTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation) (at 1080p)'`; set `TEST_RUNNER_HCP_SHOT_DIR=<dir>` to also write the screenshots. `tvos.yml` runs the same test and uploads the screenshots as the `tvos-simulator-screenshots` artifact.
 - Screenshots in `docs/images/tvos/` are tvOS Simulator captures with the live data of the moment they were taken, not photos of a TV. Nothing here has been checked on an Apple TV yet.

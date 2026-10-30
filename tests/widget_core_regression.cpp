@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         check(source.nextDelay() == 600s, "backoff capped at interval");
         net.next = {503, "busy", {}};
         source.refreshNow(); spin(app);
-        check(source.lastError() == "HTTP 503" && source.body() == "first", "HTTP errors never replace good data");
+        check(source.lastError().startsWith("HTTP 503") && source.body() == "first", "HTTP errors never replace good data");
     }
     net.next = {0, {}, "offline"};
     {
@@ -160,6 +160,12 @@ int main(int argc, char** argv) {
         check(!settings.saveStation("N0CALL", 95, 0, 0, 0, "").isEmpty(), "invalid latitude rejected");
         check(settings.saveStation("n0call", 37.77, -122.42, 51.5, -0.1, "America/Los_Angeles").isEmpty() &&
               settings.configured() && settings.callsign() == "N0CALL", "valid station saved, callsign uppercased");
+        check(settings.hasDx(), "a DX target away from DE is set");
+        // DX on top of DE is "no DX" (Settings saves an empty DX this way), never 0,0 off Africa.
+        check(settings.saveStation("N0CALL", 37.77, -122.42, 37.77, -122.42, "America/Los_Angeles").isEmpty() &&
+              !settings.hasDx(), "DX equal to DE means no DX");
+        check(settings.saveStation("N0CALL", 37.77, -122.42, 51.5, -0.1, "America/Los_Angeles").isEmpty() && settings.hasDx(),
+              "DX set again");
         check(!settings.saveCluster("bad host;rm", 7300).isEmpty() && !settings.saveCluster("dx.example.org", 0).isEmpty(),
               "cluster host/port validated");
         check(settings.saveCluster("dx.example.org", 7373).isEmpty(), "cluster saved");
@@ -211,7 +217,7 @@ int main(int argc, char** argv) {
         check(stored(*values, "hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
         check(!ini_text(secret_dir).contains("alertpw"), "moved password removed from credentials.ini");
         check(settings.saveAccount("hamqth", "N0CALL", "lookpw").isEmpty() && settings.saveHamsatKey("key123").isEmpty(), "accounts saved with a secret store");
-        check(stored(*values, "lookup.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
+        check(stored(*values, "hamqth.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
         check(!ini_text(secret_dir).contains("lookpw") && !ini_text(secret_dir).contains("key123") && ini_text(secret_dir).contains("N0CALL"),
               "only user names in the file");
         check(settings.saveHamsatKey("").isEmpty() && stored(*values, "hamsat.key").isEmpty(), "empty key removes it from the store");

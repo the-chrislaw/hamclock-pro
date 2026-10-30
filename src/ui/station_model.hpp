@@ -37,8 +37,10 @@ class StationModel : public QObject {
     Q_PROPERTY(QString dxSun READ dxSun NOTIFY tick)
     Q_PROPERTY(QString dxLocal READ dxLocal NOTIFY tick)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
+    Q_PROPERTY(bool hasDx READ hasDx NOTIFY stationChanged)
 public:
     explicit StationModel(AppSettings& settings, QObject* parent = nullptr);
+    bool hasDx() const;  // a DX target is set (not on top of DE)
 
     QString utcTime() const;
     QString utcDate() const;

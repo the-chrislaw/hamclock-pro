@@ -21,11 +21,14 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString callsign READ callsign NOTIFY stationChanged)
     Q_PROPERTY(double deLatitude READ deLatitude NOTIFY stationChanged)
     Q_PROPERTY(double deLongitude READ deLongitude NOTIFY stationChanged)
+    Q_PROPERTY(bool hasDx READ hasDx NOTIFY stationChanged)
     Q_PROPERTY(double dxLatitude READ dxLatitude NOTIFY stationChanged)
     Q_PROPERTY(double dxLongitude READ dxLongitude NOTIFY stationChanged)
     Q_PROPERTY(QString deZone READ deZone NOTIFY stationChanged)
     Q_PROPERTY(QString appearance READ appearance WRITE setAppearance NOTIFY appearanceChanged)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
+    // Why the station file could not be read at start ("" when it was fine or absent).
+    Q_PROPERTY(QString loadError READ loadError NOTIFY stationChanged)
     Q_PROPERTY(QString clusterHost READ clusterHost NOTIFY optionsChanged)
     Q_PROPERTY(int clusterPort READ clusterPort NOTIFY optionsChanged)
     Q_PROPERTY(int clusterSsid READ clusterSsid NOTIFY optionsChanged)
@@ -94,6 +97,9 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString hamAlertUser READ hamAlertUser NOTIFY accountsChanged)
     Q_PROPERTY(bool hasHamAlertPassword READ hasHamAlertPassword NOTIFY accountsChanged)
     Q_PROPERTY(bool hasHamsatKey READ hasHamsatKey NOTIFY accountsChanged)
+    // Settings > Accounts: one sign-in per service (QRZ.com and HamQTH can both be signed in).
+    Q_PROPERTY(QString qrzUser READ qrzUser NOTIFY accountsChanged)
+    Q_PROPERTY(QString hamqthUser READ hamqthUser NOTIFY accountsChanged)
 public:
     // station_path empty = <config>/station.conf. config_dir empty = per-user default.
     explicit AppSettings(QString station_path = {}, QString config_dir = {}, QObject* parent = nullptr);
@@ -106,6 +112,7 @@ public:
     QString callsign() const { return QString::fromStdString(station_.callsign); }
     double deLatitude() const { return station_.de.latitude; }
     double deLongitude() const { return station_.de.longitude; }
+    bool hasDx() const { return configured_ && has_dx(station_); }  // false when DX is unset (DX == DE)
     double dxLatitude() const { return station_.dx.latitude; }
     double dxLongitude() const { return station_.dx.longitude; }
     QString deZone() const { return QString::fromStdString(station_.de_zone); }
@@ -180,16 +187,21 @@ public:
     bool pskWspr() const { return psk_wspr_; }  // also query wspr.live (off by default)
     int aprsRadiusKm() const { return aprs_radius_km_; }
     QString adifPath() const { return adif_path_; }                    // local .adi log, empty = none
-    QString lookupService() const { return lookup_service_; }
-    QString lookupUser() const { return lookup_user_; }
-    bool hasLookupPassword() const { return !lookup_password_.isEmpty(); }
+    // The lookup service callsign lookups use: QRZ.com when signed in there, else HamQTH, else "none".
+    QString lookupService() const;
+    QString lookupUser() const { return lookupUserFor(lookupService()); }
+    bool hasLookupPassword() const { return !lookupPassword().isEmpty(); }
     // C++ only (never a QML property): for widgets that log in.
-    QString lookupPassword() const { return lookup_password_; }
-    QString hamAlertUser() const { return hamalert_user_; }
-    bool hasHamAlertPassword() const { return !hamalert_password_.isEmpty(); }
-    QString hamAlertPassword() const { return hamalert_password_; } // C++ only, like lookupPassword()
-    bool hasHamsatKey() const { return !hamsat_key_.isEmpty(); }
-    QString hamsatKey() const { return hamsat_key_; } // C++ only (never a QML property)
+    QString lookupPassword() const { return lookupPasswordFor(lookupService()); }
+    QString lookupUserFor(const QString& service) const { return account_user_.value(service); }
+    QString lookupPasswordFor(const QString& service) const { return account_secret_.value(service); } // C++ only
+    QString qrzUser() const { return account_user_.value("qrz"); }
+    QString hamqthUser() const { return account_user_.value("hamqth"); }
+    QString hamAlertUser() const { return account_user_.value("hamalert"); }
+    bool hasHamAlertPassword() const { return !hamAlertPassword().isEmpty(); }
+    QString hamAlertPassword() const { return account_secret_.value("hamalert"); } // C++ only, like lookupPassword()
+    bool hasHamsatKey() const { return !hamsatKey().isEmpty(); }
+    QString hamsatKey() const { return account_secret_.value("hamsat"); } // C++ only (never a QML property)
     QString stationPath() const { return station_path_; }
     QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
@@ -218,6 +230,8 @@ public:
     Q_INVOKABLE QString saveStation(const QString& callsign, double de_lat, double de_lon,
                                     double dx_lat, double dx_lon, const QString& de_zone);
     Q_INVOKABLE QString saveCluster(const QString& host, int port);
+    // Public nodes offered in Settings ([{label, host, port, note}]); never connected to unasked.
+    Q_INVOKABLE QVariantList clusterSuggestions() const;
     // SSID 0-99 (0 = none); commands one per line, filtered to receive-only commands.
     Q_INVOKABLE QString saveClusterLogin(int ssid, const QString& commands);
     Q_INVOKABLE QString saveWatchList(const QString& entries); // space/comma separated
@@ -290,7 +304,15 @@ public:
     // Minimum distance between spot labels in px (0 = each layer's own).
     Q_INVOKABLE int mapMinLabelPx() const { return map_min_label_px_; }
     Q_INVOKABLE QString saveMapMinLabelPx(int px);
-    // Empty password keeps the stored one; service: "none", "qrz" or "hamqth".
+    // Settings > Accounts. service: "qrz", "hamqth", "hamalert" or "hamsat" (key in `secret`, no user).
+    // An empty secret keeps the stored one for the same user. Returns "" or a message for the user.
+    Q_INVOKABLE QString signIn(const QString& service, const QString& user, const QString& secret);
+    Q_INVOKABLE QString signOut(const QString& service);
+    Q_INVOKABLE QString accountUser(const QString& service) const { return account_user_.value(service); }
+    // User and password (or the hams.at key) stored for the service.
+    Q_INVOKABLE bool accountSignedIn(const QString& service) const;
+    // Older single-account form: signs in to `service` and out of the other lookup service
+    // ("none" signs out of both). Empty password keeps the stored one.
     Q_INVOKABLE QString saveAccount(const QString& service, const QString& user, const QString& password);
     Q_INVOKABLE void clearAccount();
     // HamAlert.org telnet login; empty password keeps the stored one, empty user clears both.
@@ -317,6 +339,7 @@ signals:
 private:
     QString assignPane(int slot, const QString& widget_id, bool persist);
     void loadOptions();
+    void applyRegionDefaults();   // new installs: units/clock/date/week from the device region
     std::unique_ptr<CredentialStore> secrets_;
     QString secretKey(const QString& store_key) const;
     void loadAccounts();
@@ -380,9 +403,9 @@ private:
     QList<int> rotations_;
     QList<QStringList> rotation_sets_;
     QStringList panes_;   // empty entry = default for that slot
-    QString lookup_service_ = "none", lookup_user_, lookup_password_;
-    QString hamalert_user_, hamalert_password_;
-    QString hamsat_key_;
+    QString storeAccount(const QString& service, const QString& user, const QString& secret);
+    // Users by service (qrz, hamqth, hamalert); passwords and the hams.at key by service (+ hamsat).
+    QHash<QString, QString> account_user_, account_secret_;
 };
 
 } // namespace hamclock

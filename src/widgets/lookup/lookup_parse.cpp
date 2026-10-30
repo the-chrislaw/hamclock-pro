@@ -10,7 +10,7 @@ QString clip(QString s) { return s.simplified().left(80); }
 
 // Flat element map of the first <Callsign>/<search> block plus session fields.
 struct Doc {
-    QString session, error, call, name, nick, city, country, grid;
+    QString session, error, subscription, call, name, nick, city, country, grid;
     bool has_record = false;
     bool valid = false;
 };
@@ -33,6 +33,7 @@ Doc read(const QByteArray& body, const QString& root, const QString& record_tag,
             if (path[1] == key_tag && tag == "key") d.session = text.trimmed();
             else if (path[1] == key_tag && tag == "session_id") d.session = text.trimmed();
             else if (path[1] == "session" && tag == "error") d.error = clip(text);
+            else if (path[1] == "session" && tag == "subexp") d.subscription = clip(text);
             else if (path[1] == record_tag) {
                 if (tag == "call" || tag == "callsign") d.call = clip(text);
                 else if (tag == "fname" || tag == "adr_name") d.name = clip(text);
@@ -56,6 +57,7 @@ Reply finish(const Doc& d, bool qrz) {
         r.message = d.error;
         if (e.contains("session") || e.contains("invalid session") || e.contains("expired")) r.outcome = Outcome::SessionExpired;
         else if (e.contains("not found")) r.outcome = Outcome::NotFound;
+        else if (e.contains("connection refused")) r.outcome = Outcome::Blocked;
         else if (e.contains("password") || e.contains("username") || e.contains("incorrect") || e.contains("refused"))
             r.outcome = Outcome::LoginFailed;
         else r.outcome = Outcome::Error;
@@ -68,9 +70,15 @@ Reply finish(const Doc& d, bool qrz) {
         r.outcome = Outcome::Ok;
         r.record = rec;
         r.session = d.session;
+        r.subscription = d.subscription;
         return r;
     }
-    if (!d.session.isEmpty()) { r.outcome = Outcome::Ok; r.session = d.session; return r; }
+    if (!d.session.isEmpty()) {
+        r.outcome = Outcome::Ok;
+        r.session = d.session;
+        r.subscription = d.subscription;
+        return r;
+    }
     (void)qrz;
     r.message = "Unexpected lookup reply";
     return r;
@@ -84,6 +92,10 @@ Reply parse_qrz(const QByteArray& body) {
 
 Reply parse_hamqth(const QByteArray& body) {
     return finish(read(body, "hamqth", "search", "session"), false);
+}
+
+bool has_xml_subscription(const QString& subscription) {
+    return subscription.trimmed().compare("non-subscriber", Qt::CaseInsensitive) != 0;
 }
 
 QString normalize_call(const QString& text) {

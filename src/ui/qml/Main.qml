@@ -17,7 +17,31 @@ ApplicationWindow {
 
     // Kiosk first boot (--first-run): no station yet, so start in Settings with the callsign
     // ready to type (the on-screen keyboard opens with it under --touch-keyboard).
-    Component.onCompleted: if (firstRun && !station.configured) { settingsLayer.visible = true; settingsPage.focusFirstField() }
+    Component.onCompleted: {
+        if (firstRun && !station.configured) { settingsLayer.visible = true; settingsPage.focusFirstField() }
+        if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
+        if (nativeMenuBar) createMacMenuBar()
+    }
+
+    // Native Mac menu bar (main.cpp sets nativeMenuBar on macOS only). Created from
+    // its file at run time so the Pi kiosk, Linux and iOS never load Qt.labs.platform.
+    function createMacMenuBar() {
+        const component = Qt.createComponent("MacMenuBar.qml")
+        if (component.status !== Component.Ready) {
+            console.warn("Mac menu bar: " + component.errorString())
+            return
+        }
+        const bar = component.createObject(window, {
+            appWindow: window,
+            settingsAvailable: Qt.binding(() => !window.overlayOpen),
+            pathAvailable: Qt.binding(() => station.configured),
+            showPath: Qt.binding(() => worldMap.showPath),
+            appearance: Qt.binding(() => appSettings.appearance)
+        })
+        bar.settingsRequested.connect(() => settingsLayer.visible = true)
+        bar.pathToggleRequested.connect(() => worldMap.showPath = !worldMap.showPath)
+        bar.appearanceRequested.connect(value => appSettings.appearance = value)
+    }
 
     TouchKeyboard { id: touchKeys; target: touchKeyboard ? window.activeFocusItem : null }
     Binding { target: Theme; property: "keyboardInset"; value: touchKeys.visible ? touchKeys.height : 0 }
@@ -58,9 +82,11 @@ ApplicationWindow {
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
     // F11 (Pi, Linux, Windows); Control-Command-F on the Mac, where F11 is Show Desktop.
-    Shortcut { sequences: ["F11", "Ctrl+Meta+F"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // With the native Mac menu bar its View and app menus own Control-Command-F and
+    // Command-comma, so these shortcuts step aside rather than fire a second time.
+    Shortcut { sequences: ["F11"].concat(nativeMenuBar ? [] : ["Ctrl+Meta+F"]); onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
     // Command-comma opens Settings on the Mac, as in every Mac app (Ctrl+comma elsewhere).
-    Shortcut { sequences: ["Ctrl+,"]; enabled: !window.overlayOpen; onActivated: settingsLayer.visible = true }
+    Shortcut { sequences: ["Ctrl+,"]; enabled: !nativeMenuBar && !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
@@ -233,7 +259,7 @@ ApplicationWindow {
                     width: Math.max(52 * Theme.scale, mapLabel.implicitWidth + 2 * Theme.pad)
                     height: 34 * Theme.scale
                     radius: 4 * Theme.scale
-                    color: mapMenu.opened ? Theme.accent : (Theme.dark ? "#cc10181b" : "#ccffffff")
+                    color: mapMenu.opened ? Theme.accent : (Theme.dark ? "#10181b" : "#ffffff")
                     activeFocusOnTab: true
                     Keys.onReturnPressed: mapMenuArea.clicked(null)
                     Keys.onSpacePressed: mapMenuArea.clicked(null)
@@ -291,7 +317,7 @@ ApplicationWindow {
                         model: [{ t: "+", d: 1 }, { t: "\u2212", d: -1 }, { t: "\u21ba", d: 0 }]
                         Rectangle {
                             width: 28 * Theme.scale; height: width; radius: 4 * Theme.scale
-                            color: Theme.dark ? "#cc10181b" : "#ccffffff"
+                            color: Theme.dark ? "#10181b" : "#ffffff"
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.t

@@ -16,8 +16,9 @@ struct DashboardView: View {
     @State private var setupMode = false
     @State private var bannerMode = 0
     @State private var showLocal = false
-    @State private var map = MapView()
     @State private var lastInput = Date()
+    /// When each rotating slot was last stepped by hand (its rotation restarts from there).
+    @State private var rotationRestart: [Int: Date] = [:]
 
     private var theme: Theme { Theme(dark: settings.dark, accentStyle: settings.accentStyle) }
     private var paneCount: Int { settings.mapSize == "hidden" ? 6 : 3 }
@@ -42,14 +43,21 @@ struct DashboardView: View {
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true // the dashboard is meant to stay on
             if !settings.configured { setupMode = true; showSettings = true }
+            // UI-test hook: start as if the remote had been idle for a day (dimmed when dimming is on).
+            if ProcessInfo.processInfo.arguments.contains("-hcpIdle") { lastInput = Date().addingTimeInterval(-86400) }
         }
         .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .onPlayPauseCommand { lastInput = Date(); playPause() }
         .onMoveCommand { _ in lastInput = Date() }
-        // Menu closes an open overlay; with none open the system handles it (back to the Home Screen).
-        .onExitCommand(perform: overlay == nil || showSettings ? nil : { closeOverlay() })
+        // Menu closes Settings or an open overlay (also before the focus has moved into it); with
+        // nothing open there is NO handler, so tvOS takes the app back to the Home screen.
+        .onExitCommand(perform: overlay == nil && !showSettings ? nil : { showSettings ? closeSettings() : closeOverlay() })
         .onChange(of: overlay) { _, _ in lastInput = Date() }
         .onChange(of: showSettings) { _, _ in lastInput = Date() }
+        // A rotation just switched on (pane options) starts its first interval now.
+        .onChange(of: settings.paneRotations) { old, new in
+            for i in new.indices where i >= old.count || old[i] != new[i] { rotationRestart[i] = Date() }
+        }
     }
 
     // MARK: layout
@@ -65,10 +73,13 @@ struct DashboardView: View {
                     .accessibilityIdentifier("settingsButton")
             }
             .frame(height: 70)
+            // Full-width section: Up from any pane (even one whose left/right step a rotation) reaches Settings.
+            .frame(maxWidth: .infinity)
+            .focusSection()
             HStack(alignment: .top, spacing: Theme.gap) {
                 RemoteTile(select: { woke(); settings.configured ? showLocal.toggle() : openSettings() }, hold: { woke(); openSettings() }) {
                     StationCardView(now: now, focused: focus == .station, bannerMode: bannerMode,
-                                    showLocal: showLocal, longPath: map.longPath)
+                                    showLocal: showLocal, longPath: settings.mapView.longPath)
                 }
                 .frame(width: 400)
                 .focused($focus, equals: .station)
@@ -94,35 +105,62 @@ struct DashboardView: View {
     }
 
     private func pane(_ i: Int, _ now: Date) -> some View {
-        RemoteTile(select: { overlay = .chooser(i) }, hold: { overlay = .options(i) }) {
+        let rotating = isRotating(i)
+        return RemoteTile(select: { overlay = .chooser(i) }, hold: { overlay = .options(i) }) {
             PaneWidget(id: shownWidget(i, now), now: now, focused: focus == .pane(i))
+                .overlay(alignment: .bottom) {
+                    if rotating && focus == .pane(i) { RotationHint(seconds: settings.paneRotations[i]) }
+                }
         }
         .focused($focus, equals: .pane(i))
+        // While a pane rotates, left/right step it by hand (PaneSlot.qml); up/down still move on.
+        // Attached only to rotating panes, so other panes never see a move handler at all.
+        .modifier(RotationStepper(enabled: rotating) { stepRotation(i, $0) })
         .accessibilityIdentifier("pane\(i)")
         .accessibilityValue(settings.panes[i])
+        .accessibilityHint(rotating ? "Rotating. Left and right change the widget." : "")
     }
 
     private func mapCard(_ now: Date) -> some View {
         RemoteTile(select: { overlay = .mapMenu }, hold: { overlay = .mapMenu }) {
-            Card(title: "World map" + (map.centre == .world ? "" : map.centre == .de ? " · DE" : " · DX"), chooser: true,
-                 focused: focus == .map) {
-                WorldMapView(now: now, view: map)
+            Card(title: "World map" + mapTitleSuffix, chooser: true, focused: focus == .map) {
+                WorldMapView(now: now, view: settings.mapView)
             }
         }
         .focused($focus, equals: .map)
         .accessibilityLabel("World map")
+        .accessibilityValue("\(settings.mapView.centre.rawValue) \(Int(settings.mapView.zoom))x\(settings.mapView.longPath ? " long" : "")")
         .accessibilityIdentifier("mapCard")
     }
 
 
+    private var mapTitleSuffix: String {
+        let v = settings.mapView
+        let centre = v.centre == .world ? "" : v.centre == .de ? " · DE" : " · DX"
+        return centre + (v.zoom > 1 ? " · \(Int(v.zoom))×" : "")
+    }
+
     /// The saved widget, or the current stop of the slot's automatic rotation (never saved).
     private func shownWidget(_ i: Int, _ now: Date) -> String {
-        let saved = settings.panes[i]
-        let seconds = settings.paneRotations[i]
-        guard seconds > 0, saved != "none" else { return saved }
-        let list = WidgetCatalog.onTV.map(\.id)
-        let start = list.firstIndex(of: saved) ?? 0
-        return list[(start + Int(now.timeIntervalSince1970) / seconds) % list.count]
+        PaneRotation.shown(saved: settings.panes[i], seconds: settings.paneRotations[i], restart: rotationRestart[i], now: now)
+    }
+
+    private func isRotating(_ i: Int) -> Bool { settings.paneRotations[i] > 0 && settings.panes[i] != "none" }
+
+    /// Left/right on a rotating pane: show the previous/next widget now (saved, as PaneSlot.step
+    /// does) and restart the slot's interval so it does not change again straight away.
+    private func stepRotation(_ i: Int, _ direction: MoveCommandDirection) {
+        lastInput = Date()
+        let by: Int
+        switch direction {
+        case .left: by = -1
+        case .right: by = 1
+        default: return
+        }
+        let next = PaneRotation.step(from: shownWidget(i, Date()), by: by)
+        rotationRestart[i] = Date()
+        settings.setPane(i, next)
+        focus = .pane(i)
     }
 
     // MARK: overlays
@@ -134,7 +172,7 @@ struct DashboardView: View {
         case .options(let slot):
             PaneOptionsView(slot: slot, change: { overlay = .chooser(slot) }) { overlay = nil; focus = .pane(slot) }
         case .mapMenu:
-            MapMenuView(view: $map) { overlay = nil; focus = .map }
+            MapMenuView(view: $settings.mapView) { overlay = nil; focus = .map }
         }
     }
 
@@ -187,5 +225,33 @@ enum DimPolicy {
     static let dimmedOpacity = 0.25
     static func opacity(idle: TimeInterval, afterHours: Int) -> Double {
         afterHours > 0 && idle >= Double(afterHours) * 3600 ? dimmedOpacity : 1
+    }
+}
+
+/// Shown on a focused rotating pane: the remote's left/right step it (owner request).
+private struct RotationHint: View {
+    @Environment(\.theme) private var theme
+    let seconds: Int
+    var body: some View {
+        Text("◀ ▶ change · rotates every \(seconds) s")
+            .font(.system(size: Theme.fontCaption - 3, weight: .semibold))
+            .foregroundStyle(theme.accentInk)
+            .padding(.horizontal, 18).padding(.vertical, 6)
+            .background(Capsule().fill(theme.accent))
+            .offset(y: 18)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Installs the left/right stepping handler only while the pane rotates (no handler otherwise).
+private struct RotationStepper: ViewModifier {
+    let enabled: Bool
+    let step: (MoveCommandDirection) -> Void
+    func body(content: Content) -> some View {
+        if enabled {
+            content.onMoveCommand(perform: step)
+        } else {
+            content
+        }
     }
 }

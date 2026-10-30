@@ -9,6 +9,7 @@
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
+#include "window_geometry.hpp"
 #include "../net/polled_source.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
@@ -23,6 +24,7 @@
 #include "../platform/apple_widgetshare.hpp"
 #include <QSettings>
 #include <QEventLoop>
+#include <QNetworkInformation>
 #include <QGuiApplication>
 #include <QThread>
 #include <QCommandLineParser>
@@ -157,8 +159,9 @@ int main(int argc, char** argv) {
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
+    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: accounts, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
-    for (const auto& option : {allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    for (const auto& option : {open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -169,6 +172,9 @@ int main(int argc, char** argv) {
     QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
     set_identity();
     hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
+    // Lets every PolledSource retry at once when the network comes back (Wi-Fi drop, sleep).
+    if (!QNetworkInformation::loadDefaultBackend())
+        qWarning("No network reachability backend; sources retry on their backoff only");
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
@@ -287,10 +293,22 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
     engine.rootContext()->setContextProperty("touchKeyboard", parser.isSet(touch_keyboard));
     engine.rootContext()->setContextProperty("keyInjector", &key_injector);
+    engine.rootContext()->setContextProperty("openSettings", parser.value(open_settings));
+#ifdef Q_OS_MACOS
+    // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
+    engine.rootContext()->setContextProperty("nativeMenuBar", !parser.isSet(screenshot));
+#else
+    engine.rootContext()->setContextProperty("nativeMenuBar", false); // iOS, Linux, Pi kiosk
+#endif
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+#if !defined(Q_OS_IOS)
+    // Desktop: reopen at the last window size and position (not for kiosk full screen or screenshots).
+    if (!parser.isSet(screenshot) && !start_fullscreen)
+        hamclock::remember_window_geometry(qobject_cast<QWindow*>(engine.rootObjects().first()), settings.optionsPath());
+#endif
     // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
     QString orientation_lock = settings.orientationLock();
     hamclock::applyOrientationLock(orientation_lock);
