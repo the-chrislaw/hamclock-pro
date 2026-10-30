@@ -18,6 +18,7 @@ ApplicationWindow {
     // Kiosk first boot (--first-run): no station yet, so start in Settings.
     Component.onCompleted: {
         if (firstRun && !station.configured) settingsLayer.visible = true
+        if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
         if (nativeMenuBar) createMacMenuBar()
     }
 

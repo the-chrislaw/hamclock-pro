@@ -46,6 +46,7 @@ void HamAlertModel::start() {
     const QString user = settings_ ? settings_->hamAlertUser() : QString();
     const QString password = settings_ ? settings_->hamAlertPassword() : QString();
     client_.stop();
+    reached_ = false;
     spots_.clear();
     emit changed();
     publishOverlay();
@@ -68,8 +69,11 @@ void HamAlertModel::on_state(TelnetClient::State state) {
     using S = TelnetClient::State;
     switch (state) {
     case S::Connecting: case S::LoggingIn: setState("loading", "Connecting to HamAlert…"); break;
-    case S::Online: setState("live", "HamAlert", now()); break;
-    case S::Waiting: setState("offline", "HamAlert connection lost; retrying"); break;
+    case S::Online: reached_ = true; setState("live", "HamAlert", now()); break;
+    case S::Waiting:
+        setState("offline", reached_ ? "HamAlert connection lost; retrying"
+                                     : QString("Cannot reach %1:%2; retrying").arg(kHost).arg(kPort));
+        break;
     case S::Idle: break;
     }
     publishOverlay();

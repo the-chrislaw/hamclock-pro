@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
     m2.start();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(seen_bearer.isEmpty() && !m2.personalised() && m2.nextTitle() == "KB5FHK on RS-44", "no key -> public request");
+    check(m2.keyStatus() == "none", "key status: none");
     check(settings.saveHamsatKey("  secret-key-1  ").isEmpty() && settings.hasHamsatKey(), "key saved");
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(seen_bearer == "secret-key-1" && m2.personalised(), "key change refetches with bearer");
@@ -131,11 +132,22 @@ int main(int argc, char** argv) {
           "workable window and elevation shown");
     check(m2.later().size() == 0 || m2.later().size() == 1, "later rows from personalised list");
     check(m2.statusText().contains("(your station)"), "accepted key: your station");
+    check(m2.keyStatus() == "accepted", "key status: accepted");
+    {
+        const int before = calls;
+        check(settings.signIn("hamsat", {}, "secret-key-2").isEmpty(), "replace the key");
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(calls == before + 1 && seen_bearer == "secret-key-2" && m2.keyStatus() == "accepted",
+              "a replaced key is tried at once");
+        check(settings.signIn("hamsat", {}, "secret-key-1").isEmpty(), "back to the first key");
+        for (int i = 0; i < 20; ++i) app.processEvents();
+    }
     ignore_key = true;
     m2.source().refreshNow();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(seen_bearer == "secret-key-1" && !m2.personalised(), "200 with the public list: not personalised");
     check(!m2.statusText().contains("your station") && m2.statusText().contains("not accepted"), "unaccepted key explained, never 'your station'");
+    check(m2.keyStatus() == "rejected", "key status: not accepted counts as rejected");
     check(m2.nextDetail() == "SSB · CM96 · 01:04Z-01:26Z", "no per-station text from the public list");
     ignore_key = false;
     reject = true;
@@ -144,6 +156,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(calls == 2 && seen_bearer.isEmpty() && !m2.personalised() && m2.hasNext(), "401 -> public list, key not sent again");
     check(m2.statusText().contains("rejected"), "rejected key explained");
+    check(m2.keyStatus() == "rejected", "key status: 401 rejected");
     check(settings.saveHamsatKey("").isEmpty() && !settings.hasHamsatKey(), "key cleared");
     for (int i = 0; i < 20; ++i) app.processEvents();
 

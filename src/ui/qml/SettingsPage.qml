@@ -3,7 +3,7 @@ import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import HamClock
 
-// Settings: station, appearance, DX cluster and callsign-lookup account.
+// Settings: station, accounts (sign-ins and the DX cluster node), appearance and feeds.
 // Each section saves on its own and shows the validation error from C++.
 Rectangle {
     id: page
@@ -13,7 +13,7 @@ Rectangle {
     // Saves every section with changes, in page order. On the first error the page
     // stays open and scrolls to that section so the message is visible.
     function saveAndClose() {
-        for (const section of [stationCard, clusterCard, hardwareCard, hamAlertCard, hamsatCard, accountCard]) {
+        for (const section of [stationCard, clusterCard, hardwareCard]) {
             if (!section.save()) {
                 flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
                                                       section.mapToItem(column, 0, 0).y - Theme.pad))
@@ -29,15 +29,12 @@ Rectangle {
     function reload() {
         const bound = [
             [callsign, () => appSettings.callsign], [pskMatch, () => appSettings.pskMatch],
-            [clusterHost, () => appSettings.clusterHost], [clusterPort, () => appSettings.clusterPort],
-            [clusterSsid, () => appSettings.clusterSsid], [clusterCmds, () => appSettings.clusterCommandsText.split("\n").join("; ")],
             [udpPort, () => appSettings.udpSpotPort], [udpGroup, () => appSettings.udpSpotGroup],
             [aprsHost, () => appSettings.aprsHost], [aprsPort, () => appSettings.aprsPort], [aprsRadius, () => appSettings.aprsRadiusKm],
             [meshHost, () => appSettings.meshHost], [meshPort, () => appSettings.meshPort], [pskMax, () => appSettings.pskMaxKm],
             [adifPath, () => appSettings.adifPath], [otaProgram, () => appSettings.otaProgram], [otaBand, () => appSettings.otaBand],
             [otaMode, () => appSettings.otaMode], [otaSort, () => appSettings.otaSort], [otaAge, () => appSettings.otaMaxAgeMin],
-            [watchList, () => appSettings.watchListText], [hamAlertUser, () => appSettings.hamAlertUser],
-            [lookupUser, () => appSettings.lookupUser], [bannerTitle, () => appSettings.bannerTitle],
+            [watchList, () => appSettings.watchListText], [bannerTitle, () => appSettings.bannerTitle],
             [radioHost, () => appSettings.radioHost], [radioPort, () => appSettings.radioPort],
             [rotatorHost, () => appSettings.rotatorHost], [rotatorPort, () => appSettings.rotatorPort],
             [adsbHost, () => appSettings.adsbHost], [adsbPort, () => appSettings.adsbPort],
@@ -54,16 +51,30 @@ Rectangle {
         zone.zoneId = Qt.binding(() => timeZones.stationZone(appSettings.deZone, appSettings.configured ? appSettings.deLatitude : NaN,
                                                              appSettings.configured ? appSettings.deLongitude : NaN))
         dxZone.zoneId = Qt.binding(() => appSettings.dxZoneOverride)
-        for (const secret of [hamAlertPassword, hamsatKey, lookupPassword, place, deGrid]) secret.text = ""
+        for (const cleared of [place, deGrid]) cleared.text = ""
         placeStatus.text = ""
         zoneHint.text = ""
         udpLan.lan = Qt.binding(() => appSettings.udpSpotLan)
         udpMe.me = Qt.binding(() => appSettings.udpSpotByMe)
         udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
-        accountCard.service = Qt.binding(() => appSettings.lookupService)
-        for (const message of [stationError, clusterError, hardwareError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
+        accounts.reload()
+        for (const message of [stationError, clusterError, hardwareError]) message.text = ""
         satAlerts.refreshSystemState()
         flick.contentY = 0
+    }
+
+    // "accounts" scrolls to Accounts; "accounts:hamqth" also opens that account (--settings).
+    function show(target) { showTimer.target = target; showTimer.restart() }
+    // After the first layout pass, so the section's position is known.
+    Timer {
+        id: showTimer
+        property string target: ""
+        interval: 50
+        onTriggered: {
+            flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, accounts.mapToItem(column, 0, 0).y - Theme.pad))
+            const parts = target.split(":")
+            if (parts[0] === "accounts" && parts.length > 1) accounts.open(parts[1])
+        }
     }
 
     function num(text) { const v = Number(text.trim()); return text.trim().length && isFinite(v) ? v : NaN }
@@ -271,6 +282,8 @@ Rectangle {
                     }
                 }
             }
+
+            AccountsSection { id: accounts; Layout.fillWidth: true }
 
             Card {
                 title: "Appearance"
@@ -699,12 +712,12 @@ Rectangle {
             }
 
             Card {
-                title: "DX cluster"
+                title: "Spots and feeds"
                 Layout.fillWidth: true
                 ColumnLayout {
                     id: clusterCard
                     width: parent.width
-                    readonly property var fields: [clusterHost, clusterPort, clusterSsid, clusterCmds, udpPort, udpGroup,
+                    readonly property var fields: [udpPort, udpGroup,
                         aprsHost, aprsPort, aprsRadius, meshHost, meshPort, pskMax, pskMatch, adifPath,
                         otaProgram, otaBand, otaMode, otaSort, otaAge, watchList]
                     function changed() {
@@ -715,8 +728,6 @@ Rectangle {
                     function save() {
                         if (!changed()) return true
                         const steps = [
-                            () => appSettings.saveCluster(clusterHost.text, parseInt(clusterPort.text) || 0),
-                            () => appSettings.saveClusterLogin(parseInt(clusterSsid.text) || 0, clusterCmds.text.split(";").join("\n")),
                             () => appSettings.saveWatchList(watchList.text),
                             () => appSettings.saveAdifPath(adifPath.text),
                             () => appSettings.saveOtaFilter(otaProgram.text, otaBand.text, otaMode.text, parseInt(otaAge.text) || 0),
@@ -743,22 +754,8 @@ Rectangle {
                     }
                     spacing: Theme.gap * 0.8
                     Text {
-                        text: "Spots come from a DX cluster node you choose; it logs in with your callsign. Leave empty to stay disconnected."
+                        text: "Choose the DX cluster node under Accounts. These options shape the spots, APRS, Meshtastic and PSKReporter panes."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: clusterHost; label: "Node host name"; text: appSettings.clusterHost; Layout.preferredWidth: 3 }
-                        FormField { id: clusterPort; label: "Port"; text: appSettings.clusterPort; Layout.preferredWidth: 1
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: clusterSsid; label: "SSID (0 = none)"; text: appSettings.clusterSsid; Layout.preferredWidth: 1
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
-                        FormField { id: clusterCmds; label: "Commands after login (separate with ;)"; text: appSettings.clusterCommandsText.split("\n").join("; "); Layout.preferredWidth: 3 }
                     }
                     // Five controls: one row on wide screens, two columns below ~1100 px (a 1024x600
                     // panel cannot fit the five labels on one line without cutting them).
@@ -942,105 +939,6 @@ Rectangle {
                 }
             }
 
-            Card {
-                title: "HamAlert"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.8
-                    Text {
-                        text: "Optional. Personal spot alerts from hamalert.org (telnet). Stored only on this device, readable by you alone. Leave the user name empty to turn it off."
-                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
-                    }
-                    id: hamAlertCard
-                    function save() {
-                        if (!hamAlertUser.edited && !hamAlertPassword.text.length) return true
-                        hamAlertError.text = appSettings.saveHamAlert(hamAlertUser.text, hamAlertPassword.text)
-                        hamAlertPassword.text = ""
-                        if (hamAlertError.text.length) return false
-                        hamAlertUser.edited = false
-                        return true
-                    }
-                    FormField { id: hamAlertUser; label: "HamAlert user name"; text: appSettings.hamAlertUser; Layout.fillWidth: true }
-                    FormField { id: hamAlertPassword; label: "Password"; echoMode: TextInput.Password; Layout.fillWidth: true
-                                placeholder: appSettings.hasHamAlertPassword ? "Saved — leave empty to keep" : "" }
-                    RowLayout {
-                        Text { id: hamAlertError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: hamAlertCard.save() }
-                    }
-                }
-            }
-
-            Card {
-                title: "hams.at API key"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.8
-                    Text {
-                        text: "Optional. Copy the key from your hams.at Settings page to see which satellite activations are workable from your station. Stored only on this device, readable by you alone. Save an empty key to remove it."
-                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
-                    }
-                    id: hamsatCard
-                    function save() {
-                        if (!hamsatKey.text.length) return true
-                        return saveKey()
-                    }
-                    function saveKey() {
-                        hamsatKeyError.text = appSettings.saveHamsatKey(hamsatKey.text)
-                        hamsatKey.text = ""
-                        return hamsatKeyError.text.length === 0
-                    }
-                    FormField { id: hamsatKey; label: "API key"; echoMode: TextInput.Password; Layout.fillWidth: true
-                                placeholder: appSettings.hasHamsatKey ? "Saved — save empty to remove" : "" }
-                    RowLayout {
-                        Text { id: hamsatKeyError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save key"; primary: true; onClicked: hamsatCard.saveKey() }
-                    }
-                }
-            }
-
-            Card {
-                title: "Callsign lookup account"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.8
-                    Text {
-                        text: "Optional. Used to look up names and locations for spotted callsigns. QRZ.com needs an XML subscription; HamQTH is free. Stored only on this device, readable by you alone."
-                        color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
-                    }
-                    id: accountCard
-                    property string service: appSettings.lookupService
-                    function save() {
-                        if (service === appSettings.lookupService && !lookupUser.edited && !lookupPassword.text.length) return true
-                        accountError.text = appSettings.saveAccount(service, lookupUser.text, lookupPassword.text)
-                        lookupPassword.text = ""
-                        if (accountError.text.length) return false
-                        lookupUser.edited = false
-                        return true
-                    }
-                    RowLayout {
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [["none", "None"], ["qrz", "QRZ.com"], ["hamqth", "HamQTH"]]
-                            AppButton {
-                                text: modelData[1]
-                                primary: parent.parent.service === modelData[0]
-                                onClicked: parent.parent.service = modelData[0]
-                            }
-                        }
-                    }
-                    FormField { id: lookupUser; visible: parent.service !== "none"; label: "User name"; text: appSettings.lookupUser }
-                    FormField { id: lookupPassword; visible: parent.service !== "none"; label: "Password"
-                                echoMode: TextInput.Password
-                                placeholder: appSettings.hasLookupPassword ? "Saved — leave empty to keep" : "" }
-                    RowLayout {
-                        Text { id: accountError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: accountCard.save() }
-                    }
-                }
-            }
         }
     }
 }
