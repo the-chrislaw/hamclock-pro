@@ -1,6 +1,7 @@
 #!/bin/sh
 # Full-screen kiosk: one Wayland app under cage, cursor hidden. --first-run opens Settings when
-# there is no station yet. Screen blanking follows HamClock Pro's own Settings.
+# there is no station yet; --touch-keyboard gives text fields an on-screen keyboard (no physical
+# keyboard needed). Screen blanking follows HamClock Pro's own Settings.
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 export QT_QPA_PLATFORM=wayland
-exec cage -d -- /usr/bin/hamclock-pro --fullscreen --first-run
+exec cage -d -- /usr/bin/hamclock-pro --fullscreen --first-run --touch-keyboard
