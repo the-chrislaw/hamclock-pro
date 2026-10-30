@@ -114,7 +114,7 @@ void PassesModel::recompute() {
         empty_reason_ = filter_ == "visible" ? "No passes visible to the eye in 48 h"
                       : filter_ == "amateur" ? "No amateur-satellite passes in 48 h"
                       : filter_ == "starred" ? (starred_.isEmpty() ? "Tap a satellite name to star it" : "No starred-satellite passes in 48 h") : "No passes in 48 h";
-    setState("live", "Computed offline from CelesTrak elements", now());
+    setState("live", "Computed offline from CelesTrak or AMSAT elements", now());
     emit changed();
 }
 

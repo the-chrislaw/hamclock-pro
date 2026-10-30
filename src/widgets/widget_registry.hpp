@@ -5,6 +5,7 @@
 #include "widget_model.hpp"
 #include "../net/polled_source.hpp"
 #include <QAbstractListModel>
+#include <QStringList>
 #include <QUrl>
 #include <vector>
 
@@ -45,6 +46,8 @@ public:
     QVariant data(const QModelIndex& index, int role) const override;
     QHash<int, QByteArray> roleNames() const override;
     Q_INVOKABLE QObject* model(const QString& id) const;
+    // Ids of the listed widgets, in list order.
+    Q_INVOKABLE QStringList ids() const;
 
 signals:
     void countChanged();

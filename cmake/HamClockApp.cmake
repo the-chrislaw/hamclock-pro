@@ -11,6 +11,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_safearea.cpp
     src/platform/apple_orientation.cpp
     src/platform/apple_textentry.cpp
+    src/platform/apple_attribution.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
     src/platform/apple_camerafov.cpp
@@ -28,6 +29,12 @@ set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 # "Find it in the sky" (#573) has no screen yet. Until it does, iOS builds leave
 # out its sensor code, frameworks and permission prompts (see AppleBundle.cmake)
 # so App Review doesn't ask about camera/location use it can't find.
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # System sleep/wake suspends and resumes polling and connections (AppLifecycle).
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_lifecycle_mac.mm)
+    find_library(HC_APPKIT AppKit REQUIRED)
+    target_link_libraries(hamclock-widget-core PUBLIC ${HC_APPKIT})
+endif()
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
     target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
@@ -160,6 +167,13 @@ if(BUILD_TESTING)
     target_link_libraries(cache-dir-regression PRIVATE hamclock-widget-core)
     add_test(NAME cache-dir-regression COMMAND cache-dir-regression)
     set_tests_properties(cache-dir-regression PROPERTIES TIMEOUT 30)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        add_executable(app-lifecycle-mac-regression tests/app_lifecycle_mac_regression.mm)
+        target_link_libraries(app-lifecycle-mac-regression PRIVATE hamclock-widget-core)
+        set_target_properties(app-lifecycle-mac-regression PROPERTIES MACOSX_BUNDLE OFF)
+        add_test(NAME app-lifecycle-mac-regression COMMAND app-lifecycle-mac-regression)
+        set_tests_properties(app-lifecycle-mac-regression PROPERTIES TIMEOUT 30)
+    endif()
     add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
     target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
     add_test(NAME pane-grid-regression COMMAND pane-grid-regression)
@@ -168,6 +182,11 @@ if(BUILD_TESTING)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
     add_test(NAME safe-area-regression COMMAND safe-area-regression)
     set_tests_properties(safe-area-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(attribution-regression tests/attribution_regression.cpp)
+    target_link_libraries(attribution-regression PRIVATE hamclock-widget-core)
+    set_target_properties(attribution-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME attribution-regression COMMAND attribution-regression)
+    set_tests_properties(attribution-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(text-entry-hint-regression tests/text_entry_hint_regression.cpp)
     target_link_libraries(text-entry-hint-regression PRIVATE hamclock-widget-core)
     set_target_properties(text-entry-hint-regression PROPERTIES AUTOMOC ON)
@@ -281,6 +300,15 @@ if(BUILD_TESTING)
     endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.
+    foreach(size 1512x982 2560x1440)
+        add_test(NAME qml-app-weather-long-place-${size} COMMAND hamclock-pro --config-dir ${CMAKE_CURRENT_BINARY_DIR}/weather-place-config-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf --pane 1=weather
+            --fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/weather/tests/fixtures-long-place
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/weather-place-${size}.png --size ${size})
+        set_tests_properties(qml-app-weather-long-place-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/weather-place-cache-${size}")
+    endforeach()
     # Widget panes only report truncation (widget layouts belong to other areas); the app smokes above enforce it.
     # Every registered widget renders in the first pane at the smallest size without QML warnings.
     foreach(id ${widget_ids})

@@ -52,7 +52,6 @@ jobs:
           test -n "$udid"
           xcrun simctl boot "$udid"
           fail=0
-          ls -R build-tvos | head -40
           tests=$(find "$PWD/build-tvos" -type f -perm -u+x -name 'core-*-regression')
           test -n "$tests"
           for t in $tests; do
@@ -63,7 +62,7 @@ jobs:
           exit $fail
 
   app:
-    name: SwiftUI app (tvOS Simulator build + screenshot)
+    name: SwiftUI app (tvOS Simulator build, Siri Remote UI test, screenshots)
     needs: core
     runs-on: macos-14
     timeout-minutes: 40
@@ -89,26 +88,38 @@ jobs:
           xcodebuild -project HamClockTV.xcodeproj -scheme HamClockTV \
             -sdk appletvsimulator -configuration Debug -derivedDataPath "$RUNNER_TEMP/dd" \
             ARCHS=arm64 CODE_SIGNING_ALLOWED=NO build
-      - name: Launch and screenshot
+      # Siri Remote walk-through (apple/tvos/UITests): first-run setup, pane chooser,
+      # pane options, map menu, settings persisted across a relaunch. It also writes the
+      # 1920x1080 screenshots used in PRs (a 1080p Apple TV simulator when one exists).
+      - name: UI test with the Siri Remote (XCUIRemote) and screenshots
         run: |
           set -euo pipefail
           udid=$(xcrun simctl list devices available -j | python3 -c '
           import json,sys
           d=json.load(sys.stdin)["devices"]
-          for rt,devs in sorted(d.items()):
-              if "tvOS" in rt and devs:
-                  print(devs[0]["udid"]); break')
-          xcrun simctl boot "$udid"
-          app=$(find "$RUNNER_TEMP/dd" -name HamClockTV.app -type d | head -1)
-          xcrun simctl install "$udid" "$app"
-          xcrun simctl launch "$udid" com.chrislaw.hamclockpro
-          sleep 20
-          mkdir -p shots
-          xcrun simctl io "$udid" screenshot shots/tvos-dashboard.png
+          tv=[dev for rt,devs in sorted(d.items()) if "tvOS" in rt for dev in devs]
+          hd=[dev for dev in tv if "1080p" in dev["name"]]
+          print((hd or tv)[0]["udid"])')
+          test -n "$udid"
+          mkdir -p "$GITHUB_WORKSPACE/shots"
+          cd apple/tvos
+          TEST_RUNNER_HCP_SHOT_DIR="$GITHUB_WORKSPACE/shots" xcodebuild test -project HamClockTV.xcodeproj \
+            -scheme HamClockTV -destination "platform=tvOS Simulator,id=$udid" \
+            -derivedDataPath "$RUNNER_TEMP/dd" -resultBundlePath "$RUNNER_TEMP/tvos-uitest.xcresult" \
+            > "$RUNNER_TEMP/uitest.log" 2>&1 || { grep -E "error:|failed" "$RUNNER_TEMP/uitest.log" | head -40; exit 1; }
+          grep -E "Test Suite .All tests.|Executed" "$RUNNER_TEMP/uitest.log" | tail -3
+          ls -l "$GITHUB_WORKSPACE/shots"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: tvos-simulator-screenshot
-          path: shots/tvos-dashboard.png
+          name: tvos-simulator-screenshots
+          path: shots/*.png
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: tvos-uitest-result
+          path: ${{ runner.temp }}/tvos-uitest.xcresult
 
   # TestFlight upload of the Apple TV device build. Same gate, secrets and signing
   # route as "iPad TestFlight upload" in apple.yml: main pushes only, and only while

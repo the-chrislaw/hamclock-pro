@@ -83,6 +83,30 @@ int main(int argc, char** argv) {
     spin(app);
     check(calls == 3, "late source fetches on resume");
 
+    // Mac sleep/wake: the network is gone while the Mac sleeps, so sleeping counts
+    // as suspended and waking resumes (reconnects, refetches when overdue).
+    const int suspends_before_sleep = suspends;
+    life.setSystemAsleep(true);
+    check(life.isSuspended() && source.isPaused() && suspends == suspends_before_sleep + 1, "system sleep suspends");
+    now = now.addSecs(3600);
+    life.setSystemAsleep(false);
+    spin(app);
+    check(!life.isSuspended() && !source.isPaused() && calls == 4, "wake resumes and refetches overdue data");
+
+    // Waking while the app itself is still suspended (iPad) keeps it suspended.
+    life.setState(Qt::ApplicationSuspended);
+    life.setSystemAsleep(true);
+    life.setSystemAsleep(false);
+    check(life.isSuspended(), "wake does not override an app suspension");
+    life.setState(Qt::ApplicationActive);
+    check(!life.isSuspended(), "app resume after wake");
+    // Sleep reported twice (notification repeats) is one suspension.
+    const int suspends_before_repeat = suspends;
+    life.setSystemAsleep(true);
+    life.setSystemAsleep(true);
+    check(suspends == suspends_before_repeat + 1, "repeated sleep is idempotent");
+    life.setSystemAsleep(false);
+
     std::cout << (failures ? "FAILED\n" : "app-lifecycle-regression: ok\n");
     return failures ? 1 : 0;
 }
