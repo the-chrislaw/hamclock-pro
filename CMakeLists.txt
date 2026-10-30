@@ -146,6 +146,8 @@ if(BUILD_TESTING)
     set_tests_properties(kiosk-unit-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
     add_test(NAME map-menu-position-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/map_menu_position_regression.py)
     set_tests_properties(map-menu-position-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
+    add_test(NAME qml-overlay-import-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/qml_overlay_import_regression.py)
+    set_tests_properties(qml-overlay-import-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
 endif()
 
 if(BUILD_TESTING)
