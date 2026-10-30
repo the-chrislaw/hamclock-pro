@@ -2,3 +2,6 @@
 # Qt 6.4's QQuickPixmap cache keeps a JPEG it is still decoding when the app quits right
 # after --screenshot; the buffer is allocated by the qjpeg image plugin.
 leak:libqjpeg.so
+# The same image's scene-graph texture (QSGTexture / QPixmap made in QQuickImage::updatePaintNode)
+# is not released by Qt 6.4's software renderer when the window closes right after the screenshot.
+leak:QQuickImage::updatePaintNode
