@@ -197,7 +197,7 @@ Popup {
                 Layout.fillWidth: true
                 spacing: Theme.gap * 0.6
                 layoutDirection: Qt.RightToLeft
-                AppButton { text: sheet.isCluster ? "Connect" : sheet.service === "hamsat" ? "Save key" : "Sign in"
+                AppButton { text: sheet.isCluster ? "Connect" : sheet.service === "hamsat" ? "Use key" : "Sign in"
                             primary: true; onClicked: sheet.signIn() }
                 AppButton { visible: sheet.signedIn
                             text: sheet.isCluster ? "Disconnect" : sheet.service === "hamsat" ? "Remove key" : "Sign out"

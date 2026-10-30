@@ -99,10 +99,10 @@ set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
 qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
-    src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
-    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml
-    src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml
-    src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml
+    src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/ToggleChip.qml src/ui/qml/FormField.qml src/ui/qml/StationCard.qml
+    src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml
+    src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml
+    src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml
     src/ui/qml/SatAlertBanner.qml src/ui/qml/MacMenuBar.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

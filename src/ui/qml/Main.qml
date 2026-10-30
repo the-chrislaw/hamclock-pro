@@ -85,7 +85,8 @@ ApplicationWindow {
     Shortcut { sequences: ["Ctrl+,"]; enabled: !nativeMenuBar && !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
-    Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
+    // Escape keeps what was typed, like Done (Settings applies changes as they are made).
+    Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsPage.saveAndClose() }
 
     // The header sits outside contentItem, so the full-screen layers below cannot
     // cover it: hide it while one is open (its buttons are input-blocked anyway).
