@@ -96,7 +96,7 @@ ADS-B use hardware or programs on your own network.
   public list".
 - **With a key:** sign up at <https://hams.at/users/register> and set your grid on
   hams.at. Then open Settings on hams.at and copy the **API key**. In
-  **Accounts → hams.at**, paste it and tap **Save key**.
+  **Accounts → hams.at**, paste it and tap **Use key**.
 - **Working:** "Key accepted ✓". The pane then shows rows like "workable
   18:02Z-18:09Z". "Key not accepted" means hams.at sent the public list instead. Copy
   the key again.
