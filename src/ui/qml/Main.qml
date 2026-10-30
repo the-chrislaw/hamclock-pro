@@ -126,6 +126,10 @@ ApplicationWindow {
     GridLayout {
         id: page
         enabled: !window.pageInputBlocked
+        // Settings covers the whole window: skip drawing the dashboard under it. With the
+        // window header hidden there (#675) the station card re-lays out and its clock texts
+        // could report as clipped in Settings screenshots, depending on the time of day.
+        visible: !settingsLayer.visible
         columns: window.phone ? 1 : 2
         rowSpacing: Theme.gap
         columnSpacing: Theme.gap
