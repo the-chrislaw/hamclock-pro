@@ -207,6 +207,7 @@ Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions
 
 ### Verification
 
-- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (21 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (22 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- Threading: feed bodies are parsed (and written to the Caches copy) on a background task, never on the main actor, and satellite positions are computed every 5 s off the main actor with one batched core call. Parse times show up in Instruments as `parse` signpost intervals (subsystem `com.chrislaw.hamclockpro`).
 - App: `apple/tvos/UITests/RemoteWalkthroughTests.swift` drives the Siri Remote (`XCUIRemote`) through first-run setup, the pane chooser, pane options (hold Select and Play/Pause), the map menu and a settings change, then relaunches and checks that the station, the pane choice and the units were kept. Locally: `xcodebuild test -project apple/tvos/HamClockTV.xcodeproj -scheme HamClockTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation) (at 1080p)'`; set `TEST_RUNNER_HCP_SHOT_DIR=<dir>` to also write the screenshots. `tvos.yml` runs the same test and uploads the screenshots as the `tvos-simulator-screenshots` artifact.
 - Screenshots in `docs/images/tvos/` are tvOS Simulator captures with the live data of the moment they were taken, not photos of a TV. Nothing here has been checked on an Apple TV yet.

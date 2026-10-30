@@ -5,6 +5,7 @@
 #include "storms.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "satpass.hpp"
 #include "weather.hpp"
 #include "map/coastline.hpp"
 #include "domain/locator_input.hpp"
@@ -12,6 +13,7 @@
 #include "domain/astro_sun.hpp"
 #include "domain/astro_satellite.hpp"
 #include "domain/solar_position.hpp"
+#include <cctype>
 #include <cmath>
 #include <stdexcept>
 #include <cstring>
@@ -123,6 +125,24 @@ int hcp_quakes_strongest_index(const char* b, size_t n) {
 int hcp_quake_magnitude_class(double m, char* buf, size_t cap) { return copy(hcp::quakes::magnitude_class(m), buf, cap); }
 }
 
+namespace {
+bool valid_observer(double lat, double lon) { return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 360; }
+
+// One TLE set propagated to unix_s; 0 when SGP4 fails (e.g. decayed).
+int sat_state(const hamclock::Tle& set, int64_t unix_s, double obs_lat, double obs_lon, HcpSatState* out) {
+    const hamclock::SatellitePropagator p(set);
+    if (!p.valid()) return 0;
+    const double when = static_cast<double>(unix_s);
+    hamclock::SubSatellitePoint sp;
+    hamclock::LookAngle la;
+    bool lit = false;
+    if (!p.sub_point(when, sp) || !p.look(when, hamclock::Observer{obs_lat, obs_lon, 0.0}, la) || !p.sunlit(when, lit)) return 0;
+    *out = HcpSatState{sp.lat_deg, sp.lon_deg, sp.alt_km, la.az_deg, la.el_deg, la.range_km,
+                       la.range_rate_km_s, lit ? 1 : 0, static_cast<int64_t>(p.epoch_unix())};
+    return 1;
+}
+} // namespace
+
 extern "C" {
 int hcp_tle_count(const char* t, size_t n) {
     if (!t) return 0;
@@ -136,19 +156,21 @@ int hcp_tle_name(const char* t, size_t n, int index, char* buf, size_t cap) {
 }
 int hcp_sat_state(const char* t, size_t n, int index, int64_t unix_s,
                   double obs_lat, double obs_lon, HcpSatState* out) {
-    if (!t || !out || obs_lat < -90 || obs_lat > 90 || obs_lon < -180 || obs_lon > 360) return 0;
+    if (!t || !out || !valid_observer(obs_lat, obs_lon)) return 0;
     const auto sets = hamclock::parse_tle_set(std::string(t, n));
     if (index < 0 || static_cast<size_t>(index) >= sets.size()) return 0;
-    const hamclock::SatellitePropagator p(sets[static_cast<size_t>(index)]);
-    if (!p.valid()) return 0;
-    const double when = static_cast<double>(unix_s);
-    hamclock::SubSatellitePoint sp;
-    hamclock::LookAngle la;
-    bool lit = false;
-    if (!p.sub_point(when, sp) || !p.look(when, hamclock::Observer{obs_lat, obs_lon, 0.0}, la) || !p.sunlit(when, lit)) return 0;
-    *out = HcpSatState{sp.lat_deg, sp.lon_deg, sp.alt_km, la.az_deg, la.el_deg, la.range_km,
-                       la.range_rate_km_s, lit ? 1 : 0, static_cast<int64_t>(p.epoch_unix())};
-    return 1;
+    return sat_state(sets[static_cast<size_t>(index)], unix_s, obs_lat, obs_lon, out);
+}
+int hcp_sat_states(const char* t, size_t n, int64_t unix_s, double obs_lat, double obs_lon,
+                   HcpSatInfo* out, size_t cap) {
+    if (!t || !valid_observer(obs_lat, obs_lon)) return 0;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    for (size_t i = 0; out && i < sets.size() && i < cap; ++i) {
+        out[i] = HcpSatInfo{};
+        copy(sets[i].name, out[i].name, sizeof out[i].name);
+        out[i].valid = sat_state(sets[i], unix_s, obs_lat, obs_lon, &out[i].state);
+    }
+    return static_cast<int>(sets.size());
 }
 int hcp_hf_outlook(double sfi, double kp, double a_index, HcpBand* out, size_t cap) {
     if (!out) return 0;
@@ -228,5 +250,44 @@ int hcp_storms_parse(const char* b, size_t n, HcpStorm* out, size_t cap) {
         out[i].issued_ms = s.issued_ms;
     }
     return static_cast<int>(i);
+}
+}
+
+extern "C" {
+int hcp_sat_passes(const char* t, size_t n, int index, int64_t from_s, int64_t horizon_s,
+                   double obs_lat, double obs_lon, double min_el, HcpPass* out, size_t cap) {
+    if (!t || !out || obs_lat < -90 || obs_lat > 90 || obs_lon < -180 || obs_lon > 360 || horizon_s <= 0) return -1;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return -1;
+    const auto& tle = sets[static_cast<size_t>(index)];
+    if (!hamclock::SatellitePropagator(tle).valid()) return -1;
+    constexpr size_t kMaxPasses = 64;
+    const int want = static_cast<int>(cap < kMaxPasses ? cap : kMaxPasses);
+    const auto passes =
+        hcp::sats::next_passes(tle, hamclock::Observer{obs_lat, obs_lon, 0.0}, from_s, horizon_s, min_el, want);
+    size_t i = 0;
+    for (; i < passes.size() && i < cap; ++i) {
+        const auto& p = passes[i];
+        out[i] = HcpPass{p.aos, p.tca, p.los, p.max_el_deg, p.aos_az_deg, p.los_az_deg};
+    }
+    return static_cast<int>(i);
+}
+int hcp_tle_short_name(const char* t, size_t n, int index, char* buf, size_t cap) {
+    if (!t) return 0;
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    if (index < 0 || static_cast<size_t>(index) >= sets.size()) return 0;
+    return copy(hcp::sats::short_name(sets[static_cast<size_t>(index)].name), buf, cap);
+}
+int hcp_tle_find_short_name(const char* t, size_t n, const char* want) {
+    if (!t || !want || !*want) return -1;
+    const auto lower = [](std::string s) {
+        for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return s;
+    };
+    const std::string target = lower(want);
+    const auto sets = hamclock::parse_tle_set(std::string(t, n));
+    for (size_t i = 0; i < sets.size(); ++i)
+        if (lower(hcp::sats::short_name(sets[i].name)) == target) return static_cast<int>(i);
+    return -1;
 }
 }
