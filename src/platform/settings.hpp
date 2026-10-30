@@ -14,6 +14,11 @@ struct StationSettings {
     std::string de_zone;
 };
 
+// No DX target is stored as DX on top of DE (the station file always has DX fields).
+inline bool has_dx(const StationSettings& settings) {
+    return settings.dx.latitude != settings.de.latitude || settings.dx.longitude != settings.de.longitude;
+}
+
 // Explicit caller-selected local path. Invalid data throws invalid_argument;
 // filesystem failures throw runtime_error. Explicit saves replace regular files;
 // failed loads do not fall back to defaults or initiate an automatic save.

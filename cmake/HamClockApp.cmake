@@ -21,6 +21,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_passreminder.cpp
     src/platform/apple_notifications.cpp
     src/platform/apple_widgetshare.cpp
+    src/platform/apple_devicelocation.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -225,6 +226,10 @@ if(BUILD_TESTING)
     target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
     add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
     set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(device-location-regression tests/device_location_regression.cpp)
+    target_link_libraries(device-location-regression PRIVATE hamclock-widget-core)
+    add_test(NAME device-location-regression COMMAND device-location-regression)
+    set_tests_properties(device-location-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
     target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
@@ -331,6 +336,13 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
     endforeach()
+    # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
+    add_test(NAME app-version-headless COMMAND hamclock-pro --version)
+    set_tests_properties(app-version-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "hamclock-pro ${PROJECT_VERSION}")
+    add_test(NAME app-help-headless COMMAND hamclock-pro --help)
+    set_tests_properties(app-help-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "--touch-keyboard|--first-run")
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.

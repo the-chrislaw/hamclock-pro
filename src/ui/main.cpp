@@ -123,15 +123,23 @@ hamclock::Transport offline_transport() {
         QTimer::singleShot(0, [done] { done({0, {}, "Network disabled (--offline)"}); });
     };
 }
+// --help and --version only print text, so they must work with no display (SSH to a kiosk Pi).
+bool text_only_request(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const QByteArray arg(argv[i]);
+        if (arg == "--help" || arg == "-h" || arg == "--help-all" || arg == "--version" || arg == "-v") return true;
+    }
+    return false;
+}
+
+void set_identity() {
+    QCoreApplication::setApplicationName("hamclock-pro");
+    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
+    QCoreApplication::setApplicationVersion(HAMCLOCK_VERSION);
+}
 } // namespace
 
 int main(int argc, char** argv) {
-    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
-    QGuiApplication::setApplicationName("hamclock-pro");
-    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QGuiApplication::setApplicationVersion(HAMCLOCK_VERSION); // CMake project version
-    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
-
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");
     parser.addHelpOption();
@@ -150,6 +158,15 @@ int main(int argc, char** argv) {
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     for (const auto& option : {allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
+    if (text_only_request(argc, argv)) {
+        QCoreApplication text_app(argc, argv);
+        set_identity();
+        parser.process(text_app); // prints and exits
+        return 0;
+    }
+    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
+    set_identity();
+    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
