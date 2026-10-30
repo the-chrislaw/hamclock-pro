@@ -13,7 +13,8 @@ Card {
     ColumnLayout {
         width: parent.width
         // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
-        spacing: Theme.gap * 0.6
+        // A stacked table gets a little air between rows (still one block, about 1.6 lines apart).
+        spacing: Theme.gap * (root.stacked ? 1.2 : 0.6)
         Text {
             Layout.fillWidth: true
             visible: root.widget && root.widget.hasData

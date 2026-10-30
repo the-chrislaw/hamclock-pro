@@ -51,6 +51,14 @@ Card {
             elide: Text.ElideRight; maximumLineCount: root.full ? 100 : 1
             wrapMode: Text.WordWrap; Layout.fillWidth: true
         }
+        // Nothing in force: a full pane says what is being watched, so the quiet state reads as
+        // a checked "all clear" rather than an empty card.
+        Text {
+            visible: root.full && widget !== null && widget.hasData && widget.count === 0
+            text: "Watching NWS marine warnings and advisories for US waters (api.weather.gov)"
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
+            wrapMode: Text.WordWrap; Layout.fillWidth: true
+        }
         Text {
             visible: root.active
             text: root.times

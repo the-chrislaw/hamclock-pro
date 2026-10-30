@@ -345,7 +345,9 @@ if(BUILD_TESTING)
         endif()
         # These fixtures parse to an empty state (dated data: no sondes, activations, launches, alerts or
         # recent readings), which is a short line by design; the contact sheets cover them with live data.
-        if(NOT EXISTS ${fill_fixtures} OR id MATCHES "^(balloons|hamsat|launches|pskreporter|solaralerts|solaraurora|solardrap|solardst)$")
+        # Others never reach data in a screenshot run: their fixtures are unit-test files that do not match
+        # the request URLs (solarhamqsl, ota, weather), or the widget needs an account or host (lookup, dxcluster).
+        if(NOT EXISTS ${fill_fixtures} OR id MATCHES "^(balloons|hamsat|launches|pskreporter|solaralerts|solaraurora|solardrap|solardst|solarhamqsl|ota|weather|lookup|dxcluster)$")
             continue()
         endif()
         foreach(size 800x480 1024x600 1920x1080 2560x1440)
