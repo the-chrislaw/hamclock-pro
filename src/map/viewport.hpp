@@ -23,6 +23,12 @@ struct MapViewport {
                             std::optional<double> focus_max_lat = std::nullopt,
                             double zoom = 1.0, std::optional<double> pan_lon = std::nullopt,
                             std::optional<double> pan_lat = std::nullopt);
+    // Preferred centre at zoom 1: DE, or the midpoint of DE and DX (the shorter
+    // way round) when the item crops longitude and both fit with a margin.
+    static constexpr double auto_center_margin_deg = 10.0;
+    static double auto_center_lon(double width, double height, double de_lon, std::optional<double> dx_lon);
+    // True when the world is wider than the item, so dragging sideways reveals more.
+    bool longitude_cropped() const { return world_width() > width + 1e-9; }
     // Inverse of x_of/y_of for a pixel inside the item; latitude is clamped to +/-90.
     struct LatLon { double lat, lon; };
     LatLon location_at(double px, double py) const;

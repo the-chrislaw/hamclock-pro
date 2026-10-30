@@ -136,10 +136,7 @@ ApplicationWindow {
                 y: stationCard.height + Theme.gap
                 width: parent.width
                 height: Math.max(0, parent.height - y)
-                onChooseRequested: function (slotIndex) {
-                    paneChooser.slot = slotIndex
-                    paneChooser.open()
-                }
+                onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
                 onSetupRequested: settingsLayer.visible = true
                 onOptionsRequested: function (slotIndex) {
                     paneOptions.slot = slotIndex
@@ -188,10 +185,7 @@ ApplicationWindow {
                         y: Math.floor(index / paneRow.cols) * (paneRow.slotHeight + Theme.gap)
                         width: paneRow.slotWidth
                         height: paneRow.slotHeight
-                        onChooseRequested: function (slotIndex) {
-                            paneChooser.slot = slotIndex
-                            paneChooser.open()
-                        }
+                        onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
                         onSetupRequested: settingsLayer.visible = true
                         onOptionsRequested: function (slotIndex) {
                             paneOptions.slot = slotIndex
@@ -238,6 +232,10 @@ ApplicationWindow {
                     Keys.onSpacePressed: mapMenuArea.clicked(null)
                     border.color: activeFocus ? Theme.focus : "transparent"
                     border.width: 2
+                    // A tap on the button while the menu is open closes it on press
+                    // (outside the popup); the click that follows must not re-open it.
+                    readonly property int reopenGuardMs: 400
+                    property double closedAt: 0
                     Text {
                         id: mapLabel
                         anchors.centerIn: parent
@@ -249,17 +247,22 @@ ApplicationWindow {
                     MouseArea {
                         id: mapMenuArea
                         anchors.fill: parent
-                        onClicked: mapMenu.opened ? mapMenu.close() : mapMenu.open()
+                        onClicked: {
+                            if (mapMenu.opened) mapMenu.close()
+                            else if (Date.now() - mapMenuButton.closedAt >= mapMenuButton.reopenGuardMs) mapMenu.open()
+                        }
                     }
                 }
+                // Same parent as the Map button (the card body), so it opens just below
+                // the button even when the card title row is shown (iPad, desktop).
                 MapMenu {
                     id: mapMenu
                     map: worldMap
-                    parent: mapCard
                     x: 4 * Theme.scale
                     y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
-                    width: Math.min(implicitWidth, mapCard.width - 8 * Theme.scale)
-                    height: Math.min(implicitHeight, mapCard.height - y - 4 * Theme.scale)
+                    width: Math.min(implicitWidth, worldMap.width - 8 * Theme.scale)
+                    height: Math.min(implicitHeight, worldMap.height - y - 4 * Theme.scale)
+                    onClosed: mapMenuButton.closedAt = Date.now()
                 }
                 // Pinch / trackpad pinch zoom about the gesture point (flat map; wheel and double tap are in WorldMap).
                 PinchHandler {
@@ -271,7 +274,7 @@ ApplicationWindow {
                         lastScale = scale
                     }
                 }
-                // Zoom 1-4x and reset (drag pans when zoomed; a tap opens Set DE / Set DX).
+                // Zoom 1-4x and reset (drag pans when zoomed or when a tall pane crops longitude; a tap opens Set DE / Set DX).
                 Row {
                     anchors.top: parent.top
                     anchors.right: parent.right
@@ -304,7 +307,7 @@ ApplicationWindow {
     PaneOptions {
         id: paneOptions
         parent: window.contentItem
-        onChangeRequested: function (slotIndex) { paneChooser.slot = slotIndex; paneChooser.open() }
+        onChangeRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
         onStepRequested: function (slotIndex, direction) { paneRow.slotAt(slotIndex).step(direction) }
     }
 

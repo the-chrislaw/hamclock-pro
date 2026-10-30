@@ -16,14 +16,34 @@ using namespace std::chrono_literals;
 // CelesTrak asks for at most one download per group per 2 h; we fetch daily.
 constexpr PollPolicy kPolicy{24h, 72h, 6h};
 constexpr char kUrl[] = "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle";
+// AMSAT's daily amateur set, used only when CelesTrak does not answer.
+constexpr char kFallbackUrl[] = "https://www.amsat.org/tle/current/nasabare.txt";
 // Amateur-service, alive transmitters only: about 330 kB instead of the whole 4 MB database.
 constexpr char kTxUrl[] = "https://db.satnogs.org/api/transmitters/?format=json&service=Amateur&alive=true";
 constexpr double kMinElevation = 10.0;
 constexpr double kHorizonSeconds = 24 * 3600;
 constexpr int kMaxRows = 12;  // tall panes list as many as fit; other layouts show the first five
 // Popular FM/linear birds; matched against the TLE name.
-const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "FO-29", "AO-73", "RS-44", "AO-91", "AO-85"};
+const char* const kTracked[] = {"ZARYA", "SO-50", "AO-7", "AO-07", "FO-29", "AO-73", "RS-44", "AO-91", "AO-85"};
 } // namespace
+
+bool is_tracked_satellite(const QString& tle_name) {
+    const QString name = tle_name.trimmed();
+    if (name == QLatin1String("ISS")) return true;  // AMSAT's name for ISS (ZARYA)
+    for (const char* key : kTracked)
+        if (name.contains(QLatin1String(key))) return true;
+    return false;
+}
+
+Transport with_fallback(Transport primary, QUrl fallback) {
+    return [primary, fallback](const QUrl& url, FetchDone done) {
+        primary(url, [primary, fallback, done](FetchResult result) {
+            const bool ok = result.error.isEmpty() && result.http_status / 100 == 2;
+            if (ok) { done(std::move(result)); return; }
+            primary(fallback, done);
+        });
+    };
+}
 
 QString format_mhz(double hz) { return QString::number(hz / 1e6, 'f', 4) + " MHz"; }
 
@@ -170,7 +190,8 @@ OverlayLayer satellite_overlay_layer(const std::vector<Tle>& tles, double unix_t
 
 SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("satellites", "Satellites", parent), settings_(context.settings),
-      source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy, context.transport, this)) {
+      source_(new PolledSource("celestrak-amateur", QUrl(kUrl), kPolicy,
+                               with_fallback(context.transport, QUrl(kFallbackUrl)), this)) {
     // SatNOGS DB (CC BY-SA 4.0): at most daily; optional, the pane works without it.
     tx_source_ = new PolledSource("satnogs-transmitters", QUrl(kTxUrl), kPolicy, context.transport, this);
     connect(tx_source_, &PolledSource::updated, this, &SatellitesModel::load_transmitters);
@@ -188,9 +209,7 @@ void SatellitesModel::start() { source_->start(); tx_source_->start(); timer_.st
 void SatellitesModel::load() {
     tles_.clear();
     for (const Tle& t : parse_tle_set(source_->body().toStdString())) {
-        const QString name = QString::fromStdString(t.name);
-        for (const char* key : kTracked)
-            if (name.contains(QLatin1String(key))) { tles_.push_back(t); break; }
+        if (is_tracked_satellite(QString::fromStdString(t.name))) tles_.push_back(t);
     }
     // Optional user-supplied elements (`user-tles.txt` beside options.ini); they win over
     // the download for the same NORAD id and are not limited to the popular-bird list.

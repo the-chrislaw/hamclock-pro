@@ -10,7 +10,17 @@ AppLifecycle& AppLifecycle::instance() {
 }
 
 void AppLifecycle::setState(Qt::ApplicationState state) {
-    const bool now_suspended = state == Qt::ApplicationSuspended;
+    app_suspended_ = state == Qt::ApplicationSuspended;
+    update();
+}
+
+void AppLifecycle::setSystemAsleep(bool asleep) {
+    system_asleep_ = asleep;
+    update();
+}
+
+void AppLifecycle::update() {
+    const bool now_suspended = app_suspended_ || system_asleep_;
     if (now_suspended == suspended_) return;
     suspended_ = now_suspended;
     if (suspended_) emit suspended();
@@ -24,7 +34,13 @@ void AppLifecycle::attachToApplication() {
     setState(app->applicationState());
     connect(app, &QGuiApplication::applicationStateChanged, this, &AppLifecycle::setState,
             Qt::UniqueConnection);
+#elif defined(Q_OS_MACOS)
+    attachToSystemSleep();
 #endif
 }
+
+#if !defined(Q_OS_MACOS)
+void AppLifecycle::attachToSystemSleep() {}
+#endif
 
 } // namespace hamclock

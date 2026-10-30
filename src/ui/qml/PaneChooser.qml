@@ -26,9 +26,20 @@ Popup {
         sensors: 5, station: 5, gps: 5, radio: 5, rotator: 5, adsb: 5
     })
     property int category: 0
+    // On a touch screen the tap that picks a widget also reaches the pane under the
+    // list once it closes, which would open the chooser again; ignore that echo.
+    readonly property int reopenGuardMs: 400
+    property double closedAt: 0
+    onClosed: closedAt = Date.now()
+    function openFor(index) {
+        if (Date.now() - closedAt < reopenGuardMs) return
+        slot = index
+        open()
+    }
     // A tab shows only when it has panes on this device (iPhone/iPad have no Station panes).
     function hasPanes(index) {
-        if (index === 0 || index === 6) return true
+        if (index === 0) return true
+        if (index === 6) return widgetRegistry.ids().some(id => categoryOf[id] === undefined)
         return Object.keys(categoryOf).some(id => categoryOf[id] === index && widgetRegistry.model(id) !== null)
     }
     function inCategory(id) {
