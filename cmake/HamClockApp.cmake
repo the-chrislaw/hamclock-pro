@@ -59,6 +59,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
+    src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
@@ -156,6 +157,10 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(window-geometry-regression tests/window_geometry_regression.cpp src/ui/window_geometry.cpp)
+    target_link_libraries(window-geometry-regression PRIVATE Qt6::Gui)
+    add_test(NAME window-geometry-regression COMMAND window-geometry-regression)
+    set_tests_properties(window-geometry-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
     target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
     add_test(NAME pane-grid-regression COMMAND pane-grid-regression)

@@ -8,6 +8,7 @@
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
+#include "window_geometry.hpp"
 #include "../net/polled_source.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
@@ -237,6 +238,11 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+#if !defined(Q_OS_IOS)
+    // Desktop: reopen at the last window size and position (not for kiosk full screen or screenshots).
+    if (!parser.isSet(screenshot) && !start_fullscreen)
+        hamclock::remember_window_geometry(qobject_cast<QWindow*>(engine.rootObjects().first()), settings.optionsPath());
+#endif
     // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
     QString orientation_lock = settings.orientationLock();
     hamclock::applyOrientationLock(orientation_lock);
