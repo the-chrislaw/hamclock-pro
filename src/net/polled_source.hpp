@@ -13,6 +13,8 @@
 #include <functional>
 #include <memory>
 
+class QNetworkReply;
+
 namespace hamclock {
 
 struct FetchResult {
@@ -50,6 +52,11 @@ QString describe_http_status(int http_status);
 // (QNetworkReply::NetworkError value). Never contains the URL, which may hold
 // the user's callsign or query.
 QString describe_network_error(int network_error);
+// Turns a finished reply into what the real transport hands its caller: friendly
+// error text (never Qt's errorString(), which repeats the URL), HTTP status,
+// Retry-After and the body capped at max_bytes. abort_reason, when non-empty, is
+// why the transport aborted the reply itself (deadline, size limit).
+FetchResult fetch_result_from_reply(QNetworkReply& reply, const QString& abort_reason, qint64 max_bytes);
 // Retry-After header: delta-seconds or an HTTP-date. Zero when absent or invalid;
 // capped at one day so a bad header cannot silence a source for good.
 std::chrono::seconds parse_retry_after(const QByteArray& value, const QDateTime& now_utc);
