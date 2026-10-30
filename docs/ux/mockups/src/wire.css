@@ -1,0 +1,55 @@
+/* Low-fi wireframe style for docs/ux mockups. Colours follow Theme.qml (dark). */
+:root {
+  --canvas: #22282c; --surface: #2b3236; --raised: #323a3f; --ink: #e2e7e6;
+  --secondary: #97a4a8; --divider: #41494b; --accent: #9cb6c5; --accent-ink: #1d2427;
+  --good: #8fc79a; --note: #e6c06b;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #15191b; font: 15px/1.35 -apple-system, "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+.row-of-frames { display: flex; gap: 28px; padding: 28px; align-items: flex-start; }
+.frame { background: var(--canvas); border: 2px solid #5b6468; border-radius: 22px; overflow: hidden; position: relative; flex: none; }
+.frame.flat { border-radius: 6px; }
+.cap { color: #c8d0d2; font-size: 14px; margin: 0 0 8px 4px; font-weight: 600; }
+.cap small { font-weight: 400; color: var(--secondary); }
+.bar { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--divider); }
+.bar h1 { font-size: 22px; margin: 0; }
+.btn { display: inline-block; border: 1px solid var(--divider); border-radius: 999px; padding: 9px 16px; font-weight: 600; font-size: 14px; color: var(--ink); background: transparent; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.wide { display: block; text-align: center; padding: 13px; font-size: 16px; }
+.pad { padding: 16px; }
+.step { color: var(--secondary); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+.q { font-size: 26px; font-weight: 700; margin: 6px 0 6px; }
+.hint { color: var(--secondary); font-size: 13px; }
+.field { border: 1px solid var(--divider); background: var(--raised); border-radius: 10px; padding: 12px 14px; font-size: 17px; margin: 8px 0; }
+.field.big { font-size: 24px; letter-spacing: .06em; padding: 14px; }
+.field .ph { color: var(--secondary); }
+.label { color: var(--secondary); font-size: 12px; margin-top: 10px; }
+.group { background: var(--surface); border: 1px solid var(--divider); border-radius: 12px; margin: 10px 0; overflow: hidden; }
+.group-title { color: var(--secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin: 18px 4px 4px; }
+.item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 1px solid var(--divider); min-height: 48px; }
+.item:first-child { border-top: none; }
+.item .v { color: var(--secondary); font-size: 14px; text-align: right; }
+.item .chev::after { content: " \203A"; color: var(--secondary); font-size: 18px; }
+.item.sel { background: var(--raised); box-shadow: inset 3px 0 0 var(--accent); }
+.seg { display: inline-flex; border: 1px solid var(--divider); border-radius: 999px; overflow: hidden; }
+.seg span { padding: 6px 12px; font-size: 13px; font-weight: 600; }
+.seg span.on { background: var(--accent); color: var(--accent-ink); }
+.sw { width: 44px; height: 26px; border-radius: 13px; background: var(--divider); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 10px; background: var(--ink); }
+.sw.on { background: var(--good); }
+.sw.on::after { left: 21px; }
+.map { height: 150px; border-radius: 10px; border: 1px solid var(--divider); position: relative; overflow: hidden;
+  background: repeating-linear-gradient(0deg, #2a3337 0 19px, #303a3e 19px 20px), #2a3337; }
+.map .land { position: absolute; background: #3d4a45; border-radius: 40% 55% 45% 60%; }
+.map .pin { position: absolute; width: 14px; height: 14px; border-radius: 7px; background: var(--note); border: 2px solid #111; }
+.ok { color: var(--good); font-weight: 600; }
+.note { border: 1px dashed var(--note); color: var(--note); border-radius: 8px; padding: 8px 10px; font-size: 12px; margin-top: 10px; }
+.kbd { position: absolute; left: 0; right: 0; bottom: 0; background: #1a1f22; border-top: 1px solid var(--divider); padding: 8px; display: grid; gap: 6px; }
+.kbd div { display: flex; gap: 6px; justify-content: center; }
+.kbd b { flex: 1; max-width: 86px; text-align: center; background: var(--raised); border-radius: 6px; padding: 10px 0; font-weight: 500; color: var(--secondary); }
+.sidebar { background: var(--surface); border-right: 1px solid var(--divider); }
+.dots { display: flex; gap: 6px; justify-content: center; margin: 14px 0; }
+.dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--divider); }
+.dots i.on { background: var(--accent); }
+.bottom { position: absolute; left: 16px; right: 16px; bottom: 24px; }
+.tag { font-size: 11px; color: var(--note); border: 1px solid var(--note); border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
