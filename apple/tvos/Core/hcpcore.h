@@ -210,6 +210,25 @@ typedef struct {
 int hcp_trend_flux_daily(const char* body, size_t len, int days, HcpFluxDay* out, size_t cap);
 /* observed-solar-cycle-indices.json: newest month ("YYYY-MM") with a NOAA SSN; 1 found, 0 none or not the product. */
 int hcp_trend_sunspots(const char* body, size_t len, char* month, size_t month_cap, double* number);
+/* HamQSL (N0NBH) solar XML, port of src/widgets/solarhamqsl/solar_hamqsl_parse. */
+typedef struct {
+    char name[16];          /* "80m-40m" */
+    char day[12], night[12]; /* "Poor" / "Fair" / "Good" */
+    int day_rank, night_rank; /* 0 unknown, 1 poor, 2 fair, 3 good */
+} HcpHfCondition;
+typedef struct {
+    char name[24];     /* "E-Skip", "vhf-aurora" */
+    char location[24]; /* "europe", "north_america", "northern_hemi" */
+    char status[32];   /* "Band Closed" or an opening */
+} HcpVhfCondition;
+typedef struct {
+    int64_t updated_ms; /* UTC from <updated>; 0 when missing */
+    int hf_count, vhf_count;
+    HcpHfCondition hf[8];
+    HcpVhfCondition vhf[12];
+} HcpHamqsl;
+/* 1 with at least one complete HF band, 0 otherwise (not well-formed, truncated, or no bands). */
+int hcp_hamqsl_parse(const char* body, size_t len, HcpHamqsl* out);
 int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
 
 /* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.

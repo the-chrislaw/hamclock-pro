@@ -363,6 +363,24 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_solartrend"].waitForExistence(timeout: 5), "Solar trend is offered on TV")
     }
 
+    /// HamQSL conditions (ported from the Qt widget): offered in the chooser; shows N0NBH's band
+    /// table, or an honest Offline / No data.
+    func testHamqslPane() {
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
+                               "-hcpPanes", "solarhamqsl"]
+        app.launch()
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertEqual(pane0.value as? String, "solarhamqsl")
+        XCTAssertTrue(waitFor(20) {
+            ["VHF", "No report", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "band table or an honest Offline: \(pane0.label)")
+        shot("tvos-hamqsl")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solarhamqsl"].waitForExistence(timeout: 5), "HamQSL is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard
