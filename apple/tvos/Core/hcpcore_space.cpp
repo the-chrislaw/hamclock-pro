@@ -24,6 +24,13 @@ int fill_tail(const std::vector<Item>& items, HcpReading* out, size_t cap, Conve
 HcpReading reading(const hcp::swpc::Reading& r) { return HcpReading{1, r.value, r.time_ms}; }
 HcpReading reading(const hcp::solarwind::Point& p) { return HcpReading{1, p.value, p.time_ms}; }
 
+// hcp_solarwind_series field number -> JSON key; nullptr when out of range.
+const char* solarwind_field(int field) {
+    static const char* const fields[] = {hcp::solarwind::kSpeed, hcp::solarwind::kDensity, hcp::solarwind::kBt,
+                                         hcp::solarwind::kBz};
+    return field >= 0 && field <= 3 ? fields[field] : nullptr;
+}
+
 HcpScaleDay day(const hcp::scales::Day& d) { return HcpScaleDay{d.r, d.s, d.g, d.r_minor, d.r_major, d.s_prob}; }
 } // namespace
 
@@ -39,11 +46,21 @@ int hcp_swpc_xray_series(const char* b, size_t n, HcpReading* out, size_t cap) {
 }
 
 int hcp_solarwind_series(const char* b, size_t n, int field, HcpReading* out, size_t cap) {
-    static const char* const fields[] = {hcp::solarwind::kSpeed, hcp::solarwind::kDensity, hcp::solarwind::kBt,
-                                         hcp::solarwind::kBz};
-    if (field < 0 || field > 3) return -1;
-    const auto s = hcp::solarwind::checked_series(view(b, n), fields[field]);
+    if (!solarwind_field(field)) return -1;
+    const auto s = hcp::solarwind::checked_series(view(b, n), solarwind_field(field));
     return s ? fill_tail(*s, out, cap, [](const auto& p) { return reading(p); }) : -1;
+}
+
+int hcp_solarwind_series_pair(const char* b, size_t n, int field_a, int field_b, HcpReading* out_a,
+                              HcpReading* out_b, size_t cap, int* count_b) {
+    if (count_b) *count_b = -1;
+    if (!solarwind_field(field_a) || !solarwind_field(field_b)) return -1;
+    const auto s = hcp::solarwind::checked_series(
+        view(b, n), std::vector<std::string>{solarwind_field(field_a), solarwind_field(field_b)});
+    if (!s) return -1;
+    const auto convert = [](const auto& p) { return reading(p); };
+    if (count_b) *count_b = fill_tail((*s)[1], out_b, cap, convert);
+    return fill_tail((*s)[0], out_a, cap, convert);
 }
 
 int hcp_scales_parse(const char* b, size_t n, HcpScales* out) {

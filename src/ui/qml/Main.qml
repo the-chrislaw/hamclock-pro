@@ -53,7 +53,10 @@ ApplicationWindow {
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
-    Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // F11 (Pi, Linux, Windows); Control-Command-F on the Mac, where F11 is Show Desktop.
+    Shortcut { sequences: ["F11", "Ctrl+Meta+F"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // Command-comma opens Settings on the Mac, as in every Mac app (Ctrl+comma elsewhere).
+    Shortcut { sequences: ["Ctrl+,"]; enabled: !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
@@ -230,6 +233,10 @@ ApplicationWindow {
                     Keys.onSpacePressed: mapMenuArea.clicked(null)
                     border.color: activeFocus ? Theme.focus : "transparent"
                     border.width: 2
+                    // A tap on the button while the menu is open closes it on press
+                    // (outside the popup); the click that follows must not re-open it.
+                    readonly property int reopenGuardMs: 400
+                    property double closedAt: 0
                     Text {
                         id: mapLabel
                         anchors.centerIn: parent
@@ -241,17 +248,22 @@ ApplicationWindow {
                     MouseArea {
                         id: mapMenuArea
                         anchors.fill: parent
-                        onClicked: mapMenu.opened ? mapMenu.close() : mapMenu.open()
+                        onClicked: {
+                            if (mapMenu.opened) mapMenu.close()
+                            else if (Date.now() - mapMenuButton.closedAt >= mapMenuButton.reopenGuardMs) mapMenu.open()
+                        }
                     }
                 }
+                // Same parent as the Map button (the card body), so it opens just below
+                // the button even when the card title row is shown (iPad, desktop).
                 MapMenu {
                     id: mapMenu
                     map: worldMap
-                    parent: mapCard
                     x: 4 * Theme.scale
                     y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
-                    width: Math.min(implicitWidth, mapCard.width - 8 * Theme.scale)
-                    height: Math.min(implicitHeight, mapCard.height - y - 4 * Theme.scale)
+                    width: Math.min(implicitWidth, worldMap.width - 8 * Theme.scale)
+                    height: Math.min(implicitHeight, worldMap.height - y - 4 * Theme.scale)
+                    onClosed: mapMenuButton.closedAt = Date.now()
                 }
                 // Pinch / trackpad pinch zoom about the gesture point (flat map; wheel and double tap are in WorldMap).
                 PinchHandler {

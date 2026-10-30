@@ -10,12 +10,13 @@
     <array/>
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
-        <!-- QSettings stores the user's own options in UserDefaults. -->
+        <!-- QSettings stores the user's own options in UserDefaults (CA92.1); the station is
+             shared with the app's own widget extension through App Group defaults (1C8F.1). -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
             <key>NSPrivacyAccessedAPITypeReasons</key>
-            <array><string>CA92.1</string></array>
+            <array><string>CA92.1</string><string>1C8F.1</string></array>
         </dict>
         <!-- Cache freshness checks on files the app itself wrote. -->
         <dict>
