@@ -381,6 +381,41 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_solarhamqsl"].waitForExistence(timeout: 5), "HamQSL is offered on TV")
     }
 
+    /// Satellite pass alerts: switched on, lead time and one bird changed in Settings with the
+    /// remote; the choices survive a relaunch. (Whether a banner shows depends on the sky.)
+    func testSatellitePassAlertSettings() {
+        launchWithStation()
+        moveFocus(to: app.buttons["settingsButton"])
+        remote.press(.select)
+        let on = app.buttons["satEnabled_1"]
+        XCTAssertTrue(on.waitForExistence(timeout: 5), "pass alert settings shown")
+        moveFocus(to: on)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { on.isSelected }, "alerts on")
+        let lead = app.buttons["satLead_4"]
+        XCTAssertTrue(lead.waitForExistence(timeout: 5), "lead time choices appear once on")
+        moveFocus(to: lead)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { lead.isSelected }, "30 min before")
+        let iss = app.buttons["sat_25544"]
+        XCTAssertTrue(iss.waitForExistence(timeout: 5) && iss.isSelected, "ISS selected under All workable")
+        moveFocus(to: iss)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { !iss.isSelected }, "ISS switched off")
+        shot("tvos-settings-pass-alerts")
+        remote.press(.menu)
+
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["pane0"].waitForExistence(timeout: 20))
+        moveFocus(to: app.buttons["settingsButton"])
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["satEnabled_1"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["satEnabled_1"].isSelected && app.buttons["satLead_4"].isSelected, "kept across relaunch")
+        XCTAssertFalse(app.buttons["sat_25544"].isSelected, "ISS stays off")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

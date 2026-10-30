@@ -26,6 +26,7 @@ add_library(hamclock-core STATIC
     ${D}/locator_input.cpp
     ${D}/astro_planets.cpp
     ${D}/astro_eclipse.cpp
+    ${D}/astro_finder.cpp
     ${HCP_ROOT}/apple/tvos/Core/json_mini.cpp
     ${HCP_ROOT}/apple/tvos/Core/text_util.cpp
     ${HCP_ROOT}/apple/tvos/Core/swpc.cpp
@@ -47,6 +48,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/fires.cpp
     ${HCP_ROOT}/apple/tvos/Core/places.cpp
     ${HCP_ROOT}/apple/tvos/Core/satpass.cpp
+    ${HCP_ROOT}/apple/tvos/Core/satalert.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_space.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_feeds.cpp
@@ -129,6 +131,7 @@ function(hcp_core_test name fixture_dir)
 endfunction()
 hcp_core_test(series spaceweather)
 hcp_core_test(scales solarscales)
+hcp_core_test(satalert satellites)
 hcp_core_test(hamqsl solarhamqsl)
 hcp_core_test(trend solartrend)
 hcp_core_test(dst solardst)

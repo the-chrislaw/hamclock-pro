@@ -14,7 +14,12 @@ targets:
   HamClockTV:
     type: application
     platform: tvOS
-    sources: [App/Sources, App/Resources]
+    sources:
+      - App/Sources
+      - App/Resources
+      # The curated pass-alert catalog every HamClock Pro app ships (one file, edited in one place).
+      - path: ../../src/widgets/satellites/amateur-satellites.json
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.chrislaw.hamclockpro
