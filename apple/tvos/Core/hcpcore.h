@@ -114,6 +114,22 @@ typedef struct HcpSatInfo {
 int hcp_sat_states(const char* text, size_t len, int64_t unix_s, double obs_lat_deg, double obs_lon_deg,
                    HcpSatInfo* out, size_t cap);
 
+/* Next passes of the index-th TLE for the observer (iPhone widgets). Passes reach at least
+ * min_el_deg; a satellite already up gives a pass with aos_s == from_s. Searches horizon_s
+ * seconds ahead. Returns the number written, or -1 on bad input (null text/out, bad
+ * coordinates, index out of range, invalid elements). Azimuths are degrees from true north. */
+typedef struct {
+    int64_t aos_s, tca_s, los_s;
+    double max_el_deg, aos_az_deg, los_az_deg;
+} HcpPass;
+int hcp_sat_passes(const char* text, size_t len, int index, int64_t from_s, int64_t horizon_s,
+                   double obs_lat_deg, double obs_lon_deg, double min_el_deg, HcpPass* out, size_t cap);
+/* Short display name of the index-th TLE, the form the Qt app saves in [satellites] tracked=
+ * ("ISS (ZARYA)" -> "ISS"). */
+int hcp_tle_short_name(const char* text, size_t len, int index, char* buf, size_t cap);
+/* Index of the first TLE whose short name equals short_name (ASCII case-insensitive), or -1. */
+int hcp_tle_find_short_name(const char* text, size_t len, const char* short_name);
+
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
  * Fills out[] with up to cap bands (80m..10m); returns the number written. */

@@ -41,6 +41,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/ota.cpp
     ${HCP_ROOT}/apple/tvos/Core/fires.cpp
     ${HCP_ROOT}/apple/tvos/Core/places.cpp
+    ${HCP_ROOT}/apple/tvos/Core/satpass.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_space.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_feeds.cpp

@@ -19,6 +19,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
     src/platform/apple_passreminder.cpp
+    src/platform/apple_widgetshare.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -37,7 +38,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm src/platform/apple_widgetshare_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
@@ -211,6 +212,10 @@ if(BUILD_TESTING)
     target_link_libraries(pass-reminder-regression PRIVATE hamclock-widget-core)
     add_test(NAME pass-reminder-regression COMMAND pass-reminder-regression)
     set_tests_properties(pass-reminder-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(widget-share-regression tests/widget_share_regression.cpp)
+    target_link_libraries(widget-share-regression PRIVATE hamclock-widget-core)
+    add_test(NAME widget-share-regression COMMAND widget-share-regression)
+    set_tests_properties(widget-share-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_test(NAME sky-finder-regression COMMAND sky-finder-regression)
     set_tests_properties(sky-finder-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
