@@ -83,6 +83,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/qt/de_time_zone.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/widgets_generated.cpp)
 target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2)
+target_compile_definitions(hamclock-pro PRIVATE HAMCLOCK_VERSION="${PROJECT_VERSION}")
 set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.app
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
@@ -322,6 +323,13 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
     endforeach()
+    # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
+    add_test(NAME app-version-headless COMMAND hamclock-pro --version)
+    set_tests_properties(app-version-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "hamclock-pro ${PROJECT_VERSION}")
+    add_test(NAME app-help-headless COMMAND hamclock-pro --help)
+    set_tests_properties(app-help-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "--touch-keyboard|--first-run")
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.
