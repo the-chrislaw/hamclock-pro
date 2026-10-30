@@ -22,6 +22,7 @@ add_library(hamclock-widget-core STATIC
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
+    src/ui/app_settings_accounts.cpp
     src/ui/pane_grid.cpp
     src/platform/settings.cpp)
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core hamclock-credential-store Qt6::Core Qt6::Gui Qt6::Network)
@@ -78,7 +79,7 @@ set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
 qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
-    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
+    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml
     src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -158,6 +159,12 @@ if(BUILD_TESTING)
     add_test(NAME widget-core-regression COMMAND widget-core-regression)
     set_tests_properties(widget-core-regression PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-core;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-core")
+    add_executable(accounts-regression tests/accounts_regression.cpp)
+    target_link_libraries(accounts-regression PRIVATE hamclock-widget-core)
+    set_target_properties(accounts-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME accounts-regression COMMAND accounts-regression)
+    set_tests_properties(accounts-regression PROPERTIES TIMEOUT 30
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-accounts;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-accounts")
     add_executable(app-lifecycle-regression tests/app_lifecycle_regression.cpp)
     target_link_libraries(app-lifecycle-regression PRIVATE hamclock-widget-core)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
@@ -293,6 +300,18 @@ if(BUILD_TESTING)
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})
         set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
+    # Settings > Accounts and an open account sheet on a phone and the 7-inch panel: no clipped or cut text.
+    foreach(size 390x844 1024x600)
+        foreach(target accounts accounts:hamqth accounts:dxcluster)
+            string(REPLACE ":" "-" target_name ${target})
+            add_test(NAME qml-settings-${target_name}-${size} COMMAND hamclock-pro --offline
+                --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${target_name}-${size}
+                --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf --settings ${target}
+                --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${target_name}-${size}.png --size ${size})
+            set_tests_properties(qml-settings-${target_name}-${size} PROPERTIES TIMEOUT 30
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+        endforeach()
     endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")

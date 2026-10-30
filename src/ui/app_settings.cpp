@@ -1,7 +1,6 @@
 #include <algorithm>
 #include "app_settings.hpp"
 #include "../platform/credential_store.hpp"
-#include <QCryptographicHash>
 #include "banner_text.hpp"
 #include "blanking.hpp"
 #include "config_store.hpp"
@@ -22,8 +21,6 @@
 namespace hamclock {
 namespace {
 constexpr int kMaxHostLength = 253;
-constexpr int kMaxUserLength = 64;
-constexpr int kMaxPasswordLength = 128;
 
 QString default_config_dir() {
     auto dir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -377,132 +374,7 @@ QString AppSettings::saveClusterLogin(int ssid, const QString& commands) {
 
 AppSettings::~AppSettings() = default;
 
-namespace {
-// credentials.ini key -> secret store key, for every password and API key.
-const QList<QPair<QString, QString>> kSecretKeys{
-    {"lookup/password", "lookup.password"}, {"hamalert/password", "hamalert.password"}, {"hamsat/key", "hamsat.key"}};
-} // namespace
-
-// One set of secrets per settings directory, so a scratch profile (-c DIR) never
-// reads, overwrites or deletes the passwords of the real one.
-QString AppSettings::secretKey(const QString& store_key) const {
-    const auto dir = QFileInfo(config_dir_).absoluteFilePath().toUtf8();
-    return store_key + "@" + QCryptographicHash::hash(dir, QCryptographicHash::Sha1).toHex().left(16);
-}
-
-void AppSettings::setSecretStore(std::unique_ptr<CredentialStore> store) {
-    secrets_ = std::move(store);
-    if (!secrets_) return;
-    // Move secrets saved by an earlier version out of the file. A value only leaves
-    // the file once the store holds one; if the store refuses, it stays where it is.
-    QSettings ini(config_dir_ + "/credentials.ini", QSettings::IniFormat);
-    bool moved = false;
-    for (const auto& [ini_key, store_key] : kSecretKeys) {
-        const auto value = ini.value(ini_key).toString();
-        if (value.isEmpty()) continue;
-        if (secrets_->get(secretKey(store_key)).isEmpty() && !secrets_->set(secretKey(store_key), value)) continue;
-        ini.remove(ini_key);
-        moved = true;
-    }
-    if (moved) ini.sync();
-    loadAccounts();
-    emit accountsChanged();
-}
-
-void AppSettings::loadAccounts() {
-    QSettings ini(config_dir_ + "/credentials.ini", QSettings::IniFormat);
-    // From the store when there is one; the file is the fallback (the Pi, or a value
-    // the store refused to take during migration).
-    const auto secret = [&](const QString& ini_key) {
-        QString value;
-        for (const auto& [key, store_key] : kSecretKeys)
-            if (key == ini_key && secrets_) value = secrets_->get(secretKey(store_key));
-        if (value.isEmpty()) value = ini.value(ini_key).toString();
-        return value.left(kMaxPasswordLength);
-    };
-    const auto service = ini.value("lookup/service", "none").toString();
-    lookup_service_ = service == "qrz" || service == "hamqth" ? service : "none";
-    lookup_user_ = ini.value("lookup/user").toString().left(kMaxUserLength);
-    lookup_password_ = secret("lookup/password");
-    hamalert_user_ = ini.value("hamalert/user").toString().left(kMaxUserLength);
-    hamalert_password_ = secret("hamalert/password");
-    hamsat_key_ = secret("hamsat/key");
-}
-
-QString AppSettings::writeAccounts() {
-    const auto path = config_dir_ + "/credentials.ini";
-    const QHash<QString, QString> secrets{
-        {"lookup/password", lookup_password_}, {"hamalert/password", hamalert_password_}, {"hamsat/key", hamsat_key_}};
-    // Store first: if it refuses, the file (which may still hold a fallback copy) is left alone.
-    if (secrets_) {
-        for (const auto& [ini_key, store_key] : kSecretKeys) {
-            const auto& value = secrets.value(ini_key);
-            const auto key = secretKey(store_key);
-            if (!(value.isEmpty() ? secrets_->remove(key) : secrets_->set(key, value)))
-                return "Could not save the password in the Keychain.";
-        }
-    }
-    {
-        QSettings ini(path, QSettings::IniFormat);
-        ini.clear();
-        ini.setValue("lookup/service", lookup_service_);
-        ini.setValue("lookup/user", lookup_user_);
-        ini.setValue("hamalert/user", hamalert_user_);
-        if (!secrets_)
-            for (const auto& keys : kSecretKeys) ini.setValue(keys.first, secrets.value(keys.first));
-        ini.sync();
-        if (ini.status() != QSettings::NoError) return "Could not save account settings.";
-    }
-    // Owner read/write only; credentials must not be readable by other users.
-    if (!QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner))
-        return "Saved, but could not restrict credentials file permissions.";
-    return {};
-}
-
-QString AppSettings::saveAccount(const QString& service, const QString& user, const QString& password) {
-    if (service != "none" && service != "qrz" && service != "hamqth") return "Unknown lookup service.";
-    const auto trimmed_user = user.trimmed();
-    if (trimmed_user.size() > kMaxUserLength || password.size() > kMaxPasswordLength)
-        return "User name or password is too long.";
-    if (service != "none" && trimmed_user.isEmpty()) return "Enter a user name for the lookup service.";
-    lookup_service_ = service;
-    lookup_user_ = service == "none" ? QString() : trimmed_user;
-    if (service == "none") lookup_password_.clear();
-    else if (!password.isEmpty()) lookup_password_ = password;
-    const auto error = writeAccounts();
-    emit accountsChanged();
-    return error;
-}
-
-QString AppSettings::saveHamAlert(const QString& user, const QString& password) {
-    const auto trimmed_user = user.trimmed();
-    if (trimmed_user.size() > kMaxUserLength || password.size() > kMaxPasswordLength)
-        return "User name or password is too long.";
-    const auto printable = [](const QString& v) {
-        return std::all_of(v.begin(), v.end(), [](QChar c) { return c.unicode() > 32 && c.unicode() < 127; });
-    };
-    if (!printable(trimmed_user) || !printable(password)) return "Use plain letters, digits and symbols only (no spaces).";
-    hamalert_user_ = trimmed_user;
-    if (trimmed_user.isEmpty()) hamalert_password_.clear();
-    else if (!password.isEmpty()) hamalert_password_ = password;
-    const auto error = writeAccounts();
-    emit accountsChanged();
-    return error;
-}
-
-QString AppSettings::saveHamsatKey(const QString& key) {
-    const auto trimmed = key.trimmed();
-    if (trimmed.size() > kMaxPasswordLength) return "The key is too long.";
-    const bool plain = std::all_of(trimmed.begin(), trimmed.end(),
-                                   [](QChar c) { return c.unicode() > 32 && c.unicode() < 127; });
-    if (!plain) return "Use plain letters, digits and symbols only (no spaces).";
-    hamsat_key_ = trimmed;
-    const auto error = writeAccounts();
-    emit accountsChanged();
-    return error;
-}
-
-void AppSettings::clearAccount() { saveAccount("none", {}, {}); }
+// Account logins (lookup, HamAlert, hams.at) live in app_settings_accounts.cpp.
 
 QString AppSettings::saveWatchList(const QString& entries) {
     const auto wanted = entries.split(QRegularExpression("[\\s,;]+"), Qt::SkipEmptyParts);
