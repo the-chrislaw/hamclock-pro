@@ -380,7 +380,7 @@ if(BUILD_TESTING)
     endforeach()
     # Settings sections (Accounts and two open account sheets, Display, Screen, Spots, Hardware) on a phone and the 7-inch panel: no clipped or cut text.
     foreach(size 390x844 1024x600)
-        foreach(target accounts accounts:hamqth accounts:dxcluster display screen spots hardware advanced about)
+        foreach(target station accounts accounts:hamqth accounts:dxcluster display screen spots hardware advanced about)
             string(REPLACE ":" "-" target_name ${target})
             add_test(NAME qml-settings-${target_name}-${size} COMMAND hamclock-pro --offline
                 --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${target_name}-${size}
@@ -389,6 +389,14 @@ if(BUILD_TESTING)
             set_tests_properties(qml-settings-${target_name}-${size} PROPERTIES TIMEOUT 30
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
         endforeach()
+    endforeach()
+    # First run (no station): Settings in setup mode, the Station card with Later and Start only (no clipped text, no QML errors).
+    foreach(size 390x844 1024x600 1512x982)
+        add_test(NAME qml-settings-setup-${size} COMMAND hamclock-pro --offline --first-run
+            --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-setup-${size}
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-setup-${size}.png --size ${size})
+        set_tests_properties(qml-settings-setup-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # An unreadable station file opens first-run Settings with the reason shown, not a blank form (no clipped text, no QML errors).
     foreach(size 390x844 1024x600)

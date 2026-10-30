@@ -33,7 +33,7 @@ if "!Theme.phone" not in display or 'Qt.platform.os === "ios"' not in display:
     sys.exit("DisplaySection.qml: Map size is hidden on phones and Screen rotation is iOS-only")
 
 # Data sources is the last card in the page.
-cards = [m.start() for m in re.finditer(r"^            [A-Z]\w*\s*\{", page, re.M)]
+cards = [m.start() for m in re.finditer(r"^ {12}(?: {4})?[A-Z]\w*\s*\{", page, re.M)]   # top level, or inside moreSections
 last = page[cards[-1]:]
 if not re.search(r'title:\s*"(About and data sources|Data sources)"', last[:300]) or "dataSources" not in last:
     sys.exit("SettingsPage.qml: Data sources must be the last section")
