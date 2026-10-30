@@ -86,6 +86,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
+    src/ui/key_injector.cpp
     src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
@@ -103,7 +104,8 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/ScreenSection.qml src/ui/qml/SettingsGroup.qml src/ui/qml/FormField.qml src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
     src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml src/ui/qml/pager.mjs
     src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml
-    src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml src/ui/qml/MacMenuBar.qml)
+    src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/TouchKeyboard.qml src/ui/qml/SatelliteAlertsCard.qml
+    src/ui/qml/SatAlertBanner.qml src/ui/qml/MacMenuBar.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -241,6 +243,19 @@ if(BUILD_TESTING)
     set_target_properties(attribution-regression PROPERTIES AUTOMOC ON)
     add_test(NAME attribution-regression COMMAND attribution-regression)
     set_tests_properties(attribution-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(key-injector-regression tests/key_injector_regression.cpp src/ui/key_injector.cpp)
+    target_include_directories(key-injector-regression PRIVATE src)
+    target_link_libraries(key-injector-regression PRIVATE Qt6::Quick)
+    set_target_properties(key-injector-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME key-injector-regression COMMAND key-injector-regression)
+    set_tests_properties(key-injector-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(touch-keyboard-regression tests/touch_keyboard_regression.cpp src/ui/key_injector.cpp)
+    target_include_directories(touch-keyboard-regression PRIVATE src)
+    target_compile_definitions(touch-keyboard-regression PRIVATE HC_QML_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml")
+    target_link_libraries(touch-keyboard-regression PRIVATE Qt6::Quick Qt6::QuickControls2)
+    set_target_properties(touch-keyboard-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME touch-keyboard-regression COMMAND touch-keyboard-regression)
+    set_tests_properties(touch-keyboard-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(text-entry-hint-regression tests/text_entry_hint_regression.cpp)
     target_link_libraries(text-entry-hint-regression PRIVATE hamclock-widget-core)
     set_target_properties(text-entry-hint-regression PROPERTIES AUTOMOC ON)
@@ -415,6 +430,21 @@ if(BUILD_TESTING)
             --pane 1=bands --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-bands-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
+    endforeach()
+    # Kiosk first boot on the Pi panels: Settings opens with the callsign focused; with
+    # --touch-keyboard the on-screen keyboard is up. Nothing may be cut off (exit 4).
+    foreach(size 800x480 1024x600)
+        foreach(variant first-run touch-keyboard)
+            set(extra --first-run)
+            if(variant STREQUAL "touch-keyboard")
+                list(APPEND extra --touch-keyboard)
+            endif()
+            add_test(NAME qml-app-${variant}-${size} COMMAND hamclock-pro --offline ${extra}
+                --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${variant}-${size}
+                --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${variant}-${size}.png --size ${size})
+            set_tests_properties(qml-app-${variant}-${size} PROPERTIES TIMEOUT 30
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+        endforeach()
     endforeach()
     # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
     add_test(NAME app-version-headless COMMAND hamclock-pro --version)

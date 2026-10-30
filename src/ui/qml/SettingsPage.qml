@@ -64,6 +64,23 @@ Rectangle {
         flick.contentY = 0
     }
 
+    function focusFirstField() { callsign.field.forceActiveFocus() }
+
+    // Keeps the focused field above the on-screen keyboard.
+    function revealFocused() {
+        const item = page.Window.activeFocusItem
+        let inside = false
+        for (let p = item; p && !inside; p = p.parent) inside = p === column
+        if (!inside) return
+        const top = item.mapToItem(column, 0, 0).y
+        if (top + item.height > flick.contentY + flick.height)
+            flick.contentY = Math.min(flick.contentHeight - flick.height, top + item.height - flick.height + Theme.pad)
+        else if (top < flick.contentY)
+            flick.contentY = Math.max(0, top - Theme.pad)
+    }
+    Connections { target: page.Window.window; function onActiveFocusItemChanged() { Qt.callLater(page.revealFocused) } }
+    Connections { target: Theme; function onKeyboardInsetChanged() { Qt.callLater(page.revealFocused) } }
+
     // --settings: "station", "accounts", "display", "screen", "spots", "hardware", "advanced" or "about" scrolls
     // to that section (and opens it);
     // "accounts:hamqth" also opens that account.
@@ -129,7 +146,7 @@ Rectangle {
 
     Flickable {
         id: flick
-        anchors { top: titleBar.bottom; left: parent.left; right: parent.right; bottom: parent.bottom }
+        anchors { top: titleBar.bottom; left: parent.left; right: parent.right; bottom: parent.bottom; bottomMargin: Theme.keyboardInset }
         contentHeight: column.implicitHeight + 2 * Theme.pad
         clip: true
         boundsBehavior: Flickable.StopAtBounds
