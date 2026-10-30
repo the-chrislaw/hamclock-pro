@@ -10,6 +10,7 @@ root = pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml"
 page = (root / "SettingsPage.qml").read_text()
 sheet = (root / "AccountSheet.qml").read_text()
 main = (root / "Main.qml").read_text()
+display = (root / "DisplaySection.qml").read_text()
 
 
 def fail(msg):
@@ -32,8 +33,8 @@ for card in ("clusterCard", "hardwareCard", "stationCard"):
         fail(f"SettingsPage.qml: {card} fields must save on editingFinished")
 
 # 3. B3: the banner title saves when editing finishes (it used to need its own Save; Done dropped it).
-if not re.search(r"id:\s*bannerTitle[^\n]*\n?.*?onEditingFinished:\s*appSettings\.saveBannerTitle", page, re.S):
-    fail("SettingsPage.qml: banner title must save on editingFinished")
+if not re.search(r"id:\s*bannerTitle[^\n]*\n?.*?onEditingFinished:\s*appSettings\.saveBannerTitle", display, re.S):
+    fail("DisplaySection.qml: banner title must save on editingFinished")
 
 # 4. B4: every switch in the spots card applies at once, with a label that does not flip.
 for sid, call in (("udpLan", "saveUdpSpots"), ("udpMe", "saveUdpScope"), ("udpSetsDx", "saveUdpSetsDx"),

@@ -34,7 +34,7 @@ Rectangle {
             [meshHost, () => appSettings.meshHost], [meshPort, () => appSettings.meshPort], [pskMax, () => appSettings.pskMaxKm],
             [adifPath, () => appSettings.adifPath], [otaProgram, () => appSettings.otaProgram], [otaBand, () => appSettings.otaBand],
             [otaMode, () => appSettings.otaMode], [otaSort, () => appSettings.otaSort], [otaAge, () => appSettings.otaMaxAgeMin],
-            [watchList, () => appSettings.watchListText], [bannerTitle, () => appSettings.bannerTitle],
+            [watchList, () => appSettings.watchListText], [displaySection.bannerTitle, () => appSettings.bannerTitle],
             [radioHost, () => appSettings.radioHost], [radioPort, () => appSettings.radioPort],
             [rotatorHost, () => appSettings.rotatorHost], [rotatorPort, () => appSettings.rotatorPort],
             [adsbHost, () => appSettings.adsbHost], [adsbPort, () => appSettings.adsbPort],
@@ -60,7 +60,8 @@ Rectangle {
         flick.contentY = 0
     }
 
-    // "accounts" scrolls to Accounts; "accounts:hamqth" also opens that account (--settings).
+    // --settings: "accounts", "display", "screen", "spots" or "hardware" scrolls to that section;
+    // "accounts:hamqth" also opens that account.
     function show(target) { showTimer.target = target; showTimer.restart() }
     // After the first layout pass, so the section's position is known.
     Timer {
@@ -68,7 +69,9 @@ Rectangle {
         property string target: ""
         interval: 50
         onTriggered: {
-            flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, accounts.mapToItem(column, 0, 0).y - Theme.pad))
+            const sections = { accounts: accounts, display: displaySection, screen: screenSection, spots: spotsCard, hardware: hardwareSection }
+            const item = sections[target.split(":")[0]] || accounts
+            flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, item.mapToItem(column, 0, 0).y - Theme.pad))
             const parts = target.split(":")
             if (parts[0] === "accounts" && parts.length > 1) accounts.open(parts[1])
         }
@@ -280,110 +283,9 @@ Rectangle {
 
             AccountsSection { id: accounts; Layout.fillWidth: true }
 
-            Card {
-                title: "Appearance"
-                Layout.fillWidth: true
-                RowLayout {
-                    spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: [["system", "System"], ["light", "Light"], ["dark", "Dark"]]
-                        AppButton {
-                            text: modelData[1]
-                            primary: appSettings.appearance === modelData[0]
-                            onClicked: appSettings.appearance = modelData[0]
-                        }
-                    }
-                }
-            }
+            DisplaySection { id: displaySection; Layout.fillWidth: true }
 
-            Card {
-                title: "Distance units"
-                Layout.fillWidth: true
-                RowLayout {
-                    spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: [[false, "Metric (km)"], [true, "Imperial (miles)"]]
-                        AppButton {
-                            text: modelData[1]
-                            primary: appSettings.imperialUnits === modelData[0]
-                            onClicked: appSettings.saveImperialUnits(modelData[0])
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Clock format"
-                Layout.fillWidth: true
-                Flow {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: [[0, "Thu 15 Oct"], [1, "Thu Oct 15"], [2, "2026-10-15"]]
-                        AppButton {
-                            text: modelData[1]
-                            primary: appSettings.dateOrder === modelData[0]
-                            onClicked: appSettings.saveClockFormat(modelData[0], appSettings.clock12h)
-                        }
-                    }
-                    Repeater {
-                        model: [[false, "24 h"], [true, "12 h AM/PM"]]
-                        AppButton {
-                            text: modelData[1]
-                            primary: appSettings.clock12h === modelData[0]
-                            onClicked: appSettings.saveClockFormat(appSettings.dateOrder, modelData[0])
-                        }
-                    }
-                    Repeater {
-                        model: [[false, "Week starts Mon"], [true, "Week starts Sun"]]
-                        AppButton {
-                            text: modelData[1]
-                            primary: appSettings.weekStartsSunday === modelData[0]
-                            onClicked: appSettings.saveWeekStart(modelData[0])
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Callsign banner"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: ["Theme", "Amber", "Green", "Red", "White", "Rainbow"]
-                            AppButton {
-                                text: modelData
-                                primary: appSettings.bannerStyle === index
-                                onClicked: appSettings.saveBannerStyle(index)
-                            }
-                        }
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: ["No fill", "Black", "Navy", "Maroon", "White"]
-                            AppButton {
-                                text: "Back: " + modelData
-                                primary: appSettings.bannerBackground === index
-                                onClicked: appSettings.saveBannerBackground(index)
-                            }
-                        }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: bannerTitle; label: "Custom title (tap the banner to show it; empty = off)"; text: appSettings.bannerTitle
-                            onEditingFinished: appSettings.saveBannerTitle(text)
-                            field.maximumLength: 24 }
-                    }
-                }
-            }
+            ScreenSection { id: screenSection; Layout.fillWidth: true }
 
             Card {
                 title: "Saved configurations"
@@ -424,209 +326,6 @@ Rectangle {
                 }
             }
 
-            Card {
-                title: "Text size"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text {
-                        text: "Larger type for TVs viewed from a distance. Panes show less at once."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [100, 115, 130, 150]
-                            AppButton {
-                                text: modelData === 100 ? "Normal" : modelData + " %"
-                                primary: appSettings.textScalePercent === modelData
-                                onClicked: appSettings.saveTextScale(modelData)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Screen rotation"
-                visible: Qt.platform.os === "ios"   // the Pi, Mac and TV don't rotate
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text {
-                        text: "Keep HamClock Pro upright or sideways however you hold the device. The Control Center rotation lock still applies."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [{ id: "auto", label: "Auto" }, { id: "portrait", label: "Portrait" }, { id: "landscape", label: "Landscape" }]
-                            AppButton {
-                                text: modelData.label
-                                primary: appSettings.orientationLock === modelData.id
-                                onClicked: appSettings.saveOrientationLock(modelData.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Map size"
-                visible: !Theme.phone   // phones always show two stacked panes
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text {
-                        text: "Panes fill the width of the screen. A smaller map leaves room for a second row of panes."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [{ id: "large", label: "Large" }, { id: "medium", label: "Medium" }, { id: "small", label: "Small" }]
-                            AppButton {
-                                text: modelData.label
-                                primary: appSettings.mapSize === modelData.id
-                                onClicked: appSettings.saveMapSize(modelData.id)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Accent colour"
-                Layout.fillWidth: true
-                Flow {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: ["Blue", "Green", "Amber", "Red", "Purple"]
-                        AppButton {
-                            text: modelData
-                            primary: appSettings.accentStyle === index
-                            onClicked: appSettings.saveAccentStyle(index)
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Big Clock face"
-                Layout.fillWidth: true
-                Flow {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Repeater {
-                        model: ["Digital", "Analog"]
-                        AppButton {
-                            text: modelData
-                            primary: appSettings.bigClockFace === index
-                            onClicked: appSettings.saveBigClockFace(index)
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "TV overscan"
-                Layout.fillWidth: true
-                visible: Qt.platform.os !== "ios" // kiosk/TV setting, not for iPhone/iPad
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text {
-                        text: "Inset kept free on every edge, for TVs that crop the picture."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [0, 2, 4, 6, 8, 10]
-                            AppButton {
-                                text: modelData === 0 ? "Off" : modelData + " %"
-                                primary: appSettings.overscanPercent === modelData
-                                onClicked: appSettings.saveOverscan(modelData)
-                            }
-                        }
-                    }
-                }
-            }
-
-            Card {
-                title: "Screen blanking"
-                Layout.fillWidth: true
-                visible: Qt.platform.os !== "ios" // kiosk/TV setting, not for iPhone/iPad
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text {
-                        text: "Black overlay for kiosks (the backlight stays on). Tap to wake; inside the night window it blanks again after 1 minute."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [0, 5, 15, 30, 60]
-                            AppButton {
-                                text: modelData === 0 ? "Idle: off" : "Idle " + modelData + " min"
-                                primary: appSettings.blankIdleMinutes === modelData
-                                onClicked: appSettings.saveBlanking(modelData, appSettings.blankOffHour, appSettings.blankOnHour)
-                            }
-                        }
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: [[-1, -1, "Night: off"], [22, 6, "22:00-06:00"], [23, 7, "23:00-07:00"], [0, 6, "00:00-06:00"]]
-                            AppButton {
-                                text: modelData[2]
-                                primary: appSettings.blankOffHour === modelData[0] && appSettings.blankOnHour === modelData[1]
-                                onClicked: appSettings.saveBlanking(appSettings.blankIdleMinutes, modelData[0], modelData[1])
-                            }
-                        }
-                    }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        visible: appSettings.blankOffHour >= 0
-                        Repeater {
-                            model: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-                            AppButton {
-                                text: modelData
-                                primary: (appSettings.blankDays >> index) & 1
-                                onClicked: appSettings.saveBlankDays(appSettings.blankDays ^ (1 << index))
-                            }
-                        }
-                    }
-                }
-            }
-
             SatelliteAlertsCard { Layout.fillWidth: true }
 
             Card {
@@ -651,62 +350,7 @@ Rectangle {
             }
 
             Card {
-                title: "Data sources"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.5
-                    Text {
-                        text: "HamClock Pro is independent and not affiliated with the providers below. Data is fetched directly from each source."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
-                    }
-                    Repeater {
-                        model: dataSources
-                        Text {
-                            required property var modelData
-                            text: modelData.name + ": " + modelData.usedFor + ". " + modelData.terms + " (" + modelData.url + ")"
-                            color: Theme.ink
-                            font.pixelSize: Theme.fontCaption
-                            wrapMode: Text.WordWrap
-                            Layout.fillWidth: true
-                        }
-                    }
-                }
-            }
-
-            Card {
-                id: exitCard
-                title: "Exit"
-                Layout.fillWidth: true
-                visible: Qt.platform.os !== "ios"
-                property bool armed: false
-                Timer { id: exitDisarm; interval: 5000; onTriggered: exitCard.armed = false }
-                Flow {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    AppButton {
-                        text: exitCard.armed ? "Tap again to exit" : "Exit HamClock Pro"
-                        primary: exitCard.armed
-                        onClicked: {
-                            if (exitCard.armed) { Qt.quit(); return }
-                            exitCard.armed = true
-                            exitDisarm.restart()
-                        }
-                    }
-                    Text {
-                        text: "Closes the app only; it does not reboot or power off the device."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        width: parent.width
-                    }
-                }
-            }
-
-            Card {
+                id: spotsCard
                 title: "Spots and feeds"
                 Layout.fillWidth: true
                 ColumnLayout {
@@ -852,6 +496,7 @@ Rectangle {
             // Local station hardware. iPhone and iPad have none and do not list these panes
             // (widget_available), so the section is hidden there, like the ADIF path.
             Card {
+                id: hardwareSection
                 title: "On this computer: station hardware"
                 Layout.fillWidth: true
                 visible: Qt.platform.os !== "ios"
@@ -929,6 +574,33 @@ Rectangle {
                 }
             }
 
+
+            Card {
+                title: "Data sources"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.5
+                    Text {
+                        text: "HamClock Pro is independent and not affiliated with the providers below. Data is fetched directly from each source."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Repeater {
+                        model: dataSources
+                        Text {
+                            required property var modelData
+                            text: modelData.name + ": " + modelData.usedFor + ". " + modelData.terms + " (" + modelData.url + ")"
+                            color: Theme.ink
+                            font.pixelSize: Theme.fontCaption
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+            }
         }
     }
 }

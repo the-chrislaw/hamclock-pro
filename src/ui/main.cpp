@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
-    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: accounts, or accounts:ID to open one account (screenshots).", "section");
+    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: accounts, display, screen, spots or hardware, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     for (const auto& option : {open_settings, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
