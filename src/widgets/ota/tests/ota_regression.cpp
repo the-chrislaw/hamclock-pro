@@ -140,6 +140,11 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "live" && model.hasData() && model.count() == static_cast<int>(all3.size()), "fresh -> live");
     check(model.statusText() == "POTA + SOTA + WWFF", "all sources named");
+    // WWFF answered 429 with Retry-After 1800 at a 2 minute poll: poll it every 10 minutes
+    // or less often. POTA and SOTA keep their 2 minute refresh.
+    check(model.wwffSource().nextDelay() >= std::chrono::minutes(10), "WWFF polled every 10 minutes or less often");
+    check(model.potaSource().nextDelay() == std::chrono::minutes(2) && model.sotaSource().nextDelay() == std::chrono::minutes(2),
+          "POTA and SOTA polled every 2 minutes");
     check(model.recent().size() == std::min<int>(30, static_cast<int>(all3.size())), "recent capped at 30");
     {
         size_t positioned = 0;
