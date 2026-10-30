@@ -167,6 +167,14 @@ typedef struct {
     HcpScaleDay forecast[3];  /* today, tomorrow, day after */
 } HcpScales;
 int hcp_scales_parse(const char* body, size_t len, HcpScales* out);   /* returns out->valid */
+/* Kyoto Dst (products/kyoto-dst.json), port of src/widgets/solardst/solar_dst_parse. Fills out[] with
+ * the most recent cap hourly records, OLDEST FIRST; returns the count, or -1 when the body is not the product. */
+typedef struct {
+    int64_t time_ms; /* UTC, start of the hour */
+    int dst;         /* nT */
+} HcpDst;
+int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
+int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
 int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
 
 /* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.

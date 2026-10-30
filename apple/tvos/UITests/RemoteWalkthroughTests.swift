@@ -312,6 +312,21 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(station.label.contains("Long path"), "long path kept")
     }
 
+    /// Dst index (ported from the Qt widget): offered in the chooser, shows a reading and a badge.
+    func testDstIndexPane() {
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
+                               "-hcpPanes", "solardst"]
+        app.launch()
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertEqual(pane0.value as? String, "solardst")
+        XCTAssertTrue(waitFor(20) { pane0.label.contains("nT") || pane0.label.contains("Offline") }, "Dst reading or an honest Offline: \(pane0.label)")
+        shot("tvos-dst")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solardst"].waitForExistence(timeout: 5), "Dst index is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

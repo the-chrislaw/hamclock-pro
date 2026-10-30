@@ -3,6 +3,7 @@
 #include "abi_util.hpp"
 #include "aurora.hpp"
 #include "drap.hpp"
+#include "dst.hpp"
 #include "scales.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
@@ -74,6 +75,17 @@ int hcp_scales_parse(const char* b, size_t n, HcpScales* out) {
     for (size_t i = 0; i < 3; ++i) out->forecast[i] = day(s.forecast[i]);
     return out->valid;
 }
+
+int hcp_dst_parse(const char* b, size_t n, HcpDst* out, size_t cap) {
+    const auto s = b ? hcp::dst::parse(view(b, n)) : std::nullopt;
+    if (!s) return -1;
+    const size_t count = out ? std::min(s->size(), cap) : 0;
+    const size_t first = s->size() - count;
+    for (size_t i = 0; i < count; ++i) out[i] = HcpDst{(*s)[first + i].time_ms, (*s)[first + i].dst};
+    return static_cast<int>(count);
+}
+
+int hcp_dst_word(int dst, char* buf, size_t cap) { return copy(hcp::dst::word(dst), buf, cap); }
 
 int hcp_scale_word(int level, char* buf, size_t cap) { return copy(hcp::scales::scale_word(level), buf, cap); }
 

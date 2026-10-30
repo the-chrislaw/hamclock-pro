@@ -25,7 +25,7 @@ enum WidgetCatalog {
         .init(id: "solarhamqsl", title: "HamQSL conditions", category: 1, tv: false),
         .init(id: "bandsmatrix", title: "HF path reliability", category: 1, tv: false),
         .init(id: "solartrend", title: "Solar trend", category: 1, tv: false),
-        .init(id: "solardst", title: "Dst index", category: 1, tv: false),
+        .init(id: "solardst", title: "Dst index", category: 1, tv: true),
         .init(id: "solarimpact", title: "Space weather impact", category: 1, tv: false),
         .init(id: "ota", title: "On the air", category: 2, tv: true),
         .init(id: "dxcluster", title: "DX cluster", category: 2, tv: false),
