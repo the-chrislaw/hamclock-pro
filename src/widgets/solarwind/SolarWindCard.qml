@@ -70,17 +70,21 @@ Card {
         width: parent.width
         height: root.fillPlots ? parent.height : implicitHeight
         spacing: Theme.gap * 0.4
+        // A fixed two-row model: the rows read their values through bindings. A model array rebuilt
+        // on every reading destroyed and recreated both rows, sometimes while the layout was placing
+        // them (a freed item in Qt's grid engine: SEGV on Linux CI).
         Repeater {
-            model: [
-                { label: "Wind", ok: root.hasSpeed,
-                  value: root.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
-                  color: root.speedColor, history: root.widget ? root.widget.speedHistory : [], zero: false },
-                { label: "Bz", ok: root.hasBz,
-                  value: root.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
-                  color: root.bzColor, history: root.widget ? root.widget.bzHistory : [], zero: true }
-            ]
+            model: 2
             Item {
-                required property var modelData
+                required property int index
+                readonly property bool isSpeed: index === 0
+                readonly property var modelData: isSpeed
+                    ? { label: "Wind", ok: root.hasSpeed,
+                        value: root.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
+                        color: root.speedColor, history: root.widget ? root.widget.speedHistory : [], zero: false }
+                    : { label: "Bz", ok: root.hasBz,
+                        value: root.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
+                        color: root.bzColor, history: root.widget ? root.widget.bzHistory : [], zero: true }
                 readonly property real textWidth: Math.max(84 * Theme.scale, Math.ceil(widestValue.advanceWidth) + 2)
                 Layout.fillWidth: true
                 Layout.preferredHeight: 36 * Theme.scale
