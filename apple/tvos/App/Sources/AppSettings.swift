@@ -29,9 +29,17 @@ final class AppSettings: ObservableObject {
         static let mapSize = "hcp.map.size", mapLayers = "hcp.map.layers"
         static let mapCentre = "hcp.map.centre", mapZoom = "hcp.map.zoom", mapLongPath = "hcp.map.longPath"
         static let dimAfterHours = "hcp.tv.dimAfterHours"
+        /// Satellite pass alerts: the Qt app's [satalerts] keys.
+        static let satEnabled = "hcp.satalerts.enabled", satAllWorkable = "hcp.satalerts.allWorkable"
+        static let satMuted = "hcp.satalerts.muted", satPicked = "hcp.satalerts.picked"
+        static let satMinElevation = "hcp.satalerts.minElevation", satLead = "hcp.satalerts.leadMinutes"
+        static let satQuietStart = "hcp.satalerts.quietStart", satQuietEnd = "hcp.satalerts.quietEnd"
+        static let satDaylightOnly = "hcp.satalerts.daylightOnly", satAnnounceStart = "hcp.satalerts.announceStart"
+        static let satAlerts = [satEnabled, satAllWorkable, satMuted, satPicked, satMinElevation, satLead,
+                                satQuietStart, satQuietEnd, satDaylightOnly, satAnnounceStart]
         static let all = [callsign, deLat, deLon, dxLat, dxLon, deZone, dxZone, place, appearance, imperial,
                           clock12h, dateOrder, localPrimary, bannerStyle, bannerBackground, bannerTitle, accent,
-                          panes, rotations, mapSize, mapLayers, mapCentre, mapZoom, mapLongPath, dimAfterHours]
+                          panes, rotations, mapSize, mapLayers, mapCentre, mapZoom, mapLongPath, dimAfterHours] + satAlerts
     }
 
     private let defaults: UserDefaults
@@ -69,6 +77,16 @@ final class AppSettings: ObservableObject {
         }
     }
     @Published var dimAfterHours = 0 { didSet { put(Key.dimAfterHours, dimAfterHours) } }
+    @Published var satAlerts = SatAlertPrefs() {
+        didSet {
+            let s = satAlerts
+            put(Key.satEnabled, s.enabled); put(Key.satAllWorkable, s.allWorkable)
+            put(Key.satMuted, s.muted); put(Key.satPicked, s.picked)
+            put(Key.satMinElevation, s.minElevation); put(Key.satLead, s.leadMinutes)
+            put(Key.satQuietStart, s.quietStart); put(Key.satQuietEnd, s.quietEnd)
+            put(Key.satDaylightOnly, s.daylightOnly); put(Key.satAnnounceStart, s.announceStart)
+        }
+    }
 
     private var loading = false
 
@@ -189,6 +207,16 @@ final class AppSettings: ObservableObject {
         accentStyle = value(Key.accent) as? Int ?? 0
         mapSize = value(Key.mapSize) as? String ?? "large"
         dimAfterHours = value(Key.dimAfterHours) as? Int ?? 0
+        let d = SatAlertPrefs()
+        satAlerts = SatAlertPrefs(
+            enabled: value(Key.satEnabled) as? Bool ?? d.enabled,
+            allWorkable: value(Key.satAllWorkable) as? Bool ?? d.allWorkable,
+            muted: value(Key.satMuted) as? [Int] ?? [], picked: value(Key.satPicked) as? [Int] ?? [],
+            minElevation: min(90, max(0, value(Key.satMinElevation) as? Int ?? d.minElevation)),
+            leadMinutes: min(60, max(0, value(Key.satLead) as? Int ?? d.leadMinutes)),
+            quietStart: value(Key.satQuietStart) as? Int ?? -1, quietEnd: value(Key.satQuietEnd) as? Int ?? -1,
+            daylightOnly: value(Key.satDaylightOnly) as? Bool ?? d.daylightOnly,
+            announceStart: value(Key.satAnnounceStart) as? Bool ?? d.announceStart)
         if let saved = value(Key.panes) as? [String] {
             panes = (0..<Self.paneSlots).map { $0 < saved.count && !saved[$0].isEmpty ? saved[$0] : Self.defaultPanes[$0] }
         }

@@ -1,10 +1,12 @@
 #include "hcpcore.h"
+#include <mutex>
 #include "abi_util.hpp"
 #include "bands.hpp"
 #include "quakes.hpp"
 #include "storms.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "satalert.hpp"
 #include "satpass.hpp"
 #include "weather.hpp"
 #include "map/coastline.hpp"
@@ -142,6 +144,100 @@ int sat_state(const hamclock::Tle& set, int64_t unix_s, double obs_lat, double o
     return 1;
 }
 } // namespace
+
+namespace {
+// The catalog is a small file passed on every call: parse it once per distinct content.
+const hcp::satalert::Catalog& cached_catalog(const char* text, size_t len) {
+    static std::mutex m;
+    static std::string last;
+    static hcp::satalert::Catalog catalog;
+    std::lock_guard<std::mutex> lock(m);
+    const std::string_view now(text ? text : "", text ? len : 0);
+    if (now != last) {
+        last.assign(now);
+        catalog = hcp::satalert::parse_catalog(now);
+    }
+    return catalog;
+}
+
+hcp::satalert::Prefs prefs_from(const HcpSatAlertPrefs& p) {
+    hcp::satalert::Prefs out;
+    out.enabled = p.enabled != 0;
+    out.all_workable = p.all_workable != 0;
+    out.min_elevation_deg = p.min_elevation_deg;
+    out.lead_minutes = p.lead_minutes;
+    out.quiet_start_hour = p.quiet_start_hour;
+    out.quiet_end_hour = p.quiet_end_hour;
+    out.daylight_only = p.daylight_only != 0;
+    out.announce_start = p.announce_start != 0;
+    if (p.muted) out.muted.assign(p.muted, p.muted + p.muted_count);
+    if (p.picked) out.picked.assign(p.picked, p.picked + p.picked_count);
+    return hcp::satalert::sanitized(out);
+}
+
+hcp::satalert::AlertPass pass_from(const HcpAlertPass& a) {
+    return {a.norad, a.name, a.aos_s, a.tca_s, a.los_s, a.max_el_deg, a.sun_el_deg, a.aos_compass, a.los_compass};
+}
+} // namespace
+
+extern "C" {
+int hcp_satalert_catalog(const char* text, size_t len, HcpSatCatalogEntry* out, size_t cap) {
+    if (!text || !out) return 0;
+    const auto& c = cached_catalog(text, len);
+    size_t n = 0;
+    for (; n < c.entries.size() && n < cap; ++n) {
+        const auto& e = c.entries[n];
+        out[n] = HcpSatCatalogEntry{};
+        out[n].norad = e.norad;
+        copy(e.name, out[n].name, sizeof out[n].name);
+        copy(e.status, out[n].status, sizeof out[n].status);
+        copy(e.transponders.front().mode, out[n].mode, sizeof out[n].mode);
+        out[n].workable = e.workable() ? 1 : 0;
+    }
+    return static_cast<int>(n);
+}
+
+int hcp_satalert_selected(const HcpSatAlertPrefs* prefs, const char* catalog, size_t len, int norad) {
+    if (!prefs) return 0;
+    return hcp::satalert::is_selected(prefs_from(*prefs), cached_catalog(catalog, len), norad) ? 1 : 0;
+}
+
+int hcp_satalert_predict(const char* tle, size_t tle_len, const char* catalog, size_t cat_len, const HcpSatAlertPrefs* prefs,
+                         double lat, double lon, int64_t now_s, HcpAlertPass* out, size_t cap) {
+    if (!tle || !prefs || !out || lat < -90 || lat > 90 || lon < -180 || lon > 360) return 0;
+    const auto passes = hcp::satalert::predict(hamclock::parse_tle_set(std::string(tle, tle_len)), prefs_from(*prefs),
+                                               cached_catalog(catalog, cat_len), hamclock::Observer{lat, lon, 0.0}, now_s);
+    size_t n = 0;
+    for (; n < passes.size() && n < cap; ++n) {
+        const auto& a = passes[n];
+        out[n] = HcpAlertPass{};
+        out[n].norad = a.norad;
+        copy(a.name, out[n].name, sizeof out[n].name);
+        out[n].aos_s = a.aos;
+        out[n].tca_s = a.tca;
+        out[n].los_s = a.los;
+        out[n].max_el_deg = a.max_el_deg;
+        out[n].sun_el_deg = a.sun_el_deg;
+        copy(a.aos_compass, out[n].aos_compass, sizeof out[n].aos_compass);
+        copy(a.los_compass, out[n].los_compass, sizeof out[n].los_compass);
+    }
+    return static_cast<int>(n);
+}
+
+int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAlertPrefs* prefs, const char* catalog,
+                        size_t cat_len, int utc_offset_s, int64_t now_s, char* text, size_t cap, int* live) {
+    if (live) *live = 0;
+    if (text && cap) text[0] = 0;
+    if (!passes || !prefs) return 0;
+    std::vector<hcp::satalert::AlertPass> list;
+    for (size_t i = 0; i < count; ++i) list.push_back(pass_from(passes[i]));
+    const auto b = hcp::satalert::current_banner(list, prefs_from(*prefs), cached_catalog(catalog, cat_len), utc_offset_s, now_s);
+    if (!b) return 0;
+    copy(b->text, text, cap);
+    if (live) *live = b->live ? 1 : 0;
+    return 1;
+}
+}
 
 extern "C" {
 int hcp_tle_count(const char* t, size_t n) {

@@ -130,6 +130,44 @@ int hcp_tle_short_name(const char* text, size_t len, int index, char* buf, size_
 /* Index of the first TLE whose short name equals short_name (ASCII case-insensitive), or -1. */
 int hcp_tle_find_short_name(const char* text, size_t len, const char* short_name);
 
+/* Satellite pass alerts (port of src/widgets/satellites/sat_catalog, sat_alert_prefs and the banner in
+ * sat_alert_plan). `catalog` is amateur-satellites.json; it is parsed once and cached per content. */
+typedef struct {
+    int norad;
+    char name[24];   /* "SO-50" */
+    char status[16]; /* active / intermittent / inactive */
+    char mode[12];   /* first transponder: FM / Linear / APRS / Digital */
+    int workable;    /* active or intermittent: what "All workable" alerts on */
+} HcpSatCatalogEntry;
+/* Catalog entries in file order (malformed ones skipped); returns the count written. */
+int hcp_satalert_catalog(const char* catalog, size_t len, HcpSatCatalogEntry* out, size_t cap);
+typedef struct {
+    int enabled, all_workable;
+    int min_elevation_deg, lead_minutes;
+    int quiet_start_hour, quiet_end_hour; /* local hours, -1 = none */
+    int daylight_only, announce_start;
+    const int* muted;
+    size_t muted_count;
+    const int* picked;
+    size_t picked_count;
+} HcpSatAlertPrefs;
+/* 1 when the NORAD id is selected for alerts under prefs (is_alert_selected). */
+int hcp_satalert_selected(const HcpSatAlertPrefs* prefs, const char* catalog, size_t len, int norad);
+typedef struct {
+    int norad;
+    char name[24];
+    int64_t aos_s, tca_s, los_s;
+    double max_el_deg, sun_el_deg;
+    char aos_compass[4], los_compass[4];
+} HcpAlertPass;
+/* Passes of the selected birds in the TLE text over the next 48 h (and in progress), sorted by AOS. */
+int hcp_satalert_predict(const char* tle, size_t tle_len, const char* catalog, size_t cat_len, const HcpSatAlertPrefs* prefs,
+                         double obs_lat_deg, double obs_lon_deg, int64_t now_s, HcpAlertPass* out, size_t cap);
+/* The in-app banner at now_s: 1 and text ("SO-50 in 4 min · AOS 14:05 · ...") when one is due, live = 1 while
+ * the bird is up; 0 otherwise. Local times are UTC + utc_offset_s. */
+int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAlertPrefs* prefs, const char* catalog,
+                        size_t cat_len, int utc_offset_s, int64_t now_s, char* text, size_t cap, int* live);
+
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
  * Fills out[] with up to cap bands (80m..10m); returns the number written. */
