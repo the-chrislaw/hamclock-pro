@@ -1,5 +1,6 @@
 #include "apple_devicelocation.hpp"
 
+#include <QtGlobal>
 #include <cmath>
 
 namespace hamclock {
@@ -30,5 +31,14 @@ void DeviceLocation::deliver(const LocationFix& fix) {
 }
 
 void DeviceLocation::fail(const QString& why) { emit failed(why); }
+
+void DeviceLocation::request() {
+    if (!nativeLocationRequest(this)) fail(QStringLiteral("Location Services are not available on this device."));
+}
+
+#ifndef Q_OS_MACOS
+bool nativeLocationRequest(DeviceLocation*) { return false; }
+bool nativeLocationAvailable() { return false; }
+#endif
 
 } // namespace hamclock

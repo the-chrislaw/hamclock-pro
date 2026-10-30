@@ -24,6 +24,8 @@ SolarImageModel::SolarImageModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solarimage", "Sun (SDO)", parent) {
     for (int i = 0; i < kChannels; ++i) {
         auto* source = new PolledSource(kList[i].cache, QUrl(kList[i].url), kPolicy, context.transport, this);
+        // A body that is not an image (error page, cut-off JPEG) never replaces the last good one.
+        source->setValidator(&SolarImageModel::valid_image);
         sources_[static_cast<size_t>(i)] = source;
         connect(source, &PolledSource::updated, this, [this, i] { if (i == channel_) show(i); });
         connect(source, &PolledSource::failed, this, [this, i] { if (i == channel_) refreshState(); });
@@ -73,7 +75,7 @@ void SolarImageModel::refreshState() {
     const auto* source = sources_[static_cast<size_t>(channel_)];
     const QString label = QString("NASA SDO %1").arg(channelName());
     if (!hasImage()) {
-        if (rejected_) setState("error", "NASA SDO returned something that is not an image");
+        if (rejected_ || source->lastBodyRejected()) setState("error", "NASA SDO returned something that is not an image");
         else if (!source->lastError().isEmpty()) setState("offline", "NASA SDO unreachable: " + source->lastError());
         else setState("loading", "Contacting NASA SDO…");
         return;

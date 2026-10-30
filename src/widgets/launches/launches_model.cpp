@@ -18,6 +18,8 @@ QString when_text(const launches::Launch& l, const QDateTime& now) {
 LaunchesModel::LaunchesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("launches", "Launches", parent),
       source_(new PolledSource("launch-library-upcoming", QUrl(kUrl), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return launches::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = launches::parse(source_->body());
         emit launchesChanged();
