@@ -38,6 +38,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/scales.cpp
     ${HCP_ROOT}/apple/tvos/Core/xml_mini.cpp
     ${HCP_ROOT}/apple/tvos/Core/hamqsl.cpp
+    ${HCP_ROOT}/apple/tvos/Core/pathrel.cpp
     ${HCP_ROOT}/apple/tvos/Core/trend.cpp
     ${HCP_ROOT}/apple/tvos/Core/dst.cpp
     ${HCP_ROOT}/apple/tvos/Core/alerts.cpp
@@ -134,6 +135,7 @@ hcp_core_test(series spaceweather)
 hcp_core_test(scales solarscales)
 hcp_core_test(satalert satellites)
 hcp_core_test(hamqsl solarhamqsl)
+hcp_core_test(pathrel bands)
 hcp_core_test(trend solartrend)
 hcp_core_test(dst solardst)
 hcp_core_test(alerts solaralerts)

@@ -268,6 +268,29 @@ typedef struct {
 int hcp_trend_flux_daily(const char* body, size_t len, int days, HcpFluxDay* out, size_t cap);
 /* observed-solar-cycle-indices.json: newest month ("YYYY-MM") with a NOAA SSN; 1 found, 0 none or not the product. */
 int hcp_trend_sunspots(const char* body, size_t len, char* month, size_t month_cap, double* number);
+/* HF path reliability (port of src/widgets/bands/path_model and the bandsmatrix card): DE -> DX
+ * reliability by band, 80m..10m, for `hours` UTC hours from the current hour. In-house approximate
+ * model, NOT VOACAP. mode: 0 SSB, 1 CW, 2 digital. */
+typedef struct {
+    double de_lat_deg, de_lon_deg, dx_lat_deg, dx_lon_deg;
+    double power_w, gain_db; /* 100 W and 6 dBi (two dipoles) in the Qt app by default */
+    int mode, long_path;
+} HcpPathInput;
+#define HCP_PATH_BANDS 8
+#define HCP_PATH_HOURS 24
+typedef struct {
+    int has_path;          /* 0: DE and DX under 50 km apart (no DX target) */
+    double distance_km;    /* of the path being rated */
+    int band_count, hours;
+    char band[HCP_PATH_BANDS][8];
+    double muf_mhz[HCP_PATH_BANDS];
+    double cells[HCP_PATH_BANDS][HCP_PATH_HOURS]; /* 0..1 */
+    char best[40];         /* "Best now: 20m 87%" or "HF closed now" */
+    char start[8];         /* "14Z" */
+} HcpPathCard;
+/* 1 when filled (has_path may still be 0), 0 for NULL arguments or bad coordinates. */
+int hcp_path_card(const HcpPathInput* in, int64_t now_s, double sfi, double kp, HcpPathCard* out);
+
 /* HamQSL (N0NBH) solar XML, port of src/widgets/solarhamqsl/solar_hamqsl_parse. */
 typedef struct {
     char name[16];          /* "80m-40m" */
