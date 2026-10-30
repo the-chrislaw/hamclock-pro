@@ -25,7 +25,7 @@ struct SunMoonWidget: View {
                     row("Moonrise", event(t, 0, de, sun: false), event(t, 0, dx, sun: false))
                     row("Moonset", event(t, 1, de, sun: false), event(t, 1, dx, sun: false))
                 }
-                Text(moon(t)).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink)
+                Text(moon(t)).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.75)
             } else {
                 Note(text: "Set your location in Settings.")
             }
@@ -51,7 +51,7 @@ struct SunMoonWidget: View {
     private func moon(_ t: Int64) -> String {
         var ill = 0.0
         let name = cString(32) { hcp_moon_phase(t, $0, $1, &ill) }
-        return name.isEmpty ? "" : String(format: "Moon: %@ · %.0f%% lit", name, ill * 100)
+        return name.isEmpty ? "" : String(format: "Moon %@ · %.0f%%", name, ill * 100)
     }
 }
 
@@ -74,7 +74,7 @@ struct SatellitesWidget: View {
             : fetchAge > SatelliteStore.offlineAfter ? .offline
             : (fetchAge > 86400 * 2 || oldestDays > 14) ? .stale : .live
         Card(title: "Satellites", chooser: true, state: state,
-             status: oldestDays > 14 ? String(format: "Elements %.0f days old", oldestDays) : "\(sats.source) elements, SGP4 on device",
+             status: oldestDays > 14 ? String(format: "Elements %.0f days old", oldestDays) : "\(sats.source) · SGP4",
              age: Age.text(sats.fetched, now: now), focused: focused) {
             if settings.de != nil, sats.tle != nil, state != .offline {
                 if up.isEmpty { Note(text: "None above the horizon now.") }

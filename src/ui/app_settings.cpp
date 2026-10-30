@@ -5,6 +5,7 @@
 #include "blanking.hpp"
 #include "config_store.hpp"
 #include "pane_grid.hpp"
+#include "region_defaults.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
@@ -78,6 +79,7 @@ AppSettings::AppSettings(QString station_path, QString config_dir, QObject* pare
         }
     }
     loadOptions();
+    if (!configured_) applyRegionDefaults();
     loadAccounts();
 }
 
@@ -600,6 +602,23 @@ QString AppSettings::savePskMaxKm(int max_km) {
     psk_max_km_ = max_km;
     emit optionsChanged();
     return {};
+}
+
+// A new install (no station yet) takes units, 12/24 h, date order and week start from the
+// device region, for each choice not already in options.ini, and writes them down so they
+// stay once the station is saved. Existing installs never change under the user.
+void AppSettings::applyRegionDefaults() {
+    const RegionDefaults region = region_defaults(QLocale());
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (!ini.contains("units/imperial")) { imperial_ = region.imperial; ini.setValue("units/imperial", imperial_); }
+    if (!ini.contains("clock/h12")) { clock_12h_ = region.clock12h; ini.setValue("clock/h12", clock_12h_); }
+    if (!ini.contains("clock/date_order")) { date_order_ = region.date_order; ini.setValue("clock/date_order", date_order_); }
+    if (!ini.contains("clock/week_start")) {
+        week_sunday_ = region.week_starts_sunday;
+        ini.setValue("clock/week_start", week_sunday_ ? 0 : 1);
+    }
+    ini.sync();
+    if (ini.status() != QSettings::NoError) qWarning("Could not save the region's display defaults.");
 }
 
 QString AppSettings::saveImperialUnits(bool imperial) {

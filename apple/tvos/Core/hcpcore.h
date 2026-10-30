@@ -167,6 +167,49 @@ typedef struct {
     HcpScaleDay forecast[3];  /* today, tomorrow, day after */
 } HcpScales;
 int hcp_scales_parse(const char* body, size_t len, HcpScales* out);   /* returns out->valid */
+/* Kyoto Dst (products/kyoto-dst.json), port of src/widgets/solardst/solar_dst_parse. Fills out[] with
+ * the most recent cap hourly records, OLDEST FIRST; returns the count, or -1 when the body is not the product. */
+typedef struct {
+    int64_t time_ms; /* UTC, start of the hour */
+    int dst;         /* nT */
+} HcpDst;
+int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
+int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
+/* NOAA SWPC alerts, watches and warnings (products/alerts.json), port of
+ * src/widgets/solaralerts/solar_alerts_parse. Texts are UTF-8, truncated to fit. */
+typedef struct {
+    char code[16];      /* SWPC product id, e.g. "K05A" */
+    char kind[24];      /* Alert, Warning, Extended warning, Watch, Summary, Cancel */
+    char headline[160];
+    char scale[4];      /* "G1", "S2", "R3"...; empty when none stated */
+    int64_t issued_ms;  /* UTC */
+    int64_t until_ms;   /* UTC end of validity; 0 when the message has none */
+    int cancelled;      /* 1 for a cancellation notice */
+    int level;          /* 0 info, 1 minor/moderate or a watch/warning, 2 strong+ (scale >= 3) */
+} HcpAlert;
+/* Every parseable message, NEWEST FIRST, up to cap; returns the count or -1 when the body is not the product. */
+int hcp_alerts_parse(const char* body, size_t len, HcpAlert* out, size_t cap);
+/* The messages in force at now_ms out of a parsed list (newest per product, no cancellations, warnings
+ * until their end time, alerts/summaries 24 h, watches 48 h). Returns the count written to out. */
+int hcp_alerts_active(const HcpAlert* all, size_t count, int64_t now_ms, HcpAlert* out, size_t cap);
+/* Solar trend (port of src/widgets/solartrend/solar_trend_parse). Each returns -1 when the body is not the product. */
+typedef struct {
+    int64_t time_ms; /* UTC start of the 3-hour interval */
+    double kp;
+    int predicted;   /* 1 forecast, 0 observed/estimated */
+    int level;       /* 0 quiet, 1 active (Kp 4), 2 storm (Kp >= 5) */
+} HcpKpBar;
+/* noaa-planetary-k-index-forecast.json: 36 h before the newest observation to the end of the forecast,
+ * OLDEST FIRST, up to cap; 0 bars when there is no observation. */
+int hcp_trend_kp_bars(const char* body, size_t len, HcpKpBar* out, size_t cap);
+typedef struct {
+    int64_t day_ms; /* UTC midnight */
+    double flux;    /* sfu, the Noon reading */
+} HcpFluxDay;
+/* f107_cm_flux.json: at most `days` newest days (and cap), OLDEST FIRST. */
+int hcp_trend_flux_daily(const char* body, size_t len, int days, HcpFluxDay* out, size_t cap);
+/* observed-solar-cycle-indices.json: newest month ("YYYY-MM") with a NOAA SSN; 1 found, 0 none or not the product. */
+int hcp_trend_sunspots(const char* body, size_t len, char* month, size_t month_cap, double* number);
 int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
 
 /* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.

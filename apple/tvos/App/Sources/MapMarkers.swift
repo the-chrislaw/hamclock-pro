@@ -12,6 +12,8 @@ struct MapMarkers {
     let sats: SatelliteStore
     let sub: (lat: Double, lon: Double)?
     let longPath: Bool
+    /// The canvas: labels are kept inside it (a label cut by the map edge reads as garbage).
+    let bounds: CGRect
     var placed: [CGRect] = []
 
     private static let quake = Theme.hex(0xe0473c), storm = Theme.hex(0xf0a030), ota = Theme.hex(0xf5b400)
@@ -128,9 +130,28 @@ struct MapMarkers {
     private mutating func label(_ text: String, at p: CGPoint, dx: Double, bold: Bool = false) {
         let t = ctx.resolve(Text(text).font(.system(size: 24, weight: bold ? .bold : .medium)).foregroundColor(theme.mapInk))
         let size = t.measure(in: CGSize(width: 400, height: 60))
-        let rect = CGRect(x: p.x + dx, y: p.y - size.height / 2, width: size.width, height: size.height).insetBy(dx: -4, dy: -2)
-        if !bold, placed.contains(where: { $0.intersects(rect) }) { return }
-        placed.append(rect)
-        ctx.draw(t, at: CGPoint(x: p.x + dx, y: p.y), anchor: .leading)
+        guard let rect = MapLabelPlacement.rect(size: size, marker: p, dx: dx, in: bounds) else { return }
+        let padded = rect.insetBy(dx: -4, dy: -2)
+        if !bold, placed.contains(where: { $0.intersects(padded) }) { return }
+        placed.append(padded)
+        ctx.draw(t, at: CGPoint(x: rect.midX, y: rect.midY), anchor: .center)
+    }
+}
+
+/// Where a marker label goes: right of the marker, or left of it when the right side would run
+/// past the map edge; nudged vertically to stay inside. nil when it cannot fit at all (or the
+/// marker itself is off the map).
+enum MapLabelPlacement {
+    static let margin: CGFloat = 4
+
+    static func rect(size: CGSize, marker p: CGPoint, dx: Double, in bounds: CGRect) -> CGRect? {
+        guard bounds.contains(p), size.width + 2 * margin <= bounds.width, size.height + 2 * margin <= bounds.height else { return nil }
+        let right = CGRect(x: p.x + dx, y: p.y - size.height / 2, width: size.width, height: size.height)
+        let left = right.offsetBy(dx: -(2 * dx + size.width), dy: 0)
+        let inner = bounds.insetBy(dx: margin, dy: margin)
+        var r = right.maxX <= inner.maxX ? right : left
+        if r.minX < inner.minX { return nil }
+        r.origin.y = min(max(r.minY, inner.minY), inner.maxY - r.height)
+        return r
     }
 }

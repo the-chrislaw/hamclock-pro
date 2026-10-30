@@ -69,6 +69,29 @@ final class Feeds: ObservableObject {
         var s = HcpScales()
         return data.withC { hcp_scales_parse($0, $1, &s) } != 0 ? s : nil
     }
+    /// Kyoto Dst (SolarDstModel: 30 min interval, stale after 2 h).
+    let dst = PolledFeed(["\(swpc)/products/kyoto-dst.json"], source: "NOAA SWPC Kyoto Dst",
+                         policy: .init(interval: minutes(30), staleAfter: hours(2), offlineAfter: hours(12))) {
+        Feeds.parseDst($0)
+    }
+    /// Alerts, watches and warnings (SolarAlertsModel: 10 min interval, stale after 2 h).
+    let alerts = PolledFeed(["\(swpc)/products/alerts.json"], source: "NOAA SWPC alerts",
+                            policy: .init(interval: minutes(10), staleAfter: hours(2), offlineAfter: hours(12))) {
+        SpaceAlerts.parse($0)
+    }
+    /// Solar trend products (SolarTrendModel policies: 30 min / 6 h / 12 h, stale after 6 h / 36 h / 72 h).
+    let kpForecast = PolledFeed(["\(swpc)/products/noaa-planetary-k-index-forecast.json"], source: "NOAA SWPC Kp forecast",
+                                policy: .init(interval: minutes(30), staleAfter: hours(6), offlineAfter: hours(18))) {
+        TrendParse.kp($0)
+    }
+    let fluxHistory = PolledFeed(["\(swpc)/json/f107_cm_flux.json"], source: "NOAA SWPC F10.7",
+                                 policy: .init(interval: hours(6), staleAfter: hours(36), offlineAfter: hours(108))) {
+        TrendParse.flux($0)
+    }
+    let sunspots = PolledFeed(["\(swpc)/json/solar-cycle/observed-solar-cycle-indices.json"], source: "NOAA SWPC SSN",
+                              policy: .init(interval: hours(12), staleAfter: hours(72), offlineAfter: hours(216))) {
+        TrendParse.sunspots($0)
+    }
     let aurora = PolledFeed(["\(swpc)/json/ovation_aurora_latest.json"], source: "NOAA SWPC OVATION",
                             policy: .init(interval: minutes(10), staleAfter: hours(1), offlineAfter: hours(6))) { data -> AuroraData? in
         var info = HcpAurora()
@@ -125,6 +148,11 @@ final class Feeds: ObservableObject {
             group.addTask { await self.wind.run() }
             group.addTask { await self.mag.run() }
             group.addTask { await self.scales.run() }
+            group.addTask { await self.dst.run() }
+            group.addTask { await self.alerts.run() }
+            group.addTask { await self.kpForecast.run() }
+            group.addTask { await self.fluxHistory.run() }
+            group.addTask { await self.sunspots.run() }
             group.addTask { await self.aurora.run() }
             group.addTask { await self.drap.run() }
             group.addTask { await self.quakes.run() }
@@ -178,6 +206,13 @@ final class Feeds: ObservableObject {
         guard na > 0, nb > 0 else { return nil }
         let reading = { (r: HcpReading) in Reading(value: r.value, time: Date(timeIntervalSince1970: Double(r.time_ms) / 1000)) }
         return [outA.prefix(Int(na)).map(reading), outB.prefix(Int(nb)).map(reading)]
+    }
+
+    nonisolated static func parseDst(_ data: Data) -> [DstReading]? {
+        var raw = [HcpDst](repeating: HcpDst(), count: 24 * 8)
+        let n = raw.withUnsafeMutableBufferPointer { o in data.withC { hcp_dst_parse($0, $1, o.baseAddress, o.count) } }
+        guard n > 0 else { return nil }
+        return raw.prefix(Int(n)).map { DstReading(time: Date(timeIntervalSince1970: Double($0.time_ms) / 1000), dst: Int($0.dst)) }
     }
 
     nonisolated static func parseQuakes(_ data: Data) -> [QuakeItem]? {
