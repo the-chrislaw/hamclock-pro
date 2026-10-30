@@ -38,8 +38,8 @@ Many panes are partial; the per-widget status is in [docs/WIDGETS.md](docs/WIDGE
 
 ## Install
 
-- **Raspberry Pi (.deb):** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release on the GitHub Releases page. The automatic updater is planned, not shipped. These builds have not been validated on hardware by this project yet.
-- **SD-card image:** planned (tracked in issue #526); not available yet.
+- **Raspberry Pi (.deb):** every merge to `main` publishes `.deb` packages for Raspberry Pi OS Trixie (current) and Bookworm (Legacy), 64-bit (`arm64`) and 32-bit (`armhf`), plus a macOS app, as the rolling `latest` pre-release on the GitHub Releases page. Install with `sudo apt install ./hamclock-pro_*_trixie_arm64.deb` (pick your OS and architecture), then run `hamclock-pro`. These builds have not been validated on hardware by this project yet.
+- **SD-card image:** a flashable Raspberry Pi OS Lite (Trixie, 64-bit) image that boots straight into HamClock Pro full screen, attached to tagged releases; see [docs/install-pi.md](docs/install-pi.md). Not yet validated on a device.
 - **macOS:** a signed dmg is planned; the CI-built app is not yet signed or notarised.
 - **iPad:** via TestFlight, later.
 

@@ -17,6 +17,8 @@
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include "../platform/apple_attribution.hpp"
+#include "../platform/apple_widgetshare.hpp"
+#include <QSettings>
 #include <QEventLoop>
 #include <QGuiApplication>
 #include <QThread>
@@ -193,6 +195,22 @@ int main(int argc, char** argv) {
     apply_blanking();
     QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &blanking, apply_blanking);
     QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &alarms, [&alarms] { alarms.reload(); });
+    // iPhone/iPad widgets read the station from the App Group (no-op off iOS). Shared at
+    // start, on station/option changes, and when the app leaves the foreground (the
+    // satellites card saves its tracked list straight to options.ini).
+    const auto share_for_widgets = [&settings] {
+        const QSettings ini(settings.optionsPath(), QSettings::IniFormat);
+        hamclock::nativeShareForWidgets(hamclock::makeWidgetShare(
+            settings.station(), settings.configured(), ini.value("satellites/tracked").toStringList()));
+    };
+    if (!parser.isSet(screenshot)) {
+        share_for_widgets();
+        QObject::connect(&settings, &hamclock::AppSettings::stationChanged, &app, share_for_widgets);
+        QObject::connect(&settings, &hamclock::AppSettings::optionsChanged, &app, share_for_widgets);
+        QObject::connect(&app, &QGuiApplication::applicationStateChanged, &app, [share_for_widgets](Qt::ApplicationState s) {
+            if (s != Qt::ApplicationActive) share_for_widgets();
+        });
+    }
     location_tools.setTransport(context.transport);
     hamclock::MapItem::setSettings(&settings);
 

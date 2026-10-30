@@ -1,5 +1,11 @@
 import Foundation
 
+/// What the satellite card and the map draw, computed off the main actor.
+struct SatSky: Equatable {
+    var above: [SatPass] = []
+    var subPoints: [CGPoint] = []
+}
+
 struct SatPass: Identifiable, Equatable {
     var id: String { name }
     var name: String
@@ -57,56 +63,45 @@ final class SatelliteStore: ObservableObject {
     /// Without a successful fetch for this long the elements are not shown at all.
     static let offlineAfter: TimeInterval = 7 * 86400
 
-    private var cache: (bucket: Int64, lat: Double, lon: Double, tle: Int, limit: Int, passes: [SatPass])?
+    /// Satellites above the observer (highest first) and every sub-satellite point (lon, lat),
+    /// recomputed every `tick` seconds OFF the main actor by `track`: SGP4 over the whole set
+    /// took ~25 ms per pass on the main thread (Simulator), once every 5 s.
+    @Published private(set) var sky = SatSky()
+    static let tick: TimeInterval = 5
 
-    /// Cached per 5 s: each core call re-parses the whole TLE set, so don't redo it every clock tick.
-    func visibleCached(at now: Date, lat: Double, lon: Double, limit: Int = 5) -> [SatPass] {
-        guard let tle else { return [] }
-        let bucket = Int64(now.timeIntervalSince1970) / 5
-        if let c = cache, c.bucket == bucket, c.lat == lat, c.lon == lon, c.tle == tle.count, c.limit == limit { return c.passes }
-        let passes = Self.visible(tle: tle, at: Date(timeIntervalSince1970: TimeInterval(bucket * 5)), lat: lat, lon: lon, limit: limit)
-        cache = (bucket, lat, lon, tle.count, limit, passes)
-        return passes
-    }
-
-    /// Satellites above the horizon for the observer, highest first.
-    static func visible(tle: Data, at now: Date, lat: Double, lon: Double, limit: Int = 5) -> [SatPass] {
-        let t = Int64(now.timeIntervalSince1970)
-        return tle.withUnsafeBytes { raw -> [SatPass] in
-            let p = raw.bindMemory(to: CChar.self).baseAddress
-            let n = Int(hcp_tle_count(p, tle.count))
-            var out: [SatPass] = []
-            for i in 0..<n {
-                var s = HcpSatState()
-                guard hcp_sat_state(p, tle.count, Int32(i), t, lat, lon, &s) != 0, s.el_deg > 0 else { continue }
-                var name = [CChar](repeating: 0, count: 32)
-                guard hcp_tle_name(p, tle.count, Int32(i), &name, name.count) != 0 else { continue }
-                out.append(SatPass(name: String(cString: name), azimuth: s.az_deg, elevation: s.el_deg,
-                                   rangeKm: s.range_km, sunlit: s.sunlit != 0,
-                                   epoch: Date(timeIntervalSince1970: TimeInterval(s.epoch_s))))
+    /// Keeps `sky` current for the station position; restarted by the app when the position changes.
+    func track(position: (lat: Double, lon: Double)?) async {
+        sky = SatSky()
+        while !Task.isCancelled {
+            if let tle {
+                let t = Int64(Date().timeIntervalSince1970)
+                let next = await Task.detached(priority: .utility) { Self.compute(tle: tle, at: t, observer: position) }.value
+                if !Task.isCancelled { sky = next }
             }
-            return Array(out.sorted { $0.elevation > $1.elevation }.prefix(limit))
+            try? await Task.sleep(nanoseconds: UInt64(Self.tick * 1e9))
         }
     }
 
-    private var pointCache: (bucket: Int64, tle: Int, points: [CGPoint])?
-
-    /// Sub-satellite points (lon, lat) of every satellite, cached per 5 s like visibleCached.
-    func subPointsCached(at now: Date) -> [CGPoint] {
-        guard let tle else { return [] }
-        let bucket = Int64(now.timeIntervalSince1970) / 5
-        if let c = pointCache, c.bucket == bucket, c.tle == tle.count { return c.points }
-        let t = bucket * 5
-        let pts = tle.withUnsafeBytes { raw -> [CGPoint] in
-            let p = raw.bindMemory(to: CChar.self).baseAddress
-            return (0..<Int(hcp_tle_count(p, tle.count))).compactMap { i in
-                var s = HcpSatState()
-                return hcp_sat_state(p, tle.count, Int32(i), t, 0, 0, &s) != 0 ? CGPoint(x: s.lon_deg, y: s.lat_deg) : nil
-            }
+    /// One batched core call (the TLE text is parsed once, not once per satellite).
+    nonisolated static func compute(tle: Data, at t: Int64, observer: (lat: Double, lon: Double)?) -> SatSky {
+        let o = observer ?? (0, 0)
+        var out = [HcpSatInfo](repeating: HcpSatInfo(), count: maxSatellites)
+        let n = out.withUnsafeMutableBufferPointer { buf in
+            tle.withC { hcp_sat_states($0, $1, t, o.lat, o.lon, buf.baseAddress, buf.count) }
         }
-        pointCache = (bucket, tle.count, pts)
-        return pts
+        let valid = out.prefix(min(Int(n), maxSatellites)).filter { $0.valid != 0 }
+        let points = valid.map { CGPoint(x: $0.state.lon_deg, y: $0.state.lat_deg) }
+        guard observer != nil else { return SatSky(above: [], subPoints: points) }
+        let above = valid.filter { $0.state.el_deg > 0 && $0.name.0 != 0 }.map { info -> SatPass in
+            let s = info.state
+            return SatPass(name: cText(info.name), azimuth: s.az_deg, elevation: s.el_deg, rangeKm: s.range_km,
+                           sunlit: s.sunlit != 0, epoch: Date(timeIntervalSince1970: TimeInterval(s.epoch_s)))
+        }
+        return SatSky(above: above.sorted { $0.elevation > $1.elevation }, subPoints: points)
     }
+
+    /// The CelesTrak amateur group is about 100 sets; anything past this is ignored.
+    nonisolated static let maxSatellites = 400
 
     /// Oldest-TLE age drives the label: elements older than 14 days drift noticeably.
     static func tleAgeDays(_ p: SatPass, now: Date) -> Double { now.timeIntervalSince(p.epoch) / 86400 }
