@@ -1,4 +1,0 @@
-module HamClock
-singleton Theme 1.0 Theme.qml
-singleton Stubs 1.0 Stubs.qml
-Registry 1.0 Registry.qml
