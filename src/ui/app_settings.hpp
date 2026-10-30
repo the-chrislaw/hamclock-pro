@@ -21,6 +21,7 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString callsign READ callsign NOTIFY stationChanged)
     Q_PROPERTY(double deLatitude READ deLatitude NOTIFY stationChanged)
     Q_PROPERTY(double deLongitude READ deLongitude NOTIFY stationChanged)
+    Q_PROPERTY(bool hasDx READ hasDx NOTIFY stationChanged)
     Q_PROPERTY(double dxLatitude READ dxLatitude NOTIFY stationChanged)
     Q_PROPERTY(double dxLongitude READ dxLongitude NOTIFY stationChanged)
     Q_PROPERTY(QString deZone READ deZone NOTIFY stationChanged)
@@ -106,6 +107,7 @@ public:
     QString callsign() const { return QString::fromStdString(station_.callsign); }
     double deLatitude() const { return station_.de.latitude; }
     double deLongitude() const { return station_.de.longitude; }
+    bool hasDx() const { return configured_ && has_dx(station_); }  // false when DX is unset (DX == DE)
     double dxLatitude() const { return station_.dx.latitude; }
     double dxLongitude() const { return station_.dx.longitude; }
     QString deZone() const { return QString::fromStdString(station_.de_zone); }

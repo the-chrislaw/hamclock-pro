@@ -160,18 +160,23 @@ void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, con
     }
     const auto de_px = scene.de ? geo.at(*scene.de) : std::nullopt;
     const auto dx_px = scene.dx ? geo.at(*scene.dx) : std::nullopt;
-    if (de_px && dx_px) {
+    if (de_px) { // DE always; DX only when a target is set
         painter.setPen(QPen(route, 2)); painter.setBrush(sea);
-        const auto de = *de_px, dx = *dx_px;
+        const auto de = *de_px;
         const double dr = 4 * ui;
         painter.drawEllipse(de, dr, dr);
-        painter.drawRect(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
         used_rects.push_back(QRectF(de.x() - dr, de.y() - dr, 2 * dr, 2 * dr));
-        used_rects.push_back(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
+        std::vector<std::pair<QPointF, QString>> marks{{de, "DE"}};
+        if (dx_px) {
+            const auto dx = *dx_px;
+            painter.drawRect(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
+            used_rects.push_back(QRectF(dx.x() - dr, dx.y() - dr, 2 * dr, 2 * dr));
+            marks.push_back({dx, "DX"});
+        }
         painter.setPen(route);
         const auto m = painter.fontMetrics();
         const QRectF view(QPointF(), size);
-        for (const auto& item : {std::pair<QPointF, QString>{de, "DE"}, {dx, "DX"}}) {
+        for (const auto& item : marks) {
             const double lw = m.horizontalAdvance(item.second);
             if (view.height() < m.height() || view.width() < lw || !view.contains(item.first)) continue;
             // Prefer the first corner clear of the path and controls.

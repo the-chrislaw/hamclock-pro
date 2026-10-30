@@ -22,6 +22,10 @@ int main() {
     CHECK(zone_local_text("Asia/Tokyo", t) == "Local 08:30 · Tokyo (auto)");
     CHECK(zone_local_text("America/Los_Angeles", t, true, false) == "Local 4:30 PM · Los Angeles");
     CHECK(zone_local_text("America/Argentina/Buenos_Aires", t, false, false) == "Local 20:30 · Buenos Aires");
+    // Short hours:minutes clock (station card "local" line) follows the 12 h setting.
+    CHECK(clock_short(t, 3600) == "00:30");
+    CHECK(clock_short(t, -7 * 3600, true) == "4:30 PM");
+    CHECK(clock_short(t, 3600, true) == "12:30 AM");
     CHECK(zone_local_text("", t).isEmpty());
     CHECK(zone_local_text("Not/AZone", t).isEmpty());
     return failures ? 1 : 0;

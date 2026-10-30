@@ -124,10 +124,11 @@ Card {
             columnSpacing: Theme.gap
             rowSpacing: Theme.gap * 0.8
         Repeater {
-            model: station.configured ? [
-                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" },
+            model: !station.configured ? [] : [
+                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" }
+            ].concat(station.hasDx ? [
                 { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun, local: station.dxLocal }
-            ] : []
+            ] : [])
             delegate: ColumnLayout {
                 spacing: 1
                 Layout.fillWidth: true

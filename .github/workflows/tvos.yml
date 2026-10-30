@@ -3,6 +3,15 @@ name: tvOS
 on:
   push:
     branches: [main]
+    paths:
+      - "apple/tvos/**"
+      - "cmake/TvOS*.cmake"
+      - "cmake/TvOSCore/**"
+      - "packaging/apple/asc_profile.py"
+      - "src/domain/**"
+      - "src/providers/**"
+      - "tests/**"
+      - ".github/workflows/tvos.yml"
   pull_request:
     paths:
       - "apple/tvos/**"

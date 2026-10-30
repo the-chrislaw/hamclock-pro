@@ -142,5 +142,15 @@ int main(int argc, char** argv) {
             for (int x = 250; x < 352; ++x) ink_left += img.pixelColor(x, y).lightness() < 110;
         check(ink_left > 20, "seam label goes left of its marker, clear of the other copy's marker");
     }
+    {
+        // No DX target: DE is still marked (it used to vanish with the DX).
+        MapScene s; s.de = Location{0, 0}; s.night_shade = false;
+        QImage img(720, 360, QImage::Format_ARGB32);
+        QPainter p(&img); MapRenderer().paint(p, QSizeF(720, 360), s); p.end();
+        int ring = 0;
+        for (int y = 174; y <= 186; ++y)
+            for (int x = 354; x <= 366; ++x) ring += img.pixelColor(x, y).lightness() < 120;
+        check(ring > 6, "DE marker drawn without a DX");
+    }
     return failures == 0 ? 0 : 1;
 }
