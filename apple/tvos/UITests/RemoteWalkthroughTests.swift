@@ -345,6 +345,24 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_solaralerts"].waitForExistence(timeout: 5), "Space alerts is offered on TV")
     }
 
+    /// Solar trend (ported from the Qt widget): offered in the chooser; shows the flux trend and
+    /// sunspots, or an honest Offline / No data.
+    func testSolarTrendPane() {
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
+                               "-hcpPanes", "solartrend"]
+        app.launch()
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertEqual(pane0.value as? String, "solartrend")
+        XCTAssertTrue(waitFor(20) {
+            ["Sunspots", "over", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "trend data or an honest Offline: \(pane0.label)")
+        shot("tvos-solar-trend")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solartrend"].waitForExistence(timeout: 5), "Solar trend is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

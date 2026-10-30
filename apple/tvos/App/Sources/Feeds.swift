@@ -79,6 +79,19 @@ final class Feeds: ObservableObject {
                             policy: .init(interval: minutes(10), staleAfter: hours(2), offlineAfter: hours(12))) {
         SpaceAlerts.parse($0)
     }
+    /// Solar trend products (SolarTrendModel policies: 30 min / 6 h / 12 h, stale after 6 h / 36 h / 72 h).
+    let kpForecast = PolledFeed(["\(swpc)/products/noaa-planetary-k-index-forecast.json"], source: "NOAA SWPC Kp forecast",
+                                policy: .init(interval: minutes(30), staleAfter: hours(6), offlineAfter: hours(18))) {
+        TrendParse.kp($0)
+    }
+    let fluxHistory = PolledFeed(["\(swpc)/json/f107_cm_flux.json"], source: "NOAA SWPC F10.7",
+                                 policy: .init(interval: hours(6), staleAfter: hours(36), offlineAfter: hours(108))) {
+        TrendParse.flux($0)
+    }
+    let sunspots = PolledFeed(["\(swpc)/json/solar-cycle/observed-solar-cycle-indices.json"], source: "NOAA SWPC SSN",
+                              policy: .init(interval: hours(12), staleAfter: hours(72), offlineAfter: hours(216))) {
+        TrendParse.sunspots($0)
+    }
     let aurora = PolledFeed(["\(swpc)/json/ovation_aurora_latest.json"], source: "NOAA SWPC OVATION",
                             policy: .init(interval: minutes(10), staleAfter: hours(1), offlineAfter: hours(6))) { data -> AuroraData? in
         var info = HcpAurora()
@@ -137,6 +150,9 @@ final class Feeds: ObservableObject {
             group.addTask { await self.scales.run() }
             group.addTask { await self.dst.run() }
             group.addTask { await self.alerts.run() }
+            group.addTask { await self.kpForecast.run() }
+            group.addTask { await self.fluxHistory.run() }
+            group.addTask { await self.sunspots.run() }
             group.addTask { await self.aurora.run() }
             group.addTask { await self.drap.run() }
             group.addTask { await self.quakes.run() }

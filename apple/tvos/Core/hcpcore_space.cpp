@@ -8,6 +8,7 @@
 #include "scales.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
+#include "trend.hpp"
 #include <algorithm>
 
 using hcp::abi::copy;
@@ -130,6 +131,34 @@ int hcp_alerts_active(const HcpAlert* all, size_t count, int64_t now_ms, HcpAler
     const size_t written = std::min(active.size(), cap);
     for (size_t i = 0; i < written; ++i) out[i] = to_abi(active[i]);
     return static_cast<int>(written);
+}
+
+int hcp_trend_kp_bars(const char* b, size_t n, HcpKpBar* out, size_t cap) {
+    const auto bars = b ? hcp::trend::kp_bars(view(b, n)) : std::nullopt;
+    if (!bars) return -1;
+    const size_t count = out ? std::min(bars->size(), cap) : 0;
+    for (size_t i = 0; i < count; ++i) {
+        const auto& bar = (*bars)[i];
+        out[i] = HcpKpBar{bar.time_ms, bar.kp, bar.predicted ? 1 : 0, hcp::trend::kp_level(bar.kp)};
+    }
+    return static_cast<int>(count);
+}
+
+int hcp_trend_flux_daily(const char* b, size_t n, int days, HcpFluxDay* out, size_t cap) {
+    const auto list = b ? hcp::trend::flux_daily(view(b, n), days) : std::nullopt;
+    if (!list) return -1;
+    const size_t count = out ? std::min(list->size(), cap) : 0;
+    const size_t first = list->size() - count;
+    for (size_t i = 0; i < count; ++i) out[i] = HcpFluxDay{(*list)[first + i].day_ms, (*list)[first + i].flux};
+    return static_cast<int>(count);
+}
+
+int hcp_trend_sunspots(const char* b, size_t n, char* month, size_t month_cap, double* number) {
+    const auto s = b ? hcp::trend::latest_sunspots(view(b, n)) : std::nullopt;
+    if (!s) return 0;
+    copy(s->month, month, month_cap);
+    if (number) *number = s->number;
+    return 1;
 }
 
 int hcp_scale_word(int level, char* buf, size_t cap) { return copy(hcp::scales::scale_word(level), buf, cap); }
