@@ -167,15 +167,15 @@ final class RemoteWalkthroughTests: XCTestCase {
         launchWithStation()
         menuExits("station card focused")
 
-        app.activate()
+        launchWithStation() // fresh launch per case: no focus or overlay state carried over
         moveFocus(to: app.descendants(matching: .any)["pane1"])
         menuExits("pane focused")
 
-        app.activate()
+        launchWithStation() // fresh launch per case: no focus or overlay state carried over
         moveFocus(to: app.descendants(matching: .any)["mapCard"])
         menuExits("map focused")
 
-        app.activate()
+        launchWithStation() // fresh launch per case: no focus or overlay state carried over
         moveFocus(to: app.descendants(matching: .any)["mapCard"])
         remote.press(.select)
         XCTAssertTrue(app.buttons["layer_aurora"].waitForExistence(timeout: 5))
@@ -184,7 +184,7 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground, "closing the overlay does not leave the app")
         menuExits("after closing the map menu")
 
-        app.activate()
+        launchWithStation() // fresh launch per case: no focus or overlay state carried over
         moveFocus(to: app.descendants(matching: .any)["pane0"])
         remote.press(.select)
         XCTAssertTrue(app.buttons["tab0"].waitForExistence(timeout: 5))
@@ -192,7 +192,7 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(waitFor { !self.app.buttons["tab0"].exists }, "first Menu closes the pane chooser")
         menuExits("after closing the pane chooser")
 
-        app.activate()
+        launchWithStation() // fresh launch per case: no focus or overlay state carried over
         moveFocus(to: app.buttons["settingsButton"])
         remote.press(.select)
         XCTAssertTrue(app.buttons["doneButton"].waitForExistence(timeout: 5))
@@ -202,21 +202,21 @@ final class RemoteWalkthroughTests: XCTestCase {
         menuExits("after closing Settings")
 
         // Dimmed (dimming on, remote idle for a day).
-        app.terminate()
-        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
-                               "-hcpDimHours", "2", "-hcpIdle"]
-        app.launch()
-        XCTAssertTrue(app.descendants(matching: .any)["pane0"].waitForExistence(timeout: 10))
+        launchWithStation(["-hcpDimHours", "2", "-hcpIdle"])
         shot("tvos-dimmed")
         menuExits("while dimmed")
     }
 
     // MARK: helpers
 
-    private func launchWithStation() {
-        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York"]
+    /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard
+    /// exists AND the focus engine has put the focus somewhere (slower on older Simulators).
+    private func launchWithStation(_ extra: [String] = []) {
+        app.terminate()
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York"] + extra
         app.launch()
-        XCTAssertTrue(app.descendants(matching: .any)["pane0"].waitForExistence(timeout: 10), "dashboard")
+        XCTAssertTrue(app.descendants(matching: .any)["pane0"].waitForExistence(timeout: 20), "dashboard")
+        XCTAssertTrue(waitFor(10) { self.focused.exists }, "the focus engine has a focused element")
     }
 
     /// Menu with nothing open sends the app to the background (tvOS Home screen).
@@ -242,6 +242,7 @@ final class RemoteWalkthroughTests: XCTestCase {
     /// Moves the focus engine toward `target` with the remote's arrows, by comparing frames.
     private func moveFocus(to target: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(target.waitForExistence(timeout: 5), "target exists", file: file, line: line)
+        _ = waitFor(5) { self.focused.exists } // just after a launch or an overlay closing
         var stuck = 0
         for _ in 0..<40 {
             if target.hasFocus { return }
