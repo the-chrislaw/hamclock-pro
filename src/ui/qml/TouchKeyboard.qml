@@ -59,51 +59,53 @@ Popup {
         MouseArea { id: area; anchors.fill: parent; onClicked: k.activated() }
     }
 
-    contentItem: Column {
-        spacing: Theme.gap * 0.6
+    // Each key: label t, typed text c (or key code k, or action a), width in key units u.
+    // Keys are placed at explicit x positions (no Row/Repeater ordering), so the layout is
+    // identical every time the keyboard opens.
+    readonly property var rows: [
+        "1234567890".split("").map(ch => ({ c: ch })),
+        "qwertyuiop".split("").map(ch => ({ c: ch })),
+        "asdfghjkl".split("").map(ch => ({ c: ch })).concat([{ t: "\u232b", k: Qt.Key_Backspace, name: "Backspace" }]),
+        [{ t: "\u21e7", a: "shift", name: "Shift" }].concat("zxcvbnm/.".split("").map(ch => ({ c: ch }))),
+        [{ c: "-" }, { c: ":" }, { c: "@" }, { t: "space", c: " ", u: 3 },
+         { t: "\u2190", k: Qt.Key_Left, name: "Left" }, { t: "\u2192", k: Qt.Key_Right, name: "Right" },
+         { t: "\u21b5", k: Qt.Key_Return, name: "Enter" }, { t: "Hide", a: "hide", name: "Hide keyboard" }]
+    ]
+    readonly property real keyGap: Theme.gap * 0.6
+
+    function activate(spec) {
+        if (spec.a === "shift") shifted = !shifted
+        else if (spec.a === "hide") target.focus = false  // leaves the field; Settings > Done still saves
+        else if (spec.k !== undefined) key(spec.k)
+        else tap(spec.c)
+    }
+
+    contentItem: Item {
+        implicitHeight: keyboard.rows.length * keyboard.keyHeight + (keyboard.rows.length - 1) * keyboard.keyGap
         Repeater {
-            model: ["1234567890", "qwertyuiop", "asdfghjkl", "zxcvbnm/."]
-            Row {
-                required property string modelData
+            model: keyboard.rows.length
+            Item {
+                id: row
                 required property int index
-                spacing: Theme.gap * 0.6
-                anchors.horizontalCenter: parent.horizontalCenter
-                Key {
-                    visible: index === 3
-                    label: "⇧"
-                    accent: keyboard.shifted
-                    onActivated: keyboard.shifted = !keyboard.shifted
-                    Accessible.name: "Shift"
-                }
+                readonly property var keys: keyboard.rows[index]
+                y: index * (keyboard.keyHeight + keyboard.keyGap)
+                width: parent.width
+                height: keyboard.keyHeight
                 Repeater {
-                    model: modelData.split("")
+                    model: row.keys.length
                     Key {
-                        required property string modelData
-                        label: keyboard.shifted ? modelData.toUpperCase() : modelData
-                        onActivated: keyboard.tap(modelData)
+                        required property int index
+                        readonly property var spec: row.keys[index]
+                        readonly property int unitsBefore: row.keys.slice(0, index).reduce((n, s) => n + (s.u || 1), 0)
+                        x: unitsBefore * (keyboard.keyWidth + keyboard.keyGap)
+                        units: spec.u || 1
+                        label: spec.t !== undefined ? spec.t : (keyboard.shifted ? spec.c.toUpperCase() : spec.c)
+                        accent: spec.a === "hide" || (spec.a === "shift" && keyboard.shifted)
+                        Accessible.name: spec.name || label
+                        onActivated: keyboard.activate(spec)
                     }
                 }
-                Key {
-                    visible: index === 2
-                    label: "⌫"
-                    onActivated: keyboard.key(Qt.Key_Backspace)
-                    Accessible.name: "Backspace"
-                }
             }
-        }
-        Row {
-            spacing: Theme.gap * 0.6
-            anchors.horizontalCenter: parent.horizontalCenter
-            Repeater {
-                model: ["-", ":", "@"]
-                Key { required property string modelData; label: modelData; onActivated: keyboard.tap(modelData) }
-            }
-            Key { units: 3; label: "space"; onActivated: keyboard.tap(" ") }
-            Key { label: "←"; onActivated: keyboard.key(Qt.Key_Left); Accessible.name: "Left" }
-            Key { label: "→"; onActivated: keyboard.key(Qt.Key_Right); Accessible.name: "Right" }
-            Key { label: "↵"; onActivated: keyboard.key(Qt.Key_Return); Accessible.name: "Enter" }
-            // Hides the keyboard by leaving the field; Settings > Done still saves.
-            Key { label: "Hide"; accent: true; onActivated: keyboard.target.focus = false; Accessible.name: "Hide keyboard" }
         }
     }
 }

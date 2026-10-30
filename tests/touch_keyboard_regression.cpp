@@ -43,12 +43,32 @@ bool tap(QQuickWindow* window, const QString& label) {
     if (!key) std::cerr << "no key " << qPrintable(label) << '\n';
     return key && QMetaObject::invokeMethod(key, "activated");
 }
+// Keys of a row sit left to right in order (a Row/Repeater layout once came out scrambled).
+bool row_in_order(QQuickWindow* window, const QString& keys) {
+    qreal last = -1;
+    for (const QChar c : keys) {
+        auto* key = find_key(window->contentItem(), QString(c));
+        if (!key) return false;
+        const qreal x = key->mapToScene(QPointF(0, 0)).x();
+        if (x <= last) return false;
+        last = x;
+    }
+    return true;
+}
+
 // A real press and release at the key's centre, delivered like a touch-screen tap.
 bool click(QQuickWindow* window, const QString& label) {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-    auto* key = find_key(window->contentItem(), label);
+    // The popup re-lays out as it opens; wait until the key stops moving before tapping it.
+    QQuickItem* key = nullptr;
+    QPointF at(-1, -1);
+    for (int stable = 0, i = 0; i < 200 && stable < 5; ++i) {
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+        key = find_key(window->contentItem(), label);
+        const QPointF now = key ? key->mapToScene(QPointF(key->width() / 2, key->height() / 2)) : QPointF(-1, -1);
+        stable = (key && now == at) ? stable + 1 : 0;
+        at = now;
+    }
     if (!key) return false;
-    const QPointF at = key->mapToScene(QPointF(key->width() / 2, key->height() / 2));
     for (const auto type : {QEvent::MouseButtonPress, QEvent::MouseButtonRelease}) {
         QMouseEvent event(type, at, at, window->mapToGlobal(at), Qt::LeftButton,
                           type == QEvent::MouseButtonPress ? Qt::LeftButton : Qt::NoButton, Qt::NoModifier);
@@ -114,6 +134,7 @@ int main(int argc, char** argv) {
     QMetaObject::invokeMethod(popup, "open");
     search->forceActiveFocus();
     check(shown(), "shown above a modal popup's field");
+    check(row_in_order(window, "qwertyuiop") && row_in_order(window, "asdfghjkl"), "reopened keyboard keys in order");
     check(click(window, "l") && click(window, "o"), "keys clicked over a modal popup");
     check(search->property("text").toString() == "lo", "clicks type into the popup's field");
     check(popup->property("opened").toBool(), "modal popup stays open while typing");
