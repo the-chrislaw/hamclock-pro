@@ -413,7 +413,9 @@ final class RemoteWalkthroughTests: XCTestCase {
         remote.press(.select)
         XCTAssertTrue(app.buttons["satEnabled_1"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["satEnabled_1"].isSelected && app.buttons["satLead_4"].isSelected, "kept across relaunch")
-        XCTAssertFalse(app.buttons["sat_25544"].isSelected, "ISS stays off")
+        let issAgain = app.buttons["sat_25544"]
+        XCTAssertTrue(issAgain.waitForExistence(timeout: 5), "bird grid present")
+        XCTAssertFalse(issAgain.isSelected, "ISS stays off")
     }
 
     // MARK: helpers

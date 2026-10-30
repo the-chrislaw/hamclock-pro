@@ -42,18 +42,26 @@ struct SatAlertSection: View {
     }
 
     private func birds(_ p: SatAlertPrefs) -> some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
-            ForEach(SatCatalog.birds) { b in
-                let on = SatCatalog.isSelected(p, b.norad)
-                Button((on ? "✓ " : "   ") + b.name + " · " + b.mode + (b.workable ? "" : " (quiet)")) {
-                    settings.satAlerts = SatCatalog.toggle(settings.satAlerts, b.norad)
+        // Not lazy: every bird exists for the focus engine (and UI tests) even below the fold.
+        let birds = SatCatalog.birds
+        return Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+            ForEach(Array(stride(from: 0, to: birds.count, by: 3)), id: \.self) { row in
+                GridRow {
+                    ForEach(birds[row..<min(row + 3, birds.count)]) { b in bird(b, p) }
                 }
-                .buttonStyle(ChipStyle(primary: on, wide: true))
-                .accessibilityIdentifier("sat_\(b.norad)")
-                .accessibilityAddTraits(on ? .isSelected : [])
             }
         }
         .focusSection()
+    }
+
+    private func bird(_ b: SatCatalog.Bird, _ p: SatAlertPrefs) -> some View {
+        let on = SatCatalog.isSelected(p, b.norad)
+        return Button((on ? "✓ " : "   ") + b.name + " · " + b.mode + (b.workable ? "" : " (quiet)")) {
+            settings.satAlerts = SatCatalog.toggle(settings.satAlerts, b.norad)
+        }
+        .buttonStyle(ChipStyle(primary: on, wide: true))
+        .accessibilityIdentifier("sat_\(b.norad)")
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     private func row<V: Hashable>(_ options: [(V, String)], _ current: V, id: String, set: @escaping (V) -> Void) -> some View {
