@@ -8,7 +8,8 @@ Card {
     readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        // A few reports: no long list to stretch, so the card grows and centres the block.
+        height: root.full && widget && widget.count > 4 ? parent.height : implicitHeight
         spacing: Theme.gap
         Metric {
             label: root.compact ? "Heard by" : "Stations hearing me"

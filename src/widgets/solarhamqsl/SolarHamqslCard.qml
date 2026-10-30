@@ -22,7 +22,7 @@ Card {
         id: tableCol
         visible: root.table
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.3
         Text {
             visible: !root.ok
@@ -52,7 +52,6 @@ Card {
             Item {
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.preferredHeight: Math.round(Theme.fontBody * 1.3)
                 Layout.minimumHeight: Math.round(Theme.fontBody * 1.2)
                 Layout.maximumHeight: Theme.fontBody * 3

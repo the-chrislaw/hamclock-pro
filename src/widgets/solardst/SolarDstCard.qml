@@ -57,7 +57,7 @@ Card {
         }
         Text {
             visible: root.showDetail
-            text: "48 h · lines at 0 and −50 nT (storm)"
+            text: root.ok && Math.min.apply(null, root.widget.history) <= -30 ? "48 h · lines at 0 and −50 nT (storm)" : "48 h · line at 0 nT"
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
             wrapMode: Text.WordWrap

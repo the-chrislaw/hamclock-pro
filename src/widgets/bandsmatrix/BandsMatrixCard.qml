@@ -95,8 +95,9 @@ Card {
             readonly property real labelWidth: 40 * Theme.scale
             readonly property real rowHeight: Math.min(Theme.fontCaption * 2.5,
                                                        root.rows.length ? height / root.rows.length : 0)
-            // Too short for a readable row per band (phone strip): the chips for the current hour instead.
-            readonly property bool fits: rowHeight >= Theme.fontCaption * 1.1
+            // A phone strip still gets the grid with rows down to about 9 px (labels shrink to the row);
+            // only shorter than that does it fall back to the chips for the current hour.
+            readonly property bool fits: rowHeight >= Theme.fontCaption * 0.75
             Column {
                 visible: gridArea.fits
                 anchors.verticalCenter: parent.verticalCenter
@@ -108,7 +109,7 @@ Card {
                         spacing: gridArea.gap
                         Text { width: gridArea.labelWidth; text: modelData.band; color: Theme.ink
                                anchors.verticalCenter: parent.verticalCenter
-                               font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+                               font.pixelSize: Math.min(Theme.fontCaption, Math.floor(gridArea.rowHeight * 0.95)); font.weight: Font.DemiBold }
                         Repeater {
                             model: modelData.cells
                             delegate: Rectangle {

@@ -6,7 +6,8 @@ Card {
     id: root
     // Labels and values; the lower rows are dropped (not clipped) when the body is short.
     // A tall pane shows every row, values wrapping, rows spread over the height.
-    readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
+    // One row's real pitch (line height plus spacing): a larger estimate drops a row that fits.
+    readonly property real rowH: Math.ceil(Theme.fontCaption * 1.3 * 1.2) + Theme.gap
     readonly property int rowsFit: tall ? 99 : Math.floor((grid.parent ? grid.parent.height : 0) / rowH)
     function v(s) { return s ? s : "—" }
     // A narrow slot drops the bracketed extra ("(6 h 24 min)", "(405600 km)") so the value fits.

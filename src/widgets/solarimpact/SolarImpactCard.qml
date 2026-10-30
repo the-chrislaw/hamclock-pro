@@ -12,8 +12,7 @@ Card {
     readonly property bool brief: root.compact && !root.stacked
     ColumnLayout {
         width: parent.width
-        // Tall pane: the rows spread over the height.
-        height: root.stacked ? parent.height : implicitHeight
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.6
         Text {
             Layout.fillWidth: true
@@ -31,7 +30,6 @@ Card {
                 required property var modelData
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(Math.round(Theme.fontBody * 1.2), effect.implicitHeight)
-                Layout.fillHeight: root.stacked
                 Layout.maximumHeight: root.stacked ? Math.max(effect.implicitHeight, Theme.fontBody * 3) : Layout.preferredHeight
                 readonly property color tone: modelData.level >= 3 ? Theme.bad : modelData.level >= 1 ? Theme.warn : Theme.good
                 Text {

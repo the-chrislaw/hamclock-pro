@@ -17,13 +17,14 @@ Rectangle {
     // in a stage 1/fit the size of the body and drawn `fit` times larger, so a pane
     // bigger than its layout needs grows crisply to fill it instead of leaving space.
     // Two kinds of content:
-    //  - Content that stretches itself (a stage child given more height than it asks
-    //    for: lists, plots, tables bound to the stage height) grows until the layout
-    //    reaches its design width (420 full, 260 compact) and fills the stage at any fit.
-    //  - Anything else (summaries, metrics, short tables) also grows past the design
-    //    width (to maxGrow) until its natural height fills the body, as long as no text in it gets
-    //    cut short at the narrower stage (checked after each layout; it backs off when
-    //    one does). Height still left over is shared above and below, so it sits centred.
+    //  - Content that stretches itself (a stage child bound to the stage height: lists,
+    //    plots) grows with the pane's width, a little past its design width (420 full,
+    //    260 compact) up to maxGrow, and fills the stage at any fit.
+    //  - Anything else (summaries, metrics, tables) grows past the design width (to
+    //    maxGrow) until its natural height fills the body. Height still left over is
+    //    shared above and below, so it sits centred.
+    //  Either way no text may be cut short at the narrower stage (checked after each
+    //  layout; the card backs off when one is).
     // A card can set scaleToFill itself to override the choice.
     property bool adaptive: false
     property bool scaleToFill: !stretches
@@ -35,9 +36,18 @@ Rectangle {
     readonly property bool roomy: compact && height >= 225 * Theme.scale && width >= 240 * Theme.scale
     // A widget that needs setting up shows why, in full, with a button to Settings.
     readonly property bool needsSetup: adaptive && widget !== null && widget.state === "unconfigured"
+    // Nothing to show yet (first answer in flight) or the source failed before any data came:
+    // the card shows a centred notice instead of the widget's empty skeleton ("—" in a big pane).
+    // A model with `hasData` decides; one without it only counts its first load.
+    readonly property bool waiting: adaptive && widget !== null && !needsSetup
+        && ["loading", "offline", "error"].indexOf(widget.state) >= 0
+        && (widget.hasData === false || (widget.hasData === undefined && widget.state === "loading"))
     signal setupRequested()
     property real designWidth: (compact ? 260 : 420) * Theme.scale
-    property real maxFit: 2.2
+    // Neighbouring panes should read at about the same size: content is grown at most 1.6x
+    // (stretching content, by width) or 1.4x (content grown to fill), so a summary never
+    // towers over the list beside it.
+    property real maxFit: 1.6
     property real fit: 1
     // Leftover body height (pixels) put above content that scales to fill.
     property real lift: 0
@@ -55,18 +65,33 @@ Rectangle {
     readonly property bool stretches: {
         for (let i = 0; i < stage.children.length; ++i) {
             const c = stage.children[i]
-            if (c.visible && c.height > c.implicitHeight + 1) return true
+            // Bound to the stage height: taller than it asks (spread) or shorter (a list longer than the pane).
+            if (c.visible && Math.abs(c.height - c.implicitHeight) > 1) return true
         }
         return false
     }
     // The fit that only reaches the design width (always safe), and the one that fills the height.
-    function widthFit() { return Math.max(1, Math.min(maxFit, body.width / designWidth, body.height / naturalHeight)) }
+    // Stretching content fills any height, so only its width limits it (a long list's natural
+    // height is every row, which would otherwise pin it at 1).
+    function widthFit() {
+        const byWidth = Math.min(maxFit, body.width / designWidth)
+        return Math.max(1, scaleToFill ? Math.min(byWidth, body.height / naturalHeight) : byWidth)
+    }
     // Content grown to fill keeps a small margin: text drawn a little past its row's budget is not cut by the body.
     readonly property real fillShare: 0.95
-    // Growing past the design width stops at 1.8x: a one-line summary or empty state ("Nothing in
-    // force") in a big pane stays a headline, not a poster.
-    property real maxGrow: 1.8
+    // Growing past the design width stops at 1.4x for every kind of content, so a one-line summary
+    // ("Nothing in force") stays a headline, not a poster, and neighbouring panes read alike.
+    property real maxGrow: 1.4
     readonly property real minFit: 0.85
+    // Stretching content (a list in a big pane) may also grow past its design width, to at most
+    // maxGrow and a stage 0.8 of the design width: bigger rows instead of a long list of small ones.
+    // Only a pane with height to spare (tall or roomy): in a short strip the plots would be squeezed.
+    function stretchFit() {
+        if (!tall && !roomy) return widthFit()
+        return Math.max(widthFit(), Math.min(maxGrow, ceiling, body.width / (designWidth * 0.8)))
+    }
+    // Lowest fit the cut check may back off to: 1 for content grown to fill, the design-width fit otherwise.
+    function cutFloor() { return scaleToFill ? 1 : widthFit() }
     function heightFit() { return Math.max(1, Math.min(maxGrow, ceiling, body.height * fillShare / naturalHeight)) }
     // `cut` (from checkCuts): text was cut short at this fit, so take the lower target even if it is close.
     function refit(cut) {
@@ -74,7 +99,7 @@ Rectangle {
         const overflows = naturalHeight * fit > body.height + 1
         if (scaleToFill) limitGrowth(overflows)
         // Content that scales to fill may also back off below the design-width fit when text is cut there.
-        let target = scaleToFill ? Math.min(ceiling, Math.max(widthFit(), heightFit())) : widthFit()
+        let target = scaleToFill ? Math.min(ceiling, Math.max(widthFit(), heightFit())) : stretchFit()
         // Content that does not fit even at 1 (a phone strip with a two-line footer) is drawn a
         // little smaller, down to minFit, rather than cut off at the bottom.
         if (scaleToFill && naturalHeight * target > body.height + 1) {
@@ -92,7 +117,7 @@ Rectangle {
             fit = Math.floor(target * 100) / 100
         }
         lift = scaleToFill ? Math.max(0, Math.floor((body.height - naturalHeight * fit) / 2)) : 0
-        if (fit > 1.01 && scaleToFill) cutCheck.restart()
+        if (fit > cutFloor() + 0.01) cutCheck.restart()
     }
     // Growing past the design width narrows the stage, which can make the content taller
     // (lines wrap) or shorter (rows that no longer fit are dropped). Both lower the ceiling:
@@ -114,33 +139,46 @@ Rectangle {
     // How much narrower the stage may get before visible text in it is cut short: the smallest
     // width/needed ratio of an elided single line or one running out of its container (1 when nothing is cut;
     // a wrapped text over its line limit counts as a fifth too narrow).
-    function cutRatio(item) {
+    // `inClip`: below an item that clips on purpose (a list showing whole rows), where text past
+    // the bottom is meant to be hidden.
+    function cutRatio(item, inClip) {
         let ratio = 1
         for (let i = 0; i < item.children.length; ++i) {
             const c = item.children[i]
             if (!c.visible) continue
+            // Text below the stage's bottom: a layout squeezed past its minimum (stretching
+            // content grown too far in a short pane) overflows instead of shrinking.
+            if (!inClip && c.truncated !== undefined && c.text !== "" && c.height > 0) {
+                const bottom = c.mapToItem(stage, 0, 0).y + Math.min(c.height, c.contentHeight)
+                if (bottom > stage.height + 1) ratio = Math.min(ratio, Math.max(0.5, stage.height / bottom))
+            }
             const single = c.truncated !== undefined && c.wrapMode === Text.NoWrap && c.width > 0 && c.objectName !== "elideOk"
             if (single && c.implicitWidth > c.width + 1) ratio = Math.min(ratio, c.width / c.implicitWidth)
             else if (c.truncated === true && c.objectName !== "elideOk") ratio = Math.min(ratio, 0.8)
             // A line sized to its text that runs past the right edge of its container.
             if (single && item.width > 0 && c.x + c.implicitWidth > item.width + 1)
                 ratio = Math.min(ratio, Math.max(0.5, (item.width - c.x) / c.implicitWidth))
-            ratio = Math.min(ratio, cutRatio(c))
+            // ...or past the right edge of the stage (rows of fixed-width columns).
+            if (single) {
+                const right = c.mapToItem(stage, 0, 0).x + Math.max(c.width, c.implicitWidth)
+                if (right > stage.width + 1) ratio = Math.min(ratio, Math.max(0.5, stage.width / right))
+            }
+            ratio = Math.min(ratio, cutRatio(c, inClip || c.clip))
         }
         return ratio
     }
     // After the layout settles at a fit above 1, and every few seconds while
     // it stays there (new data can lengthen a line): back off until no text is cut short.
     function checkCuts() {
-        if (fit <= 1.01 || !scaleToFill) return
-        const ratio = cutRatio(stage)
+        if (fit <= cutFloor() + 0.01) return
+        const ratio = cutRatio(stage, false)
         if (ratio >= 1) return
-        ceiling = Math.max(1, Math.min(fit - 0.01, Math.floor(fit * ratio * 0.98 * 100) / 100))
+        ceiling = Math.max(cutFloor(), Math.min(fit - 0.01, Math.floor(fit * ratio * 0.98 * 100) / 100))
         fitted = Math.min(fitted, ceiling)
         refit(true)
     }
     Timer { id: cutCheck; interval: 30; onTriggered: card.checkCuts() }
-    Timer { interval: 3000; repeat: true; running: card.fit > 1.01 && card.scaleToFill && card.visible; onTriggered: card.checkCuts() }
+    Timer { interval: 3000; repeat: true; running: card.fit > 1.01 && card.visible; onTriggered: card.checkCuts() }
     // Deferred refit owned by the card (Qt.callLater would still run after a pane swap destroyed it).
     Timer { id: refitLater; interval: 0; onTriggered: card.refit() }
     function resetCeiling() { ceiling = maxFit; fitted = 1; grownFrom = { fit: 1, height: 0 }; refitLater.restart() }
@@ -229,22 +267,39 @@ Rectangle {
                 height: body.height / card.fit
                 scale: card.fit
                 transformOrigin: Item.TopLeft
-                visible: !card.needsSetup
+                visible: !card.needsSetup && !card.waiting
             }
             ColumnLayout {
-                visible: card.needsSetup
+                visible: card.needsSetup || card.waiting
                 anchors.centerIn: parent
                 width: Math.min(parent.width, 360 * Theme.scale)
                 spacing: Theme.gap
                 Text {
-                    text: card.widget ? card.widget.statusText : ""
+                    visible: card.waiting
+                    text: card.widget && card.widget.state === "loading" ? "Loading…" : "No data yet"
+                    color: Theme.ink
+                    font.pixelSize: Theme.fontTitle
+                    font.weight: Font.DemiBold
+                    horizontalAlignment: Text.AlignHCenter
+                    Layout.fillWidth: true
+                }
+                Text {
+                    // While loading the heading says it all; a long error reason keeps to three lines.
+                    visible: text.length > 0
+                    // Request URLs in an error reason mean nothing on a dashboard: leave them out.
+                    text: !card.widget || (card.waiting && card.widget.state === "loading") ? ""
+                        : card.widget.statusText.replace(/\s*https?:\/\/\S+/g, "")
                     color: Theme.secondary
                     font.pixelSize: Theme.fontBody
-                    wrapMode: Text.WordWrap
+                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                    maximumLineCount: card.waiting ? 3 : 6
+                    elide: Text.ElideRight
+                    objectName: "elideOk"
                     horizontalAlignment: Text.AlignHCenter
                     Layout.fillWidth: true
                 }
                 AppButton {
+                    visible: card.needsSetup
                     text: "Open Settings"
                     Layout.alignment: Qt.AlignHCenter
                     onClicked: card.setupRequested()
@@ -259,7 +314,8 @@ Rectangle {
             Text {
                 id: statusLine
                 objectName: "elideOk"  // long error reasons are shortened on purpose
-                text: widget ? widget.statusText : ""
+                // The notice in the body already says it while waiting.
+                text: widget && !card.waiting ? widget.statusText : ""
                 color: Theme.secondary
                 font.pixelSize: Theme.fontCaption
                 elide: Text.ElideRight

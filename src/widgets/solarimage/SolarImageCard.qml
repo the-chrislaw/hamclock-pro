@@ -1,47 +1,51 @@
 import QtQuick
+import QtQuick.Layouts
 import HamClock
 
 Card {
     id: root
-    // The picture fills the body; the channel name is overlaid so it also fits compact slots.
-    Item {
+    // Channel name above the picture (never over it); the picture takes the rest of the body.
+    ColumnLayout {
         width: parent.width
-        height: Math.max(80 * Theme.scale, (root.height / root.fit) - 2 * Theme.pad - 3 * Theme.gap - 2 * Theme.fontCaption - Theme.fontTitle)
-        Image {
-            id: sun
-            anchors.fill: parent
-            visible: root.widget && root.widget.hasImage
-            source: root.widget && root.widget.hasImage ? root.widget.imageUrl : ""
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            // Local data: URL decode is cheap; synchronous so a render or screenshot never catches it blank.
-            asynchronous: false
-            sourceSize.width: 512
-            sourceSize.height: 512
-            Accessible.role: Accessible.Graphic
-            Accessible.name: root.widget ? "Sun in " + root.widget.channelName : "Sun"
-        }
+        height: parent.height
+        spacing: Theme.gap * 0.4
         Text {
-            anchors.centerIn: parent
-            visible: !sun.visible
-            text: "No image yet"
-            color: Theme.secondary
-            font.pixelSize: Theme.fontBody
-        }
-        Text {
-            // Top-left: NASA burns its own caption into the bottom of the image.
-            anchors { left: parent.left; top: parent.top; margins: Theme.gap * 0.5 }
             text: root.widget ? root.widget.channelName + (root.compact ? "" : " · " + root.widget.channelCaption) : ""
-            color: "#ffffff"
-            style: Text.Outline
-            styleColor: "#000000"
+            color: Theme.secondary
             font.pixelSize: Theme.fontCaption
-            width: parent.width - Theme.gap
             elide: Text.ElideRight
+            objectName: "elideOk"  // the channel caption is a description; the name comes first
+            Layout.fillWidth: true
         }
-        TapHandler {
-            enabled: root.widget && root.widget.channelCount > 1
-            onTapped: root.widget.cycle()
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.minimumHeight: 60 * Theme.scale
+            Image {
+                id: sun
+                anchors.fill: parent
+                visible: root.widget && root.widget.hasImage
+                source: root.widget && root.widget.hasImage ? root.widget.imageUrl : ""
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                // Local data: URL decode is cheap; synchronous so a render or screenshot never catches it blank.
+                asynchronous: false
+                sourceSize.width: 512
+                sourceSize.height: 512
+                Accessible.role: Accessible.Graphic
+                Accessible.name: root.widget ? "Sun in " + root.widget.channelName : "Sun"
+            }
+            Text {
+                anchors.centerIn: parent
+                visible: !sun.visible
+                text: "No image yet"
+                color: Theme.secondary
+                font.pixelSize: Theme.fontBody
+            }
+            TapHandler {
+                enabled: root.widget && root.widget.channelCount > 1
+                onTapped: root.widget.cycle()
+            }
         }
     }
 }

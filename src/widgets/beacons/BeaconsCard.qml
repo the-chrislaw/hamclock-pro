@@ -11,14 +11,13 @@ Card {
     ColumnLayout {
         visible: root.stacked
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.6
         Repeater {
             model: root.stacked && root.widget ? root.widget.rows : []
             delegate: RowLayout {
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.maximumHeight: Theme.fontBody * 4
                 spacing: Theme.gap * 1.5
                 Text {

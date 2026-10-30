@@ -24,7 +24,7 @@ Card {
         id: drapColumn
         visible: root.full
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.4
         Metric {
             label: "Max absorbed"
@@ -50,7 +50,6 @@ Card {
             columnSpacing: Theme.gap * 2
             rowSpacing: 0
             Layout.fillWidth: true
-            Layout.fillHeight: true
             Repeater {
                 model: root.ok ? root.hfBands : []
                 Item {
@@ -58,7 +57,6 @@ Card {
                     readonly property bool absorbed: modelData.mhz <= root.mhz
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
-                    Layout.fillHeight: true
                     Layout.preferredHeight: Theme.fontBody * 1.3
                     Layout.minimumHeight: Theme.fontBody * 1.1
                     Layout.maximumHeight: Theme.fontBody * 3

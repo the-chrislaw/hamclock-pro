@@ -4,6 +4,9 @@ import HamClock
 
 Card {
     id: root
+    // The moon disc shares the tall layout with the text: growing the text much past the
+    // design width would squeeze the disc to a dot.
+    maxGrow: 1.15
     // Short value: drop the " UTC" suffix (the DE/DX headers say UTC) and shorten durations.
     function brief(t) { return t.replace(/ UTC/g, "").replace(/ h /, "h ").replace(/ min/, "m") }
     // Rows that fit in the body: header + 3 sun rows + Moon title are fixed;

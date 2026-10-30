@@ -6,7 +6,8 @@ Card {
     id: root
     // Planets above the horizon at DE, highest first; rows that do not fit are dropped, not clipped.
     // A pane with height to spare grows the rows (Card scales short content to fill) instead of spreading them.
-    readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
+    // One row's real pitch (line height plus spacing): a larger estimate drops a row that fits.
+    readonly property real rowH: Math.ceil(Theme.fontCaption * 1.3 * 1.2) + Theme.gap
     readonly property int rowsFit: Math.max(1, Math.floor((grid.parent ? grid.parent.height : 0) / rowH))
     readonly property int shown: root.widget ? Math.min(root.widget.rows.length, rowsFit) : 0
     Text {

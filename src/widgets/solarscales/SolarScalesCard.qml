@@ -12,7 +12,7 @@ Card {
     readonly property bool brief: root.compact && !root.stacked
     ColumnLayout {
         width: parent.width
-        height: root.stacked ? parent.height : implicitHeight
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.6
         Repeater {
             model: root.list
@@ -23,7 +23,6 @@ Card {
                 readonly property real blockHeight: Math.round(Theme.fontBody * 1.2)
                     + (root.brief ? 0 : 2 * Theme.scale + Math.ceil(Theme.fontCaption * 1.3) * (root.stacked ? 2 : 1))
                 Layout.preferredHeight: blockHeight
-                Layout.fillHeight: root.stacked
                 Layout.maximumHeight: root.stacked ? Math.max(blockHeight, Theme.fontBody * 4) : blockHeight
                 readonly property color tone: modelData.level >= 3 ? Theme.bad : modelData.level >= 1 ? Theme.warn : Theme.good
                 Item {

@@ -17,13 +17,20 @@ Card {
         readonly property var w: root.widget
         readonly property bool has: w !== null && w[key + "Temp"].length > 0
         spacing: 2 * Theme.scale
-        // Label, temperature and sky as in a Metric, but plain wrapping texts: a place name takes
-        // as many lines as a narrow column (or a pane the card has grown) needs, never cut short.
+        // DE / DX, then the place on its own line (shortened in a narrow column rather than
+        // wrapping over three), then temperature and sky.
         Text {
-            text: side.w && side.w[side.key + "City"].length > 0 ? side.key.toUpperCase() + " · " + side.w[side.key + "City"] : side.key.toUpperCase()
+            text: side.key.toUpperCase()
             color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
-            font.capitalization: Font.AllUppercase; font.letterSpacing: 0.6
-            wrapMode: Text.WordWrap; Layout.fillWidth: true
+            font.letterSpacing: 0.6
+        }
+        Text {
+            visible: text.length > 0
+            text: side.w ? side.w[side.key + "City"] : ""
+            color: Theme.ink; font.pixelSize: Theme.fontCaption
+            elide: Text.ElideRight
+            objectName: "elideOk"  // a long place name is shortened on purpose; the map names it in full
+            Layout.fillWidth: true
         }
         Text {
             text: side.has ? side.w[side.key + "Temp"] : "—"
