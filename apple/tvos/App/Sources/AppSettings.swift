@@ -196,6 +196,7 @@ final class AppSettings: ObservableObject {
             for (slot, id) in args[p + 1].split(separator: ",").enumerated() { setPane(slot, String(id)) }
         }
         if let m = args.firstIndex(of: "-hcpMapSize"), args.count > m + 1 { mapSize = args[m + 1] }
+        if let d = args.firstIndex(of: "-hcpDimHours"), args.count > d + 1, let h = Int(args[d + 1]) { dimAfterHours = h }
         guard let i = args.firstIndex(of: "-hcpStation"), args.count > i + 4 else { return }
         var de = (0.0, 0.0), dx = (0.0, 0.0)
         guard hcp_locator_center(args[i + 2], &de.0, &de.1) != 0, hcp_locator_center(args[i + 3], &dx.0, &dx.1) != 0 else { return }
