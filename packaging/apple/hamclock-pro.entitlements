@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Shared with the widget extension (apple/widgets): the app writes the station here.
+	     Applied only by the TestFlight job, and only once the App Group is set up on the
+	     App ID (see docs/widgets-ios.md); unsigned builds ignore it. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.chrislaw.hamclockpro</string>
+	</array>
+</dict>
+</plist>

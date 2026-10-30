@@ -19,6 +19,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
     src/platform/apple_passreminder.cpp
+    src/platform/apple_widgetshare.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -37,7 +38,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
 if(IOS)
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm src/platform/apple_widgetshare_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
     find_library(HC_GAMECONTROLLER GameController REQUIRED)
     find_library(HC_UIKIT UIKit REQUIRED)
@@ -168,6 +169,10 @@ if(BUILD_TESTING)
     target_link_libraries(window-geometry-regression PRIVATE Qt6::Gui)
     add_test(NAME window-geometry-regression COMMAND window-geometry-regression)
     set_tests_properties(window-geometry-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(cache-dir-regression tests/cache_dir_regression.cpp)
+    target_link_libraries(cache-dir-regression PRIVATE hamclock-widget-core)
+    add_test(NAME cache-dir-regression COMMAND cache-dir-regression)
+    set_tests_properties(cache-dir-regression PROPERTIES TIMEOUT 30)
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         add_executable(app-lifecycle-mac-regression tests/app_lifecycle_mac_regression.mm)
         target_link_libraries(app-lifecycle-mac-regression PRIVATE hamclock-widget-core)
@@ -216,6 +221,10 @@ if(BUILD_TESTING)
     target_link_libraries(pass-reminder-regression PRIVATE hamclock-widget-core)
     add_test(NAME pass-reminder-regression COMMAND pass-reminder-regression)
     set_tests_properties(pass-reminder-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(widget-share-regression tests/widget_share_regression.cpp)
+    target_link_libraries(widget-share-regression PRIVATE hamclock-widget-core)
+    add_test(NAME widget-share-regression COMMAND widget-share-regression)
+    set_tests_properties(widget-share-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_test(NAME sky-finder-regression COMMAND sky-finder-regression)
     set_tests_properties(sky-finder-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
@@ -298,6 +307,15 @@ if(BUILD_TESTING)
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})
         set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
+    # Band conditions with SWPC fixture data in the phone pane: all eight bands (80m..10m) fit in portrait.
+    foreach(size 390x844 440x956)
+        add_test(NAME qml-app-truncation-bands-${size} COMMAND hamclock-pro --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-bands-${size}
+            --fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/bands/tests/fixtures
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
+            --pane 1=bands --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-bands-${size}.png --size ${size})
+        set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
     endforeach()
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")

@@ -99,6 +99,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           ls -l dist
+          # The Pi updater (packaging/pi/.../hamclock-pro-update) installs a release .deb only if
+          # this file lists it with a matching checksum.
+          (cd dist && sha256sum -- *.deb *.zip > SHA256SUMS && cat SHA256SUMS)
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             gh release create "$GITHUB_REF_NAME" dist/* --title "HamClock Pro $GITHUB_REF_NAME" --generate-notes
           else

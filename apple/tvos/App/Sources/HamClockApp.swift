@@ -17,6 +17,9 @@ struct HamClockApp: App {
                 .task { await feeds.run() }
                 .task { await sats.run() }
                 .task(id: settings.de.map { "\($0.lat),\($0.lon)" } ?? "") { await localWx.run(position: settings.de) }
+                .task(id: (settings.de.map { "\($0.lat),\($0.lon)" } ?? "") + "/\(sats.fetched?.timeIntervalSince1970 ?? 0)") {
+                    await sats.track(position: settings.de)
+                }
         }
     }
 }

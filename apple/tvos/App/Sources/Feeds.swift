@@ -61,15 +61,9 @@ final class Feeds: ObservableObject {
         Feeds.series($0, cap: 400, hcp_swpc_xray_series)
     }
     let wind = PolledFeed(["\(swpc)/json/rtsw/rtsw_wind_1m.json"], source: "NOAA SWPC RTSW",
-                          policy: .init(interval: minutes(2), staleAfter: minutes(15), offlineAfter: hours(2))) { data -> [[Reading]]? in
-        let s = [0, 1].compactMap { field in Feeds.series(data, cap: 240) { hcp_solarwind_series($0, $1, Int32(field), $2, $3) } }
-        return s.count == 2 ? s : nil
-    }
+                          policy: .init(interval: minutes(2), staleAfter: minutes(15), offlineAfter: hours(2))) { Feeds.windPair($0, 0, 1) }
     let mag = PolledFeed(["\(swpc)/json/rtsw/rtsw_mag_1m.json"], source: "NOAA SWPC RTSW",
-                         policy: .init(interval: minutes(2), staleAfter: minutes(15), offlineAfter: hours(2))) { data -> [[Reading]]? in
-        let s = [2, 3].compactMap { field in Feeds.series(data, cap: 240) { hcp_solarwind_series($0, $1, Int32(field), $2, $3) } }
-        return s.count == 2 ? s : nil
-    }
+                         policy: .init(interval: minutes(2), staleAfter: minutes(15), offlineAfter: hours(2))) { Feeds.windPair($0, 2, 3) }
     let scales = PolledFeed(["\(swpc)/products/noaa-scales.json"], source: "NOAA SWPC",
                             policy: .init(interval: minutes(15), staleAfter: hours(2), offlineAfter: hours(12))) { data -> HcpScales? in
         var s = HcpScales()
@@ -159,7 +153,7 @@ final class Feeds: ObservableObject {
     private var otaCache: (key: String, spots: [OtaSpot])?
 
     /// Rows the fires parser keeps; a fuller file is reported as "at least" this many.
-    static let fireCap = 20000
+    nonisolated static let fireCap = 20000
 
     // MARK: parsers (thin wrappers over the C ABI)
 
@@ -169,6 +163,21 @@ final class Feeds: ObservableObject {
         let n = out.withUnsafeMutableBufferPointer { o in data.withC { parse($0, $1, o.baseAddress, cap) } }
         guard n > 0 else { return nil }
         return out.prefix(Int(n)).map { Reading(value: $0.value, time: Date(timeIntervalSince1970: Double($0.time_ms) / 1000)) }
+    }
+
+    /// Two rtsw fields from ONE parse of the body (it was parsed once per field).
+    nonisolated static func windPair(_ data: Data, _ a: Int32, _ b: Int32) -> [[Reading]]? {
+        let cap = 240
+        var outA = [HcpReading](repeating: HcpReading(), count: cap), outB = outA
+        var nb: Int32 = 0
+        let na = outA.withUnsafeMutableBufferPointer { pa in
+            outB.withUnsafeMutableBufferPointer { pb in
+                data.withC { hcp_solarwind_series_pair($0, $1, a, b, pa.baseAddress, pb.baseAddress, cap, &nb) }
+            }
+        }
+        guard na > 0, nb > 0 else { return nil }
+        let reading = { (r: HcpReading) in Reading(value: r.value, time: Date(timeIntervalSince1970: Double(r.time_ms) / 1000)) }
+        return [outA.prefix(Int(na)).map(reading), outB.prefix(Int(nb)).map(reading)]
     }
 
     nonisolated static func parseQuakes(_ data: Data) -> [QuakeItem]? {

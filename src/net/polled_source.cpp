@@ -20,6 +20,12 @@ constexpr qint64 kMaxBodyBytes = 4 * 1024 * 1024;
 constexpr std::chrono::seconds kFirstRetry{60};
 
 QString cache_dir() {
+#if defined(Q_OS_MACOS)
+    // Qt honours XDG_CACHE_HOME on Linux only; follow it on the Mac too so tests and
+    // side-by-side builds can use their own cache instead of ~/Library/Caches.
+    const QString xdg = qEnvironmentVariable("XDG_CACHE_HOME");
+    if (QDir::isAbsolutePath(xdg)) return xdg + "/" + QCoreApplication::applicationName() + "/sources";
+#endif
     auto dir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     if (dir.isEmpty()) dir = QDir::tempPath() + "/hamclock-pro-cache";
     return dir + "/sources";
