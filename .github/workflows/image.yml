@@ -14,16 +14,36 @@ jobs:
   image:
     name: pi-gen (bookworm arm64)
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    # Up to 150 min waiting for the tag's .deb, then the pi-gen build.
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - name: Fetch the arm64 bookworm .deb
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          mkdir -p packaging/pi/stage-hamclock/00-install/files
-          url=$(curl -fsSL -A "hamclock-pro-ci" "https://api.github.com/repos/${{ github.repository }}/releases?per_page=5" |
-                grep -o 'https://[^"]*_bookworm_arm64\.deb' | head -n1)
-          test -n "$url"
-          curl -fsSL -o packaging/pi/stage-hamclock/00-install/files/hamclock-pro.deb "$url"
+          files=packaging/pi/stage-hamclock/00-install/files
+          mkdir -p "$files"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # The tag's own package. release.yml builds it in parallel under QEMU, so wait
+            # for it (up to 150 min) instead of taking the newest dev build, which is
+            # what the old lookup found while the tag's packages were still building.
+            mkdir -p "$RUNNER_TEMP/deb"
+            for i in $(seq 1 75); do
+              gh release download "$GITHUB_REF_NAME" -p '*_bookworm_arm64.deb' -D "$RUNNER_TEMP/deb" --clobber 2>/dev/null && break
+              sleep 120
+            done
+            deb=$(ls "$RUNNER_TEMP"/deb/*_bookworm_arm64.deb 2>/dev/null | head -n1)
+            test -n "$deb" || { echo "Release $GITHUB_REF_NAME has no bookworm arm64 .deb"; exit 1; }
+            echo "Using $deb"
+            mv "$deb" "$files/hamclock-pro.deb"
+          else
+            url=$(curl -fsSL -A "hamclock-pro-ci" "https://api.github.com/repos/${{ github.repository }}/releases?per_page=5" |
+                  grep -o 'https://[^"]*_bookworm_arm64\.deb' | head -n1)
+            test -n "$url"
+            curl -fsSL -o "$files/hamclock-pro.deb" "$url"
+          fi
       - name: Fetch pi-gen
         run: git clone --depth 1 --branch arm64 https://github.com/RPi-Distro/pi-gen.git ../pi-gen
       - name: Build image
