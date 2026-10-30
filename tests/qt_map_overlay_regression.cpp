@@ -127,5 +127,15 @@ int main(int argc, char** argv) {
         const auto second = place_label(view, mercury, 4, QSizeF(48, 12), used);
         check(!second || !second->intersects(*first), "second planet label never overprints the first");
     }
+    {
+        // No DX target: DE is still marked (it used to vanish with the DX).
+        MapScene s; s.de = Location{0, 0}; s.night_shade = false;
+        QImage img(720, 360, QImage::Format_ARGB32);
+        QPainter p(&img); MapRenderer().paint(p, QSizeF(720, 360), s); p.end();
+        int ring = 0;
+        for (int y = 174; y <= 186; ++y)
+            for (int x = 354; x <= 366; ++x) ring += img.pixelColor(x, y).lightness() < 120;
+        check(ring > 6, "DE marker drawn without a DX");
+    }
     return failures == 0 ? 0 : 1;
 }
