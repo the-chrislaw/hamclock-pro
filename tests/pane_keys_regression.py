@@ -15,8 +15,26 @@ for key, call in want.items():
     m = re.search(re.escape(key) + r".*", qml)
     if not m or not re.search(call, m.group(0)):
         sys.exit("PaneSlot.qml: missing " + key)
-if "pageDots" not in qml or "Theme.phone" not in qml.split("pageDots", 1)[1][:200]:
+if "PageDots {" not in qml or "Theme.phone" not in qml.split("PageDots {", 1)[1][:200]:
     sys.exit("PaneSlot.qml: missing phone page dots")
+# Swipe carousel (pager.mjs holds the maths, tests/pager_regression.cpp checks it):
+# the card follows the finger, release decides by distance and velocity, and keys
+# and rotation slide through the same animation instead of swapping the card.
+swipe = {
+    "pager module": r'import "pager\.mjs" as Pager',
+    "finger tracking": r"onCentroidChanged:.*dragTo\(",
+    "release decision": r"Pager\.releaseStep\(",
+    "step slides": r"function step\(direction\)[^}]*slideTo\(",
+    "rotation slides": r"onTriggered:.*slideTo\(slot\.rotationNext",
+    "neighbours preloaded": r"preload && \(id === prevId \|\| id === nextId",
+    "slide lands on finish": r"onFinished: slot\.finishSlide\(\)",
+    "dots follow the swipe": r"progress: .*slot\.offset",
+}
+for what, pattern in swipe.items():
+    if not re.search(pattern, qml):
+        sys.exit("PaneSlot.qml: swipe carousel lost " + what)
+if re.search(r"active: widgetId === slot\.choice", qml):
+    sys.exit("PaneSlot.qml: only the shown card is loaded; neighbours would slide in blank")
 root = pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml"
 big = (root / "BigClockPage.qml").read_text()
 main = (root / "Main.qml").read_text()

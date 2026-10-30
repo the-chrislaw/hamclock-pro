@@ -1,14 +1,18 @@
 #include "solar_wind_model.hpp"
 #include "../../net/polled_source.hpp"
+#include <QCoreApplication>
+#include <QPointer>
 #include <QStringList>
+#include <QThreadPool>
 #include <QTimer>
 #include <algorithm>
 
 namespace hamclock {
 namespace {
 using namespace std::chrono_literals;
-// SWPC refreshes these once a minute; poll politely every 2 minutes.
-constexpr PollPolicy kPolicy{2min, 15min, 15min};
+// SWPC refreshes these once a minute, but each fetch is ~3.6 MB (wind + mag), so
+// poll every 5 minutes: still well inside the 15 minute "reading is old" limit.
+constexpr PollPolicy kPolicy{5min, 15min, 15min};
 // A reading older than this is not "now": the feed can be fresh while the
 // spacecraft data behind it is not.
 constexpr qint64 kMaxSampleAgeSecs = 15 * 60;
@@ -21,10 +25,10 @@ SolarWindModel::SolarWindModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solarwind", "Solar wind", parent),
       wind_source_(new PolledSource("swpc-rtsw-wind", QUrl(kWindUrl), kPolicy, context.transport, this)),
       mag_source_(new PolledSource("swpc-rtsw-mag", QUrl(kMagUrl), kPolicy, context.transport, this)) {
-    for (auto* source : {wind_source_, mag_source_}) {
-        connect(source, &PolledSource::updated, this, [this] { parse(); refreshState(); });
+    connect(wind_source_, &PolledSource::updated, this, [this] { parseInBackground(Feed::Wind); });
+    connect(mag_source_, &PolledSource::updated, this, [this] { parseInBackground(Feed::Mag); });
+    for (auto* source : {wind_source_, mag_source_})
         connect(source, &PolledSource::failed, this, &SolarWindModel::refreshState);
-    }
     connect(this, &WidgetModel::ageChanged, this, &SolarWindModel::refreshState);
 }
 
@@ -50,14 +54,41 @@ SolarWindModel::Series SolarWindModel::lastHour(Series series) {
     return series;
 }
 
-void SolarWindModel::parse() {
-    const auto& wind = wind_source_->body();
-    const auto& mag = mag_source_->body();
-    speed_ = lastHour(solarwind::series(wind, solarwind::kSpeed));
-    density_ = lastHour(solarwind::series(wind, solarwind::kDensity));
-    bz_ = lastHour(solarwind::series(mag, solarwind::kBz));
-    bt_ = lastHour(solarwind::series(mag, solarwind::kBt));
+// Each body is megabytes of JSON: parse only the feed that changed, on a pool
+// thread, so the clock and map keep drawing (Pi). The parser is a pure function of
+// its (implicitly shared, read-only) body; the result is applied on the GUI thread,
+// and only if no newer body for that feed has been queued since.
+void SolarWindModel::parseInBackground(Feed feed) {
+    const bool wind = feed == Feed::Wind;
+    const QByteArray body = (wind ? wind_source_ : mag_source_)->body();
+    const int generation = ++(wind ? wind_generation_ : mag_generation_);
+    const char* first_field = wind ? solarwind::kSpeed : solarwind::kBz;
+    const char* second_field = wind ? solarwind::kDensity : solarwind::kBt;
+    QPointer<SolarWindModel> self(this);
+    QThreadPool::globalInstance()->start([self, feed, generation, body, first_field, second_field] {
+        Series first = lastHour(solarwind::series(body, first_field));
+        Series second = lastHour(solarwind::series(body, second_field));
+        // Queued to the application object, which outlives every model; the model
+        // itself is only touched there, after checking it still exists.
+        QMetaObject::invokeMethod(QCoreApplication::instance(),
+            [self, feed, generation, first = std::move(first), second = std::move(second)]() mutable {
+                if (self) self->applyParsed(feed, generation, std::move(first), std::move(second));
+            }, Qt::QueuedConnection);
+    });
+}
+
+void SolarWindModel::applyParsed(Feed feed, int generation, Series first, Series second) {
+    if (feed == Feed::Wind) {
+        if (generation != wind_generation_) return; // a newer body is being parsed
+        speed_ = std::move(first);
+        density_ = std::move(second);
+    } else {
+        if (generation != mag_generation_) return;
+        bz_ = std::move(first);
+        bt_ = std::move(second);
+    }
     emit valuesChanged();
+    refreshState();
 }
 
 void SolarWindModel::refreshState() {
