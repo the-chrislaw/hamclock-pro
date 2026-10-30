@@ -420,7 +420,9 @@ Rectangle {
                             // Five filters: one row on wide screens, two columns on a phone.
                             GridLayout {
                                 Layout.fillWidth: true
-                                columns: width < 600 * Theme.scale ? 2 : 5
+                                // From the card's width, not the grid's own: a column count that follows the
+                                // grid's own width can flip 2 <-> 5 inside an opened group (Qt 6.4 polish loop).
+                                columns: clusterCard.width < 600 * Theme.scale ? 2 : 5
                                 columnSpacing: Theme.gap
                                 rowSpacing: Theme.gap * 0.8
                                 FormField { id: otaProgram; label: "POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
