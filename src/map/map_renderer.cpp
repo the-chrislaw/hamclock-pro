@@ -91,12 +91,30 @@ struct GeoDraw {
     std::function<std::optional<QPointF>(Location)> at;
     std::function<void(QPainter&, Location, Location)> line; // current pen, seam-safe
 };
-void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, const GeoDraw& geo, const QColor& sea, const QColor& route_color) {
+struct LabelJob { const OverlayLayer* layer; std::vector<QPointF> anchors; std::vector<const OverlayMarker*> labelled; };
+struct FixedText { QPointF base; QString text; };
+struct CityAt { QPointF at; QString name; };
+// Label work shared by every world copy (a panned or Pacific-centred map draws two):
+// the symbols of all copies are obstacles before any label is placed or drawn, so a
+// later copy never paints a marker over an earlier copy's label.
+struct LabelPass {
+    std::vector<QRectF> used;      // map buttons, DE/DX, paths, every marker, placed labels
+    std::vector<FixedText> fixed;  // DE/DX labels, placed with their markers, drawn last
+    std::vector<LabelJob> pending; // overlay labels by layer
+    std::vector<CityAt> cities;    // biggest first
+};
+void set_label_font(QPainter& painter, double ui) {
+    QFont f = painter.font();
+    f.setPixelSize(int(std::lround(11 * ui)));
+    painter.setFont(f);
+}
+void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, const GeoDraw& geo, const QColor& sea,
+                      const QColor& route_color, LabelPass& pass) {
     const bool dark = scene.dark;
     const QColor route = route_color;
     const double ui = std::max(1.0, scene.ui_scale);
-    { QFont f = painter.font(); f.setPixelSize(int(std::lround(11 * ui))); painter.setFont(f); }
-    std::vector<QRectF> used_rects = scene.reserved; // map buttons, then DE/DX, so they always win
+    set_label_font(painter, ui);
+    auto& used_rects = pass.used; // map buttons first (seeded by the caller), then DE/DX, so they always win
     if (scene.sun) {
         if (const auto sun = geo.at({scene.sun->latitude_deg, scene.sun->longitude_deg})) {
             painter.setPen(QPen(QColor(dark ? "#f2c14e" : "#d68f00"), 2)); painter.setBrush(Qt::NoBrush);
@@ -175,15 +193,14 @@ void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, con
                 first = false;
                 if (!clash) break;
             }
-            painter.drawText(base, item.second);
+            pass.fixed.push_back({base, item.second});
             used_rects.push_back(QRectF(base.x(), base.y() - m.ascent(), lw, m.height()));
         }
     }
     // Symbols of every layer first, so labels of any layer avoid all of them;
     // then labels by layer priority (satellites, spots, hazards).
     const QRectF view(QPointF(), size);
-    struct Pending { const OverlayLayer* layer; std::vector<QPointF> anchors; std::vector<const OverlayMarker*> labelled; };
-    std::vector<Pending> pending;
+    auto& pending = pass.pending;
     for (const auto& layer : scene.overlays) {
         if (!layer.visible) continue;
         pending.push_back({&layer, {}, {}});
@@ -215,7 +232,24 @@ void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, con
             if (!overlay_label_text(m, layer.labels).isEmpty()) { anchors.push_back(p); labelled.push_back(&m); }
         }
     }
-    std::stable_sort(pending.begin(), pending.end(), [](const Pending& x, const Pending& y) {
+    if (scene.cities)
+        for (const auto& c : cities) {
+            const auto at_c = geo.at({c.latitude, c.longitude});
+            if (at_c && view.contains(*at_c)) pass.cities.push_back({*at_c, QString::fromLatin1(c.name)});
+        }
+}
+// Second pass, after every world copy drew its symbols: DE/DX labels, overlay labels by
+// layer priority (satellites, spots, hazards), then city names.
+void paint_labels(QPainter& painter, QSizeF size, const MapScene& scene, LabelPass& pass, const QColor& route_color) {
+    const bool dark = scene.dark;
+    const double ui = std::max(1.0, scene.ui_scale);
+    set_label_font(painter, ui);
+    const QRectF view(QPointF(), size);
+    auto& used_rects = pass.used;
+    auto& pending = pass.pending;
+    painter.setPen(route_color);
+    for (const auto& t : pass.fixed) painter.drawText(t.base, t.text);
+    std::stable_sort(pending.begin(), pending.end(), [](const LabelJob& x, const LabelJob& y) {
         return overlay_label_priority(x.layer->id) < overlay_label_priority(y.layer->id);
     });
     for (const auto& pl : pending) {
@@ -239,19 +273,15 @@ void paint_geo_layers(QPainter& painter, QSizeF size, const MapScene& scene, con
         const auto fm = painter.fontMetrics();
         const QColor ink = dark ? QColor("#c9d3d6") : QColor("#34454b");
         const double r = 2 * ui;
-        for (const auto& c : cities) {
-            const auto at_c = geo.at({c.latitude, c.longitude});
-            if (!at_c || !view.contains(*at_c)) continue;
-            const QString text = QString::fromLatin1(c.name);
-            const auto rect = place_label(view, *at_c, r, QSizeF(fm.horizontalAdvance(text), fm.height()), used_rects);
+        for (const auto& c : pass.cities) {
+            const auto rect = place_label(view, c.at, r, QSizeF(fm.horizontalAdvance(c.name), fm.height()), used_rects);
             if (!rect) continue;
-            const QRectF dot(at_c->x() - r, at_c->y() - r, 2 * r, 2 * r);
-            used_rects.push_back(dot);
+            used_rects.push_back(QRectF(c.at.x() - r, c.at.y() - r, 2 * r, 2 * r));
             used_rects.push_back(*rect);
             painter.setPen(Qt::NoPen); painter.setBrush(ink);
-            painter.drawEllipse(*at_c, r, r);
+            painter.drawEllipse(c.at, r, r);
             painter.setPen(ink);
-            painter.drawText(QPointF(rect->left(), rect->top() + fm.ascent()), text);
+            painter.drawText(QPointF(rect->left(), rect->top() + fm.ascent()), c.name);
         }
     }
 }
@@ -395,7 +425,9 @@ void MapRenderer::paint_projected(QPainter& painter, QSizeF size, const MapScene
     }
     painter.save();
     painter.setClipRect(QRectF(QPointF(), size));
-    paint_geo_layers(painter, size, scene, geo, sea, route);
+    LabelPass pass{scene.reserved, {}, {}, {}};
+    paint_geo_layers(painter, size, scene, geo, sea, route, pass);
+    paint_labels(painter, size, scene, pass, route);
     painter.restore();
 }
 MapViewport MapRenderer::viewportFor(QSizeF size, const MapScene& scene) {
@@ -431,6 +463,7 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
     painter.setClipRect(QRectF(QPointF(), size));
     int first = 0, last = -1;
     vp.copy_range(first, last);
+    LabelPass pass{scene.reserved, {}, {}, {}};
     const double W = vp.world_width(), H = vp.world_height();
     QPolygonF night;
     if (scene.sun) {
@@ -504,8 +537,9 @@ void MapRenderer::paint(QPainter& painter, QSizeF size, const MapScene& scene) c
                 painter.drawLine(*geo.at(Location{l.lat1, l.lon1}), *geo.at(Location{l.lat2, l.lon2}));
             painter.restore();
         }
-        paint_geo_layers(painter, size, scene, geo, sea, route);
+        paint_geo_layers(painter, size, scene, geo, sea, route, pass);
     }
+    paint_labels(painter, size, scene, pass, route);
     if (scene.style) paint_legend(painter, size, *scene.style, dark);
     painter.restore();
 }
