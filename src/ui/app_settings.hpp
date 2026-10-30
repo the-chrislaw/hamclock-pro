@@ -321,6 +321,7 @@ signals:
 private:
     QString assignPane(int slot, const QString& widget_id, bool persist);
     void loadOptions();
+    void applyRegionDefaults();   // new installs: units/clock/date/week from the device region
     std::unique_ptr<CredentialStore> secrets_;
     QString secretKey(const QString& store_key) const;
     void loadAccounts();

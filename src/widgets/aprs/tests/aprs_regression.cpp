@@ -4,6 +4,7 @@
 #include "../../../map/overlay.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
+#include <QLocale>
 #include <QTemporaryDir>
 #include <cmath>
 #include <iostream>
@@ -26,6 +27,7 @@ public:
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
     using namespace hamclock;
     auto p = aprs::parse_packet("N0CALL-9>APRS,TCPIP*:!4903.50N/07201.75W-Test comment");
     check(p && p->call == "N0CALL-9" && std::fabs(p->latitude - 49.0583) < 1e-3 && std::fabs(p->longitude + 72.0292) < 1e-3, "plain position");
