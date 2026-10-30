@@ -11,6 +11,15 @@ Popup {
     property var map
     // Width the menu asks for, from its column alone (not the Popup implicit size, which loops).
     readonly property real naturalWidth: menuColumn.implicitWidth + leftPadding + rightPadding
+    // Natural width of a chip row (its chips side by side, at least the toggle grid's width). A
+    // Flow's own implicit width follows its width, so feeding that back into the popup width
+    // loops; this sums the chips instead. Narrow screens (phones) wrap the row.
+    function rowWidth(row) {
+        let w = 0
+        for (let i = 0; i < row.children.length; ++i)
+            if (row.children[i].visible && row.children[i].implicitWidth > 0) w += row.children[i].implicitWidth + row.spacing
+        return Math.max(layerGrid.implicitWidth, w - row.spacing)
+    }
     padding: Theme.pad
     modal: false
     focus: true
@@ -86,7 +95,7 @@ Popup {
             Layout.fillWidth: true
             // A Flow's implicit width follows its own width; a fixed preference stops it feeding
             // back into the popup width (binding loop). It still fills and wraps.
-            Layout.preferredWidth: layerGrid.implicitWidth
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             visible: menu.map && menu.map.styleIds.length > 0
             Toggle { label: "Plain"; on: menu.map && menu.map.style === "" && menu.map.rotation === 0
@@ -99,7 +108,9 @@ Popup {
         }
         Text { text: "Rotate styles"; color: Theme.ink; font.pixelSize: Theme.fontBody
                visible: menu.map && menu.map.styleIds.length > 1 }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             visible: menu.map && menu.map.styleIds.length > 1
             Repeater {
@@ -109,7 +120,9 @@ Popup {
             }
         }
         Text { text: "Grid"; color: Theme.ink; font.pixelSize: Theme.fontBody }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             Repeater {
                 model: [{ t: "None", g: 0 }, { t: "Tropics", g: 1 }, { t: "Lat/Lng", g: 2 }, { t: "Maidenhead", g: 3 }, { t: "Rings", g: 4 }]
@@ -118,7 +131,9 @@ Popup {
             }
         }
         Text { text: "Projection"; color: Theme.ink; font.pixelSize: Theme.fontBody }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             Repeater {
                 model: [{ t: "Flat", p: 0 }, { t: "Azimuthal", p: 1 }, { t: "Robinson", p: 2 }, { t: "Azim one", p: 3 }]
@@ -127,7 +142,9 @@ Popup {
             }
         }
         Text { text: "Centre"; color: Theme.ink; font.pixelSize: Theme.fontBody }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             Repeater {
                 model: [{ t: "DE", c: 999 }, { t: "Greenwich", c: 0 }, { t: "Americas", c: -90 }, { t: "Asia", c: 90 }, { t: "Pacific", c: 180 }]
@@ -136,7 +153,9 @@ Popup {
             }
         }
         Text { text: "Labels"; color: Theme.ink; font.pixelSize: Theme.fontBody }
-        RowLayout {
+        Flow {
+            Layout.fillWidth: true
+            Layout.preferredWidth: menu.rowWidth(this)
             spacing: Theme.gap / 2
             Repeater {
                 model: [{ t: "Layer", m: -1 }, { t: "None", m: 0 }, { t: "Prefix", m: 1 }, { t: "Call", m: 2 }, { t: "Dot", m: 3 }]
