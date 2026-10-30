@@ -41,6 +41,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/pathrel.cpp
     ${HCP_ROOT}/apple/tvos/Core/trend.cpp
     ${HCP_ROOT}/apple/tvos/Core/dst.cpp
+    ${HCP_ROOT}/apple/tvos/Core/impact.cpp
     ${HCP_ROOT}/apple/tvos/Core/alerts.cpp
     ${HCP_ROOT}/apple/tvos/Core/aurora.cpp
     ${HCP_ROOT}/apple/tvos/Core/drap.cpp
@@ -138,6 +139,7 @@ hcp_core_test(hamqsl solarhamqsl)
 hcp_core_test(pathrel bands)
 hcp_core_test(trend solartrend)
 hcp_core_test(dst solardst)
+hcp_core_test(impact solarimpact)
 hcp_core_test(alerts solaralerts)
 hcp_core_test(aurora solaraurora)
 hcp_core_test(drap solardrap)

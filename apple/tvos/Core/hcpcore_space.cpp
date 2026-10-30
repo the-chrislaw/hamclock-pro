@@ -5,6 +5,7 @@
 #include "aurora.hpp"
 #include "drap.hpp"
 #include "hamqsl.hpp"
+#include "impact.hpp"
 #include "pathrel.hpp"
 #include "dst.hpp"
 #include "scales.hpp"
@@ -116,6 +117,31 @@ int hcp_dst_parse(const char* b, size_t n, HcpDst* out, size_t cap) {
 }
 
 int hcp_dst_word(int dst, char* buf, size_t cap) { return copy(hcp::dst::word(dst), buf, cap); }
+
+int hcp_impact_rank(const HcpScales* in, const HcpDst* dst, size_t dst_count, int64_t now_ms, HcpImpactRow* out,
+                    size_t cap, char* headline, size_t headline_cap) {
+    if (headline && headline_cap) headline[0] = 0;
+    if (!in || !in->valid) return 0;
+    hcp::scales::Scales s;
+    s.valid = true;
+    s.observed_ms = in->observed_ms;
+    s.current.r = in->current.r; s.current.s = in->current.s; s.current.g = in->current.g;
+    s.past24h.r = in->past24h.r; s.past24h.s = in->past24h.s; s.past24h.g = in->past24h.g;
+    std::vector<hcp::dst::Sample> samples;
+    for (size_t i = 0; dst && i < dst_count; ++i) samples.push_back({dst[i].time_ms, dst[i].dst});
+    copy(hcp::impact::headline(s, samples, now_ms), headline, headline_cap);
+    const auto rows = hcp::impact::ranked(s, samples, now_ms);
+    size_t n = 0;
+    for (; out && n < rows.size() && n < cap; ++n) {
+        out[n] = HcpImpactRow{};
+        out[n].letter = rows[n].letter;
+        out[n].level = rows[n].level;
+        copy(rows[n].word, out[n].word, sizeof out[n].word);
+        out[n].max24 = rows[n].max24;
+        copy(rows[n].effect, out[n].effect, sizeof out[n].effect);
+    }
+    return static_cast<int>(n);
+}
 
 int hcp_alerts_parse(const char* b, size_t n, HcpAlert* out, size_t cap) {
     const auto all = b ? hcp::alerts::parse(view(b, n)) : std::nullopt;

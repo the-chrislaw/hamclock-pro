@@ -467,6 +467,22 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_bandsmatrix"].waitForExistence(timeout: 5), "HF path reliability is offered on TV")
     }
 
+    /// Space weather impact (ported from the Qt solarimpact widget): R, S, G (and fresh Dst) ranked
+    /// worst first with their effects, or an honest Loading / Offline / No data.
+    func testImpactPane() {
+        launchWithStation(["-hcpPanes", "solarimpact"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "solarimpact")
+        XCTAssertTrue(waitFor(30) {
+            ["All quiet", "HF", "Aurora", "radiation", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "ranked effects or an honest state: \(pane0.label)")
+        XCTAssertFalse(pane0.label.contains("Not available on Apple TV"), pane0.label)
+        shot("tvos-impact")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solarimpact"].waitForExistence(timeout: 5), "Space weather impact is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

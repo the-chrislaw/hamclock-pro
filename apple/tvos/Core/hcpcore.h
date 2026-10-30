@@ -233,6 +233,19 @@ typedef struct {
 } HcpDst;
 int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
 int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
+/* Space weather impact (port of src/widgets/solarimpact/solar_impact_model): R, S, G and, while the
+ * latest Dst record is under 6 h old, D, worst first (ties: higher 24 h max, then R, S, G, D).
+ * Returns the rows written (0 when scales->valid is 0); headline gets "All quiet" or
+ * "G3 Strong: <effect>". dst may be NULL; oldest first as hcp_dst_parse writes it. */
+typedef struct {
+    char letter;       /* 'R', 'S', 'G' or 'D' */
+    int level;         /* 0-5, -1 when SWPC states none */
+    char word[16];     /* "Severe"; empty for level 0 on R/S/G; Dst storm word for D */
+    int max24;         /* 24 h maximum level (Dst: level of the 24 h low) */
+    char effect[64];
+} HcpImpactRow;
+int hcp_impact_rank(const HcpScales* scales, const HcpDst* dst, size_t dst_count, int64_t now_ms,
+                    HcpImpactRow* out, size_t cap, char* headline, size_t headline_cap);
 /* NOAA SWPC alerts, watches and warnings (products/alerts.json), port of
  * src/widgets/solaralerts/solar_alerts_parse. Texts are UTF-8, truncated to fit. */
 typedef struct {
