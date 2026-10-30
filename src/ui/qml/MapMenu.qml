@@ -14,6 +14,7 @@ Popup {
     // Widest the menu may be (the map width). The width is assigned, not bound: on iOS a
     // binding through the popup's size re-entered itself ("Binding loop detected for width").
     property real maxWidth: 0
+    width: 0 // never the Popup default (implicitWidth): see fitWidth()
     function fitWidth() { width = Math.max(0, Math.min(naturalWidth, maxWidth)) }
     onAboutToShow: fitWidth()
     onMaxWidthChanged: if (opened) fitWidth()

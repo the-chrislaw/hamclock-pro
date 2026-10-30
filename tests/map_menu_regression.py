@@ -18,7 +18,7 @@ main = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml/Main.qml").
 menu_use = main.split("MapMenu {", 1)[1][:500]
 if re.search(r"^\s*width:", menu_use, re.M) or "maxWidth:" not in menu_use:
     sys.exit("Main.qml: MapMenu takes a maxWidth and sizes itself on open (no width binding)")
-if "onAboutToShow: fitWidth()" not in qml:
+if "onAboutToShow: fitWidth()" not in qml or not re.search(r"^    width: 0\b", qml, re.M):
     sys.exit("MapMenu.qml: the width must be assigned on open (fitWidth)")
 
 # Settings: the hidden (iOS) station hardware card has width 0; its wrapped labels then loop the
