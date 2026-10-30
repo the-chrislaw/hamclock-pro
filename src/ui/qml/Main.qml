@@ -58,8 +58,10 @@ ApplicationWindow {
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
+    // The header sits outside contentItem, so the full-screen layers below cannot
+    // cover it: hide it while one is open (its buttons are input-blocked anyway).
     header: Rectangle {
-        visible: !Theme.dense
+        visible: !Theme.dense && !window.overlayOpen
         enabled: !window.pageInputBlocked
         color: Theme.canvas
         implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
