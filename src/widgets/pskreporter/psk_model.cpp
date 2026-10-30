@@ -19,6 +19,8 @@ constexpr int kRbnPort = 7000;           // CW/RTTY skimmers; 7001 (FT8/FT4) wou
 PskModel::PskModel(const WidgetContext& context, TelnetSocketFactory socket_factory, QObject* parent)
     : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport),
       socket_factory_(std::move(socket_factory)) {
+    // Once here, not in start(): start() runs again on every callsign change.
+    connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     if (settings_) {
         map_visible_ = settings_->mapSourceVisible("psk");
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
@@ -198,7 +200,6 @@ void PskModel::start() {
         refreshState();
     });
     connect(source_, &PolledSource::failed, this, &PskModel::refreshState);
-    connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     setState("loading", "Contacting PSKReporter…");
     source_->start();
     syncWspr();
