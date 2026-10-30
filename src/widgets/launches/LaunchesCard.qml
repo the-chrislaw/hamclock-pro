@@ -7,7 +7,7 @@ Card {
     // Full layout in a roomy or tall pane: the later launches fill the leftover height (as many
     // as fit, never a clipped one); a tall pane stacks each as name over time. A small slot
     // shows the next launch only, without the agency so the detail fits.
-    readonly property bool full: !compact || tall
+    readonly property bool full: !compact || tall || roomy
     FontMetrics { id: rowFont; font.pixelSize: Theme.fontBody }
     FontMetrics { id: whenFont; font.pixelSize: Theme.fontCaption }
     readonly property real rowHeight: Math.ceil(rowFont.height) + (tall ? Math.ceil(whenFont.height) : 0)

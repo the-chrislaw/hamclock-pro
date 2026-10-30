@@ -4,10 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property var list: root.widget ? root.widget.scales : []
     // Compact slot that is not tall: scale words only. A tall pane shows the full rows, spread over the height.
     readonly property bool brief: root.compact && !root.stacked
@@ -31,7 +30,8 @@ Card {
                     // Content block, centred in a tall pane's spread row.
                     width: parent.width
                     height: parent.blockHeight
-                    anchors.verticalCenter: root.stacked ? parent.verticalCenter : undefined
+                    // Bound y (an anchor set to undefined keeps a stale centred y after a resize).
+                    y: root.stacked ? (parent.height - height) / 2 : 0
                     Text {
                         id: tag
                         text: modelData.letter + modelData.level

@@ -62,6 +62,7 @@ set_target_properties(hamclock-widgets PROPERTIES AUTOMOC ON)
 add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/main.cpp
     src/ui/station_model.cpp
+    src/ui/pane_fill.cpp
     src/ui/time_zone_search.cpp
     src/ui/location_tools.cpp
     src/ui/timers_model.cpp
@@ -178,6 +179,9 @@ if(BUILD_TESTING)
     add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
     target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
     add_test(NAME pane-grid-regression COMMAND pane-grid-regression)
+    add_executable(pane-fill-regression tests/pane_fill_regression.cpp src/ui/pane_fill.cpp)
+    target_link_libraries(pane-fill-regression PRIVATE Qt6::Quick)
+    add_test(NAME pane-fill-regression COMMAND pane-fill-regression)
     add_executable(safe-area-regression tests/safe_area_regression.cpp)
     target_link_libraries(safe-area-regression PRIVATE hamclock-widget-core)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
@@ -330,5 +334,28 @@ if(BUILD_TESTING)
             --pane 1=${id} --allow-truncation --screenshot ${CMAKE_CURRENT_BINARY_DIR}/pane-${id}.png --size 800x480)
         set_tests_properties(qml-pane-${id} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/pane-cache-${id}")
+    endforeach()
+    # Adaptive panes (owner, Oct 29: "no matter where you put it it looks the best possible"): every widget
+    # with test fixtures, in pane 1 with data, may leave at most a third of its card body blank (exit 5)
+    # on the 7-inch panels, a 1080p TV and a 1440p monitor (two rows of panes).
+    foreach(id ${widget_ids})
+        set(fill_fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/${id}/tests/fixtures)
+        if(id STREQUAL "passes")
+            set(fill_fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/satellites/tests/fixtures)
+        endif()
+        # These fixtures parse to an empty state (dated data: no sondes, activations, launches, alerts or
+        # recent readings), which is a short line by design; the contact sheets cover them with live data.
+        if(NOT EXISTS ${fill_fixtures} OR id MATCHES "^(balloons|hamsat|launches|pskreporter|solaralerts|solaraurora|solardrap|solardst)$")
+            continue()
+        endif()
+        foreach(size 800x480 1024x600 1920x1080 2560x1440)
+            add_test(NAME qml-fill-${id}-${size} COMMAND hamclock-pro --fixtures ${fill_fixtures}
+                --config-dir ${CMAKE_CURRENT_BINARY_DIR}/fill-config-${id}-${size}
+                --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
+                --pane 1=${id} --allow-truncation --check-fill 1 --theme dark
+                --screenshot ${CMAKE_CURRENT_BINARY_DIR}/fill-${id}-${size}.png --size ${size})
+            set_tests_properties(qml-fill-${id}-${size} PROPERTIES TIMEOUT 30
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/fill-cache-${id}-${size}")
+        endforeach()
     endforeach()
 endif()

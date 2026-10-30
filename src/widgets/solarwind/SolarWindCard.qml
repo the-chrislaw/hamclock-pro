@@ -5,8 +5,8 @@ import HamClock
 Card {
     id: root
     readonly property bool bzSouth: widget && widget.hasBz && widget.bz <= -5
-    // Desktop panes (not the tuned 7-inch dense layout): the sparklines take the leftover height.
-    readonly property bool fillPlots: !Theme.dense
+    // Every pane, the 7-inch panels too: the sparklines take the leftover height.
+    readonly property bool fillPlots: true
     readonly property bool hasSpeed: widget !== null && widget.hasSpeed
     readonly property bool hasBz: widget !== null && widget.hasBz
     readonly property color speedColor: hasSpeed && widget.speed >= 800 ? Theme.bad

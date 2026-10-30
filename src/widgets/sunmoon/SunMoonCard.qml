@@ -181,7 +181,8 @@ Card {
                 MoonDisc {
                     visible: !!root.widget && !!root.widget.moonPhase
                     anchors.centerIn: parent
-                    width: Math.min(parent.width, parent.height)
+                    // At most two thirds of the width: a very tall pane does not turn it into a poster.
+                    width: Math.min(parent.width * 0.66, parent.height)
                     height: width
                 }
             }

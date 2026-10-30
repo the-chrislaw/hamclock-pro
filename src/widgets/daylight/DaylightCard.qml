@@ -8,6 +8,25 @@ Card {
     onPtsChanged: plot.requestPaint()
     readonly property string tzTag: root.widget && root.widget.localTime ? "L" : "Z"
     onTzTagChanged: plot.requestPaint()
+    // Minutes after 00:00 with sunset carried past midnight (UTC, or a far-east zone) so each
+    // curve is continuous; -1 for no sunrise or sunset (polar day or night).
+    function unwrapped(q, key) {
+        const v = q[key]
+        if (v < 0) return -1
+        return key === "set" && q.rise >= 0 && v < q.rise ? v + 1440 : v
+    }
+    // Vertical range: the year's earliest sunrise to latest sunset, padded to whole hours.
+    function span(points) {
+        let lo = 1e9, hi = -1e9
+        for (const q of points) {
+            for (const key of ["rise", "set"]) {
+                const v = unwrapped(q, key)
+                if (v >= 0) { lo = Math.min(lo, v); hi = Math.max(hi, v) }
+            }
+        }
+        if (hi < lo) return { lo: 0, hi: 1440 }
+        return { lo: Math.floor(lo / 60 - 1) * 60, hi: Math.ceil(hi / 60 + 1) * 60 }
+    }
     Text {
         visible: root.widget && root.widget.hasStation && root.pts.length === 0
         text: "—"
@@ -30,39 +49,40 @@ Card {
             ctx.reset()
             const p = root.pts
             if (!p || p.length < 2 || !root.widget) return
-            const w = width, h = height, n = root.widget.daysInYear, k = root.fit
-            const x = d => d / n * w
-            const y = m => h - m / 1440 * h
-            ctx.strokeStyle = Theme.hairline; ctx.lineWidth = k
-            // Hour guides (UTC) with labels on the left, month initials along the bottom when there is room.
+            const k = root.fit, n = root.widget.daysInYear
             const fs = Math.max(8, Math.round(Theme.fontCaption * 0.8)) * k
-            const roomy = h / k > 90 && w / k > 120
-            ctx.font = fs + "px sans-serif"; ctx.fillStyle = Theme.secondary
-            for (const hr of [6, 12, 18]) {
+            const roomy = height / k > 90 && width / k > 120
+            ctx.font = fs + "px sans-serif"
+            // Labels get their own gutter (left) and strip (bottom) so no curve runs through them.
+            const left = roomy ? Math.ceil(ctx.measureText("18Z").width) + 4 * k : 0
+            const bottom = roomy ? fs + 4 * k : 0
+            const w = width - left, h = height - bottom
+            const range = root.span(p)
+            const x = d => left + d / n * w
+            const y = m => (range.hi - m) / (range.hi - range.lo) * h
+            ctx.fillStyle = Theme.secondary
+            ctx.strokeStyle = Theme.secondary; ctx.lineWidth = k
+            for (let hr = Math.ceil(range.lo / 360) * 6; hr * 60 <= range.hi; hr += 6) {
                 ctx.globalAlpha = 0.35
-                ctx.beginPath(); ctx.moveTo(0, y(hr * 60)); ctx.lineTo(w, y(hr * 60)); ctx.stroke()
+                ctx.beginPath(); ctx.moveTo(left, y(hr * 60)); ctx.lineTo(left + w, y(hr * 60)); ctx.stroke()
                 ctx.globalAlpha = 1
-                if (roomy) ctx.fillText(hr + root.tzTag, 2 * k, y(hr * 60) - 2 * k)
+                if (roomy) ctx.fillText(((hr % 24) + 24) % 24 + root.tzTag, 0, y(hr * 60) + fs * 0.35)
             }
             if (roomy) {
                 const mdays = [31, n === 366 ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
                 let d0 = 0
                 for (let m = 0; m < 12; ++m) {
-                    ctx.fillText("JFMAMJJASOND"[m], x(d0) + 2 * k, h - 2 * k)
+                    ctx.fillText("JFMAMJJASOND"[m], x(d0) + 2 * k, height - 2 * k)
                     d0 += mdays[m]
                 }
             }
-            const series = [["rise", "#e0a030"], ["set", "#4a7fc0"]]
-            for (const s of series) {
+            for (const s of [["rise", "#e0a030"], ["set", "#4a7fc0"]]) {
                 ctx.strokeStyle = s[1]; ctx.lineWidth = 2 * k
                 ctx.beginPath()
-                let pen = false, prev = 0
+                let pen = false
                 for (const q of p) {
-                    const v = q[s[0]]
+                    const v = root.unwrapped(q, s[0])
                     if (v < 0) { pen = false; continue }
-                    // Break the path where the time wraps past 00:00 UTC instead of drawing a vertical stroke.
-                    if (pen && Math.abs(v - prev) > 720) pen = false
-                    prev = v
                     if (pen) ctx.lineTo(x(q.day - 1), y(v)); else ctx.moveTo(x(q.day - 1), y(v))
                     pen = true
                 }

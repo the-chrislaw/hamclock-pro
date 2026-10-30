@@ -3,6 +3,7 @@
 #include "app_settings.hpp"
 #include "map_item.hpp"
 #include "station_model.hpp"
+#include "pane_fill.hpp"
 #include "alarms_model.hpp"
 #include "blanking_model.hpp"
 #include "timers_model.hpp"
@@ -93,7 +94,42 @@ namespace {
         return 0;
     }
 
+// Prints the fill of every pane; returns true when pane `check` (1-based, 0 = none) has data but
+// leaves too much blank, or is not on screen at all (nothing would be checked).
+bool report_pane_fill(QQuickItem* root, const QImage& image, int check) {
+    bool underfilled = false;
+    bool found = check <= 0;
+    for (const auto& fill : hamclock::measure_pane_fill(root, image)) {
+        found = found || fill.slot == check;
+        const bool has_data = fill.state == "live" || fill.state == "stale";
+        const bool bad = fill.slot == check && has_data && fill.blankBand > hamclock::kMaxBlankBand;
+        std::printf("PANE FILL: slot %d \"%s\" %s at %.0f,%.0f %.0fx%.0f: blank %.0f%%%s\n", fill.slot, qPrintable(fill.title),
+                    qPrintable(fill.state), fill.paneRect.x(), fill.paneRect.y(), fill.paneRect.width(), fill.paneRect.height(),
+                    fill.blankBand * 100, bad ? " UNDERFILLED" : "");
+        underfilled = underfilled || bad;
+    }
+    if (!found) std::fprintf(stderr, "PANE FILL: pane %d is not on screen at this size\n", check);
+    return underfilled || !found;
+}
+
 constexpr int kScreenshotDelayMs = 1500;
+constexpr int kSettleStepMs = 250;
+constexpr int kSettleMaxSteps = 16;
+
+// Adaptive panes refine their scale over a few layout passes (slower on a busy machine):
+// wait until every pane card reads the same twice in a row, at most about four seconds.
+void wait_for_settled_panes(QQuickItem* root) {
+    auto last = hamclock::pane_layout_state(root);
+    for (int step = 0; step < kSettleMaxSteps; ++step) {
+        QEventLoop loop;
+        QTimer::singleShot(kSettleStepMs, &loop, &QEventLoop::quit);
+        loop.exec();
+        auto now = hamclock::pane_layout_state(root);
+        if (now == last) return;
+        last = std::move(now);
+    }
+    std::fprintf(stderr, "Panes still adjusting their scale; screenshot taken anyway\n");
+}
 constexpr int kSmallScreenWidth = 1280;
 constexpr int kSmallScreenHeight = 800;
 
@@ -146,7 +182,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
-    for (const auto& option : {allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
+    for (const auto& option : {check_fill, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     parser.process(app);
 
@@ -266,6 +303,12 @@ int main(int argc, char** argv) {
         hamclock::applyOrientationLock(orientation_lock);
     });
 
+    bool check_fill_ok = true;
+    const int check_fill_slot = parser.value(check_fill).toInt(&check_fill_ok);
+    if (parser.isSet(check_fill) && (!check_fill_ok || check_fill_slot < 0)) {
+        std::fprintf(stderr, "--check-fill %s: expected a pane number (0 = report only).\n", qPrintable(parser.value(check_fill)));
+        return 2;
+    }
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
         const auto parts = parser.value(size).split('x');
@@ -282,17 +325,21 @@ int main(int argc, char** argv) {
         }
         if (window->contentItem()->size().toSize() != wanted) window->contentItem()->setSize(wanted);
         const auto out = parser.value(screenshot);
-        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation)] {
+        QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation),
+                                                fill_slot = parser.isSet(check_fill) ? check_fill_slot : -1] {
             if (window->contentItem()->size().toSize() != window->size()) {
                 std::fprintf(stderr, "Content item is not window-sized: layout would be cropped\n");
                 QCoreApplication::exit(6);
                 return;
             }
+            wait_for_settled_panes(window->contentItem());
             const int truncated = count_truncated(window->contentItem());
-            const bool saved = window->grabWindow().save(out);
+            const QImage image = window->grabWindow();
+            const bool underfilled = fill_slot >= 0 && report_pane_fill(window->contentItem(), image, fill_slot);
+            const bool saved = image.save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
                          qPrintable(out));
-            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : 0);
+            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : underfilled ? 5 : 0);
         });
     }
     return app.exec();

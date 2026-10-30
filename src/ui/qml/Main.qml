@@ -104,20 +104,34 @@ ApplicationWindow {
         anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
 
         // Station column. When the station card leaves room below it (tall desktop
-        // windows), the room becomes one more pane instead of empty space: the next
-        // saved slot after the grid's, so it never repeats a widget on screen.
+        // windows), the room becomes one more pane (two in a very tall column) instead of
+        // empty space: the next saved slots after the grid's, so it never repeats a widget on screen.
         // Plain Item with explicit geometry (like the pane row): a layout that shows
         // and hides the spill slot while it settles can leave the slot at 0x0 (#638).
         Item {
             id: stationColumn
-            Layout.preferredWidth: window.phone ? page.width : Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
+            readonly property real baseWidth: Math.max(Theme.dense ? 165 : 190, 0) * Theme.scale + (Theme.dense ? 0 : Math.min(150 * Theme.scale, Math.max(0, page.width * 0.22 - 190 * Theme.scale)))
+            // Portrait tablet (iPad): the column is narrower than a pane, so the height under the
+            // station card would stay empty. Widen it to one pane when the grid keeps two columns,
+            // so that height becomes a tall spill pane.
+            readonly property bool widenForSpill: !window.phone && !window.phoneWide && page.height > page.width
+                && baseWidth < paneRow.minPaneWidth
+                && page.width - paneRow.minPaneWidth - Theme.gap >= 2 * paneRow.minPaneWidth + Theme.gap
+                && page.height - stationCard.implicitHeight - Theme.gap >= paneRow.minPaneHeight
+            Layout.preferredWidth: window.phone ? page.width : widenForSpill ? paneRow.minPaneWidth : baseWidth
             Layout.fillWidth: window.phone
             Layout.fillHeight: !window.phone
             Layout.preferredHeight: window.phone ? Math.min(stationCard.implicitHeight, page.height * 0.3) : -1
             implicitHeight: stationCard.implicitHeight
             readonly property int spillIndex: paneRow.grid.columns * paneRow.grid.rows
+            readonly property real spillRoom: height - stationCard.implicitHeight - Theme.gap
             readonly property bool spill: !window.phone && !window.phoneWide && spillIndex < appSettings.panes.length
-                && width >= paneRow.minPaneWidth && height - stationCard.implicitHeight - Theme.gap >= paneRow.minPaneHeight
+                && width >= paneRow.minPaneWidth && spillRoom >= paneRow.minPaneHeight
+            // A very tall column (iPad portrait) splits the room into two spill panes once each would
+            // still be one and a half minimum panes high, rather than one pane three times taller than wide.
+            readonly property int spillCount: !spill ? 0
+                : spillIndex + 1 < appSettings.panes.length && spillRoom >= 3 * paneRow.minPaneHeight + Theme.gap ? 2 : 1
+            readonly property real spillHeight: spillCount > 0 ? (spillRoom - (spillCount - 1) * Theme.gap) / spillCount : 0
 
             StationCard {
                 id: stationCard
@@ -129,19 +143,21 @@ ApplicationWindow {
                 onSettingsRequested: settingsLayer.visible = true
                 onTimersRequested: timersLayer.visible = true
             }
-            PaneSlot {
-                id: spillSlot
-                visible: stationColumn.spill
-                index: stationColumn.spillIndex
-                paused: paneChooser.visible || paneOptions.visible
-                y: stationCard.height + Theme.gap
-                width: parent.width
-                height: Math.max(0, parent.height - y)
-                onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
-                onSetupRequested: settingsLayer.visible = true
-                onOptionsRequested: function (slotIndex) {
-                    paneOptions.slot = slotIndex
-                    paneOptions.open()
+            Repeater {
+                id: spillRepeater
+                model: stationColumn.spillCount
+                PaneSlot {
+                    index: stationColumn.spillIndex + modelData
+                    paused: paneChooser.visible || paneOptions.visible
+                    y: stationCard.height + Theme.gap + modelData * (stationColumn.spillHeight + Theme.gap)
+                    width: parent.width
+                    height: Math.max(0, stationColumn.spillHeight)
+                    onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
+                    onSetupRequested: settingsLayer.visible = true
+                    onOptionsRequested: function (slotIndex) {
+                        paneOptions.slot = slotIndex
+                        paneOptions.open()
+                    }
                 }
             }
         }
@@ -175,7 +191,7 @@ ApplicationWindow {
                     : grid.height > 0 ? grid.height : Math.max(150 * Theme.scale, page.height * 0.4))
                 Layout.maximumHeight: window.phoneWide ? 100000 : Layout.preferredHeight
                 Layout.minimumHeight: window.phoneWide ? 0 : Layout.preferredHeight
-                function slotAt(i) { return i === stationColumn.spillIndex ? spillSlot : paneRepeater.itemAt(i) }
+                function slotAt(i) { return i >= stationColumn.spillIndex ? spillRepeater.itemAt(i - stationColumn.spillIndex) : paneRepeater.itemAt(i) }
                 Repeater {
                     id: paneRepeater
                     model: paneRow.grid.columns * paneRow.grid.rows

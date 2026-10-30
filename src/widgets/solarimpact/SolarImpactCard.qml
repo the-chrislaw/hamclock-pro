@@ -4,10 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property var list: root.widget ? root.widget.ranked : []
     // Compact slot that is not tall: scale words only. Otherwise the full effect text, wrapping.
     readonly property bool brief: root.compact && !root.stacked
@@ -37,7 +36,9 @@ Card {
                 readonly property color tone: modelData.level >= 3 ? Theme.bad : modelData.level >= 1 ? Theme.warn : Theme.good
                 Text {
                     id: tag
-                    anchors.verticalCenter: root.stacked ? parent.verticalCenter : undefined
+                    // A bound y, not an anchor set to undefined: that leaves the last centred y behind
+                    // when the pane stops being stacked (a resize), drawing the row below its slot.
+                    y: root.stacked ? (parent.height - height) / 2 : 0
                     text: modelData.letter + modelData.level
                     color: parent.tone
                     font.pixelSize: Theme.fontBody
@@ -46,7 +47,8 @@ Card {
                 }
                 Text {
                     id: effect
-                    anchors { left: tag.right; right: parent.right; verticalCenter: root.stacked ? parent.verticalCenter : undefined }
+                    anchors { left: tag.right; right: parent.right }
+                    y: root.stacked ? (parent.height - height) / 2 : 0
                     text: root.brief ? (modelData.word.length ? modelData.word : "none") : modelData.effect
                     color: Theme.secondary
                     font.pixelSize: Theme.fontBody

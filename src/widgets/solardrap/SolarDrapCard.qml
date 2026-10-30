@@ -4,12 +4,11 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
-    // The band table needs real height: a barely-tall pane (1024x768) keeps the compact summary.
-    readonly property bool full: root.stacked && drapColumn.parent !== null && drapColumn.parent.height >= 250 * Theme.scale
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
+    // The band table (two bands per row when short) needs about 160 px of stage.
+    readonly property bool full: root.stacked && drapColumn.parent !== null && drapColumn.parent.height >= 160 * Theme.scale
     readonly property bool ok: root.widget && root.widget.hasData
     readonly property real mhz: ok ? root.widget.peakMhz : 0
     function tone(f) { return f >= 15 ? Theme.bad : f >= 5 ? Theme.warn : Theme.good }
