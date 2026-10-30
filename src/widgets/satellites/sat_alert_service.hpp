@@ -81,6 +81,8 @@ public:
     Q_INVOKABLE bool isSelected(int norad) const;
     const std::vector<AlertPass>& passes() const { return passes_; }
     const std::vector<PlannedAlert>& plan() const { return plan_; }
+    // SGP4 prediction runs so far (tests: settings that only filter must not re-run it).
+    int predictionRuns() const { return prediction_runs_; }
 
     Q_INVOKABLE void setEnabled(bool on);
     Q_INVOKABLE void setAllWorkable(bool all);
@@ -111,6 +113,7 @@ private:
     QTimeZone zone() const;
     void apply(const SatAlertPrefs& next);
     void predict();
+    QString predictionKey(const std::vector<Tle>& fresh) const;
     void replan();
     void pushToSystem();
     void tick();
@@ -125,7 +128,11 @@ private:
     QString pushed_signature_;
     qint64 predicted_at_ = 0;
     qint64 test_banner_until_ = 0;
-    bool predicted_ = false;      // a prediction ran (not just "waiting for elements")
+    bool predicted_ = false;
+    int prediction_runs_ = 0;
+    int elements_version_ = 0;
+    QString raw_key_;                  // inputs of raw_passes_ (see predictionKey)
+    std::vector<AlertPass> raw_passes_; // every selected pass, horizon to horizon, unfiltered      // a prediction ran (not just "waiting for elements")
     bool push_in_flight_ = false;
     bool push_queued_ = false;
     QString status_;
