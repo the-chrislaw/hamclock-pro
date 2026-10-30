@@ -4,6 +4,7 @@
 #include "alerts.hpp"
 #include "aurora.hpp"
 #include "drap.hpp"
+#include "hamqsl.hpp"
 #include "dst.hpp"
 #include "scales.hpp"
 #include "solarwind.hpp"
@@ -159,6 +160,32 @@ int hcp_trend_sunspots(const char* b, size_t n, char* month, size_t month_cap, d
     copy(s->month, month, month_cap);
     if (number) *number = s->number;
     return 1;
+}
+
+int hcp_hamqsl_parse(const char* b, size_t n, HcpHamqsl* out) {
+    if (!out) return 0;
+    *out = HcpHamqsl{};
+    if (!b) return 0;
+    const auto r = hcp::hamqsl::parse(view(b, n));
+    out->updated_ms = r.updated_ms;
+    const size_t hf_cap = sizeof out->hf / sizeof out->hf[0], vhf_cap = sizeof out->vhf / sizeof out->vhf[0];
+    for (size_t i = 0; i < r.hf.size() && i < hf_cap; ++i) {
+        auto& o = out->hf[i];
+        copy(r.hf[i].name, o.name, sizeof o.name);
+        copy(r.hf[i].day, o.day, sizeof o.day);
+        copy(r.hf[i].night, o.night, sizeof o.night);
+        o.day_rank = hcp::hamqsl::condition_rank(r.hf[i].day);
+        o.night_rank = hcp::hamqsl::condition_rank(r.hf[i].night);
+        out->hf_count = static_cast<int>(i + 1);
+    }
+    for (size_t i = 0; i < r.vhf.size() && i < vhf_cap; ++i) {
+        auto& o = out->vhf[i];
+        copy(r.vhf[i].name, o.name, sizeof o.name);
+        copy(r.vhf[i].location, o.location, sizeof o.location);
+        copy(r.vhf[i].status, o.status, sizeof o.status);
+        out->vhf_count = static_cast<int>(i + 1);
+    }
+    return out->hf_count > 0 ? 1 : 0;
 }
 
 int hcp_scale_word(int level, char* buf, size_t cap) { return copy(hcp::scales::scale_word(level), buf, cap); }
