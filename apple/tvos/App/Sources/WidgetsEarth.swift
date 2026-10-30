@@ -50,7 +50,7 @@ struct QuakesWidget: View {
     var body: some View {
         let list = feeds.quakes.value ?? []
         let top = list.max { $0.magnitude < $1.magnitude }
-        Card(title: "Earthquakes", chooser: true, state: feeds.quakes.state(now), status: "USGS · M2.5+ past day",
+        Card(title: "Earthquakes", chooser: true, state: feeds.quakes.state(now), status: "USGS M2.5+ 24 h",
              age: Age.text(feeds.quakes.status.fetched, now: now), focused: focused) {
             if let top {
                 Text(String(format: "M%.1f %@", top.magnitude, SpaceText.quakeClass(top.magnitude)))
@@ -75,7 +75,7 @@ struct StormsWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        Card(title: "Tropical storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC · Atlantic, E/C Pacific",
+        Card(title: "Tropical storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC",
              age: Age.text(feeds.storms.status.fetched, now: now), focused: focused) {
             if let list = feeds.storms.value {
                 if list.isEmpty { Note(text: "No active storms.") }
@@ -86,6 +86,7 @@ struct StormsWidget: View {
                         Text("\(s.windKt) kt" + (s.pressureMb > 0 ? " · \(s.pressureMb) mb" : "")
                              + (s.speedKt >= 0 && !s.heading.isEmpty ? " · moving \(s.heading) \(s.speedKt) kt" : ""))
                             .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                 }
             } else { Note(text: "No data") }
@@ -100,7 +101,7 @@ struct FiresWidget: View {
     let focused: Bool
     var body: some View {
         let list = feeds.fires.value ?? []
-        Card(title: "Active fires", chooser: true, state: feeds.fires.state(now), status: "NASA FIRMS · VIIRS, US 24 h",
+        Card(title: "Active fires", chooser: true, state: feeds.fires.state(now), status: "NASA FIRMS 24 h",
              age: Age.text(feeds.fires.status.fetched, now: now), focused: focused) {
             if feeds.fires.value == nil { Note(text: "No data") } else {
                 Metric(label: "Detections", value: (list.count >= Feeds.fireCap ? "≥ " : "") + "\(list.count)",
@@ -127,10 +128,13 @@ struct OtaWidget: View {
         // Spots come only from Live/Stale feeds, so the card is as good as its best feed;
         // the status line names the feeds that are out.
         let state = [WidgetState.live, .stale, .loading].first { states.contains($0) } ?? .offline
-        let out = all.filter { $0.state(now) == .offline }.map(\.source)
+        // The badge is the best feed's state, so the age is the newest fetch; feeds that are not
+        // Live are named in the status line ("WWFF stale"), so a Live badge never hides an old feed.
+        let lagging = zip(all, states).filter { $0.1 == .stale || $0.1 == .offline }
+            .map { "\($0.0.source) \($0.1 == .stale ? "stale" : "offline")" }
         Card(title: "On the air", chooser: true, state: state,
-             status: out.isEmpty || out.count == 3 ? "POTA · SOTA · WWFF" : "No " + out.joined(separator: ", "),
-             age: Age.text(all.compactMap(\.status.fetched).min(), now: now), focused: focused) {
+             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : lagging.joined(separator: " · "),
+             age: Age.text(all.compactMap(\.status.fetched).max(), now: now), focused: focused) {
             if spots.isEmpty { Note(text: state == .loading ? "Loading…" : "No spots") }
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
                 ForEach(spots.prefix(7)) { s in

@@ -50,7 +50,8 @@ struct Card<Content: View>: View {
                 .clipped()
             if !status.isEmpty || !age.isEmpty {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text(status).lineLimit(1).truncationMode(.tail)
+                    // Sources are short names; scale a little before truncating (29 pt at 1080p).
+                    Text(status).lineLimit(1).minimumScaleFactor(0.8).truncationMode(.tail)
                     Spacer(minLength: 0)
                     Text(age).lineLimit(1).fixedSize()
                 }
@@ -80,7 +81,7 @@ struct Metric: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label.uppercased()).font(.system(size: Theme.fontCaption - 4, weight: .semibold)).kerning(0.8)
-                .foregroundStyle(theme.secondary).lineLimit(1)
+                .foregroundStyle(theme.secondary).lineLimit(1).minimumScaleFactor(0.75)
             Text(value ?? "—").font(.system(size: size, weight: .semibold))
                 .foregroundStyle(value == nil ? theme.secondary : (color ?? theme.ink))
                 .lineLimit(1).minimumScaleFactor(0.5)
@@ -122,7 +123,7 @@ struct ChipStyle: ButtonStyle {
             configuration.label
                 .font(.system(size: Theme.fontBody, weight: focused ? .semibold : .medium))
                 .foregroundStyle(focused ? theme.canvas : primary ? theme.accentInk : theme.ink)
-                .lineLimit(1)
+                .lineLimit(1).minimumScaleFactor(0.75)
                 .padding(.horizontal, 30).padding(.vertical, 14)
                 .frame(maxWidth: wide ? .infinity : nil, alignment: wide ? .leading : .center)
                 .background(RoundedRectangle(cornerRadius: 16)
