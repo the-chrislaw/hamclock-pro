@@ -56,21 +56,25 @@ Card {
         visible: root.compact && !root.stackTall
         width: parent.width
         spacing: Theme.gap * 0.4
+        // A fixed three-row model: the rows read their values through bindings. An array literal
+        // rebuilt on every reading destroys and recreates the rows, possibly while they are being
+        // placed (the solar wind card crashed Qt's layout engine that way on Linux).
+        function row(i) {
+            const w = root.widget
+            if (i === 0) return { label: "Kp", ok: w && w.hasKp,
+                value: w && w.hasKp ? w.kp.toFixed(1) + " " + w.kpText : "",
+                color: w && w.hasKp && w.kp >= 5 ? Theme.bad : w && w.hasKp && w.kp >= 4 ? Theme.warn : Theme.ink }
+            if (i === 1) return { label: "SFI", ok: w && w.hasSolarFlux,
+                value: w && w.hasSolarFlux ? String(w.solarFlux) : "", color: Theme.ink }
+            return { label: "X-ray", ok: w && w.xrayClass.length > 0,
+                value: w ? w.xrayClass : "",
+                color: w && w.xrayClass[0] === "X" ? Theme.bad : w && w.xrayClass[0] === "M" ? Theme.warn : Theme.ink }
+        }
         Repeater {
-            model: [
-                { label: "Kp", ok: root.widget && root.widget.hasKp,
-                  value: root.widget && root.widget.hasKp ? root.widget.kp.toFixed(1) + " " + root.widget.kpText : "",
-                  color: root.widget && root.widget.hasKp && root.widget.kp >= 5 ? Theme.bad
-                       : root.widget && root.widget.hasKp && root.widget.kp >= 4 ? Theme.warn : Theme.ink },
-                { label: "SFI", ok: root.widget && root.widget.hasSolarFlux,
-                  value: root.widget && root.widget.hasSolarFlux ? String(root.widget.solarFlux) : "", color: Theme.ink },
-                { label: "X-ray", ok: root.widget && root.widget.xrayClass.length > 0,
-                  value: root.widget ? root.widget.xrayClass : "",
-                  color: root.widget && root.widget.xrayClass[0] === "X" ? Theme.bad
-                       : root.widget && root.widget.xrayClass[0] === "M" ? Theme.warn : Theme.ink }
-            ]
+            model: 3
             Item {
-                required property var modelData
+                required property int index
+                readonly property var modelData: compactColumn.row(index)
                 width: parent.width
                 height: Math.round(Theme.fontValue * 0.75) + 4 * Theme.scale
                 Text {
