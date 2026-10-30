@@ -22,6 +22,8 @@ FiresModel::FiresModel(const WidgetContext& context, QObject* parent)
       settings_(context.settings),
       source_(new PolledSource("firms-viirs-usa", QUrl(kUrl), kPolicy, context.transport, this)) {
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &FiresModel::firesChanged);
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return fires::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = fires::parse(source_->body());
         emit firesChanged();

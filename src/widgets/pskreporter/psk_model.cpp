@@ -104,6 +104,8 @@ void PskModel::syncWspr() {
     wspr_source_ = new PolledSource("wspr-" + QString(call_).replace('/', '-').toLower(), QUrl(url), kPolicy,
                                     transport_, this);
     wspr_source_->setClock([this] { return now(); });
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    wspr_source_->setValidator([](const QByteArray& body) { return psk::parse_wspr(body).ok; });
     connect(wspr_source_, &PolledSource::updated, this, [this] {
         wspr_raw_ = psk::parse_wspr(wspr_source_->body());
         mergeRaw();
@@ -115,6 +117,7 @@ void PskModel::syncWspr() {
     heard_source_ = new PolledSource("wspr-heard-" + QString(call_).replace('/', '-').toLower(),
                                      QUrl(psk::wspr_heard_url(call_)), kPolicy, transport_, this);
     heard_source_->setClock([this] { return now(); });
+    heard_source_->setValidator([](const QByteArray& body) { return psk::parse_wspr(body).ok; });
     connect(heard_source_, &PolledSource::updated, this, [this] {
         heard_raw_ = psk::parse_wspr(heard_source_->body());
         emit reportsChanged();
@@ -186,6 +189,7 @@ void PskModel::start() {
     source_ = new PolledSource("pskreporter-" + QString(call).replace('/', '-').toLower(), QUrl(url), kPolicy,
                                transport_, this);
     source_->setClock([this] { return now(); });
+    source_->setValidator([](const QByteArray& body) { return psk::parse_reports(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         psk_raw_ = psk::parse_reports(source_->body());
         mergeRaw();
