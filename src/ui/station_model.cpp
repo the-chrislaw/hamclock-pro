@@ -33,6 +33,7 @@ StationModel::StationModel(AppSettings& settings, QObject* parent) : QObject(par
 }
 
 bool StationModel::configured() const { return settings_.configured(); }
+bool StationModel::hasDx() const { return settings_.hasDx(); }
 
 QString StationModel::utcTime() const { return clock_time(QDateTime::currentDateTimeUtc(), 0, settings_.clock12h()); }
 QString StationModel::utcDate() const { return clock_date(QDateTime::currentDateTimeUtc(), 0, settings_.dateOrder()); }
@@ -107,7 +108,7 @@ QString StationModel::deSun() const {
     return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), de_lat_, de_lon_, sun_at_) : QString();
 }
 QString StationModel::dxSun() const {
-    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_, sun_at_) : QString();
+    return hasDx() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_, sun_at_) : QString();
 }
 
 QString StationModel::dxLocal() const {
