@@ -131,3 +131,11 @@ hcp_core_test(fires fires)
 hcp_core_test(places weather)
 hcp_core_test(astro eclipse)
 hcp_core_test(geo eclipse)
+
+# Batched SGP4 over the whole amateur TLE set (one parse instead of one per satellite).
+add_executable(core-satbatch-regression ${HCP_ROOT}/apple/tvos/Core/tests/satbatch_regression.cpp)
+target_link_libraries(core-satbatch-regression PRIVATE hamclock-core)
+target_compile_definitions(core-satbatch-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/tests/fixtures/sources" HCP_WIDGET_FIXTURES="${HCP_ROOT}/src/widgets")
+set_target_properties(core-satbatch-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-satbatch-regression COMMAND core-satbatch-regression)

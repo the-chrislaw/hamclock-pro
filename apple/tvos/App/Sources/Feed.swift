@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Shared networking for every source: honest User-Agent, 20 s timeout.
 enum Net {
@@ -63,30 +64,32 @@ struct FeedStatus {
 
 /// One polled HTTPS document handed to a parser from the Qt-free core. A failed fetch or parse
 /// keeps the previous value; its age then drives Stale/Offline (never shown as live).
+/// Parsing and the cache file run OFF the main actor: some bodies (RTSW, OVATION) took
+/// 250-350 ms to parse, which froze the focus engine and the clock when done on the main thread.
 @MainActor
-final class PolledFeed<Value>: ObservableObject {
+final class PolledFeed<Value: Sendable>: ObservableObject {
     @Published private(set) var value: Value?
     @Published private(set) var status = FeedStatus()
     let urls: [URL]
     let policy: FreshnessPolicy
     let source: String
-    private let parse: (Data) -> Value?
+    private let parse: @Sendable (Data) -> Value?
 
     /// After a failed refresh, try again sooner than the normal interval.
     private static var retryAfterFailure: TimeInterval { 300 }
 
     /// `urls` are tried in order (fallback mirrors) until one parses.
-    init(_ urls: [String], source: String, policy: FreshnessPolicy, parse: @escaping (Data) -> Value?) {
+    init(_ urls: [String], source: String, policy: FreshnessPolicy, parse: @escaping @Sendable (Data) -> Value?) {
         self.urls = urls.compactMap(URL.init(string:))
         self.source = source
         self.policy = policy
         self.parse = parse
-        loadCache()
     }
 
     func state(_ now: Date) -> WidgetState { status.state(now, policy) }
 
     func run() async {
+        if !cacheLoaded { await loadCache() }
         while !Task.isCancelled {
             // A cached copy younger than the interval (relaunch) is not fetched again yet:
             // some sources (Launch Library 2) allow only a few requests an hour.
@@ -102,12 +105,10 @@ final class PolledFeed<Value>: ObservableObject {
 
     func refresh() async {
         for url in urls {
-            if let data = await Net.get(url), let v = parse(data) {
-                value = v
-                status = FeedStatus(fetched: Date(), failed: false, tried: true)
-                try? data.write(to: cacheURL, options: .atomic)
-                return
-            }
+            guard let data = await Net.get(url), let v = await Self.decode(data, parse, label: source, saveTo: cacheURL) else { continue }
+            value = v
+            status = FeedStatus(fetched: Date(), failed: false, tried: true)
+            return
         }
         status.failed = true
         status.tried = true
@@ -121,13 +122,43 @@ final class PolledFeed<Value>: ObservableObject {
             .appendingPathComponent("feed-" + String(String(name).suffix(120)))
     }
 
+    private var cacheLoaded = false
+
     /// The last good body, shown with its real fetch time so its age drives Stale/Offline.
-    private func loadCache() {
-        guard let data = try? Data(contentsOf: cacheURL),
-              let date = (try? FileManager.default.attributesOfItem(atPath: cacheURL.path))?[.modificationDate] as? Date,
-              let v = parse(data) else { return }
-        value = v
-        status = FeedStatus(fetched: date, failed: false, tried: false)
+    private func loadCache() async {
+        cacheLoaded = true
+        let url = cacheURL, parse = parse, label = source
+        let cached = await Task.detached(priority: .utility) { () -> (Value, Date)? in
+            guard let data = try? Data(contentsOf: url),
+                  let date = (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date,
+                  let v = Parse.timed(label, { parse(data) }) else { return nil }
+            return (v, date)
+        }.value
+        // A fetch that finished first is newer than the cache: keep it.
+        guard let cached, status.fetched == nil else { return }
+        value = cached.0
+        status = FeedStatus(fetched: cached.1, failed: false, tried: false)
+    }
+
+    /// Parses on a background thread; a body that parses is also written to the cache there.
+    nonisolated private static func decode(_ data: Data, _ parse: @escaping @Sendable (Data) -> Value?,
+                                           label: String, saveTo cache: URL) async -> Value? {
+        await Task.detached(priority: .utility) {
+            guard let v = Parse.timed(label, { parse(data) }) else { return nil }
+            try? data.write(to: cache, options: .atomic)
+            return v
+        }.value
+    }
+}
+
+/// Parse timing for Instruments (os_signpost "parse" intervals, subsystem com.chrislaw.hamclockpro).
+enum Parse {
+    private static let signposter = OSSignposter(subsystem: "com.chrislaw.hamclockpro", category: "parse")
+
+    static func timed<T>(_ label: String, _ body: () -> T) -> T {
+        let state = signposter.beginInterval("parse", id: signposter.makeSignpostID(), "\(label, privacy: .public)")
+        defer { signposter.endInterval("parse", state) }
+        return body()
     }
 }
 

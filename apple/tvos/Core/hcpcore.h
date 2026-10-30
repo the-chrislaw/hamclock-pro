@@ -103,6 +103,16 @@ int hcp_sat_state(const char* text, size_t len, int index, int64_t unix_s,
                   double obs_lat_deg, double obs_lon_deg, HcpSatState* out);
 /* Name of the index-th TLE. */
 int hcp_tle_name(const char* text, size_t len, int index, char* buf, size_t cap);
+/* Every TLE set in text, parsed ONCE and propagated to unix_s for the observer (the per-index calls
+ * above re-parse the whole text each time). Fills out[] in file order with up to cap entries; valid
+ * is 0 where SGP4 fails. Returns the number of sets (may exceed cap), 0 on bad input. */
+typedef struct HcpSatInfo {
+    char name[32];
+    int valid;
+    HcpSatState state;
+} HcpSatInfo;
+int hcp_sat_states(const char* text, size_t len, int64_t unix_s, double obs_lat_deg, double obs_lon_deg,
+                   HcpSatInfo* out, size_t cap);
 
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
@@ -126,6 +136,11 @@ const float* hcp_coast_points(size_t* point_count);
 int hcp_swpc_kp_series(const char* body, size_t len, HcpReading* out, size_t cap);      /* noaa-planetary-k-index.json */
 int hcp_swpc_xray_series(const char* body, size_t len, HcpReading* out, size_t cap);    /* xrays-6-hour.json, 0.1-0.8 nm long channel only */
 int hcp_solarwind_series(const char* body, size_t len, int field, HcpReading* out, size_t cap); /* field 0 speed (rtsw_wind_1m), 1 density (wind), 2 bt (rtsw_mag_1m), 3 bz (mag); active spacecraft rows as the latest_* functions choose */
+/* Two fields of the same rtsw body from ONE parse (0+1 for wind, 2+3 for mag), same rows and order as
+ * two hcp_solarwind_series calls. Returns field_a's count and writes field_b's to *count_b; -1 (and
+ * *count_b = -1) when the body is not the product or a field is out of range. */
+int hcp_solarwind_series_pair(const char* body, size_t len, int field_a, int field_b, HcpReading* out_a,
+                              HcpReading* out_b, size_t cap, int* count_b);
 
 /* NOAA scales (products/noaa-scales.json), port of src/widgets/solarscales/solar_scales_parse. -1 = not stated. */
 typedef struct { int r, s, g; int r_minor, r_major, s_prob; } HcpScaleDay;

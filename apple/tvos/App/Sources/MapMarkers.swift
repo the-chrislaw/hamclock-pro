@@ -42,7 +42,7 @@ struct MapMarkers {
             for s in spots.prefix(12) { label(s.call, at: pt(s.position!.lon, s.position!.lat), dx: 12) }
         }
         if settings.isOn(.satellites), sats.fetched.map({ now.timeIntervalSince($0) < SatelliteStore.offlineAfter }) == true {
-            for p in sats.subPointsCached(at: now) { triangle(pt(p.x, p.y), 5, Self.sat.opacity(0.85)) }
+            for p in sats.sky.subPoints { triangle(pt(p.x, p.y), 5, Self.sat.opacity(0.85)) }
         }
         if settings.isOn(.launches), live(feeds.launches.state(now)) {
             for l in (feeds.launches.value ?? []).prefix(10) where l.has_pad != 0 { square(pt(l.pad_lon, l.pad_lat), 7, Self.pad) }
