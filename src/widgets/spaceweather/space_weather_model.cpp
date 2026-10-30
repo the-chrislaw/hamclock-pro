@@ -85,22 +85,29 @@ void SpaceWeatherModel::refreshState() {
                           {xray_source_, "X-ray", !xray_class_.isEmpty()}};
     QStringList stale, missing;
     QDateTime oldest;
+    QStringList loading;
     for (const auto& item : items) {
+        if (!item.has && awaitingFirstAnswer(*item.source)) { loading << item.label; continue; }
         if (!item.has) { missing << item.label; continue; }
         if (item.source->isStale(now_utc)) stale << item.label;
         if (!oldest.isValid() || item.source->fetchedAt() < oldest) oldest = item.source->fetchedAt();
     }
-    if (missing.size() == 3) {
+    if (missing.size() + loading.size() == 3) {
         const bool any_error = std::any_of(std::begin(items), std::end(items),
             [](const Item& item) { return !item.source->lastError().isEmpty(); });
         if (any_error) setState("offline", "NOAA SWPC unreachable: " + kp_source_->lastError());
         else setState("loading", "Contacting NOAA SWPC…");
         return;
     }
+    if (!loading.isEmpty() && missing.isEmpty() && stale.isEmpty()) {
+        setState("loading", "NOAA SWPC (loading: " + loading.join(", ") + ")", oldest);
+        return;
+    }
     if (!stale.isEmpty() || !missing.isEmpty()) {
         QStringList parts;
         if (!stale.isEmpty()) parts << "out of date: " + stale.join(", ");
         if (!missing.isEmpty()) parts << "missing: " + missing.join(", ");
+        if (!loading.isEmpty()) parts << "loading: " + loading.join(", ");
         setState("stale", "NOAA SWPC (" + parts.join("; ") + ")", oldest);
         return;
     }
