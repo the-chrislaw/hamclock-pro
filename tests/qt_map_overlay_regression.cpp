@@ -127,5 +127,20 @@ int main(int argc, char** argv) {
         const auto second = place_label(view, mercury, 4, QSizeF(48, 12), used);
         check(!second || !second->intersects(*first), "second planet label never overprints the first");
     }
+    {
+        // A Pacific-centred map draws two world copies. A label near the seam in the left copy
+        // must avoid a marker that only the right copy draws (it used to be painted over it).
+        MapScene s; s.center_lon = 180.0;
+        OverlayMarker a; a.where = {0, 179.5}; a.call = "WWWWWWWW"; a.size_px = 3; a.color = QColor(0, 160, 0);
+        OverlayMarker b; b.where = {0, -176}; b.size_px = 12; b.color = QColor(0, 0, 255);
+        OverlayLayer seam; seam.id = "seam"; seam.labels = OverlayLabelMode::Call; seam.markers = {a, b};
+        s.overlays = {seam};
+        QImage img(720, 360, QImage::Format_ARGB32);
+        QPainter p(&img); MapRenderer().paint(p, QSizeF(720, 360), s); p.end();
+        int ink_left = 0;
+        for (int y = 168; y < 192; ++y)
+            for (int x = 250; x < 352; ++x) ink_left += img.pixelColor(x, y).lightness() < 110;
+        check(ink_left > 20, "seam label goes left of its marker, clear of the other copy's marker");
+    }
     return failures == 0 ? 0 : 1;
 }

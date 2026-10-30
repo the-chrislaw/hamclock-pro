@@ -227,7 +227,7 @@ ApplicationWindow {
                     width: Math.max(52 * Theme.scale, mapLabel.implicitWidth + 2 * Theme.pad)
                     height: 34 * Theme.scale
                     radius: 4 * Theme.scale
-                    color: mapMenu.opened ? Theme.accent : (Theme.dark ? "#cc10181b" : "#ccffffff")
+                    color: mapMenu.opened ? Theme.accent : (Theme.dark ? "#10181b" : "#ffffff")
                     activeFocusOnTab: true
                     Keys.onReturnPressed: mapMenuArea.clicked(null)
                     Keys.onSpacePressed: mapMenuArea.clicked(null)
@@ -285,7 +285,7 @@ ApplicationWindow {
                         model: [{ t: "+", d: 1 }, { t: "\u2212", d: -1 }, { t: "\u21ba", d: 0 }]
                         Rectangle {
                             width: 28 * Theme.scale; height: width; radius: 4 * Theme.scale
-                            color: Theme.dark ? "#cc10181b" : "#ccffffff"
+                            color: Theme.dark ? "#10181b" : "#ffffff"
                             Text {
                                 anchors.centerIn: parent
                                 text: modelData.t
