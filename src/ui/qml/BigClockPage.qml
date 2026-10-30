@@ -62,6 +62,8 @@ Item {
             fontSizeMode: Text.Fit
             minimumPixelSize: Theme.fontValue
             Layout.preferredHeight: root.height * (dial.visible ? 0.2 : 0.38)
+            // A tall window fits the digits to the width: keep them on their caption.
+            verticalAlignment: Text.AlignBottom
             text: station.utcTime
             color: Theme.ink
             font.pixelSize: root.height
