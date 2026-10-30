@@ -92,6 +92,9 @@ int main(int argc, char** argv) {
     service.toggleSatellite(other_norad);
     check(service.isSelected(other_norad), "other bird selectable");
 
+    // Settings that only filter passes reuse the SGP4 prediction: each run costs seconds on a
+    // Pi or a debug build, and re-running it on every tap made this test time out on CI.
+    const int runs = service.predictionRuns();
     service.setMinElevation(60);
     bool sixty = true;
     for (const AlertPass& p : service.passes()) sixty = sixty && p.max_el_deg >= 60;
@@ -101,6 +104,10 @@ int main(int argc, char** argv) {
     service.setQuietHours(22, 7);
     service.setDaylightOnly(false);
     service.setSound(false);
+    check(service.predictionRuns() == runs, "filter-only settings do not re-run the prediction");
+    service.toggleSatellite(other_norad);
+    service.toggleSatellite(other_norad);
+    check(service.predictionRuns() == runs + 2 && service.isSelected(other_norad), "selection changes do re-run it");
 
     // Persistence: a new service (next launch) reads what was chosen.
     {
@@ -143,8 +150,13 @@ int main(int argc, char** argv) {
     context.sat_alerts = &service;
     PassesModel passes(context);
     passes.setClock([&] { return now; });
+    // A handful of sets keeps the pane's 48 h schedule quick (as in passes_regression).
+    std::vector<Tle> few;
+    for (const Tle& t : tles)
+        if (few.size() < 6 && (tle_norad_id(t) == kIss || catalog.find(tle_norad_id(t)) || tle_norad_id(t) == other_norad))
+            few.push_back(t);
     std::set<int> amateur;
-    passes.setElements(tles, amateur);
+    passes.setElements(few, amateur);
     passes.setFilter("alerts");
     bool filtered = !passes.rows().isEmpty();
     for (const QVariant& r : passes.rows()) filtered = filtered && r.toMap().value("alert").toBool();

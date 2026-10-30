@@ -158,6 +158,7 @@ The first TestFlight build used system glass cards, a bare UTC clock, inline loc
 |---|---|---|---|---|
 | Station card | swap UTC / local clock (opens setup when no station) | Settings | cycle banner (call, ON AIR, 73 DE, custom title) | leave the app |
 | Pane | pane chooser | pane options | pane options | leave the app |
+| Rotating pane | pane chooser | pane options | pane options | leave the app; **left/right step the widget** (back and forward, wrapping), up/down move the focus |
 | Map | map menu | map menu | map menu | leave the app |
 | Settings button | Settings | – | – | leave the app |
 | Any overlay or Settings | choose | – | – | close it |
@@ -165,6 +166,8 @@ The first TestFlight build used system glass cards, a bare UTC clock, inline loc
 - The **pane chooser** has the main app's category tabs (All, Space Wx, DX & Contest, Weather, Sky & Space; Station has no TV widgets so its tab is hidden) and lists only widgets with a TV data source. Empty pane is at the bottom.
 - **Pane options** follow `PaneOptions.qml`: Change widget, Next/Previous widget (registry order, "none" between last and first), Rotate (off, 5, 10, 30, 60 s; the rotation is never saved as the pane's choice), Empty pane, Reset all panes.
 - The **map menu** sets the centre (World, DE, DX), zoom 1–4×, short or long path, and the overlays: day/night, lat/lon grid, borders, DE–DX path, Sun, earthquakes, tropical storms, satellites, POTA/SOTA/WWFF, fires, launch pads, planets, aurora, D-RAP. Overlays draw only while their source is Live or Stale, never from Offline data.
+- **Rotating panes** (owner request): while a rotating pane has the focus it shows "◀ ▶ change · rotates every N s". Left/right (click or swipe) step it like `PaneSlot.step` in the main app: the widget shown becomes the pane's choice and the rotation restarts from there, so it does not change again for a full interval. Up/down still move the focus (the header is a full-width focus section, so Up from any pane reaches Settings). Nothing else on the TV advances on its own.
+- **Menu at the root** (no overlay, no Settings) has no handler in the app, so tvOS goes back to the Home screen, also while dimmed and straight after closing a menu or Settings. With Settings or an overlay open, Menu closes it, even before the focus has moved into it. `testMenuAtRootExitsToHomeScreen` checks each case.
 - No text fields on the dashboard and no sheets: overlays are centred panels over the dimmed dashboard; Settings is a full-screen layer.
 
 ### First run and Settings

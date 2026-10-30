@@ -20,6 +20,8 @@ constexpr int kRbnPort = 7000;           // CW/RTTY skimmers; 7001 (FT8/FT4) wou
 PskModel::PskModel(const WidgetContext& context, TelnetSocketFactory socket_factory, QObject* parent)
     : WidgetModel("pskreporter", "PSKReporter", parent), settings_(context.settings), transport_(context.transport),
       socket_factory_(std::move(socket_factory)) {
+    // Once here, not in start(): start() runs again on every callsign change.
+    connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     if (settings_) {
         map_visible_ = settings_->mapSourceVisible("psk");
         connect(settings_, &AppSettings::optionsChanged, this, [this] {
@@ -105,6 +107,8 @@ void PskModel::syncWspr() {
     wspr_source_ = new PolledSource("wspr-" + QString(call_).replace('/', '-').toLower(), QUrl(url), kPolicy,
                                     transport_, this);
     wspr_source_->setClock([this] { return now(); });
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    wspr_source_->setValidator([](const QByteArray& body) { return psk::parse_wspr(body).ok; });
     connect(wspr_source_, &PolledSource::updated, this, [this] {
         wspr_raw_ = psk::parse_wspr(wspr_source_->body());
         mergeRaw();
@@ -116,6 +120,7 @@ void PskModel::syncWspr() {
     heard_source_ = new PolledSource("wspr-heard-" + QString(call_).replace('/', '-').toLower(),
                                      QUrl(psk::wspr_heard_url(call_)), kPolicy, transport_, this);
     heard_source_->setClock([this] { return now(); });
+    heard_source_->setValidator([](const QByteArray& body) { return psk::parse_wspr(body).ok; });
     connect(heard_source_, &PolledSource::updated, this, [this] {
         heard_raw_ = psk::parse_wspr(heard_source_->body());
         emit reportsChanged();
@@ -187,6 +192,7 @@ void PskModel::start() {
     source_ = new PolledSource("pskreporter-" + QString(call).replace('/', '-').toLower(), QUrl(url), kPolicy,
                                transport_, this);
     source_->setClock([this] { return now(); });
+    source_->setValidator([](const QByteArray& body) { return psk::parse_reports(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         psk_raw_ = psk::parse_reports(source_->body());
         mergeRaw();
@@ -195,7 +201,6 @@ void PskModel::start() {
         refreshState();
     });
     connect(source_, &PolledSource::failed, this, &PskModel::refreshState);
-    connect(this, &WidgetModel::ageChanged, this, &PskModel::refreshState);
     setState("loading", "Contacting PSKReporter…");
     source_->start();
     syncWspr();

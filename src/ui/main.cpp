@@ -24,6 +24,7 @@
 #include "../platform/apple_widgetshare.hpp"
 #include <QSettings>
 #include <QEventLoop>
+#include <QNetworkInformation>
 #include <QGuiApplication>
 #include <QThread>
 #include <QCommandLineParser>
@@ -205,6 +206,9 @@ int main(int argc, char** argv) {
     QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
     set_identity();
     hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
+    // Lets every PolledSource retry at once when the network comes back (Wi-Fi drop, sleep).
+    if (!QNetworkInformation::loadDefaultBackend())
+        qWarning("No network reachability backend; sources retry on their backoff only");
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
@@ -320,6 +324,12 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
+#ifdef Q_OS_MACOS
+    // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
+    engine.rootContext()->setContextProperty("nativeMenuBar", !parser.isSet(screenshot));
+#else
+    engine.rootContext()->setContextProperty("nativeMenuBar", false); // iOS, Linux, Pi kiosk
+#endif
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;

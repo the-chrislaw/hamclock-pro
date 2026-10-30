@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
         check(source.nextDelay() == 600s, "backoff capped at interval");
         net.next = {503, "busy", {}};
         source.refreshNow(); spin(app);
-        check(source.lastError() == "HTTP 503" && source.body() == "first", "HTTP errors never replace good data");
+        check(source.lastError().startsWith("HTTP 503") && source.body() == "first", "HTTP errors never replace good data");
     }
     net.next = {0, {}, "offline"};
     {
