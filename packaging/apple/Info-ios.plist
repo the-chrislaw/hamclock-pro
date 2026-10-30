@@ -31,6 +31,6 @@
 	<key>ITSAppUsesNonExemptEncryption</key><false/>
 ${HAMCLOCK_SKY_FINDER_PLIST_KEYS}
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>HamClock Pro listens on your local network only if you enable the optional WSJT-X/JTDX UDP spot feed or a local rig/GPS service.</string>
+	<string>HamClock Pro connects to devices on your local network only for features you turn on: a rig or rotator (rigctld, flrig), GPS (gpsd), a Meshtastic node, a local DX cluster, or the WSJT-X/JTDX spot feed.</string>
 </dict>
 </plist>

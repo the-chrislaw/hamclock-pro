@@ -21,6 +21,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_passreminder.cpp
     src/platform/apple_notifications.cpp
     src/platform/apple_widgetshare.cpp
+    src/platform/apple_devicelocation.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -78,20 +79,24 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
+    src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
     src/qt/de_time_zone.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/widgets_generated.cpp)
 target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2)
+target_compile_definitions(hamclock-pro PRIVATE HAMCLOCK_VERSION="${PROJECT_VERSION}")
 set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.app
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
 qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
-    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
+    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml
+    src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml
+    src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml
+    src/ui/qml/SatAlertBanner.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -181,6 +186,10 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(window-geometry-regression tests/window_geometry_regression.cpp src/ui/window_geometry.cpp)
+    target_link_libraries(window-geometry-regression PRIVATE Qt6::Gui)
+    add_test(NAME window-geometry-regression COMMAND window-geometry-regression)
+    set_tests_properties(window-geometry-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(cache-dir-regression tests/cache_dir_regression.cpp)
     target_link_libraries(cache-dir-regression PRIVATE hamclock-widget-core)
     add_test(NAME cache-dir-regression COMMAND cache-dir-regression)
@@ -223,6 +232,10 @@ if(BUILD_TESTING)
     target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
     add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
     set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(device-location-regression tests/device_location_regression.cpp)
+    target_link_libraries(device-location-regression PRIVATE hamclock-widget-core)
+    add_test(NAME device-location-regression COMMAND device-location-regression)
+    set_tests_properties(device-location-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
     target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
@@ -300,6 +313,17 @@ if(BUILD_TESTING)
     add_test(NAME location-tools-regression COMMAND location-tools-regression
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/sources/nominatim-search.json)
     set_tests_properties(location-tools-regression PROPERTIES TIMEOUT 30)
+    # Swipeable pane paging maths (pager.mjs) run in a plain JS engine.
+    add_executable(pager-regression tests/pager_regression.cpp)
+    target_link_libraries(pager-regression PRIVATE Qt6::Qml)
+    add_test(NAME pager-regression COMMAND pager-regression ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml/pager.mjs)
+    set_tests_properties(pager-regression PROPERTIES TIMEOUT 15)
+    # The real PaneSlot.qml driven by drags and keys (needs Qt's qmltestrunner; skipped without it).
+    find_program(HAMCLOCK_QMLTESTRUNNER qmltestrunner HINTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}" "${QT6_INSTALL_PREFIX}/bin")
+    if(HAMCLOCK_QMLTESTRUNNER)
+        add_test(NAME pane-swipe-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_swipe_regression.py ${HAMCLOCK_QMLTESTRUNNER})
+        set_tests_properties(pane-swipe-regression PROPERTIES TIMEOUT 120 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PYTHONDONTWRITEBYTECODE=1")
+    endif()
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
@@ -341,6 +365,13 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
     endforeach()
+    # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
+    add_test(NAME app-version-headless COMMAND hamclock-pro --version)
+    set_tests_properties(app-version-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "hamclock-pro ${PROJECT_VERSION}")
+    add_test(NAME app-help-headless COMMAND hamclock-pro --help)
+    set_tests_properties(app-help-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "--touch-keyboard|--first-run")
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.

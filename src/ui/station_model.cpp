@@ -33,6 +33,7 @@ StationModel::StationModel(AppSettings& settings, QObject* parent) : QObject(par
 }
 
 bool StationModel::configured() const { return settings_.configured(); }
+bool StationModel::hasDx() const { return settings_.hasDx(); }
 
 QString StationModel::utcTime() const { return clock_time(QDateTime::currentDateTimeUtc(), 0, settings_.clock12h()); }
 QString StationModel::utcDate() const { return clock_date(QDateTime::currentDateTimeUtc(), 0, settings_.dateOrder()); }
@@ -42,7 +43,7 @@ QString StationModel::deTime() const {
     const auto now = QDateTime::currentDateTimeUtc();
     const auto offset = resolve_de_zone_offset(zone, {now.toSecsSinceEpoch()});
     if (!offset) return {};
-    return now.addSecs(offset->value).toString("HH:mm");
+    return clock_short(now, offset->value, settings_.clock12h());
 }
 
 QString StationModel::deClock() const {
@@ -107,11 +108,15 @@ QString StationModel::deSun() const {
     return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), de_lat_, de_lon_, sun_at_) : QString();
 }
 QString StationModel::dxSun() const {
-    return configured() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_, sun_at_) : QString();
+    return hasDx() ? sun_line(QDateTime::currentSecsSinceEpoch(), dx_lat_, dx_lon_, sun_at_) : QString();
 }
 
 QString StationModel::dxLocal() const {
-    return configured() ? zone_local_text(settings_.dxZoneOverride().isEmpty() ? dx_zone_ : settings_.dxZoneOverride(), QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+    if (!configured()) return {};
+    // A zone picked in Settings is not a guess, so it carries no "(auto)" mark.
+    const QString chosen = settings_.dxZoneOverride();
+    return zone_local_text(chosen.isEmpty() ? dx_zone_ : chosen, QDateTime::currentDateTimeUtc(), settings_.clock12h(),
+                           chosen.isEmpty());
 }
 
 void StationModel::reload() {

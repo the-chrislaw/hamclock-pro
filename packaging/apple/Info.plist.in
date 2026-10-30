@@ -17,5 +17,9 @@
     <key>NSHighResolutionCapable</key><true/>
     <key>NSSupportsAutomaticGraphicsSwitching</key><true/>
     <key>ITSAppUsesNonExemptEncryption</key><false/>
+    <!-- macOS 15 and later ask before an app reaches the local network (rigctld, gpsd,
+         a LAN DX cluster, the WSJT-X/JTDX UDP feed); this is the text of that prompt. -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>HamClock Pro connects to devices on your local network only for features you turn on: a rig or rotator (rigctld), GPS (gpsd), a local DX cluster, or the WSJT-X/JTDX spot feed.</string>
 </dict>
 </plist>

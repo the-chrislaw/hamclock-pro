@@ -8,6 +8,7 @@
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
+#include "window_geometry.hpp"
 #include "../net/polled_source.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
@@ -123,15 +124,23 @@ hamclock::Transport offline_transport() {
         QTimer::singleShot(0, [done] { done({0, {}, "Network disabled (--offline)"}); });
     };
 }
+// --help and --version only print text, so they must work with no display (SSH to a kiosk Pi).
+bool text_only_request(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const QByteArray arg(argv[i]);
+        if (arg == "--help" || arg == "-h" || arg == "--help-all" || arg == "--version" || arg == "-v") return true;
+    }
+    return false;
+}
+
+void set_identity() {
+    QCoreApplication::setApplicationName("hamclock-pro");
+    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
+    QCoreApplication::setApplicationVersion(HAMCLOCK_VERSION);
+}
 } // namespace
 
 int main(int argc, char** argv) {
-    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
-    QGuiApplication::setApplicationName("hamclock-pro");
-    // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
-    QGuiApplication::setApplicationVersion("1.0.0");
-    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
-
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");
     parser.addHelpOption();
@@ -151,6 +160,15 @@ int main(int argc, char** argv) {
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     for (const auto& option : {open_settings, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
+    if (text_only_request(argc, argv)) {
+        QCoreApplication text_app(argc, argv);
+        set_identity();
+        parser.process(text_app); // prints and exits
+        return 0;
+    }
+    QGuiApplication app(argc, argv); // QtGui only: the map is a pure QPainter renderer
+    set_identity();
+    hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
     parser.process(app);
 
     hamclock::AppSettings settings(parser.value(station), parser.value(config));
@@ -271,6 +289,11 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+#if !defined(Q_OS_IOS)
+    // Desktop: reopen at the last window size and position (not for kiosk full screen or screenshots).
+    if (!parser.isSet(screenshot) && !start_fullscreen)
+        hamclock::remember_window_geometry(qobject_cast<QWindow*>(engine.rootObjects().first()), settings.optionsPath());
+#endif
     // Rotation lock (iPhone/iPad): apply the saved choice now and whenever it changes.
     QString orientation_lock = settings.orientationLock();
     hamclock::applyOrientationLock(orientation_lock);
