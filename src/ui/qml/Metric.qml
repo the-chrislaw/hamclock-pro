@@ -9,6 +9,8 @@ ColumnLayout {
     property string value: ""
     property string caption: ""
     property bool available: true
+    // Long labels (a weather place name) take a second line instead of being cut short.
+    property bool wrapLabel: false
     property color valueColor: Theme.ink
     spacing: 2 * Theme.scale
     Accessible.role: Accessible.StaticText
@@ -21,6 +23,8 @@ ColumnLayout {
         font.weight: Font.DemiBold
         font.capitalization: Font.AllUppercase
         font.letterSpacing: 0.6
+        wrapMode: parent.wrapLabel ? Text.WordWrap : Text.NoWrap
+        maximumLineCount: parent.wrapLabel ? 2 : 1
         elide: Text.ElideRight
         Layout.fillWidth: true
     }

@@ -19,6 +19,7 @@ Card {
         spacing: 2 * Theme.scale
         Metric {
             label: side.w && side.w[side.key + "City"].length > 0 ? side.key.toUpperCase() + " · " + side.w[side.key + "City"] : side.key.toUpperCase()
+            wrapLabel: true
             available: side.has
             value: available ? side.w[side.key + "Temp"] : ""
             caption: available ? side.w[side.key + "Summary"] : ""
