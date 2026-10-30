@@ -40,6 +40,8 @@ StormsModel::StormsModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("storms", "Tropical storms", parent),
       transport_(context.transport),
       source_(new PolledSource("nhc-current-storms", QUrl(kUrl), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return storms::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = storms::parse(source_->body());
         syncForecastSources();
@@ -89,6 +91,7 @@ void StormsModel::syncForecastSources() {
         cache.remove(QRegularExpression("[^a-z0-9]"));
         auto* src = new PolledSource("nhc-forecast-" + cache, QUrl(it->forecast_url), kPolicy, transport_, this);
         src->setClock([this] { return now(); });
+        src->setAcceptsHtml(true); // the advisory is an .shtml page with the text in <pre>
         connect(src, &PolledSource::updated, this, &StormsModel::refreshState);
         forecast_sources_.insert(it.key(), {src, it->forecast_url, it->forecast_adv, it->issued});
         src->start();

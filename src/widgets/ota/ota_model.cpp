@@ -24,14 +24,18 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
       pota_(new PolledSource("pota-activator-spots", QUrl(kPotaUrl), kPolicy, context.transport, this)),
       sota_(new PolledSource("sota-spots", QUrl(kSotaUrl), kPolicy, context.transport, this)),
       wwff_(new PolledSource("wwff-spots", QUrl(kWwffUrl), kWwffPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    pota_->setValidator([](const QByteArray& body) { return ota::parse_pota(body).ok; });
     connect(pota_, &PolledSource::updated, this, [this] {
         pota_feed_ = ota::parse_pota(pota_->body());
         reparse();
     });
+    sota_->setValidator([](const QByteArray& body) { return ota::parse_sota(body).ok; });
     connect(sota_, &PolledSource::updated, this, [this] {
         sota_feed_ = ota::parse_sota(sota_->body());
         reparse();
     });
+    wwff_->setValidator([](const QByteArray& body) { return ota::parse_wwff(body).ok; });
     connect(wwff_, &PolledSource::updated, this, [this] {
         wwff_feed_ = ota::parse_wwff(wwff_->body());
         reparse();

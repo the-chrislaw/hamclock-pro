@@ -3,21 +3,28 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QLocale>
 #include <QNetworkAccessManager>
+#include <QNetworkInformation>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPointer>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QStandardPaths>
+#include <QTimeZone>
+#include <memory>
 #include <algorithm>
 #include <stdexcept>
 
 namespace hamclock {
 namespace {
-constexpr int kTimeoutMs = 20000;
-constexpr qint64 kMaxBodyBytes = 4 * 1024 * 1024;
+constexpr qint64 kMaxBodyBytes = TransportLimits{}.max_bytes;
 constexpr std::chrono::seconds kFirstRetry{60};
+constexpr std::chrono::seconds kMaxRetryAfter{24 * 3600};
+// A rate-limited source never waits longer than this between tries.
+constexpr std::chrono::seconds kMaxRateLimitWait{6 * 3600};
+constexpr qsizetype kHtmlSniffBytes = 512;
 
 QString cache_dir() {
 #if defined(Q_OS_MACOS)
@@ -39,24 +46,112 @@ QByteArray hamclock_user_agent() {
         " (+https://github.com/the-chrislaw/hamclock-pro)";
 }
 
-AuthTransport make_authorized_transport(QObject* owner) {
+QString describe_http_status(int status) {
+    const QString code = QString("HTTP %1").arg(status);
+    if (status == 429) return code + " (rate limited by the server)";
+    if (status == 401) return code + " (not authorized)";
+    if (status == 403) return code + " (access refused by the server)";
+    if (status == 404 || status == 410) return code + " (not found; the feed may have moved)";
+    if (status >= 500 && status < 600) return code + " (server error; try again later)";
+    return code;
+}
+
+QString describe_network_error(int network_error) {
+    switch (static_cast<QNetworkReply::NetworkError>(network_error)) {
+    case QNetworkReply::HostNotFoundError: return "Server not found (DNS lookup failed; check the network)";
+    case QNetworkReply::TimeoutError:
+    case QNetworkReply::OperationCanceledError: return "Timed out";
+    case QNetworkReply::ConnectionRefusedError: return "Connection refused by the server";
+    case QNetworkReply::RemoteHostClosedError: return "Connection closed by the server";
+    case QNetworkReply::SslHandshakeFailedError:
+        return "Secure connection failed (check the date and time, or a network sign-in page)";
+    case QNetworkReply::TemporaryNetworkFailureError:
+    case QNetworkReply::NetworkSessionFailedError: return "No network connection";
+    case QNetworkReply::TooManyRedirectsError:
+    case QNetworkReply::InsecureRedirectError: return "Redirected away from the feed (network sign-in page?)";
+    case QNetworkReply::ProxyConnectionRefusedError:
+    case QNetworkReply::ProxyConnectionClosedError:
+    case QNetworkReply::ProxyNotFoundError:
+    case QNetworkReply::ProxyTimeoutError:
+    case QNetworkReply::ProxyAuthenticationRequiredError: return "Proxy error";
+    default: return "Network error";
+    }
+}
+
+std::chrono::seconds parse_retry_after(const QByteArray& value, const QDateTime& now_utc) {
+    const QByteArray text = value.trimmed();
+    if (text.isEmpty()) return std::chrono::seconds{0};
+    bool numeric = false;
+    const qlonglong secs = text.toLongLong(&numeric);
+    qint64 delta = 0;
+    if (numeric) {
+        delta = secs;
+    } else {
+        // IMF-fixdate, e.g. "Thu, 29 Oct 2026 12:10:00 GMT".
+        QDateTime when = QLocale::c().toDateTime(QString::fromLatin1(text), "ddd, dd MMM yyyy HH:mm:ss 'GMT'");
+        if (!when.isValid()) return std::chrono::seconds{0};
+        when.setTimeZone(QTimeZone::utc());
+        delta = now_utc.secsTo(when);
+    }
+    if (delta <= 0) return std::chrono::seconds{0};
+    return std::min(std::chrono::seconds{delta}, kMaxRetryAfter);
+}
+
+bool looks_like_html(const QByteArray& body) {
+    QByteArray head = body.left(kHtmlSniffBytes);
+    if (head.startsWith("\xEF\xBB\xBF")) head = head.mid(3);
+    head = head.trimmed().toLower();
+    // Pages often open with <!-- comments --> before the doctype.
+    while (head.startsWith("<!--")) {
+        const auto end = head.indexOf("-->");
+        if (end < 0) return true;
+        head = head.mid(end + 3).trimmed();
+    }
+    return head.startsWith("<!doctype html") || head.startsWith("<html") || head.startsWith("<head") ||
+        head.startsWith("<body") || head.startsWith("<title") || head.startsWith("<meta");
+}
+
+AuthTransport make_authorized_transport(QObject* owner, TransportLimits limits) {
     auto* manager = new QNetworkAccessManager(owner);
-    return [manager](const QUrl& url, const QByteArray& bearer, FetchDone done) {
+    return [manager, limits](const QUrl& url, const QByteArray& bearer, FetchDone done) {
         QNetworkRequest request(url);
         if (!bearer.isEmpty()) request.setRawHeader("Authorization", "Bearer " + bearer);
         request.setHeader(QNetworkRequest::UserAgentHeader, hamclock_user_agent());
-        request.setTransferTimeout(kTimeoutMs);
+        request.setTransferTimeout(limits.inactivity_ms);
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                              QNetworkRequest::NoLessSafeRedirectPolicy);
         auto* reply = manager->get(request);
-        QObject::connect(reply, &QNetworkReply::finished, reply, [reply, done = std::move(done)]() {
+        // Why we aborted, if we did: abort() reports OperationCanceledError either way.
+        auto abort_reason = std::make_shared<QString>();
+        auto* deadline = new QTimer(reply);
+        deadline->setSingleShot(true);
+        QObject::connect(deadline, &QTimer::timeout, reply, [reply, abort_reason] {
+            *abort_reason = "Timed out";
+            reply->abort();
+        });
+        deadline->start(limits.total_ms);
+        QObject::connect(reply, &QNetworkReply::downloadProgress, reply,
+                         [reply, abort_reason, max = limits.max_bytes](qint64 received, qint64 total) {
+            if (received > max || total > max) {
+                if (abort_reason->isEmpty()) *abort_reason = "Response too large";
+                reply->abort();
+            }
+        });
+        QObject::connect(reply, &QNetworkReply::finished, reply,
+                         [reply, abort_reason, max = limits.max_bytes, done = std::move(done)]() {
             FetchResult result;
             result.http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            if (reply->error() != QNetworkReply::NoError) {
-                result.error = reply->errorString();
+            result.retry_after = parse_retry_after(reply->rawHeader("Retry-After"), QDateTime::currentDateTimeUtc());
+            if (!abort_reason->isEmpty()) {
+                result.http_status = 0;
+                result.error = *abort_reason;
+            } else if (reply->error() != QNetworkReply::NoError) {
+                // Qt's errorString() repeats the URL (callsign, query); never show it.
+                result.error = result.http_status >= 400 ? describe_http_status(result.http_status)
+                                                         : describe_network_error(reply->error());
             } else {
-                result.body = reply->read(kMaxBodyBytes + 1);
-                if (result.body.size() > kMaxBodyBytes) {
+                result.body = reply->read(max + 1);
+                if (result.body.size() > max) {
                     result.body.clear();
                     result.error = "Response too large";
                 }
@@ -67,8 +162,8 @@ AuthTransport make_authorized_transport(QObject* owner) {
     };
 }
 
-Transport make_network_transport(QObject* owner) {
-    auto auth = make_authorized_transport(owner);
+Transport make_network_transport(QObject* owner, TransportLimits limits) {
+    auto auth = make_authorized_transport(owner, limits);
     return [auth](const QUrl& url, FetchDone done) { auth(url, {}, std::move(done)); };
 }
 
@@ -86,12 +181,31 @@ PolledSource::PolledSource(QString cache_name, QUrl url, PollPolicy policy, Tran
     paused_ = lifecycle.isSuspended();
     connect(&lifecycle, &AppLifecycle::suspended, this, &PolledSource::pause);
     connect(&lifecycle, &AppLifecycle::resumed, this, &PolledSource::resume);
+    if (auto* info = QNetworkInformation::instance()) {
+        connect(info, &QNetworkInformation::reachabilityChanged, this,
+                [this](QNetworkInformation::Reachability reachability) {
+            if (reachability == QNetworkInformation::Reachability::Online) networkReturned();
+        });
+    }
 }
 
 QString PolledSource::cachePath() const { return cache_dir() + "/" + cache_name_ + ".cache"; }
 
 void PolledSource::start() {
     loadCache();
+    if (fetched_at_.isValid()) {
+        const qint64 age = fetched_at_.secsTo(clock_());
+        if (age >= 0 && age < policy_.interval.count()) {
+            schedule(std::chrono::seconds(std::max<qint64>(1, policy_.interval.count() - age)));
+            return;
+        }
+    }
+    fetch();
+}
+
+void PolledSource::networkReturned() {
+    if (failures_ == 0 || paused_ || in_flight_) return;
+    timer_.stop();
     fetch();
 }
 
@@ -126,11 +240,19 @@ std::chrono::seconds PolledSource::nextDelay() const {
     if (failures_ == 0) return policy_.interval;
     auto delay = kFirstRetry;
     for (int i = 1; i < failures_ && delay < policy_.max_backoff; ++i) delay *= 2;
-    return std::min({delay, policy_.max_backoff, policy_.interval});
+    return std::max(hold_, std::min({delay, policy_.max_backoff, policy_.interval}));
 }
 
 void PolledSource::fetch() {
     if (in_flight_ || paused_) return;
+    // A server that said "not before" gets nothing earlier, whatever asked (refresh, resume).
+    if (not_before_.isValid()) {
+        const qint64 wait = clock_().secsTo(not_before_);
+        if (wait > 0) {
+            schedule(std::chrono::seconds(wait));
+            return;
+        }
+    }
     in_flight_ = true;
     QPointer<PolledSource> self(this);
     transport_(url_, [self](FetchResult result) {
@@ -138,19 +260,54 @@ void PolledSource::fetch() {
     });
 }
 
+QString PolledSource::rejectReason(const QByteArray& body) const {
+    if (!accepts_html_ && looks_like_html(body))
+        return "Got a web page instead of data (network sign-in page or proxy?)";
+    if (validator_ && !validator_(body)) return "Unexpected data from the server (format changed or cut short)";
+    return {};
+}
+
+void PolledSource::fail(const QString& error, std::chrono::seconds retry_after, bool rate_limited,
+                        bool rejected) {
+    ++failures_;
+    rejected_ = rejected;
+    if (rate_limited) {
+        ++rate_limits_;
+        // At least the server's wait, and never sooner than the normal interval:
+        // a quick retry is what got us limited. Doubles while it keeps refusing.
+        auto wait = policy_.interval;
+        for (int i = 1; i < rate_limits_ && wait < kMaxRateLimitWait; ++i) wait *= 2;
+        hold_ = std::max(retry_after, std::min(wait, kMaxRateLimitWait));
+        not_before_ = clock_().addSecs(hold_.count());
+        const qint64 minutes = (hold_.count() + 59) / 60;
+        last_error_ = error + QString("; next try in %1 min").arg(minutes);
+    } else {
+        last_error_ = error;
+    }
+    schedule(nextDelay());
+    emit failed(last_error_);
+}
+
 void PolledSource::handle(FetchResult result) {
     in_flight_ = false;
-    const bool ok = result.error.isEmpty() && result.http_status >= 200 && result.http_status < 300 &&
-        !result.body.isEmpty();
-    if (!ok) {
-        ++failures_;
-        last_error_ = !result.error.isEmpty() ? result.error
-            : result.http_status ? QString("HTTP %1").arg(result.http_status) : QString("Empty response");
-        schedule(nextDelay());
-        emit failed(last_error_);
+    const int status = result.http_status;
+    const bool rate_limited = status == 429 || (status == 503 && result.retry_after.count() > 0);
+    const bool http_ok = result.error.isEmpty() && status >= 200 && status < 300;
+    if (!http_ok || result.body.isEmpty()) {
+        const QString error = !result.error.isEmpty() ? result.error
+            : status && !http_ok ? describe_http_status(status) : QString("Empty response");
+        fail(error, result.retry_after, rate_limited);
+        return;
+    }
+    if (const auto reason = rejectReason(result.body); !reason.isEmpty()) {
+        fail(reason, {}, false, true);
         return;
     }
     failures_ = 0;
+    rejected_ = false;
+    rate_limits_ = 0;
+    hold_ = std::chrono::seconds{0};
+    not_before_ = {};
     last_error_.clear();
     body_ = std::move(result.body);
     fetched_at_ = clock_();
