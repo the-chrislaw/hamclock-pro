@@ -371,6 +371,15 @@ ApplicationWindow {
         }
     }
 
+    // Below the Settings layer (z 10) so it never covers Settings' Done button.
+    SatAlertBanner {
+        z: 9
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: alarmBanner.visible ? alarmBanner.bottom : parent.top
+        anchors.topMargin: alarmBanner.visible ? Theme.gap : safeArea.top
+        width: Math.min(parent.width - 2 * Theme.pad, 520 * Theme.scale)
+    }
+
     Rectangle {
         id: settingsLayer
         anchors.fill: parent

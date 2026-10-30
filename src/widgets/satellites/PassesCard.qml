@@ -24,7 +24,7 @@ Card {
             visible: !root.compact
             spacing: Theme.gap
             Repeater {
-                model: [{k: "all", t: "All"}, {k: "amateur", t: "Amateur"}, {k: "visible", t: "Visible"}, {k: "starred", t: "★ Starred"}]
+                model: [{k: "all", t: "All"}, {k: "amateur", t: "Amateur"}, {k: "visible", t: "Visible"}, {k: "starred", t: "★ Starred"}, {k: "alerts", t: "Alerts"}]
                 delegate: Text {
                     required property var modelData
                     readonly property bool on: root.widget && root.widget.filter === modelData.k

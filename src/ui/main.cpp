@@ -11,6 +11,8 @@
 #include "../net/polled_source.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/widget_registry.hpp"
+#include "../widgets/satellites/sat_alert_service.hpp"
+#include "../widgets/satellites/satellites_model.hpp"
 #include "../platform/apple_lifecycle.hpp"
 #include "../platform/apple_orientation.hpp"
 #include "../platform/credential_store.hpp"
@@ -171,8 +173,17 @@ int main(int argc, char** argv) {
     if (!parser.isSet(fixtures) && !parser.isSet(offline))
         context.auth_transport = hamclock::make_authorized_transport(&app);
 
+    // Satellite pass alerts: fed by the Satellites pane's elements (downloaded once).
+    hamclock::SatAlertService sat_alerts(&settings, hamclock::shipped_sat_catalog());
+    context.sat_alerts = &sat_alerts;
     hamclock::WidgetRegistry registry;
     hamclock::register_all_widgets(registry, context);
+    if (auto* sats = qobject_cast<hamclock::SatellitesModel*>(registry.model("satellites"))) {
+        QObject::connect(sats, &hamclock::SatellitesModel::elementsChanged, &sat_alerts,
+                         [&sat_alerts, sats] { sat_alerts.setElements(sats->elements()); });
+        sat_alerts.setElements(sats->elements()); // a cached set may already be loaded
+    }
+    QTimer::singleShot(0, &sat_alerts, &hamclock::SatAlertService::start);
     for (const auto& assignment : parser.values(pane)) {
         const auto parts = assignment.split('=');
         bool number_ok = false;
@@ -246,6 +257,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("station", &station_model);
     engine.rootContext()->setContextProperty("timers", &timers);
     engine.rootContext()->setContextProperty("alarms", &alarms);
+    engine.rootContext()->setContextProperty("satAlerts", &sat_alerts);
     engine.rootContext()->setContextProperty("blanking", &blanking);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
