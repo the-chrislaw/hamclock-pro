@@ -1,3 +1,4 @@
+#include <cmath>
 #include "ui/time_zone_search.hpp"
 
 #include <QCoreApplication>
@@ -36,5 +37,13 @@ int main(int argc, char** argv) {
     CHECK(zones.suggestZone(0.0, 200.0).isEmpty());    // invalid longitude
     const auto sys = zones.systemZone();
     CHECK(sys.isEmpty() || !zones.labelFor(sys).isEmpty());
+    // The station's zone: a saved choice wins; otherwise it follows the station's
+    // location, never the device's zone (Connecticut set up on a Mac in California).
+    CHECK(zones.stationZone("Europe/Paris", 41.7292, -72.7083) == "Europe/Paris");
+    CHECK(zones.stationZone("", 41.7292, -72.7083) == "America/New_York");
+    CHECK(zones.stationZone("  ", 35.68, 139.69) == "Asia/Tokyo");
+    // No usable location yet: the device's zone is the only hint left.
+    CHECK(zones.stationZone("", std::nan(""), std::nan("")) == sys);
+    CHECK(zones.stationZone("", 0.0, -140.0) == sys);
     return failures ? 1 : 0;
 }

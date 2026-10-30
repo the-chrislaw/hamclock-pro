@@ -51,7 +51,7 @@ struct DisplaySections: View {
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
         }
         SettingsCard(title: "Data sources") {
-            Text("NOAA Space Weather Prediction Center · NOAA National Hurricane Center · USGS Earthquake Hazards Program · NASA FIRMS · NASA SDO · Open-Meteo · OpenStreetMap Nominatim · CelesTrak · AMSAT · Launch Library 2 (The Space Devs) · POTA · SOTA · WWFF · Natural Earth. Every pane shows its source, the age of its data and Live, Stale or Offline.")
+            Text("NOAA Space Weather Prediction Center (incl. Kyoto WDC Dst) · NOAA National Hurricane Center · USGS Earthquake Hazards Program · NASA FIRMS · NASA SDO · Open-Meteo · OpenStreetMap Nominatim · CelesTrak · AMSAT · Launch Library 2 (The Space Devs) · N0NBH HamQSL · POTA · SOTA · WWFF · Natural Earth. Every pane shows its source, the age of its data and Live, Stale or Offline.")
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
             Text("HamClock Pro \(Net.version)").font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary)
         }

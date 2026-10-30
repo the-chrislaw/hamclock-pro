@@ -27,10 +27,11 @@ final class AppSettings: ObservableObject {
         static let bannerTitle = "hcp.display.bannerTitle", accent = "hcp.display.accentStyle"
         static let panes = "hcp.panes.slots", rotations = "hcp.panes.rotations"
         static let mapSize = "hcp.map.size", mapLayers = "hcp.map.layers"
+        static let mapCentre = "hcp.map.centre", mapZoom = "hcp.map.zoom", mapLongPath = "hcp.map.longPath"
         static let dimAfterHours = "hcp.tv.dimAfterHours"
         static let all = [callsign, deLat, deLon, dxLat, dxLon, deZone, dxZone, place, appearance, imperial,
                           clock12h, dateOrder, localPrimary, bannerStyle, bannerBackground, bannerTitle, accent,
-                          panes, rotations, mapSize, mapLayers, dimAfterHours]
+                          panes, rotations, mapSize, mapLayers, mapCentre, mapZoom, mapLongPath, dimAfterHours]
     }
 
     private let defaults: UserDefaults
@@ -58,6 +59,15 @@ final class AppSettings: ObservableObject {
     /// "large" shows one row of panes over the map, "small" two rows.
     @Published var mapSize = "large" { didSet { put(Key.mapSize, mapSize) } }
     @Published private(set) var mapLayers: Set<String> = MapLayer.defaultOn
+    /// Map centre, zoom and short/long path, kept across launches like the main app's map/center
+    /// and map/long_path (src/map/view_options.cpp).
+    @Published var mapView = MapView() {
+        didSet {
+            put(Key.mapCentre, mapView.centre.rawValue)
+            put(Key.mapZoom, mapView.zoom)
+            put(Key.mapLongPath, mapView.longPath)
+        }
+    }
     @Published var dimAfterHours = 0 { didSet { put(Key.dimAfterHours, dimAfterHours) } }
 
     private var loading = false
@@ -186,6 +196,8 @@ final class AppSettings: ObservableObject {
             paneRotations = (0..<Self.paneSlots).map { $0 < saved.count ? saved[$0] : 0 }
         }
         if let saved = value(Key.mapLayers) as? [String] { mapLayers = Set(saved) }
+        mapView = MapView.restored(centre: value(Key.mapCentre) as? String, zoom: value(Key.mapZoom) as? Double,
+                                   longPath: value(Key.mapLongPath) as? Bool)
         migrateLegacyLocator()
     }
 

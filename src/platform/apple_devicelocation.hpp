@@ -45,7 +45,7 @@ private:
     bool available_ = false;
 };
 
-// Native hook (apple_devicelocation_mac.mm on macOS; a stub elsewhere). Returns false when
+// Native hook (apple_devicelocation_apple.mm on macOS and iOS; a stub elsewhere). Returns false when
 // no location service exists; otherwise starts a one-shot request that ends in
 // DeviceLocation::deliver() or fail() on the owner's thread.
 bool nativeLocationRequest(DeviceLocation* owner);
