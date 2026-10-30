@@ -613,6 +613,33 @@ Rectangle {
             }
 
             Card {
+                title: "Data sources"
+                Layout.fillWidth: true
+                ColumnLayout {
+                    width: parent.width
+                    spacing: Theme.gap * 0.5
+                    Text {
+                        text: "HamClock Pro is independent and not affiliated with the providers below. Data is fetched directly from each source."
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
+                    }
+                    Repeater {
+                        model: dataSources
+                        Text {
+                            required property var modelData
+                            text: modelData.name + ": " + modelData.usedFor + ". " + modelData.terms + " (" + modelData.url + ")"
+                            color: Theme.ink
+                            font.pixelSize: Theme.fontCaption
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+            }
+
+            Card {
                 id: exitCard
                 title: "Exit"
                 Layout.fillWidth: true
