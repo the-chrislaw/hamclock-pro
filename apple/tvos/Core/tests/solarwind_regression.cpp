@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <tuple>
 
 namespace {
 int failures = 0;
@@ -61,5 +62,29 @@ int main() {
     check(z.valid && z.value == 1.42 && hcp_solarwind_bz_description(z.value, buf, sizeof buf) &&
           std::string(buf) == "Northward", "C ABI Bz");
     check(!hcp_solarwind_latest_bt("garbage", 7).valid && !hcp_solarwind_latest_bt(nullptr, 0).valid, "C ABI bad input");
+
+    // One parse for both fields of a body gives exactly what two single-field calls give.
+    for (const auto& [body, fa, fb] : {std::tuple{wind, 0, 1}, std::tuple{mag, 2, 3}}) {
+        HcpReading a1[240], b1[240], a2[240], b2[240];
+        const int na1 = hcp_solarwind_series(body.data(), body.size(), fa, a1, 240);
+        const int nb1 = hcp_solarwind_series(body.data(), body.size(), fb, b1, 240);
+        int nb2 = 0;
+        const int na2 = hcp_solarwind_series_pair(body.data(), body.size(), fa, fb, a2, b2, 240, &nb2);
+        bool same = na1 > 0 && nb1 > 0 && na1 == na2 && nb1 == nb2;
+        for (int i = 0; same && i < na1; ++i) same = a1[i].value == a2[i].value && a1[i].time_ms == a2[i].time_ms;
+        for (int i = 0; same && i < nb1; ++i) same = b1[i].value == b2[i].value && b1[i].time_ms == b2[i].time_ms;
+        check(same, "pair parse equals two single-field parses");
+        HcpReading small_a[3], small_b[3];
+        int nsmall = 0;
+        check(na1 >= 3 && nb1 >= 3 &&
+                  hcp_solarwind_series_pair(body.data(), body.size(), fa, fb, small_a, small_b, 3, &nsmall) == 3 &&
+                  nsmall == 3 && small_a[2].time_ms == a1[na1 - 1].time_ms,
+              "pair keeps the most recent cap rows");
+    }
+    int nbad = 0;
+    check(hcp_solarwind_series_pair("garbage", 7, 0, 1, nullptr, nullptr, 0, &nbad) == -1 && nbad == -1,
+          "pair rejects a non-product body");
+    check(hcp_solarwind_series_pair(wind.data(), wind.size(), 0, 7, nullptr, nullptr, 0, &nbad) == -1 && nbad == -1,
+          "pair rejects an unknown field");
     return failures ? 1 : 0;
 }

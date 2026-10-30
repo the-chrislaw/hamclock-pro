@@ -550,3 +550,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: fa180ce (only my run 96 log #658 merged since 82b125d). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-30 (UTC) QA run 98
+- Last reviewed commit: d997638 (merged since fa180ce: #655 iPhone widgets, #659 tvOS parity rebuild, #661 iPad portrait map, #668 Apple attribution, #667 weather place wrapping, #666 map menu position, #664 Mac shortcuts, #663 Mac sleep/wake, #662 tvOS off-main parse, plus CI/TestFlight fixes, my run 97 log). Main builds and passes 193/193 tests. Qt-side diffs (28 files under src) add no QtWidgets, scrolling containers, password exposure or network code, and no test assertions were removed. Screenshots at 800x480, 1024x600 and 1920x1080 in light and dark are correct; stale/set-up states are honest and nothing is clipped beyond the known truncated stale footers at 800x480. Most of the diff is Swift (Apple apps), which Linux CI cannot exercise.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and unchanged in behaviour on the Pi. Remaining risk is iOS/tvOS/Mac code Linux CI cannot exercise and data freshness on the real Pi (#150).

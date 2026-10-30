@@ -64,7 +64,7 @@ struct SatellitesWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        let up = settings.de.map { sats.visibleCached(at: now, lat: $0.lat, lon: $0.lon, limit: 6) } ?? []
+        let up = settings.de == nil ? [] : Array(sats.sky.above.prefix(6))
         // Elements drift: older than 14 days (by TLE epoch, whatever the fetch time) is Stale;
         // no successful fetch for a week hides them.
         let oldestDays = up.map { SatelliteStore.tleAgeDays($0, now: now) }.max() ?? 0
