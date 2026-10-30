@@ -1,5 +1,6 @@
 #include "passes_model.hpp"
 #include "satellites_model.hpp"
+#include "sat_alert_service.hpp"
 #include "../../ui/app_settings.hpp"
 #include <QDateTime>
 #include <QSettings>
@@ -8,6 +9,7 @@
 namespace hamclock {
 
 namespace {
+bool known_filter(const QString& f) { return f == "amateur" || f == "visible" || f == "starred" || f == "alerts"; }
 constexpr double kHorizonS = 48 * 3600;
 constexpr double kMinEl = 10.0;
 constexpr int kMaxPasses = 24;  // enough to fill a tall pane; the card shows the rows that fit
@@ -22,14 +24,18 @@ QString pass_day_label(qint64 unix_time, qint64 now) {
 }
 
 PassesModel::PassesModel(const WidgetContext& context, QObject* parent)
-    : WidgetModel("passes", "Passes", parent), settings_(context.settings) {
+    : WidgetModel("passes", "Passes", parent), settings_(context.settings), alerts_(context.sat_alerts) {
+    if (alerts_) {
+        // Every alert setting change emits selectionChanged; only the Alerts filter depends on it.
+        connect(alerts_, &SatAlertService::selectionChanged, this, [this] { if (filter_ == "alerts") recompute(); });
+    }
     timer_.setInterval(60 * 1000);
     connect(&timer_, &QTimer::timeout, this, &PassesModel::recompute);
     if (settings_) {
         connect(settings_, &AppSettings::stationChanged, this, &PassesModel::recompute);
         QSettings ini(settings_->optionsPath(), QSettings::IniFormat);
         const QString saved = ini.value("passes/filter").toString();
-        if (saved == "amateur" || saved == "visible" || saved == "starred") filter_ = saved;
+        if (known_filter(saved)) filter_ = saved;
         starred_ = ini.value("passes/starred").toStringList();
         starred_.removeAll(QString());
     }
@@ -44,7 +50,7 @@ void PassesModel::setElements(const std::vector<Tle>& tles, const std::set<int>&
 }
 
 void PassesModel::setFilter(const QString& filter) {
-    const QString f = (filter == "amateur" || filter == "visible" || filter == "starred") ? filter : QString("all");
+    const QString f = known_filter(filter) ? filter : QString("all");
     if (f == filter_) return;
     filter_ = f;
     if (settings_) QSettings(settings_->optionsPath(), QSettings::IniFormat).setValue("passes/filter", f);
@@ -79,16 +85,18 @@ void PassesModel::recompute() {
     std::vector<SatellitePropagator> props;
     props.reserve(tles.size());
     std::vector<std::pair<std::string, const SatellitePropagator*>> sats;
-    std::set<std::string> amateur_names;
+    std::set<std::string> amateur_names, alert_names;
     for (const Tle& tle : tles) props.emplace_back(tle);
     for (std::size_t i = 0; i < tles.size(); ++i) {
         if (!props[i].valid()) continue;
         const std::string name = satellite_short_name(QString::fromStdString(tles[i].name)).toStdString();
         sats.push_back({name, &props[i]});
         if (amateur_.count(tle_norad_id(tles[i]))) amateur_names.insert(name);
+        if (alerts_ && alerts_->enabled() && alerts_->isSelected(tle_norad_id(tles[i]))) alert_names.insert(name);
     }
     std::function<bool(const std::string&)> include;
     if (filter_ == "amateur") include = [&](const std::string& n) { return amateur_names.count(n) > 0; };
+    if (filter_ == "alerts") include = [&](const std::string& n) { return alert_names.count(n) > 0; };
     if (filter_ == "starred") include = [&](const std::string& n) { return starred_.contains(QString::fromStdString(n)); };
     // Start a few minutes back so a pass in progress is still listed.
     const auto sched = pass_schedule(sats, obs, t - 900, kHorizonS + 900, kMinEl,
@@ -107,12 +115,14 @@ void PassesModel::recompute() {
             {"from", QString::fromStdString(s.pass.aos_compass)}, {"to", QString::fromStdString(s.pass.los_compass)},
             {"duration", QString("%1 min").arg((s.pass.duration_s + 30) / 60)},
             {"mag", s.pass.brightest_mag ? QString::number(*s.pass.brightest_mag, 'f', 1) : QString()},
-            {"visible", s.pass.visible_to_eye}, {"starred", starred_.contains(QString::fromStdString(s.name))}, {"live", aos <= now_s}});
+            {"visible", s.pass.visible_to_eye}, {"starred", starred_.contains(QString::fromStdString(s.name))}, {"live", aos <= now_s},
+            {"alert", alert_names.count(s.name) > 0}});
         if (rows_.size() >= kMaxPasses) break;
     }
     if (rows_.isEmpty())
         empty_reason_ = filter_ == "visible" ? "No passes visible to the eye in 48 h"
                       : filter_ == "amateur" ? "No amateur-satellite passes in 48 h"
+                      : filter_ == "alerts" ? (alerts_ && alerts_->enabled() ? "No alert-satellite passes in 48 h" : "Turn on satellite alerts in Settings")
                       : filter_ == "starred" ? (starred_.isEmpty() ? "Tap a satellite name to star it" : "No starred-satellite passes in 48 h") : "No passes in 48 h";
     setState("live", "Computed offline from CelesTrak or AMSAT elements", now());
     emit changed();

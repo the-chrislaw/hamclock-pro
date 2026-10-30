@@ -1,6 +1,7 @@
 #include "bands_matrix_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include "../bands/path_model.hpp"
 #include "../spaceweather/swpc_parse.hpp"
 #include <QSettings>
@@ -28,6 +29,8 @@ BandsMatrixModel::BandsMatrixModel(const WidgetContext& context, QObject* parent
     // The columns start at the current UTC hour, so recompute when the hour turns.
     connect(this, &WidgetModel::ageChanged, this, [this] { recompute(); refreshState(); });
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, [this] { start_hour_ = -1; recompute(); refreshState(); });
+    // Distance units (and the [bandsmatrix] options) can change without a station edit.
+    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, [this] { start_hour_ = -1; recompute(); });
 }
 
 void BandsMatrixModel::start() {
@@ -104,7 +107,7 @@ void BandsMatrixModel::recompute() {
             }
             has_matrix_ = true;
             start_hour_ = hour;
-            path_text_ = QString("%1 km%5 · %2 %3 W · %4 dBi").arg(qRound(km)).arg(mode_name).arg(qRound(path.power_w)).arg(qRound(path.gain_db)).arg(path.long_path ? QString(" long path") : QString());
+            path_text_ = QString("%1%5 · %2 %3 W · %4 dBi").arg(distance_label(km, settings_->imperialUnits())).arg(mode_name).arg(qRound(path.power_w)).arg(qRound(path.gain_db)).arg(path.long_path ? QString(" long path") : QString());
             best_text_ = first[best].reliability < 0.05 ? QString("HF closed now")
                 : QString("Best now: %1 %2%").arg(first[best].band).arg(qRound(first[best].reliability * 100));
             start_text_ = QString("%1Z").arg(int(hour % 24), 2, 10, QChar('0'));
@@ -119,6 +122,8 @@ void BandsMatrixModel::refreshState() {
         if (!kp_source_->lastError().isEmpty() || !flux_source_->lastError().isEmpty())
             setState("offline", "NOAA SWPC unreachable: " +
                      (kp_source_->lastError().isEmpty() ? flux_source_->lastError() : kp_source_->lastError()));
+        else if (awaitingFirstAnswer(*kp_source_) || awaitingFirstAnswer(*flux_source_))
+            setState("loading", "Contacting NOAA SWPC…");
         else if (kp_source_->fetchedAt().isValid() || flux_source_->fetchedAt().isValid())
             setState("stale", "NOAA SWPC returned no usable SFI/Kp data");
         else setState("loading", "Contacting NOAA SWPC…");
