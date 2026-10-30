@@ -21,6 +21,7 @@ A macOS window screenshot is not included yet.
 
 - **Tap** a pane's title to choose what it shows; **swipe** to step through panes; **long-press** for that pane's options.
 - Open **Settings** (a header button on large screens) to set callsign, location, theme, accent colour and data sources.
+- **Satellite pass alerts** (Settings > Satellite alerts): pick the amateur satellites you work (or "All workable": ISS, SO-50, AO-91, RS-44, AO-7 and the rest of a curated, AMSAT-checked list), a minimum peak elevation, how many minutes ahead, and quiet hours. iPhone, iPad and Mac get system notifications even with the app closed (the next 48 h, up to 60 alerts, topped up each time the app opens); the Pi and other desktops show a banner, with a chime on Linux. The Passes pane's **Alerts** filter shows the same satellites.
 - Panes without a configured source say so ("Set up", "Not configured"); old data is marked Stale. Nothing is presented as live when it is not.
 
 ## Features
@@ -38,8 +39,8 @@ Many panes are partial; the per-widget status is in [docs/WIDGETS.md](docs/WIDGE
 
 ## Install
 
-- **Raspberry Pi (.deb):** every merge to `main` publishes an arm64 Bookworm `.deb` and a macOS app as the rolling `latest` pre-release on the GitHub Releases page. The automatic updater is planned, not shipped. These builds have not been validated on hardware by this project yet.
-- **SD-card image:** planned (tracked in issue #526); not available yet.
+- **Raspberry Pi (.deb):** every merge to `main` publishes `.deb` packages for Raspberry Pi OS Trixie (current) and Bookworm (Legacy), 64-bit (`arm64`) and 32-bit (`armhf`), plus a macOS app, as the rolling `latest` pre-release on the GitHub Releases page. Install with `sudo apt install ./hamclock-pro_*_trixie_arm64.deb` (pick your OS and architecture), then run `hamclock-pro`. These builds have not been validated on hardware by this project yet.
+- **SD-card image:** a flashable Raspberry Pi OS Lite (Trixie, 64-bit) image that boots straight into HamClock Pro full screen, attached to tagged releases; see [docs/install-pi.md](docs/install-pi.md). Not yet validated on a device.
 - **macOS:** a signed dmg is planned; the CI-built app is not yet signed or notarised.
 - **iPad:** via TestFlight, later.
 

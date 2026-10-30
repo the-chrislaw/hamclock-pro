@@ -1,5 +1,5 @@
 IMG_NAME=hamclock-pro
-RELEASE=bookworm
+RELEASE=trixie
 TARGET_HOSTNAME=hamclock
 FIRST_USER_NAME=hamclock
 DISABLE_FIRST_BOOT_USER_RENAME=1

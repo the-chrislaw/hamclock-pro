@@ -2,6 +2,7 @@
 #include "../dxcluster/spot_layer_style.hpp"
 #include "psk_overlay.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include <QTimer>
 #include <algorithm>
 #include <cmath>
@@ -221,9 +222,8 @@ QString PskModel::farthest() const {
     if (!settings_) return {};
     const auto f = psk::farthest_report(feed_.reports, settings_->deLatitude(), settings_->deLongitude());
     if (!f.found) return {};
-    const bool mi = settings_->imperialUnits();
-    const long d = std::lround(mi ? f.km * 0.621371 : f.km);
-    return QString("Farthest: %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km").arg(f.band.isEmpty() ? "" : " " + f.band);
+    return QString("Farthest: %1 %2%3").arg(f.call, distance_label(f.km, settings_->imperialUnits()),
+                                              f.band.isEmpty() ? "" : " " + f.band);
 }
 
 QString PskModel::heard() const {
@@ -232,10 +232,8 @@ QString PskModel::heard() const {
     QString out = QString("I heard %1").arg(swapped.size());
     const auto f = psk::farthest_report(swapped, settings_->deLatitude(), settings_->deLongitude());
     if (f.found) {
-        const bool mi = settings_->imperialUnits();
-        const long d = std::lround(mi ? f.km * 0.621371 : f.km);
-        out += QString(" · farthest %1 %2 %3%4").arg(f.call).arg(d).arg(mi ? "mi" : "km")
-                   .arg(f.band.isEmpty() ? "" : " " + f.band);
+        out += QString(" · farthest %1 %2%3").arg(f.call, distance_label(f.km, settings_->imperialUnits()),
+                                                    f.band.isEmpty() ? "" : " " + f.band);
     }
     return out;
 }

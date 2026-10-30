@@ -53,13 +53,18 @@ ApplicationWindow {
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
-    Shortcut { sequences: ["F11"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // F11 (Pi, Linux, Windows); Control-Command-F on the Mac, where F11 is Show Desktop.
+    Shortcut { sequences: ["F11", "Ctrl+Meta+F"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // Command-comma opens Settings on the Mac, as in every Mac app (Ctrl+comma elsewhere).
+    Shortcut { sequences: ["Ctrl+,"]; enabled: !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
 
+    // The header sits outside contentItem, so the full-screen layers below cannot
+    // cover it: hide it while one is open (its buttons are input-blocked anyway).
     header: Rectangle {
-        visible: !Theme.dense
+        visible: !Theme.dense && !window.overlayOpen
         enabled: !window.pageInputBlocked
         color: Theme.canvas
         implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
@@ -363,6 +368,15 @@ ApplicationWindow {
             Text { Layout.fillWidth: true; text: alarms.ringingText; color: Theme.canvas; font.pixelSize: Theme.fontValue; font.bold: true; elide: Text.ElideRight }
             AppButton { text: "Dismiss"; onClicked: alarms.dismiss() }
         }
+    }
+
+    // Below the Settings layer (z 10) so it never covers Settings' Done button.
+    SatAlertBanner {
+        z: 9
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: alarmBanner.visible ? alarmBanner.bottom : parent.top
+        anchors.topMargin: alarmBanner.visible ? Theme.gap : safeArea.top
+        width: Math.min(parent.width - 2 * Theme.pad, 520 * Theme.scale)
     }
 
     Rectangle {

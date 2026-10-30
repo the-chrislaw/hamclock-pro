@@ -75,21 +75,28 @@ void SolarTrendModel::refreshState() {
     QStringList stale, missing;
     QDateTime oldest;
     bool any_error = false;
+    QStringList loading;
     for (const auto& item : items) {
         any_error = any_error || !item.source->lastError().isEmpty();
+        if (!item.has && awaitingFirstAnswer(*item.source)) { loading << item.label; continue; }
         if (!item.has) { missing << item.label; continue; }
         if (item.source->isStale(now_utc)) stale << item.label;
         if (!oldest.isValid() || item.source->fetchedAt() < oldest) oldest = item.source->fetchedAt();
     }
-    if (missing.size() == 3) {
+    if (missing.size() + loading.size() == 3) {
         if (any_error) setState("offline", "NOAA SWPC unreachable: " + kp_source_->lastError());
         else setState("loading", "Contacting NOAA SWPC…");
+        return;
+    }
+    if (!loading.isEmpty() && missing.isEmpty() && stale.isEmpty()) {
+        setState("loading", "NOAA SWPC (loading: " + loading.join(", ") + ")", oldest);
         return;
     }
     if (!stale.isEmpty() || !missing.isEmpty()) {
         QStringList parts;
         if (!stale.isEmpty()) parts << "out of date: " + stale.join(", ");
         if (!missing.isEmpty()) parts << "missing: " + missing.join(", ");
+        if (!loading.isEmpty()) parts << "loading: " + loading.join(", ");
         setState("stale", "NOAA SWPC (" + parts.join("; ") + ")", oldest);
         return;
     }
