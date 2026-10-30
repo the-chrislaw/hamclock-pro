@@ -4,7 +4,7 @@ The flashable image is built by `.github/workflows/image.yml` (pi-gen, Raspberry
 Trixie). **Not yet validated on a device**: build it from the Actions tab (manual run) and report
 what happens on your Pi.
 
-1. Download the `*-hamclock-pro.img.xz` image and `SHA256SUMS-image` from the release; check with
+1. Download the `image_<date>-hamclock-pro.img.xz` image (about 700 MB) and `SHA256SUMS-image` from the release; check with
    `sha256sum -c SHA256SUMS-image`.
 2. In Raspberry Pi Imager choose *Use custom* and the `.img.xz`. In the settings dialog set Wi-Fi
    (and, only if you want it, enable SSH with a key or password you choose; SSH is off by default).
