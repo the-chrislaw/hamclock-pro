@@ -4,6 +4,9 @@ import HamClock
 
 Card {
     id: root
+    // The moon disc shares the tall layout with the text: growing the text much past the
+    // design width would squeeze the disc to a dot.
+    maxGrow: 1.15
     // Short value: drop the " UTC" suffix (the DE/DX headers say UTC) and shorten durations.
     function brief(t) { return t.replace(/ UTC/g, "").replace(/ h /, "h ").replace(/ min/, "m") }
     // Rows that fit in the body: header + 3 sun rows + Moon title are fixed;
@@ -181,7 +184,8 @@ Card {
                 MoonDisc {
                     visible: !!root.widget && !!root.widget.moonPhase
                     anchors.centerIn: parent
-                    width: Math.min(parent.width, parent.height)
+                    // At most two thirds of the width: a very tall pane does not turn it into a poster.
+                    width: Math.min(parent.width * 0.66, parent.height)
                     height: width
                 }
             }

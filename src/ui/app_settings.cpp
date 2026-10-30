@@ -247,8 +247,9 @@ void AppSettings::loadOptions() {
 
 QStringList AppSettings::panes() const {
     static const QStringList defaults{"spaceweather", "solarwind", "dxcluster", "bands", "sunmoon", "satellites",
-                                      "pskreporter", "ota", "solarimage", "weather", "launches", "quakes"};
-    static_assert(kPaneSlots == 12, "one default widget per pane slot");
+                                      "pskreporter", "ota", "solarimage", "weather", "launches", "quakes",
+                                      "solartrend", "daylight"};
+    static_assert(kPaneSlots == 14, "one default widget per pane slot");
     QStringList result;
     for (int slot = 0; slot < kPaneSlots; ++slot)
         result << (slot < panes_.size() && !panes_[slot].isEmpty() ? panes_[slot] : defaults[slot]);
@@ -1052,7 +1053,7 @@ QString AppSettings::saveOrientationLock(const QString& lock) {
 }
 
 QVariantMap AppSettings::paneGrid(double width, double height, double gap, double min_pane_width, double min_pane_height) const {
-    const auto grid = fit_pane_grid({width, height, gap, min_pane_width, min_pane_height, map_share(map_size_), kPaneSlots});
+    const auto grid = fit_pane_grid({width, height, gap, min_pane_width, min_pane_height, map_share(map_size_), kGridSlots});
     return {{"columns", grid.columns}, {"rows", grid.rows}, {"height", grid.height}};
 }
 

@@ -5,10 +5,11 @@ import HamClock
 Card {
     id: root
     // Full layout (wide pane, tall pane, or a narrow one with room below, e.g. 1440p rows): the station list fills the leftover height.
-    readonly property bool full: !compact || tall || height >= 260 * Theme.scale
+    readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        // A few stations: no long list to stretch, so the card grows and centres the block.
+        height: root.full && widget && widget.count > 4 ? parent.height : implicitHeight
         spacing: Theme.gap
         Metric {
             label: root.compact ? "APRS" : (widget ? widget.rangeText : "")

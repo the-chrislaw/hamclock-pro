@@ -5,10 +5,9 @@ import HamClock
 // DE -> DX HF reliability: bands down, the next 24 UTC hours across. Approximate model.
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property bool ok: widget && widget.hasMatrix
     readonly property var rows: widget ? widget.rows : []
     // Compact slot that is not tall: best band and one chip per band. Otherwise the heat grid.
@@ -96,8 +95,9 @@ Card {
             readonly property real labelWidth: 40 * Theme.scale
             readonly property real rowHeight: Math.min(Theme.fontCaption * 2.5,
                                                        root.rows.length ? height / root.rows.length : 0)
-            // Too short for a readable row per band (phone strip): the chips for the current hour instead.
-            readonly property bool fits: rowHeight >= Theme.fontCaption * 1.1
+            // A phone strip still gets the grid with rows down to about 9 px (labels shrink to the row);
+            // only shorter than that does it fall back to the chips for the current hour.
+            readonly property bool fits: rowHeight >= Theme.fontCaption * 0.75
             Column {
                 visible: gridArea.fits
                 anchors.verticalCenter: parent.verticalCenter
@@ -109,7 +109,7 @@ Card {
                         spacing: gridArea.gap
                         Text { width: gridArea.labelWidth; text: modelData.band; color: Theme.ink
                                anchors.verticalCenter: parent.verticalCenter
-                               font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+                               font.pixelSize: Math.min(Theme.fontCaption, Math.floor(gridArea.rowHeight * 0.95)); font.weight: Font.DemiBold }
                         Repeater {
                             model: modelData.cells
                             delegate: Rectangle {
@@ -126,6 +126,7 @@ Card {
             NowChips {
                 visible: !gridArea.fits
                 width: parent.width
+                anchors.verticalCenter: parent.verticalCenter
             }
         }
         Text {

@@ -198,7 +198,10 @@ public:
     QString optionsPath() const { return config_dir_ + "/options.ini"; }
     QString loadError() const { return load_error_; }
 
-    static constexpr int kPaneSlots = 12;
+    // Saved pane slots: up to twelve in the grid, then the station column's spill panes (two at
+    // most), so a full 2560x1440 grid still leaves a widget for the room under the station card.
+    static constexpr int kGridSlots = 12;
+    static constexpr int kPaneSlots = kGridSlots + 2;
     static constexpr int kMaxRotationSet = 64;
     QStringList panes() const;
     // Returns an empty string or a user-facing error.

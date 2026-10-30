@@ -5,10 +5,9 @@ import HamClock
 // Day/night HF outlook per band. A rough estimate from SFI/Kp/A, labelled as such.
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property var rows: widget ? widget.bands : []
     function conditionColor(name) {
         return name === "Good" ? Theme.good : name === "Fair" ? Theme.warn : Theme.bad

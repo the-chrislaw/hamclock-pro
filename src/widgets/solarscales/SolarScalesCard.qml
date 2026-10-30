@@ -4,16 +4,15 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property var list: root.widget ? root.widget.scales : []
     // Compact slot that is not tall: scale words only. A tall pane shows the full rows, spread over the height.
     readonly property bool brief: root.compact && !root.stacked
     ColumnLayout {
         width: parent.width
-        height: root.stacked ? parent.height : implicitHeight
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.6
         Repeater {
             model: root.list
@@ -24,14 +23,14 @@ Card {
                 readonly property real blockHeight: Math.round(Theme.fontBody * 1.2)
                     + (root.brief ? 0 : 2 * Theme.scale + Math.ceil(Theme.fontCaption * 1.3) * (root.stacked ? 2 : 1))
                 Layout.preferredHeight: blockHeight
-                Layout.fillHeight: root.stacked
                 Layout.maximumHeight: root.stacked ? Math.max(blockHeight, Theme.fontBody * 4) : blockHeight
                 readonly property color tone: modelData.level >= 3 ? Theme.bad : modelData.level >= 1 ? Theme.warn : Theme.good
                 Item {
                     // Content block, centred in a tall pane's spread row.
                     width: parent.width
                     height: parent.blockHeight
-                    anchors.verticalCenter: root.stacked ? parent.verticalCenter : undefined
+                    // Bound y (an anchor set to undefined keeps a stale centred y after a resize).
+                    y: root.stacked ? (parent.height - height) / 2 : 0
                     Text {
                         id: tag
                         text: modelData.letter + modelData.level

@@ -4,12 +4,11 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
-    // The band table needs real height: a barely-tall pane (1024x768) keeps the compact summary.
-    readonly property bool full: root.stacked && drapColumn.parent !== null && drapColumn.parent.height >= 250 * Theme.scale
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
+    // The band table (two bands per row when short) fits any tall or roomy pane.
+    readonly property bool full: root.stacked
     readonly property bool ok: root.widget && root.widget.hasData
     readonly property real mhz: ok ? root.widget.peakMhz : 0
     function tone(f) { return f >= 15 ? Theme.bad : f >= 5 ? Theme.warn : Theme.good }
@@ -20,12 +19,12 @@ Card {
         { band: "17m", mhz: 18.068 }, { band: "15m", mhz: 21.0 }, { band: "12m", mhz: 24.89 },
         { band: "10m", mhz: 28.0 }
     ]
-    // Tall pane: the peak with its message, then every HF band marked absorbed or clear, rows spread over the height.
+    // Tall pane: the peak with its message, then every HF band marked absorbed or clear.
     ColumnLayout {
         id: drapColumn
         visible: root.full
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.4
         Metric {
             label: "Max absorbed"
@@ -45,13 +44,14 @@ Card {
         // Bands in one column; two (band and state only) when the pane is too short for ten readable rows.
         GridLayout {
             id: bandGrid
-            readonly property bool twoUp: drapColumn.parent.height < 330 * Theme.scale
+            // Decided from the pane, not the stage: the stage's height follows the card's scale, which
+            // follows this table's height, and the two would chase each other.
+            readonly property bool twoUp: root.height < 420 * Theme.scale
             visible: root.ok
             columns: twoUp ? 2 : 1
             columnSpacing: Theme.gap * 2
             rowSpacing: 0
             Layout.fillWidth: true
-            Layout.fillHeight: true
             Repeater {
                 model: root.ok ? root.hfBands : []
                 Item {
@@ -59,7 +59,6 @@ Card {
                     readonly property bool absorbed: modelData.mhz <= root.mhz
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
-                    Layout.fillHeight: true
                     Layout.preferredHeight: Theme.fontBody * 1.3
                     Layout.minimumHeight: Theme.fontBody * 1.1
                     Layout.maximumHeight: Theme.fontBody * 3

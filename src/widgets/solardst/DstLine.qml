@@ -29,13 +29,21 @@ Item {
             var w = root.width, h = root.height
             if (n < 2 || w <= 0 || h <= 0) return
             ctx.scale(k, k)
-            var lo = Math.min(Math.min.apply(null, values), -60), hi = Math.max(Math.max.apply(null, values), 10)
+            // The range follows the data (with 0 always in view and some headroom) so a quiet
+            // day's curve uses the plot instead of a thin band at its top; the -50 nT storm line
+            // appears once the data comes near it.
+            var vlo = Math.min.apply(null, values), vhi = Math.max.apply(null, values)
+            var span = Math.max(20, vhi - vlo)
+            var nearStorm = vlo <= -30  // the card's caption uses the same test
+            var lo = Math.min(vlo, 0) - span * 0.25, hi = Math.max(vhi, 0) + span * 0.25
+            if (nearStorm) lo = Math.min(lo, -55)
             var pad = 2
             function y(v) { return pad + (h - 2 * pad) * (1 - (v - lo) / (hi - lo)) }
             ctx.strokeStyle = Theme.divider
             ctx.lineWidth = 1
             ctx.beginPath(); ctx.moveTo(0, y(0)); ctx.lineTo(w, y(0))
-            ctx.moveTo(0, y(-50)); ctx.lineTo(w, y(-50)); ctx.stroke()
+            if (nearStorm) { ctx.moveTo(0, y(-50)); ctx.lineTo(w, y(-50)) }
+            ctx.stroke()
             ctx.strokeStyle = root.lineColor
             ctx.lineWidth = Math.max(1.5, 1.5 * Theme.scale)
             ctx.lineJoin = "round"

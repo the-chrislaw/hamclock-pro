@@ -96,8 +96,8 @@ Card {
         XrayPlot {
             visible: root.widget && root.widget.hasXrayHistory
             width: parent.width
-            // Desktop panes: the plot takes the height left under the values (the 7-inch layout keeps 34).
-            height: Theme.dense ? 34 * Theme.scale : Math.max(34 * Theme.scale, compactColumn.parent.height - y)
+            // The plot takes the height left under the values.
+            height: Math.max(34 * Theme.scale, compactColumn.parent.height - y)
             values: root.widget ? root.widget.xrayHistory : []
             pixelScale: root.fit
         }

@@ -4,11 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Tall pane: the full layout with one line per kind of warning, every line wrapped and laid
-    // out narrow so the card grows it until it fills the height. A small slot keeps the counts on (at most) two
-    // wrapped lines and the end time only.
-    designWidth: (tall ? 180 : compact ? 260 : 420) * Theme.scale
-    readonly property bool full: !compact || tall
+    // Full layout (wide, tall or roomy pane): one line per kind of warning in a tall pane, every
+    // line wrapped. A small slot keeps the counts on (at most) two wrapped lines and the end time only.
+    readonly property bool full: !compact || tall || roomy
     readonly property bool active: widget && widget.hasData && widget.count > 0
     readonly property string value: !(widget && widget.hasData) ? "" : widget.count === 0 ? "None active" : widget.headline
     readonly property color valueColor: widget && widget.hasData && widget.topRank >= 4 ? Theme.bad
@@ -23,22 +21,11 @@ Card {
         width: parent.width
         spacing: Theme.gap * (root.full ? 1 : 0.5)
         Metric {
-            visible: !root.tall
             label: root.full ? "Marine warnings" : "Marine" + (widget && widget.hasData ? " " + widget.count : "")
             available: widget && widget.hasData
             value: root.value
             valueColor: root.valueColor
             Layout.fillWidth: true
-        }
-        // Tall: the same value, wrapping, so the narrow stage never clips it.
-        ColumnLayout {
-            visible: root.tall
-            spacing: 2 * Theme.scale
-            Layout.fillWidth: true
-            Text { text: "Marine warnings"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
-                   font.capitalization: Font.AllUppercase; font.letterSpacing: 0.6; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            Text { text: widget && widget.hasData ? root.value : "—"; color: widget && widget.hasData ? root.valueColor : Theme.secondary
-                   font.pixelSize: Theme.fontValue; font.weight: Font.DemiBold; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         }
         // Counts per kind: wrapped (never cut short); one per line in a tall pane.
         Text {
@@ -62,6 +49,14 @@ Card {
             text: widget ? widget.headlineArea : ""
             color: Theme.ink; font.pixelSize: Theme.fontBody
             elide: Text.ElideRight; maximumLineCount: root.full ? 100 : 1
+            wrapMode: Text.WordWrap; Layout.fillWidth: true
+        }
+        // Nothing in force: a full pane says what is being watched, so the quiet state reads as
+        // a checked "all clear" rather than an empty card.
+        Text {
+            visible: root.full && widget !== null && widget.hasData && widget.count === 0
+            text: "Watching NWS marine warnings and advisories for US waters (api.weather.gov)"
+            color: Theme.secondary; font.pixelSize: Theme.fontCaption
             wrapMode: Text.WordWrap; Layout.fillWidth: true
         }
         Text {

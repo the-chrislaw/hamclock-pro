@@ -7,7 +7,7 @@ Card {
     // Full layout in a roomy or tall pane: the recent quakes fill the leftover height (as many
     // rows as fit, never a clipped one); a tall pane puts each quake's age under its place.
     // A small slot shows the strongest and the nearest only.
-    readonly property bool full: !compact || tall
+    readonly property bool full: !compact || tall || roomy
     FontMetrics { id: rowFont; font.pixelSize: Theme.fontBody }
     FontMetrics { id: ageFont; font.pixelSize: Theme.fontCaption }
     readonly property real rowHeight: Math.ceil(rowFont.height) + (tall ? Math.ceil(ageFont.height) : 0)

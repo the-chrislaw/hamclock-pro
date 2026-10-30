@@ -7,7 +7,7 @@ Card {
     // Full layout in a roomy or tall pane: the later launches fill the leftover height (as many
     // as fit, never a clipped one); a tall pane stacks each as name over time. A small slot
     // shows the next launch only, without the agency so the detail fits.
-    readonly property bool full: !compact || tall
+    readonly property bool full: !compact || tall || roomy
     FontMetrics { id: rowFont; font.pixelSize: Theme.fontBody }
     FontMetrics { id: whenFont; font.pixelSize: Theme.fontCaption }
     readonly property real rowHeight: Math.ceil(rowFont.height) + (tall ? Math.ceil(whenFont.height) : 0)
@@ -19,7 +19,8 @@ Card {
     }
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        // Nothing scheduled: no empty list to stretch, so the card centres the short summary.
+        height: root.full && widget && widget.hasNext ? parent.height : implicitHeight
         spacing: Theme.gap
         Metric {
             label: root.full ? "Next launch (NET)" : "Next launch"

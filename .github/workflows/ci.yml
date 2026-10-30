@@ -35,4 +35,5 @@ jobs:
       - name: Test
         env:
           QT_QPA_PLATFORM: offscreen
+          LSAN_OPTIONS: suppressions=${{ github.workspace }}/tests/lsan.supp
         run: ctest --test-dir build-ci --output-on-failure
