@@ -77,7 +77,6 @@ Rectangle {
     Connections { target: page.Window.window; function onActiveFocusItemChanged() { Qt.callLater(page.revealFocused) } }
     Connections { target: Theme; function onKeyboardInsetChanged() { Qt.callLater(page.revealFocused) } }
 
-    // --settings: "accounts", "display", "screen", "spots" or "hardware" scrolls to that section;
     // --settings: "accounts", "display", "screen", "spots", "hardware", "advanced" or "about" scrolls
     // to that section (and opens it);
     // "accounts:hamqth" also opens that account.
