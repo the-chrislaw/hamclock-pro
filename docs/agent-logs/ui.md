@@ -309,3 +309,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-29 (hourly run, 74)
 - QA #652 (Sun & Moon header badge clipped at 1512x982): root cause was `StatusBadge.implicitWidth` reading `row.implicitWidth`; when `dotOnly` flipped back to false while the pane widened (137 -> 298 px), the header RowLayout kept the title sized for the 19 px dot and never re-laid out, so the 62 px badge ran past the card (title 273 + badge 62 > 298). The width now comes straight from `dotOnly`/`fullWidth` (same values), so the layout tracks it. Measured with temporary logging: badge x 237 + w 61 = 298 = row width. `qml-app-truncation-1512x982` failed before (reproduced locally, exit 4) and passes now; full ctest 187/187. Rendered light/dark at 800x480, 1024x600, 1512x982, 1920x1080: exit 0, no truncation report. The CI font set likely settles the layout differently, which is why CI was green before; the fix removes the dependence on that. ASan/UBSan left to CI. Not validated on a device.
+
+## 2026-10-30 (hourly run, 75)
+- No code change. Merged #724 (other area, required checks green). #726 was still running its checks, #73 is stale and conflicting; left alone. No new `[A]` qa issues; #527, #526, #532, #546 and #574 are covered by earlier entries. Remaining area-A work needs a device or belongs to area G. Nothing invented.
