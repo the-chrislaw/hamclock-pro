@@ -3,10 +3,19 @@ import QtQuick.Controls.Basic
 import HamClock
 
 // Rounded, flat button with a clear pressed state and focus ring.
-// `primary` fills it with the accent colour.
+// `primary` fills it with the accent colour. confirm() briefly swaps the label for
+// "✓ Saved" (or the given text) so a save that changes nothing visible still answers.
 Button {
     id: control
     property bool primary: false
+    property string confirmation: ""
+    readonly property int confirmMs: 2000
+    function confirm(message) {
+        confirmation = message === undefined ? "✓ Saved" : message
+        confirmTimer.restart()
+    }
+    Timer { id: confirmTimer; interval: control.confirmMs; onTriggered: control.confirmation = "" }
+    Accessible.name: confirmation.length ? confirmation : text
     implicitHeight: Theme.touch
     leftPadding: Theme.pad
     rightPadding: Theme.pad
@@ -16,7 +25,7 @@ Button {
     font.weight: Font.DemiBold
     focusPolicy: Qt.StrongFocus
     contentItem: Text {
-        text: control.text
+        text: control.confirmation.length ? control.confirmation : control.text
         font: control.font
         color: control.primary ? Theme.accentInk : Theme.ink
         horizontalAlignment: Text.AlignHCenter

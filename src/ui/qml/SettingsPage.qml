@@ -206,7 +206,7 @@ Rectangle {
                     Text { id: stationError; visible: text.length > 0; color: Theme.bad; font.pixelSize: Theme.fontCaption
                            wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     AppButton { text: "Save"; primary: true; Layout.alignment: Qt.AlignRight
-                                onClicked: if (stationCard.save()) stationError.text = "" }
+                                onClicked: if (stationCard.save()) { stationError.text = ""; confirm() } }
 
                     function coordinate(field, latitude) { return locationTools.parseCoordinate(field.text, latitude) }
                     // Saves the station and DX zone when anything changed. DX is optional:
@@ -344,7 +344,7 @@ Rectangle {
                         spacing: Theme.gap
                         FormField { id: bannerTitle; label: "Custom title (tap the banner to show it; empty = off)"; text: appSettings.bannerTitle
                             field.maximumLength: 24 }
-                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: appSettings.saveBannerTitle(bannerTitle.text) }
+                        AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom; onClicked: if (!appSettings.saveBannerTitle(bannerTitle.text).length) confirm() }
                     }
                 }
             }
@@ -362,7 +362,7 @@ Rectangle {
                         spacing: Theme.gap
                         FormField { id: cfgName; label: "Name"; Layout.fillWidth: true; field.maximumLength: 24 }
                         AppButton { text: "Save"; Layout.alignment: Qt.AlignBottom
-                                    onClicked: { cfgMsg.text = appSettings.saveConfig(cfgName.text) } }
+                                    onClicked: { cfgMsg.text = appSettings.saveConfig(cfgName.text); if (!cfgMsg.text.length) confirm() } }
                         AppButton { text: "Rename to"; Layout.alignment: Qt.AlignBottom; visible: cfgPick.current.length > 0
                                     onClicked: { cfgMsg.text = appSettings.renameConfig(cfgPick.current, cfgName.text); if (!cfgMsg.text.length) cfgPick.current = "" } }
                     }
@@ -826,7 +826,7 @@ Rectangle {
                     FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC, NAPREF, NAGRID or NABAND for spots your ADIF log still needs, OTA/POTA/SOTA/IOTA/WWFF for spots naming a reference; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
                     RowLayout {
                         Text { id: clusterError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: clusterCard.save() }
+                        AppButton { text: "Save"; primary: true; onClicked: if (clusterCard.save()) confirm() }
                     }
                 }
             }
@@ -907,7 +907,7 @@ Rectangle {
                     }
                     RowLayout {
                         Text { id: hardwareError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: hardwareCard.save() }
+                        AppButton { text: "Save"; primary: true; onClicked: if (hardwareCard.save()) confirm() }
                     }
                 }
             }
@@ -936,7 +936,7 @@ Rectangle {
                                 placeholder: appSettings.hasHamAlertPassword ? "Saved — leave empty to keep" : "" }
                     RowLayout {
                         Text { id: hamAlertError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: hamAlertCard.save() }
+                        AppButton { text: "Save"; primary: true; onClicked: if (hamAlertCard.save()) confirm() }
                     }
                 }
             }
@@ -965,7 +965,7 @@ Rectangle {
                                 placeholder: appSettings.hasHamsatKey ? "Saved — save empty to remove" : "" }
                     RowLayout {
                         Text { id: hamsatKeyError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save key"; primary: true; onClicked: hamsatCard.saveKey() }
+                        AppButton { text: "Save key"; primary: true; onClicked: if (hamsatCard.saveKey()) confirm() }
                     }
                 }
             }
@@ -1007,7 +1007,7 @@ Rectangle {
                                 placeholder: appSettings.hasLookupPassword ? "Saved — leave empty to keep" : "" }
                     RowLayout {
                         Text { id: accountError; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-                        AppButton { text: "Save"; primary: true; onClicked: accountCard.save() }
+                        AppButton { text: "Save"; primary: true; onClicked: if (accountCard.save()) confirm() }
                     }
                 }
             }
