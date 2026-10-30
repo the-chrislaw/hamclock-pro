@@ -4,6 +4,7 @@
 #include "../../map/overlay.hpp"
 #include "../../domain/geometry.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include <algorithm>
 
 namespace hamclock {
@@ -16,6 +17,7 @@ AprsModel::AprsModel(const WidgetContext& context, TelnetSocketFactory factory, 
             const bool v = settings_->mapSourceVisible("aprs");
             if (v != map_visible_) setMapVisible(v);
             else publishOverlay();
+            emit changed();  // distance units may have changed
         });
     }
     retry_.setSingleShot(true);
@@ -138,11 +140,18 @@ QVariantList AprsModel::nearest() const {
         rows.push_back({km, &e.station});
     }
     std::sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) { return a.km < b.km; });
+    const bool imperial = settings_ && settings_->imperialUnits();
     QVariantList out;
     for (size_t i = 0; i < rows.size() && int(i) < kShown; ++i)
         out.push_back(QVariantMap{{"call", rows[i].s->call}, {"km", int(std::lround(rows[i].km))},
+                                  {"distance", distance_label(rows[i].km, imperial)},
                                   {"symbol", rows[i].s->symbol}, {"comment", rows[i].s->comment}});
     return out;
+}
+
+QString AprsModel::rangeText() const {
+    const int radius = settings_ ? settings_->aprsRadiusKm() : 100;
+    return "Stations within " + distance_label(radius, settings_ && settings_->imperialUnits());
 }
 
 void register_widget_aprs(WidgetRegistry& registry, const WidgetContext& context) {

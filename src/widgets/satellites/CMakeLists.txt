@@ -44,6 +44,26 @@ if(BUILD_TESTING)
         COMMAND widget-satellites-finder_regression ${CMAKE_SOURCE_DIR}/tests/fixtures/sources/celestrak-amateur.tle)
     set_tests_properties(widget-satellites-finder_regression PROPERTIES TIMEOUT 30)
 endif()
+# Satellite pass alerts (Settings > Satellite alerts): curated catalog, preferences,
+# planning and the service that schedules Apple notifications / the in-app banner.
+target_sources(hamclock-widgets PRIVATE sat_catalog.cpp sat_alert_prefs.cpp sat_alert_plan.cpp sat_alert_service.cpp sat_alert_chime.cpp)
+qt_add_resources(hamclock-pro "satalerts_catalog" PREFIX "/satalerts" FILES amateur-satellites.json)
+if(BUILD_TESTING)
+    foreach(test_name sat_catalog_regression sat_alert_plan_regression sat_alert_service_regression)
+        set(test_target "widget-satellites-${test_name}")
+        add_executable(${test_target} tests/${test_name}.cpp)
+        target_link_libraries(${test_target} PRIVATE hamclock-widgets)
+        set_target_properties(${test_target} PROPERTIES AUTOMOC ON)
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+            target_compile_options(${test_target} PRIVATE -Wall -Wextra -Wpedantic)
+        endif()
+        add_test(NAME ${test_target} COMMAND ${test_target}
+            ${CMAKE_CURRENT_SOURCE_DIR}/amateur-satellites.json
+            ${CMAKE_SOURCE_DIR}/tests/fixtures/sources/celestrak-amateur.tle)
+        set_tests_properties(${test_target} PROPERTIES TIMEOUT 60
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-${test_name}")
+    endforeach()
+endif()
 hamclock_add_widget(passes
     SOURCES passes_model.cpp
     QML PassesCard.qml

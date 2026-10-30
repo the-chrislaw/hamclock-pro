@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <algorithm>
+#include <vector>
 #include <QTimeZone>
 #include <QTimer>
 #include <cmath>
@@ -81,8 +83,16 @@ int main(int argc, char** argv) {
     WidgetContext context;
     int requests = 0;
     bool fail_all = false, storm = false;
+    // Answers for URLs ending in one of these are held back, as when one
+    // product is slow at startup while the others have arrived.
+    QStringList hold;
+    std::vector<std::pair<FetchDone, QString>> held;
     context.transport = [&](const QUrl& url, FetchDone done) {
         ++requests;
+        if (std::any_of(hold.begin(), hold.end(), [&](const QString& h) { return url.path().endsWith(h); })) {
+            held.emplace_back(done, QFileInfo(url.path()).fileName());
+            return;
+        }
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
         else if (storm && url.path().endsWith("noaa-planetary-k-index.json")) {
@@ -134,6 +144,36 @@ int main(int argc, char** argv) {
     check(!model.hasXrayHistory(), "stale history is not plotted");
     check(MapStyles::instance().active(0) == nullptr, "stale values never pick a style");
     check(model.statusText().contains("Kp"), "status names the stale source");
+
+    // Startup race (seen on iPad): solar flux answers first while Kp and X-ray
+    // are still in flight. That is loading, not "missing" data.
+    {
+        fail_all = false;
+        storm = false;
+        hold = {"noaa-planetary-k-index.json", "xrays-6-hour.json"};
+        SpaceWeatherModel early(context);
+        early.setClock([&] { return now; });
+        for (auto* source : {&early.kpSource(), &early.fluxSource(), &early.xraySource(), &early.xrayDaySource()}) {
+            source->setClock([&] { return now; });
+            QFile::remove(source->cachePath());
+        }
+        early.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(early.hasSolarFlux() && !early.hasKp(), "flux arrived, Kp still in flight");
+        check(early.state() == "loading", "partial startup -> loading, not stale");
+        check(!early.statusText().contains("missing"), "values still loading are not called missing");
+        check(early.statusText().contains("Kp") && early.statusText().contains("X-ray"), "status names what is loading");
+        hold.clear();
+        auto pending = std::move(held);
+        for (auto& [done, name] : pending) {
+            FetchResult r;
+            r.http_status = 200;
+            r.body = fixture(dir, name.toUtf8().constData());
+            done(r);
+        }
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(early.state() == "live", "all arrived -> live");
+    }
 
     std::cout << "Space weather: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;

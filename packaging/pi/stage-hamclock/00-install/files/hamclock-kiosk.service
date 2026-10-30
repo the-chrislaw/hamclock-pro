@@ -1,7 +1,8 @@
 [Unit]
 Description=HamClock Pro kiosk
-After=systemd-user-sessions.service network-online.target
-Wants=network-online.target
+# Not after network-online.target: with no Wi-Fi that waits for its timeout on a blank screen;
+# the app starts offline and its feeds retry on their own.
+After=systemd-user-sessions.service
 Conflicts=getty@tty1.service
 After=getty@tty1.service
 

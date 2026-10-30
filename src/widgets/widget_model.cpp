@@ -36,6 +36,10 @@ void WidgetModel::setState(const QString& state, const QString& status_text, con
     emit ageChanged();
 }
 
+bool WidgetModel::awaitingFirstAnswer(const PolledSource& source) {
+    return !source.fetchedAt().isValid() && source.lastError().isEmpty();
+}
+
 void WidgetModel::trackSource(PolledSource& source, const QString& source_label) {
     auto refresh = [this, &source, source_label]() {
         const auto now_utc = clock_();
