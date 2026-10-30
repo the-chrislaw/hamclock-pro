@@ -38,5 +38,9 @@ int main(int argc, char** argv) {
     check(ok == 1 && bad == 1, "coarse fix emits failed");
     loc.fail(QStringLiteral("denied"));
     check(bad == 2, "native failure forwarded");
+    loc.request();
+#ifndef Q_OS_MACOS
+    check(bad == 3, "request without a backend fails with a message");
+#endif
     return failures ? 1 : 0;
 }
