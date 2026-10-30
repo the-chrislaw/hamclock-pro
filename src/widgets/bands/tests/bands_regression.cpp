@@ -8,6 +8,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <algorithm>
+#include <vector>
 #include <QTimeZone>
 #include <QTimer>
 #include <iostream>
@@ -68,15 +70,49 @@ int main(int argc, char** argv) {
     WidgetContext context;
     int requests = 0;
     bool fail_all = false;
+    // Answers for URLs ending in one of these are held back, as when one
+    // product is slow at startup while the others have arrived.
+    QStringList hold;
+    std::vector<std::pair<FetchDone, QString>> held;
     context.transport = [&](const QUrl& url, FetchDone done) {
         ++requests;
+        if (std::any_of(hold.begin(), hold.end(), [&](const QString& h) { return url.path().endsWith(h); })) {
+            held.emplace_back(done, QFileInfo(url.path()).fileName());
+            return;
+        }
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
         else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
-    BandsModel model(context);
     const auto now = QDateTime(QDate(2026, 10, 13), QTime(16, 0), QTimeZone::utc());
+    // Startup race: solar flux arrives first, Kp/A still in flight -> loading,
+    // never "returned no usable data".
+    {
+        hold = {"noaa-planetary-k-index.json"};
+        BandsModel early(context);
+        early.setClock([&] { return now; });
+        for (auto* source : {&early.kpSource(), &early.fluxSource()}) {
+            source->setClock([&] { return now; });
+            QFile::remove(source->cachePath());
+        }
+        early.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(early.state() == "loading" && !early.statusText().contains("no usable"),
+              "one index still in flight -> loading");
+        hold.clear();
+        auto pending = std::move(held);
+        for (auto& [done, name] : pending) {
+            FetchResult r;
+            r.http_status = 200;
+            r.body = fixture(dir, name.toUtf8().constData());
+            done(r);
+        }
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(early.state() == "live", "both arrived -> live");
+        requests = 0;
+    }
+    BandsModel model(context);
     model.setClock([&] { return now; });
     for (auto* source : {&model.kpSource(), &model.fluxSource()}) {
         source->setClock([&] { return now; });
