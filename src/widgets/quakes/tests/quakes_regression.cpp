@@ -62,9 +62,11 @@ int main(int argc, char** argv) {
     WidgetContext context;
     context.settings = &settings;
     bool fail_all = false;
+    QByteArray override_body; // when set, served with HTTP 200 instead of the fixture
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
+        else if (!override_body.isEmpty()) { result.http_status = 200; result.body = override_body; }
         else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
@@ -101,6 +103,25 @@ int main(int argc, char** argv) {
         model.setMapVisible(true);
         check(MapOverlays::instance().layers().size() == 1, "map on restores it");
     }
+
+    // Changed schema, truncated JSON or a portal page: the last good list and its
+    // cache stay, the card says what happened instead of "no usable data".
+    for (const QByteArray& bad : {QByteArray("{\"type\":\"Feature\",\"features\":{}}"),
+                                  QByteArray("{\"type\":\"FeatureCollection\",\"feat"),
+                                  QByteArray("<html><body>Sign in to Wi-Fi</body></html>")}) {
+        override_body = bad;
+        model.source().refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(model.hasData() && model.count() == 8, "unusable answer keeps the last good quakes");
+        check(model.state() == "live" && !model.statusText().contains("no usable"),
+              "still within the stale window -> last good data shown as live");
+    }
+    {
+        QFile cache(model.source().cachePath());
+        check(cache.open(QIODevice::ReadOnly) && cache.readAll().contains("FeatureCollection\",\"metadata"),
+              "cache keeps the last good feed");
+    }
+    override_body.clear();
 
     fail_all = true;
     now = now.addSecs(3 * 3600);

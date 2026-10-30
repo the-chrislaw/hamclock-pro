@@ -40,6 +40,8 @@ StormsModel::StormsModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("storms", "Tropical storms", parent),
       transport_(context.transport),
       source_(new PolledSource("nhc-current-storms", QUrl(kUrl), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return storms::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = storms::parse(source_->body());
         syncForecastSources();
