@@ -415,7 +415,7 @@ install(TARGETS hamclock-pro hamclock-pro-cli
 install(FILES LICENSE README.md DESTINATION ${CMAKE_INSTALL_DOCDIR})
 set(CPACK_PACKAGE_NAME hamclock-pro)
 set(CPACK_PACKAGE_VENDOR "HamClock Pro contributors")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amateur radio world-time and station dashboard (development preview)")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amateur radio world-time and station dashboard")
 set(CPACK_PACKAGE_CONTACT "https://github.com/the-chrislaw/hamclock-pro")
 set(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
