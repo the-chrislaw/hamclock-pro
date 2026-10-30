@@ -29,6 +29,9 @@ int main(int argc, char** argv) {
     // Start from an empty cache: a place name cached by an earlier run is (rightly)
     // not re-requested, which would hide the request this test counts.
     QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
+    // On the Mac PolledSource follows XDG_CACHE_HOME (set per test by CMake) instead.
+    if (const QString xdg = qEnvironmentVariable("XDG_CACHE_HOME"); QDir::isAbsolutePath(xdg))
+        QDir(xdg + "/" + QCoreApplication::applicationName() + "/sources").removeRecursively();
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     QFile file(QDir(argv[1]).filePath("forecast"));

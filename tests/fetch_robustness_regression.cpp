@@ -84,6 +84,9 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("hamclock-pro-fetch-test");
     QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
+    // On the Mac PolledSource follows XDG_CACHE_HOME (set per test by CMake) instead.
+    if (const QString xdg = qEnvironmentVariable("XDG_CACHE_HOME"); QDir::isAbsolutePath(xdg))
+        QDir(xdg + "/" + QCoreApplication::applicationName() + "/sources").removeRecursively();
     // Only localhost is used; skip the system proxy lookup (Linux libproxy leaks
     // a few bytes inside glib, which fails the ASan job).
     QNetworkProxyFactory::setUseSystemConfiguration(false);
