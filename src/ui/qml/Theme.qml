@@ -12,6 +12,8 @@ QtObject {
     // Accent choice from Settings: 0 blue, 1 green, 2 amber, 3 red, 4 purple.
     property int accentStyle: 0
     property bool phone: false   // portrait phone: one column, one pane
+    // Height the on-screen keyboard (--touch-keyboard) covers at the bottom of the window; 0 when hidden.
+    property real keyboardInset: 0
 
     readonly property color canvas: dark ? "#22282c" : "#eeede9"
     readonly property color surface: dark ? "#2b3236" : "#fafaf7"

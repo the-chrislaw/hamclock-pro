@@ -15,9 +15,10 @@ ApplicationWindow {
     title: "HamClock Pro"
     color: Theme.canvas
 
-    // Kiosk first boot (--first-run): no station yet, so start in Settings.
+    // Kiosk first boot (--first-run): no station yet, so start in Settings with the callsign
+    // ready to type (the on-screen keyboard opens with it under --touch-keyboard).
     Component.onCompleted: {
-        if (firstRun && !station.configured) settingsLayer.visible = true
+        if (firstRun && !station.configured) { settingsLayer.visible = true; settingsPage.focusFirstField() }
         if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
         if (nativeMenuBar) createMacMenuBar()
     }
@@ -41,6 +42,9 @@ ApplicationWindow {
         bar.pathToggleRequested.connect(() => worldMap.showPath = !worldMap.showPath)
         bar.appearanceRequested.connect(value => appSettings.appearance = value)
     }
+
+    TouchKeyboard { id: touchKeys; target: touchKeyboard ? window.activeFocusItem : null }
+    Binding { target: Theme; property: "keyboardInset"; value: touchKeys.visible ? touchKeys.height : 0 }
 
     SystemPalette { id: systemPalette }
     Binding {

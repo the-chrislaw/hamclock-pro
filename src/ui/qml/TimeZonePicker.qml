@@ -32,9 +32,10 @@ ColumnLayout {
         closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
         padding: Theme.pad
         width: Math.min(parent.width - 2 * Theme.pad, 420 * Theme.scale)
-        height: Math.min(parent.height - 2 * Theme.pad, 520 * Theme.scale)
+        // Stays above the on-screen keyboard so the search field and results remain visible.
+        height: Math.min(parent.height - 2 * Theme.pad - Theme.keyboardInset, 520 * Theme.scale)
         x: (parent.width - width) / 2
-        y: Math.max(Theme.pad, (parent.height - height) / 4)
+        y: Math.max(Theme.pad, (parent.height - Theme.keyboardInset - height) / 4)
         background: Rectangle { radius: Theme.radius; color: Theme.surfaceRaised; border.color: Theme.divider }
         onOpened: { search.text = ""; results.model = timeZones.search("", 80); search.forceActiveFocus() }
 
