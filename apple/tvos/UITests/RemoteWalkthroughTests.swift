@@ -451,6 +451,22 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_passes"].waitForExistence(timeout: 5), "Passes is offered on TV")
     }
 
+    /// HF path reliability (ported from the Qt bandsmatrix widget): the DE → DX band × 24 h grid
+    /// with the best band now, or an honest Loading / Offline / No data.
+    func testPathReliabilityPane() {
+        launchWithStation(["-hcpPanes", "bandsmatrix"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "bandsmatrix")
+        XCTAssertTrue(waitFor(30) {
+            ["Best now", "HF closed now", "Waiting for SFI", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "reliability grid or an honest state: \(pane0.label)")
+        XCTAssertFalse(pane0.label.contains("Not available on Apple TV"), pane0.label)
+        shot("tvos-path-reliability")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_bandsmatrix"].waitForExistence(timeout: 5), "HF path reliability is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

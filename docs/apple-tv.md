@@ -191,6 +191,7 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | Space weather (Kp, SFI, X-ray, 6 h X-ray plot) | NOAA SWPC | `swpc` |
 | Solar wind (speed, Bz, sparklines) | NOAA SWPC RTSW | `solarwind` |
 | Band conditions (day/night, 80–10 m) | SFI and Kp (band_outlook heuristic, not VOACAP) | `bands` |
+| HF path reliability (DE → DX, 80–10 m × next 24 UTC hours, best band now; SSB 100 W 6 dBi) | SFI and Kp (in-house path model, approximate, not VOACAP) | `pathrel` |
 | NOAA scales (R/S/G, 24 h max, today's probabilities) | NOAA SWPC | `scales` |
 | Aurora (hemisphere peaks; map overlay) | NOAA SWPC OVATION | `aurora` |
 | D-RAP (highest affected frequency; map overlay) | NOAA SWPC | `drap` |
@@ -207,11 +208,11 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | Active fires (US, 24 h; map overlay) | NASA FIRMS VIIRS | `fires` |
 | On the air (POTA/SOTA/WWFF spots; map overlay) | POTA, SOTA, WWFF | `ota` |
 
-Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), HF path reliability and Space weather impact (parsers not ported yet; Dst index, Space alerts, Solar trend and HamQSL are ported), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
+Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), Space weather impact (parser not ported yet; Dst index, Space alerts, Solar trend, HamQSL and HF path reliability are ported), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
 
 ### Verification
 
-- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (28 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (29 tests; `tvos.yml` also runs them inside the tvOS Simulator).
 - Threading: feed bodies are parsed (and written to the Caches copy) on a background task, never on the main actor, and satellite positions are computed every 5 s off the main actor with one batched core call. Parse times show up in Instruments as `parse` signpost intervals (subsystem `com.chrislaw.hamclockpro`).
 - App: `apple/tvos/UITests/RemoteWalkthroughTests.swift` drives the Siri Remote (`XCUIRemote`) through first-run setup, the pane chooser, pane options (hold Select and Play/Pause), the map menu and a settings change, then relaunches and checks that the station, the pane choice and the units were kept. Locally: `xcodebuild test -project apple/tvos/HamClockTV.xcodeproj -scheme HamClockTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation) (at 1080p)'`; set `TEST_RUNNER_HCP_SHOT_DIR=<dir>` to also write the screenshots. `tvos.yml` runs the same test and uploads the screenshots as the `tvos-simulator-screenshots` artifact.
 - Screenshots in `docs/images/tvos/` are tvOS Simulator captures with the live data of the moment they were taken, not photos of a TV. Nothing here has been checked on an Apple TV yet.
