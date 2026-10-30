@@ -147,6 +147,7 @@ if(BUILD_TESTING)
     set_tests_properties(kiosk-unit-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
     add_test(NAME map-menu-position-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/map_menu_position_regression.py)
     set_tests_properties(map-menu-position-regression PROPERTIES ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1" TIMEOUT 15)
+    add_test(NAME empty-dx-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/empty_dx_regression.py)
 endif()
 
 if(BUILD_TESTING)
