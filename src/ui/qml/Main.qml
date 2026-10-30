@@ -261,7 +261,7 @@ ApplicationWindow {
                     map: worldMap
                     x: 4 * Theme.scale
                     y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
-                    width: Math.min(implicitWidth, worldMap.width - 8 * Theme.scale)
+                    width: Math.max(0, Math.min(naturalWidth, worldMap.width - 8 * Theme.scale))
                     height: Math.min(implicitHeight, worldMap.height - y - 4 * Theme.scale)
                     onClosed: mapMenuButton.closedAt = Date.now()
                 }

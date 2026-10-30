@@ -9,6 +9,8 @@ import HamClock
 Popup {
     id: menu
     property var map
+    // Width the menu asks for, from its column alone (not the Popup implicit size, which loops).
+    readonly property real naturalWidth: menuColumn.implicitWidth + leftPadding + rightPadding
     padding: Theme.pad
     modal: false
     focus: true
