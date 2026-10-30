@@ -67,6 +67,12 @@ int main(int argc, char** argv) {
     check(rows.first().toMap()["cells"].toList().size() == 24, "24 hourly cells per band");
     check(model.startText() == "16Z", "columns start at the current UTC hour");
     check(model.pathText().startsWith("55") && model.pathText().endsWith("SSB 100 W · 6 dBi"), "path text with distance and mode");
+    check(model.pathText().startsWith("55") && model.pathText().contains(" km "), "metric path distance");
+    check(settings.saveImperialUnits(true).isEmpty(), "imperial saved");
+    for (int i = 0; i < 5; ++i) app.processEvents();
+    check(model.pathText().startsWith("34") && model.pathText().contains(" mi "), "path distance follows Imperial units");
+    check(settings.saveImperialUnits(false).isEmpty(), "metric restored");
+    for (int i = 0; i < 5; ++i) app.processEvents();
     check(model.bestText().startsWith("Best now: "), "best band named");
     double r20 = 0, r80 = 1;
     for (const auto& row : rows) {

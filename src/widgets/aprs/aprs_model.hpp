@@ -14,13 +14,15 @@ class AprsModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(int count READ count NOTIFY changed)
     Q_PROPERTY(QVariantList nearest READ nearest NOTIFY changed)
+    Q_PROPERTY(QString rangeText READ rangeText NOTIFY changed)
 public:
     AprsModel(const WidgetContext& context, TelnetSocketFactory factory, QObject* parent = nullptr);
     ~AprsModel() override;
     void start();
     void setMapVisible(bool visible); // per-source map on/off (default on)
     int count() const { return int(stations_.size()); }
-    QVariantList nearest() const; // closest to DE first, at most kShown rows
+    QVariantList nearest() const; // closest to DE first, at most kShown rows; "distance" follows the units setting
+    QString rangeText() const;    // "Stations within 100 km" (or miles)
     static QString login_line(const QString& call, double lat, double lon, int radius_km);
     static constexpr int kCapacity = 200, kShown = 30, kMaxAgeSec = 1800;
 signals:
