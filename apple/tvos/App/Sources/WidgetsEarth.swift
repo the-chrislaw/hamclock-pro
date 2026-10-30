@@ -172,6 +172,7 @@ struct PaneWidget: View {
         case "bands": BandsWidget(now: now, focused: focused)
         case "solarscales": ScalesWidget(now: now, focused: focused)
         case "solardst": DstWidget(now: now, focused: focused)
+        case "solaralerts": AlertsWidget(now: now, focused: focused)
         case "solaraurora": AuroraWidget(now: now, focused: focused)
         case "solardrap": DrapWidget(now: now, focused: focused)
         case "solarimage": SolarImageWidget(now: now, focused: focused)

@@ -74,6 +74,11 @@ final class Feeds: ObservableObject {
                          policy: .init(interval: minutes(30), staleAfter: hours(2), offlineAfter: hours(12))) {
         Feeds.parseDst($0)
     }
+    /// Alerts, watches and warnings (SolarAlertsModel: 10 min interval, stale after 2 h).
+    let alerts = PolledFeed(["\(swpc)/products/alerts.json"], source: "NOAA SWPC alerts",
+                            policy: .init(interval: minutes(10), staleAfter: hours(2), offlineAfter: hours(12))) {
+        SpaceAlerts.parse($0)
+    }
     let aurora = PolledFeed(["\(swpc)/json/ovation_aurora_latest.json"], source: "NOAA SWPC OVATION",
                             policy: .init(interval: minutes(10), staleAfter: hours(1), offlineAfter: hours(6))) { data -> AuroraData? in
         var info = HcpAurora()
@@ -131,6 +136,7 @@ final class Feeds: ObservableObject {
             group.addTask { await self.mag.run() }
             group.addTask { await self.scales.run() }
             group.addTask { await self.dst.run() }
+            group.addTask { await self.alerts.run() }
             group.addTask { await self.aurora.run() }
             group.addTask { await self.drap.run() }
             group.addTask { await self.quakes.run() }

@@ -21,7 +21,7 @@ enum WidgetCatalog {
         .init(id: "solaraurora", title: "Aurora", category: 1, tv: true),
         .init(id: "solardrap", title: "D-RAP", category: 1, tv: true),
         .init(id: "solarimage", title: "Sun (SDO)", category: 1, tv: true),
-        .init(id: "solaralerts", title: "Space alerts", category: 1, tv: false),
+        .init(id: "solaralerts", title: "Space alerts", category: 1, tv: true),
         .init(id: "solarhamqsl", title: "HamQSL conditions", category: 1, tv: false),
         .init(id: "bandsmatrix", title: "HF path reliability", category: 1, tv: false),
         .init(id: "solartrend", title: "Solar trend", category: 1, tv: false),

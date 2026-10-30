@@ -175,6 +175,23 @@ typedef struct {
 } HcpDst;
 int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
 int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
+/* NOAA SWPC alerts, watches and warnings (products/alerts.json), port of
+ * src/widgets/solaralerts/solar_alerts_parse. Texts are UTF-8, truncated to fit. */
+typedef struct {
+    char code[16];      /* SWPC product id, e.g. "K05A" */
+    char kind[24];      /* Alert, Warning, Extended warning, Watch, Summary, Cancel */
+    char headline[160];
+    char scale[4];      /* "G1", "S2", "R3"...; empty when none stated */
+    int64_t issued_ms;  /* UTC */
+    int64_t until_ms;   /* UTC end of validity; 0 when the message has none */
+    int cancelled;      /* 1 for a cancellation notice */
+    int level;          /* 0 info, 1 minor/moderate or a watch/warning, 2 strong+ (scale >= 3) */
+} HcpAlert;
+/* Every parseable message, NEWEST FIRST, up to cap; returns the count or -1 when the body is not the product. */
+int hcp_alerts_parse(const char* body, size_t len, HcpAlert* out, size_t cap);
+/* The messages in force at now_ms out of a parsed list (newest per product, no cancellations, warnings
+ * until their end time, alerts/summaries 24 h, watches 48 h). Returns the count written to out. */
+int hcp_alerts_active(const HcpAlert* all, size_t count, int64_t now_ms, HcpAlert* out, size_t cap);
 int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
 
 /* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.

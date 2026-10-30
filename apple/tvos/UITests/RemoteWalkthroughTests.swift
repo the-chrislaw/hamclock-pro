@@ -327,6 +327,24 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertTrue(app.buttons["choose_solardst"].waitForExistence(timeout: 5), "Dst index is offered on TV")
     }
 
+    /// Space alerts (ported from the Qt widget): offered in the chooser; shows what is in force, or
+    /// says nothing is, or an honest Offline / No data.
+    func testSpaceAlertsPane() {
+        app.launchArguments = ["-hcpResetSettings", "-hcpStation", "W1AW", "FN31pr", "PM95uq", "America/New_York",
+                               "-hcpPanes", "solaralerts"]
+        app.launch()
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertEqual(pane0.value as? String, "solaralerts")
+        XCTAssertTrue(waitFor(20) {
+            ["until", "issued", "in force", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "alerts, none in force, or an honest Offline: \(pane0.label)")
+        shot("tvos-space-alerts")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solaralerts"].waitForExistence(timeout: 5), "Space alerts is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

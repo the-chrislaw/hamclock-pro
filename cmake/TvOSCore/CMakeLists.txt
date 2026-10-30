@@ -36,6 +36,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/storms.cpp
     ${HCP_ROOT}/apple/tvos/Core/scales.cpp
     ${HCP_ROOT}/apple/tvos/Core/dst.cpp
+    ${HCP_ROOT}/apple/tvos/Core/alerts.cpp
     ${HCP_ROOT}/apple/tvos/Core/aurora.cpp
     ${HCP_ROOT}/apple/tvos/Core/drap.cpp
     ${HCP_ROOT}/apple/tvos/Core/launches.cpp
@@ -126,6 +127,7 @@ endfunction()
 hcp_core_test(series spaceweather)
 hcp_core_test(scales solarscales)
 hcp_core_test(dst solardst)
+hcp_core_test(alerts solaralerts)
 hcp_core_test(aurora solaraurora)
 hcp_core_test(drap solardrap)
 hcp_core_test(launches launches)

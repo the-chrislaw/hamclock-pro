@@ -1,6 +1,7 @@
 // C ABI: space-weather history, NOAA scales, OVATION aurora and D-RAP (see hcpcore.h).
 #include "hcpcore.h"
 #include "abi_util.hpp"
+#include "alerts.hpp"
 #include "aurora.hpp"
 #include "drap.hpp"
 #include "dst.hpp"
@@ -30,6 +31,31 @@ const char* solarwind_field(int field) {
     static const char* const fields[] = {hcp::solarwind::kSpeed, hcp::solarwind::kDensity, hcp::solarwind::kBt,
                                          hcp::solarwind::kBz};
     return field >= 0 && field <= 3 ? fields[field] : nullptr;
+}
+
+HcpAlert to_abi(const hcp::alerts::Alert& a) {
+    HcpAlert o{};
+    copy(a.code, o.code, sizeof o.code);
+    copy(a.kind, o.kind, sizeof o.kind);
+    copy(a.headline, o.headline, sizeof o.headline);
+    copy(a.scale, o.scale, sizeof o.scale);
+    o.issued_ms = a.issued_ms;
+    o.until_ms = a.until_ms;
+    o.cancelled = a.cancelled ? 1 : 0;
+    o.level = hcp::alerts::level(a);
+    return o;
+}
+
+hcp::alerts::Alert from_abi(const HcpAlert& o) {
+    hcp::alerts::Alert a;
+    a.code = o.code;
+    a.kind = o.kind;
+    a.headline = o.headline;
+    a.scale = o.scale;
+    a.issued_ms = o.issued_ms;
+    a.until_ms = o.until_ms;
+    a.cancelled = o.cancelled != 0;
+    return a;
 }
 
 HcpScaleDay day(const hcp::scales::Day& d) { return HcpScaleDay{d.r, d.s, d.g, d.r_minor, d.r_major, d.s_prob}; }
@@ -86,6 +112,25 @@ int hcp_dst_parse(const char* b, size_t n, HcpDst* out, size_t cap) {
 }
 
 int hcp_dst_word(int dst, char* buf, size_t cap) { return copy(hcp::dst::word(dst), buf, cap); }
+
+int hcp_alerts_parse(const char* b, size_t n, HcpAlert* out, size_t cap) {
+    const auto all = b ? hcp::alerts::parse(view(b, n)) : std::nullopt;
+    if (!all) return -1;
+    const size_t count = out ? std::min(all->size(), cap) : 0;
+    for (size_t i = 0; i < count; ++i) out[i] = to_abi((*all)[i]);
+    return static_cast<int>(count);
+}
+
+int hcp_alerts_active(const HcpAlert* all, size_t count, int64_t now_ms, HcpAlert* out, size_t cap) {
+    if (!all || !out) return 0;
+    std::vector<hcp::alerts::Alert> list;
+    list.reserve(count);
+    for (size_t i = 0; i < count; ++i) list.push_back(from_abi(all[i]));
+    const auto active = hcp::alerts::active(list, now_ms);
+    const size_t written = std::min(active.size(), cap);
+    for (size_t i = 0; i < written; ++i) out[i] = to_abi(active[i]);
+    return static_cast<int>(written);
+}
 
 int hcp_scale_word(int level, char* buf, size_t cap) { return copy(hcp::scales::scale_word(level), buf, cap); }
 
