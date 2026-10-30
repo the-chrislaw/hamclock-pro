@@ -72,6 +72,15 @@ int main() {
     for (const auto& b : lp_noon) lp_finite = lp_finite && std::isfinite(b.reliability) && std::isfinite(b.muf_mhz);
     check(lp_finite, "long path stays finite");
 
+    // Daytime W1AW (FN31pr) -> JJ00AA, ~8600 km, 3 hops, at a modest SFI 89: 20m is the
+    // classic open band here, not "HF closed" (the band-conditions widget rates it Good).
+    PathInput w1aw_africa{41.71, -72.73, 0.02, 0.04};
+    const auto africa = path_outlook(w1aw_africa, UtcSeconds{1761753600}, 89, 1); // 2025-10-29 16:00 UTC
+    check(band(africa, "20m").hops == 3, "W1AW-JJ00 three hops");
+    check(band(africa, "20m").reliability > 0.4, "W1AW-JJ00 20m open by day at SFI 89");
+    check(band(africa, "80m").reliability < 0.05, "W1AW-JJ00 80m absorbed by day");
+    check(band(africa, "20m").snr_db > 10, "W1AW-JJ00 20m SNR above the SSB need");
+
     // Bad input is clamped, never NaN.
     const auto odd = path_outlook(lon_ny, UtcSeconds{kNoonUtc}, std::nan(""), std::nan(""));
     bool finite = true;

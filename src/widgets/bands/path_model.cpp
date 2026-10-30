@@ -10,6 +10,7 @@ constexpr double kEarthKm = 6371.0;
 constexpr double kF2HeightKm = 300.0;
 constexpr double kDHeightKm = 100.0;
 constexpr double kMaxHopKm = 3000.0;
+constexpr double kKtbDbw = -170.0; // kT0 * 2.5 kHz
 struct BandDef { const char* name; double mhz; };
 constexpr BandDef kBands[] = {{"80m", 3.6}, {"40m", 7.1}, {"30m", 10.12}, {"20m", 14.2},
                               {"17m", 18.1}, {"15m", 21.2}, {"12m", 24.9}, {"10m", 28.4}};
@@ -42,6 +43,17 @@ double incidence(double theta, double h) {
 double takeoff(double theta, double h) {
     const double top = kEarthKm + h;
     return std::atan2(top * std::cos(theta) - kEarthKm, top * std::sin(theta));
+}
+// Ray incidence at the D layer for the F2 ray leaving the ground at `takeoff_rad` (ITU-R P.533 i110).
+double d_layer_incidence(double takeoff_rad) {
+    return std::asin(std::clamp(kEarthKm * std::cos(takeoff_rad) / (kEarthKm + kDHeightKm), 0.0, 0.999));
+}
+// Noise in 2.5 kHz (dBW): quiet-rural man-made plus galactic noise (ITU-R P.372 Fam), power-summed.
+double noise_dbw(double mhz) {
+    const double quiet_rural = 53.6 - 28.6 * std::log10(mhz);
+    const double galactic = 52.0 - 23.0 * std::log10(mhz);
+    const double fam = 10 * std::log10(std::pow(10.0, quiet_rural / 10) + std::pow(10.0, galactic / 10));
+    return kKtbDbw + fam;
 }
 double logistic(double x) { return 1.0 / (1.0 + std::exp(-x)); }
 
@@ -82,7 +94,7 @@ std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sf
     const double hop_km = dist / hops;
     const double theta = hop_km / (2 * kEarthKm);
     const double sec_f2 = 1.0 / std::cos(incidence(theta, kF2HeightKm));
-    const double sec_d = 1.0 / std::cos(incidence(theta, kDHeightKm));
+    const double sec_d = 1.0 / std::cos(d_layer_incidence(takeoff(theta, kF2HeightKm)));
     const double r12 = std::max(0.0, (sfi - 67) / 0.7);
     const auto sun = subsolar_point(utc);
 
@@ -113,7 +125,7 @@ std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sf
             absorb += 0.6 * 677.2 * (1 + 0.0037 * r12) * i_day * sec_d / (std::pow(def.mhz + 1.0, 1.98) + 10.2);
         }
         const double fspl = 32.45 + 20 * std::log10(def.mhz) + 20 * std::log10(slant_km);
-        const double noise = -170 + (67.2 - 27.7 * std::log10(def.mhz));
+        const double noise = noise_dbw(def.mhz);
         const double snr = power_dbw + p.gain_db - fspl - absorb - 2.0 * (hops - 1) - noise;
         const double rel = logistic((muf - def.mhz) / (0.06 * def.mhz) ) * logistic((snr - need_db(p.mode)) / 4.0) * storm;
         out.push_back({def.name, def.mhz, muf, snr, std::clamp(rel, 0.0, 1.0), deg(takeoff(theta, kF2HeightKm)), hops});
