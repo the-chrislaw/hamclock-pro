@@ -4,6 +4,7 @@
 #include "../../../net/polled_source.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
+#include <QLocale>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -27,6 +28,7 @@ QByteArray fixture(const QString& dir, const char* name) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     const QString dir = argv[1];
