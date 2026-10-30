@@ -119,6 +119,8 @@ void BandsMatrixModel::refreshState() {
         if (!kp_source_->lastError().isEmpty() || !flux_source_->lastError().isEmpty())
             setState("offline", "NOAA SWPC unreachable: " +
                      (kp_source_->lastError().isEmpty() ? flux_source_->lastError() : kp_source_->lastError()));
+        else if (awaitingFirstAnswer(*kp_source_) || awaitingFirstAnswer(*flux_source_))
+            setState("loading", "Contacting NOAA SWPC…");
         else if (kp_source_->fetchedAt().isValid() || flux_source_->fetchedAt().isValid())
             setState("stale", "NOAA SWPC returned no usable SFI/Kp data");
         else setState("loading", "Contacting NOAA SWPC…");
