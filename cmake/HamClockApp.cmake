@@ -11,6 +11,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_safearea.cpp
     src/platform/apple_orientation.cpp
     src/platform/apple_textentry.cpp
+    src/platform/apple_attribution.cpp
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
     src/platform/apple_camerafov.cpp
@@ -164,6 +165,11 @@ if(BUILD_TESTING)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
     add_test(NAME safe-area-regression COMMAND safe-area-regression)
     set_tests_properties(safe-area-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(attribution-regression tests/attribution_regression.cpp)
+    target_link_libraries(attribution-regression PRIVATE hamclock-widget-core)
+    set_target_properties(attribution-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME attribution-regression COMMAND attribution-regression)
+    set_tests_properties(attribution-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(text-entry-hint-regression tests/text_entry_hint_regression.cpp)
     target_link_libraries(text-entry-hint-regression PRIVATE hamclock-widget-core)
     set_target_properties(text-entry-hint-regression PROPERTIES AUTOMOC ON)
