@@ -1,0 +1,4 @@
+# LeakSanitizer suppressions for leaks inside Qt itself, not HamClock code (asan-ubsan CI job).
+# Qt 6.4's QQuickPixmap cache keeps a JPEG it is still decoding when the app quits right
+# after --screenshot; the buffer is allocated by the qjpeg image plugin.
+leak:libqjpeg.so
