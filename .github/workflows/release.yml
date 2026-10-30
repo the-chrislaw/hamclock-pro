@@ -41,7 +41,10 @@ jobs:
       - name: Build package in ${{ matrix.release }} ${{ matrix.arch }} container
         run: |
           # Date AND time so same-day builds upgrade cleanly (hash alone sorts arbitrarily).
-          version="1.0.0~git$(date -u +%Y%m%d%H%M%S).${GITHUB_SHA::7}"
+          # Same version as the Apple builds: the CMakeLists.txt project() version.
+          base=$(sed -nE 's/^project\(HamClockPro VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+          [ -n "$base" ] || { echo "No project version in CMakeLists.txt"; exit 1; }
+          version="${base}~git$(date -u +%Y%m%d%H%M%S).${GITHUB_SHA::7}"
           [[ "$GITHUB_REF" == refs/tags/v* ]] && version="${GITHUB_REF_NAME#v}"
           platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
           docker run --rm --platform "$platform" -v "$PWD":/src -w /src debian:${{ matrix.release }} bash -euxc "
@@ -118,7 +121,10 @@ jobs:
           # this file lists it with a matching checksum.
           (cd dist && sha256sum -- *.deb *.zip > SHA256SUMS && cat SHA256SUMS)
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            gh release create "$GITHUB_REF_NAME" dist/* --title "HamClock Pro $GITHUB_REF_NAME" --generate-notes
+            # apple.yml attaches the notarized Mac DMG to the same release and may get
+            # there first, so create it or add to it.
+            gh release create "$GITHUB_REF_NAME" dist/* --title "HamClock Pro $GITHUB_REF_NAME" --generate-notes \
+              || gh release upload "$GITHUB_REF_NAME" dist/* --clobber
           else
             gh release delete latest --cleanup-tag --yes || true
             gh release create latest dist/* --target "$GITHUB_SHA" --prerelease \

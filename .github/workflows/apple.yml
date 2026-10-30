@@ -3,6 +3,9 @@ name: Apple
 on:
   push:
     branches: [main]
+    # A v* tag builds the notarized DMG and attaches it to that tag's GitHub release
+    # (the TestFlight jobs stay main-only).
+    tags: ['v*']
     paths-ignore:
       - "docs/**"
       - "**.md"
@@ -95,6 +98,8 @@ jobs:
     # so it only runs on main — on PRs it doubled the macOS minutes for no signal.
     if: github.event_name == 'push'
     timeout-minutes: 45
+    permissions:
+      contents: write # only used on v* tags, to attach the notarized dmg to the release
     steps:
       - uses: actions/checkout@v4
       - name: Cache Qt install
@@ -207,6 +212,19 @@ jobs:
         with:
           name: hamclock-pro-macos-signed
           path: hamclock-pro-macos.dmg
+      # Tagged release: put the notarized dmg on the GitHub release that release.yml
+      # creates for the same tag. Whichever workflow gets there first creates it.
+      - name: Attach the notarized dmg to the tag's release
+        if: startsWith(github.ref, 'refs/tags/v') && steps.sign.outputs.sign == 'true' && steps.sign.outputs.notarize == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mv hamclock-pro-macos.dmg "hamclock-pro-${GITHUB_REF_NAME}-macos.dmg"
+          dmg="hamclock-pro-${GITHUB_REF_NAME}-macos.dmg"
+          gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber \
+            || gh release create "$GITHUB_REF_NAME" "$dmg" --title "HamClock Pro $GITHUB_REF_NAME" --generate-notes \
+            || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber
 
   # iPhone/iPad home-screen widgets (apple/widgets, docs/widgets-ios.md): a native
   # WidgetKit extension over the Qt-free core shared with the Apple TV app. Builds

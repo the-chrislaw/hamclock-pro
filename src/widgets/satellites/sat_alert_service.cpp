@@ -150,6 +150,7 @@ void SatAlertService::setElements(const std::vector<Tle>& tles) {
     // elementsChanged also fires for transmitter updates; skip the 48 h prediction when nothing moved.
     if (same_elements(tles, tles_)) return;
     tles_ = tles;
+    ++elements_version_;
     emit selectionChanged(); // the "other" list follows the TLE set
     predict();
 }
@@ -169,10 +170,20 @@ void SatAlertService::apply(const SatAlertPrefs& next) {
     predict();
 }
 
+// What the SGP4 prediction depends on: the element set, the station and which satellites are
+// selected. Thresholds, lead time, quiet hours and daylight only filter its result.
+QString SatAlertService::predictionKey(const std::vector<Tle>& fresh) const {
+    QStringList ids;
+    for (const Tle& tle : fresh)
+        if (const int norad = tle_norad_id(tle); isSelected(norad)) ids.append(QString::number(norad));
+    ids.sort();
+    return QString("%1|%2,%3|%4").arg(elements_version_).arg(settings_->deLatitude(), 0, 'g', 10)
+        .arg(settings_->deLongitude(), 0, 'g', 10).arg(ids.join(','));
+}
+
 void SatAlertService::predict() {
     passes_.clear();
     const qint64 now = nowSecs();
-    predicted_at_ = now;
     predicted_ = false;
     status_.clear();
     const std::vector<Tle> fresh = fresh_tles(tles_, static_cast<double>(now));
@@ -183,12 +194,22 @@ void SatAlertService::predict() {
     } else if (fresh.empty()) {
         status_ = tles_.empty() ? "Waiting for satellite elements" : "Satellite elements are too old";
     }
-    if (!status_.isEmpty()) { replan(); return; }
-
-    const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
-    const auto selected = [this](int norad) { return isSelected(norad); };
-    const std::vector<AlertPass> all = predict_alert_passes(fresh, selected, catalog_, obs, now);
-    passes_ = alert_passes(all, prefs_, catalog_, zone(), now);
+    if (!status_.isEmpty()) {
+        predicted_at_ = now;
+        replan();
+        return;
+    }
+    // Reuse the last run while its inputs are unchanged and its 48 h window is recent enough.
+    const QString key = predictionKey(fresh);
+    if (key != raw_key_ || now < predicted_at_ || now - predicted_at_ >= kRepredictS) {
+        const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
+        const auto selected = [this](int norad) { return isSelected(norad); };
+        raw_passes_ = predict_alert_passes(fresh, selected, catalog_, obs, now);
+        raw_key_ = key;
+        predicted_at_ = now;
+        ++prediction_runs_;
+    }
+    passes_ = alert_passes(raw_passes_, prefs_, catalog_, zone(), now);
     predicted_ = true;
     replan();
 }

@@ -9,10 +9,11 @@
 //     reduced up to 40% toward the poles. MUF = foF2 / cos(incidence angle at
 //     300 km); the path MUF is the lowest control-point MUF.
 //   * Absorption: ITU-R P.533-style D-layer loss per hop (scaled by 0.6, tuned so a daytime
-//     transatlantic 20m path loses about 10 dB), by solar zenith angle, summed.
+//     transatlantic 20m path loses about 10 dB), by solar zenith angle, summed. The secant is
+//     taken where the F2 ray crosses the D layer (P.533 i110).
 //   * SNR in 2.5 kHz = power + gain - free-space loss over the slanted path -
-//     absorption - 2 dB per extra ground reflection - quiet-rural noise
-//     (ITU-R P.372). Mode sets the SNR needed.
+//     absorption - 2 dB per extra ground reflection - noise (ITU-R P.372 quiet-rural
+//     man-made plus galactic, power-summed). Mode sets the SNR needed.
 //   * Reliability = P(f below the median MUF, logistic, +-6%) * P(SNR above
 //     the need, logistic, 4 dB) * geomagnetic factor (Kp >= 5 and polar paths).
 // Short path by default, or the long path (other way round the globe) with `long_path`; takeoff angle is the ground elevation of the first hop.

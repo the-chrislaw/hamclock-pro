@@ -28,6 +28,8 @@ HamsatModel::HamsatModel(const WidgetContext& context, QObject* parent)
         };
     }
     source_ = new PolledSource("hamsat-upcoming", QUrl(kUrl), kPolicy, transport, this);
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return hamsat::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this](bool from_cache) {
         feed_ = hamsat::parse(source_->body());
         // A cached list does not say how it was fetched, so it is never shown as personalised.

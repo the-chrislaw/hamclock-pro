@@ -181,6 +181,12 @@ if(BUILD_TESTING)
     add_test(NAME accounts-regression COMMAND accounts-regression)
     set_tests_properties(accounts-regression PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-accounts;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-accounts")
+    add_executable(fetch-robustness-regression tests/fetch_robustness_regression.cpp)
+    target_link_libraries(fetch-robustness-regression PRIVATE hamclock-widget-core)
+    set_target_properties(fetch-robustness-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME fetch-robustness-regression COMMAND fetch-robustness-regression)
+    set_tests_properties(fetch-robustness-regression PROPERTIES TIMEOUT 60
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-fetch;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-fetch")
     add_executable(app-lifecycle-regression tests/app_lifecycle_regression.cpp)
     target_link_libraries(app-lifecycle-regression PRIVATE hamclock-widget-core)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)

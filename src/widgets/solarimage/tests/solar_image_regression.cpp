@@ -76,6 +76,14 @@ int main(int argc, char** argv) {
     settle();
     check(model.state() == "stale" && model.hasImage(), "outage -> stale, last image kept");
 
+    // A captive portal or maintenance page after a good image keeps the image and its cache.
+    mode = "html";
+    model.source(0).refreshNow();
+    settle();
+    check(model.hasImage() && model.source(0).body() == jpeg, "HTML after a good image keeps the image");
+    QFile cached(model.source(0).cachePath());
+    check(cached.open(QIODevice::ReadOnly) && cached.readAll().endsWith(jpeg), "cache keeps the last good image");
+
     // A server returning an HTML error page is an error, not a picture.
     SolarImageModel bad(context);
     mode = "html";

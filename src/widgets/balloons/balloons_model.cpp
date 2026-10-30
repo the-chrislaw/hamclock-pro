@@ -24,6 +24,8 @@ QString km_text(double km) { return QString::number(km, 'f', 0) + " km"; }
 BalloonsModel::BalloonsModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("balloons", "Balloons", parent), settings_(context.settings),
       source_(new PolledSource("sondehub-telemetry", QUrl(kUrl), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return balloons::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = balloons::parse(source_->body());
         emit balloonsChanged();

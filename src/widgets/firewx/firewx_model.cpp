@@ -41,6 +41,8 @@ FirewxModel::FirewxModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("firewx", "Fire weather", parent),
       context_(context),
       source_(new PolledSource("nws-firewx-alerts", feed_url(), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return firewx::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = firewx::parse(source_->body());
         emit alertsChanged();
@@ -63,6 +65,7 @@ void FirewxModel::resetPointSource() {
     if (s && s->configured() && valid_location({s->deLatitude(), s->deLongitude()})) {
         point_ = new PolledSource("nws-firewx-point", point_url(s->deLatitude(), s->deLongitude()), kPolicy,
                                   context_.transport, this);
+        point_->setValidator([](const QByteArray& body) { return firewx::parse(body).ok; });
         connect(point_, &PolledSource::updated, this, [this] {
             point_feed_ = firewx::parse(point_->body());
             emit alertsChanged();

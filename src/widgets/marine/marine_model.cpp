@@ -37,6 +37,8 @@ MarineModel::MarineModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("marine", "Marine warnings", parent),
       context_(context),
       source_(new PolledSource("nws-marine-alerts", feed_url(), kPolicy, context.transport, this)) {
+    // Unusable answers (schema change, cut-off body) keep the last good data.
+    source_->setValidator([](const QByteArray& body) { return marine::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
         feed_ = marine::parse(source_->body());
         emit alertsChanged();
@@ -61,6 +63,7 @@ void MarineModel::resetRegionSource() {
         region_code_ = marine::region_for(s->deLatitude(), s->deLongitude());
         if (!region_code_.isEmpty()) {
             region_ = new PolledSource("nws-marine-region", region_url(region_code_), kPolicy, context_.transport, this);
+            region_->setValidator([](const QByteArray& body) { return marine::parse(body).ok; });
             connect(region_, &PolledSource::updated, this, [this] {
                 region_feed_ = marine::parse(region_->body());
                 emit alertsChanged();
