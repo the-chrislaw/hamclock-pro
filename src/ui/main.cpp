@@ -16,6 +16,7 @@
 #include "../platform/credential_store.hpp"
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
+#include "../platform/apple_attribution.hpp"
 #include "../platform/apple_widgetshare.hpp"
 #include <QSettings>
 #include <QEventLoop>
@@ -249,6 +250,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
+    engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
