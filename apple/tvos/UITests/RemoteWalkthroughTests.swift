@@ -123,7 +123,7 @@ final class RemoteWalkthroughTests: XCTestCase {
         // A pane that does not rotate: right moves the focus to the next pane, as before.
         moveFocus(to: pane0)
         remote.press(.right)
-        XCTAssertTrue(waitFor { pane1.hasFocus }, "right moves focus off a pane that does not rotate; focused: \(self.focused.exists ? self.focused.identifier : "nothing")")
+        XCTAssertTrue(waitFor { pane1.holdsFocus }, "right moves focus off a pane that does not rotate; focused: \(self.focused.exists ? self.focused.identifier : "nothing")")
 
         // Rotate pane 2 every 10 s.
         remote.press(.select, forDuration: 1.2)
@@ -133,17 +133,17 @@ final class RemoteWalkthroughTests: XCTestCase {
         remote.press(.select)
         XCTAssertTrue(waitFor { self.app.buttons["optRotate"].label.contains("10 s") })
         remote.press(.menu)
-        XCTAssertTrue(waitFor { pane1.hasFocus }, "focus back on the pane")
+        XCTAssertTrue(waitFor { pane1.holdsFocus }, "focus back on the pane")
         XCTAssertEqual(pane1.value as? String, "solarwind")
 
         remote.press(.right)
         XCTAssertTrue(waitFor { (pane1.value as? String) == "bands" }, "right steps forwards: \(String(describing: pane1.value))")
-        XCTAssertTrue(pane1.hasFocus, "the focus stays on the rotating pane")
+        XCTAssertTrue(pane1.holdsFocus, "the focus stays on the rotating pane")
         shot("tvos-rotating-pane-hint")
         remote.press(.left)
         remote.press(.left)
         XCTAssertTrue(waitFor { (pane1.value as? String) == "spaceweather" }, "left steps backwards")
-        XCTAssertTrue(pane1.hasFocus)
+        XCTAssertTrue(pane1.holdsFocus)
         remote.press(.left)
         XCTAssertTrue(waitFor { (pane1.value as? String) == PaneOrder.last }, "left wraps round to the last TV widget")
         XCTAssertTrue(waitFor { pane1.label.contains(PaneOrder.lastTitle) }, "the stepped widget shows at once: \(pane1.label)")
@@ -152,9 +152,9 @@ final class RemoteWalkthroughTests: XCTestCase {
 
         // Up/down still leave a rotating pane.
         remote.press(.down)
-        XCTAssertTrue(waitFor { map.hasFocus }, "down moves on to the map")
+        XCTAssertTrue(waitFor { map.holdsFocus }, "down moves on to the map")
         remote.press(.up)
-        XCTAssertTrue(waitFor { pane1.hasFocus || pane0.hasFocus || self.app.descendants(matching: .any)["pane2"].hasFocus },
+        XCTAssertTrue(waitFor { pane1.holdsFocus || pane0.holdsFocus || self.app.descendants(matching: .any)["pane2"].holdsFocus },
                       "up returns to the panes")
         moveFocus(to: app.buttons["settingsButton"])
         moveFocus(to: app.descendants(matching: .any)["stationCard"])
@@ -236,7 +236,7 @@ final class RemoteWalkthroughTests: XCTestCase {
     }
 
     private var focused: XCUIElement {
-        app.descendants(matching: .any).element(matching: NSPredicate(format: "hasFocus == true"))
+        app.descendants(matching: .any).matching(XCUIElement.focusedPredicate).firstMatch
     }
 
     /// Moves the focus engine toward `target` with the remote's arrows, by comparing frames.
@@ -245,7 +245,7 @@ final class RemoteWalkthroughTests: XCTestCase {
         _ = waitFor(5) { self.focused.exists } // just after a launch or an overlay closing
         var stuck = 0
         for _ in 0..<40 {
-            if target.hasFocus { return }
+            if target.holdsFocus { return }
             let from = focused.exists ? focused.frame : .zero
             let to = target.frame
             let dx = to.midX - from.midX, dy = to.midY - from.midY
@@ -258,11 +258,11 @@ final class RemoteWalkthroughTests: XCTestCase {
             usleep(350_000)
             stuck = !focused.exists || focused.frame == from ? stuck + 1 : 0
         }
-        if !target.hasFocus {
+        if !target.holdsFocus {
             shot("failure-focus")
             print("FOCUSED: \(focused.debugDescription)\nTREE: \(app.debugDescription)")
         }
-        XCTAssertTrue(target.hasFocus, "focus reached \(target); focused: \(focused.exists ? focused.identifier + " " + focused.label : "nothing")", file: file, line: line)
+        XCTAssertTrue(target.holdsFocus, "focus reached \(target); focused: \(focused.exists ? focused.identifier + " " + focused.label : "nothing")", file: file, line: line)
     }
 
     private func waitFor(_ timeout: TimeInterval = 5, _ condition: @escaping () -> Bool) -> Bool {
@@ -291,4 +291,15 @@ final class RemoteWalkthroughTests: XCTestCase {
 private enum PaneOrder {
     static let last = "launches"
     static let lastTitle = "Launches"
+}
+
+extension XCUIElement {
+    static let focusedPredicate = NSPredicate(format: "hasFocus == true")
+
+    /// The element has the focus, or one of its descendants reports it. tvOS 18 reports
+    /// `hasFocus` on a text inside a focused SwiftUI Button (e.g. "Weakly south" in the Solar
+    /// wind pane) rather than on the Button itself; tvOS 26+ reports it on the Button.
+    var holdsFocus: Bool {
+        hasFocus || descendants(matching: .any).matching(Self.focusedPredicate).firstMatch.exists
+    }
 }

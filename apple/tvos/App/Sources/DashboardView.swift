@@ -115,8 +115,7 @@ struct DashboardView: View {
         }
         .focused($focus, equals: .pane(i))
         // While a pane rotates, left/right step it by hand (PaneSlot.qml); up/down still move on.
-        // Attached only to rotating panes: an onMoveCommand with a nil action can still take the
-        // arrows from the focus engine on tvOS 18, which stopped left/right between panes.
+        // Attached only to rotating panes, so other panes never see a move handler at all.
         .modifier(RotationStepper(enabled: rotating) { stepRotation(i, $0) })
         .accessibilityIdentifier("pane\(i)")
         .accessibilityValue(settings.panes[i])
