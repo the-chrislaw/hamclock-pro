@@ -287,6 +287,12 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
+#ifdef Q_OS_MACOS
+    // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
+    engine.rootContext()->setContextProperty("nativeMenuBar", !parser.isSet(screenshot));
+#else
+    engine.rootContext()->setContextProperty("nativeMenuBar", false); // iOS, Linux, Pi kiosk
+#endif
     engine.rootContext()->setContextProperty("forcedTheme", parser.value(theme));
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;

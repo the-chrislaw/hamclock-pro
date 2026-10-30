@@ -100,7 +100,8 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml
+    src/ui/qml/MacMenuBar.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -213,6 +214,13 @@ if(BUILD_TESTING)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
     add_test(NAME safe-area-regression COMMAND safe-area-regression)
     set_tests_properties(safe-area-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    # Native Mac menu bar (Qt.labs.platform is only required on the Mac).
+    if(APPLE AND NOT IOS)
+        add_executable(mac-menu-bar-regression tests/mac_menu_bar_regression.cpp)
+        target_link_libraries(mac-menu-bar-regression PRIVATE Qt6::Quick)
+        add_test(NAME mac-menu-bar-regression COMMAND mac-menu-bar-regression ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml)
+        set_tests_properties(mac-menu-bar-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    endif()
     add_executable(attribution-regression tests/attribution_regression.cpp)
     target_link_libraries(attribution-regression PRIVATE hamclock-widget-core)
     set_target_properties(attribution-regression PROPERTIES AUTOMOC ON)

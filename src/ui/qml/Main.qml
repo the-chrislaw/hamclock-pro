@@ -16,7 +16,30 @@ ApplicationWindow {
     color: Theme.canvas
 
     // Kiosk first boot (--first-run): no station yet, so start in Settings.
-    Component.onCompleted: if (firstRun && !station.configured) settingsLayer.visible = true
+    Component.onCompleted: {
+        if (firstRun && !station.configured) settingsLayer.visible = true
+        if (nativeMenuBar) createMacMenuBar()
+    }
+
+    // Native Mac menu bar (main.cpp sets nativeMenuBar on macOS only). Created from
+    // its file at run time so the Pi kiosk, Linux and iOS never load Qt.labs.platform.
+    function createMacMenuBar() {
+        const component = Qt.createComponent("MacMenuBar.qml")
+        if (component.status !== Component.Ready) {
+            console.warn("Mac menu bar: " + component.errorString())
+            return
+        }
+        const bar = component.createObject(window, {
+            appWindow: window,
+            settingsAvailable: Qt.binding(() => !window.overlayOpen),
+            pathAvailable: Qt.binding(() => station.configured),
+            showPath: Qt.binding(() => worldMap.showPath),
+            appearance: Qt.binding(() => appSettings.appearance)
+        })
+        bar.settingsRequested.connect(() => settingsLayer.visible = true)
+        bar.pathToggleRequested.connect(() => worldMap.showPath = !worldMap.showPath)
+        bar.appearanceRequested.connect(value => appSettings.appearance = value)
+    }
 
     SystemPalette { id: systemPalette }
     Binding {
@@ -54,9 +77,11 @@ ApplicationWindow {
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
     // F11 (Pi, Linux, Windows); Control-Command-F on the Mac, where F11 is Show Desktop.
-    Shortcut { sequences: ["F11", "Ctrl+Meta+F"]; onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
+    // With the native Mac menu bar its View and app menus own Control-Command-F and
+    // Command-comma, so these shortcuts step aside rather than fire a second time.
+    Shortcut { sequences: ["F11"].concat(nativeMenuBar ? [] : ["Ctrl+Meta+F"]); onActivated: window.visibility = window.visibility === Window.FullScreen ? Window.Windowed : Window.FullScreen }
     // Command-comma opens Settings on the Mac, as in every Mac app (Ctrl+comma elsewhere).
-    Shortcut { sequences: ["Ctrl+,"]; enabled: !window.overlayOpen; onActivated: settingsLayer.visible = true }
+    Shortcut { sequences: ["Ctrl+,"]; enabled: !nativeMenuBar && !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
