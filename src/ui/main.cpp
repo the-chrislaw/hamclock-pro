@@ -18,6 +18,7 @@
 #include "../platform/apple_textentry.hpp"
 #include "../platform/apple_attribution.hpp"
 #include <QEventLoop>
+#include <QNetworkInformation>
 #include <QGuiApplication>
 #include <QThread>
 #include <QCommandLineParser>
@@ -127,6 +128,9 @@ int main(int argc, char** argv) {
     // No organization name: settings live in ~/.config/hamclock-pro (not .../hamclock-pro/hamclock-pro).
     QGuiApplication::setApplicationVersion("1.0.0");
     hamclock::AppLifecycle::instance().attachToApplication(); // iPad: pause polling while suspended
+    // Lets every PolledSource retry at once when the network comes back (Wi-Fi drop, sleep).
+    if (!QNetworkInformation::loadDefaultBackend())
+        qWarning("No network reachability backend; sources retry on their backoff only");
 
     QCommandLineParser parser;
     parser.setApplicationDescription("HamClock Pro amateur radio dashboard");

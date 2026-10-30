@@ -89,6 +89,7 @@ void StormsModel::syncForecastSources() {
         cache.remove(QRegularExpression("[^a-z0-9]"));
         auto* src = new PolledSource("nhc-forecast-" + cache, QUrl(it->forecast_url), kPolicy, transport_, this);
         src->setClock([this] { return now(); });
+        src->setAcceptsHtml(true); // the advisory is an .shtml page with the text in <pre>
         connect(src, &PolledSource::updated, this, &StormsModel::refreshState);
         forecast_sources_.insert(it.key(), {src, it->forecast_url, it->forecast_adv, it->issued});
         src->start();

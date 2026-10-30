@@ -6,6 +6,7 @@
 #include "../../../net/polled_source.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
+#include <QStandardPaths>
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
@@ -25,6 +26,9 @@ void check(bool ok, const char* label) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    // Start from an empty cache: a place name cached by an earlier run is (rightly)
+    // not re-requested, which would hide the request this test counts.
+    QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     QFile file(QDir(argv[1]).filePath("forecast"));
