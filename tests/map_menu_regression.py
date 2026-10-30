@@ -12,6 +12,8 @@ if "Layout.preferredWidth" not in flow:
     sys.exit("MapMenu.qml: the base map Flow needs a fixed preferred width (width binding loop)")
 if not re.search(r"contentWidth:\s*width", qml) or not re.search(r"id: menuColumn\s*\n\s*width:\s*menuFlick\.width", qml):
     sys.exit("MapMenu.qml: the menu column must take the popup width, not its own childrenRect")
+if "RowLayout" in qml:
+    sys.exit("MapMenu.qml: chip rows must wrap (Flow), a RowLayout elides them on a phone")
 main = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml/Main.qml").read_text()
 menu_use = main.split("MapMenu {", 1)[1][:500]
 if re.search(r"width:[^\n]*\bimplicitWidth\b", menu_use) or "naturalWidth" not in menu_use:
