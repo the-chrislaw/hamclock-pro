@@ -26,6 +26,11 @@ Grid parse_drap(const QByteArray& body);
 // Highest frequency anywhere on the grid, MHz.
 double peak(const Grid& grid);
 
+// Below this the table shows no absorption (and the map style leaves the cell transparent).
+constexpr double kMinAbsorbedMhz = 1.0;
+// "Max 7.3 MHz", or "No HF absorption" on a quiet day (peak below kMinAbsorbedMhz).
+QString peak_text(double peak_mhz);
+
 ColorScale drap_scale();
 
 // World image for the map style: 360 x 180, longitude -180..179 left to right, north up.

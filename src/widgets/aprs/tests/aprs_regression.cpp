@@ -61,6 +61,14 @@ int main(int argc, char** argv) {
     check(model.state() == "live" && model.count() == 2, "stations taken");
     const auto n = model.nearest();
     check(n.size() == 2 && n[0].toMap()["call"] == "N0CALL-9" && n[0].toMap()["km"].toInt() < 20, "nearest first");
+    // Distances and the range follow the Distance units setting.
+    check(n[1].toMap()["distance"].toString() == QString("%1 km").arg(n[1].toMap()["km"].toInt()), "metric distance label");
+    check(model.rangeText() == "Stations within 100 km", "metric range");
+    check(settings.saveImperialUnits(true).isEmpty(), "imperial saved");
+    check(model.nearest()[1].toMap()["distance"].toString() ==
+              QString("%1 mi").arg(qRound(n[1].toMap()["km"].toInt() / 1.609344)), "imperial distance label");
+    check(model.rangeText() == "Stations within 62 mi", "imperial range");
+    check(settings.saveImperialUnits(false).isEmpty(), "metric restored");
     {
         const auto& layers = MapOverlays::instance().layers();
         check(layers.size() == 1 && layers[0].id == "aprs" && layers[0].markers.size() == 2, "live stations published on the map");

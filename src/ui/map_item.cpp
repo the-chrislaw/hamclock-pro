@@ -366,8 +366,8 @@ void MapItem::syncStation() {
             const auto& station = g_settings->station();
             const auto result = geometry(station.de, station.dx);
             scene_.de = station.de;
-            scene_.dx = station.dx;
-            if (result.status != BearingStatus::Antipodal) scene_.route = options_.long_path ? map_long_path(station.de, station.dx)
+            if (has_dx(station)) scene_.dx = station.dx;
+            if (has_dx(station) && result.status != BearingStatus::Antipodal) scene_.route = options_.long_path ? map_long_path(station.de, station.dx)
                                                                   : map_short_path(station.de, station.dx);
         } catch (const std::exception&) {
             scene_.de.reset();

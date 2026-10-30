@@ -19,7 +19,9 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
     src/platform/apple_passreminder.cpp
+    src/platform/apple_notifications.cpp
     src/platform/apple_widgetshare.cpp
+    src/platform/apple_devicelocation.cpp
     src/widgets/widget_model.cpp
     src/widgets/widget_registry.cpp
     src/ui/app_settings.cpp
@@ -37,6 +39,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     target_link_libraries(hamclock-widget-core PUBLIC ${HC_APPKIT})
 endif()
 option(HAMCLOCK_SKY_FINDER "Build the iOS sky finder sensors and permission prompts" OFF)
+# Satellite pass alerts: UNUserNotificationCenter on iPhone, iPad and the Mac app.
+if(APPLE)
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_notifications.mm)
+    set_source_files_properties(src/platform/apple_notifications.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+    if(NOT IOS)
+        find_library(HC_MAC_USERNOTIFICATIONS UserNotifications REQUIRED)
+        target_link_libraries(hamclock-widget-core PUBLIC ${HC_MAC_USERNOTIFICATIONS})
+    endif()
+endif()
 if(IOS)
     target_sources(hamclock-widget-core PRIVATE src/platform/apple_safearea_ios.mm src/platform/apple_textentry_ios.mm src/platform/apple_orientation_ios.mm src/platform/apple_haptics_ios.mm src/platform/apple_passreminder_ios.mm src/platform/apple_widgetshare_ios.mm)
     find_library(HC_USERNOTIFICATIONS UserNotifications REQUIRED)
@@ -67,12 +78,14 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
+    src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
     src/app/station_view.cpp
     src/qt/de_time_zone.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/widgets_generated.cpp)
 target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2)
+target_compile_definitions(hamclock-pro PRIVATE HAMCLOCK_VERSION="${PROJECT_VERSION}")
 set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.app
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
@@ -80,7 +93,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -164,6 +177,14 @@ if(BUILD_TESTING)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
     add_test(NAME app-lifecycle-regression COMMAND app-lifecycle-regression)
     set_tests_properties(app-lifecycle-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(window-geometry-regression tests/window_geometry_regression.cpp src/ui/window_geometry.cpp)
+    target_link_libraries(window-geometry-regression PRIVATE Qt6::Gui)
+    add_test(NAME window-geometry-regression COMMAND window-geometry-regression)
+    set_tests_properties(window-geometry-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(cache-dir-regression tests/cache_dir_regression.cpp)
+    target_link_libraries(cache-dir-regression PRIVATE hamclock-widget-core)
+    add_test(NAME cache-dir-regression COMMAND cache-dir-regression)
+    set_tests_properties(cache-dir-regression PROPERTIES TIMEOUT 30)
     if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         add_executable(app-lifecycle-mac-regression tests/app_lifecycle_mac_regression.mm)
         target_link_libraries(app-lifecycle-mac-regression PRIVATE hamclock-widget-core)
@@ -202,6 +223,10 @@ if(BUILD_TESTING)
     target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
     add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
     set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(device-location-regression tests/device_location_regression.cpp)
+    target_link_libraries(device-location-regression PRIVATE hamclock-widget-core)
+    add_test(NAME device-location-regression COMMAND device-location-regression)
+    set_tests_properties(device-location-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(sky-attitude-regression tests/sky_attitude_regression.cpp)
     target_link_libraries(sky-attitude-regression PRIVATE hamclock-widget-core)
     add_test(NAME sky-attitude-regression COMMAND sky-attitude-regression)
@@ -308,6 +333,13 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
     endforeach()
+    # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
+    add_test(NAME app-version-headless COMMAND hamclock-pro --version)
+    set_tests_properties(app-version-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "hamclock-pro ${PROJECT_VERSION}")
+    add_test(NAME app-help-headless COMMAND hamclock-pro --help)
+    set_tests_properties(app-help-headless PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=no-such-platform"
+        PASS_REGULAR_EXPRESSION "--touch-keyboard|--first-run")
     set_tests_properties(qml-app-smoke PROPERTIES TIMEOUT 30
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # A long reverse-geocoded place ("DX · Greater London, GB") must not be cut short on desktop windows.
