@@ -17,6 +17,10 @@ inline QString date_format(int order) {
 inline QString clock_time(const QDateTime& utc, qint64 offset_secs, bool h12 = false) {
     return utc.addSecs(offset_secs).toString(h12 ? "h:mm:ss AP" : "HH:mm:ss");
 }
+// Hours and minutes only ("14:05", or "2:05 PM" in 12 h mode), for secondary clock lines.
+inline QString clock_short(const QDateTime& utc, qint64 offset_secs, bool h12 = false) {
+    return utc.addSecs(offset_secs).toString(h12 ? "h:mm AP" : "HH:mm");
+}
 inline QString clock_date(const QDateTime& utc, qint64 offset_secs, int order = 0) {
     return utc.addSecs(offset_secs).toString(date_format(order));
 }
@@ -29,7 +33,7 @@ inline QString zone_local_text(const QString& zone_id, const QDateTime& utc, boo
     if (!tz.isValid()) return {};
     QString city = zone_id.mid(zone_id.lastIndexOf('/') + 1);
     city.replace('_', ' ');
-    const QString time = utc.addSecs(tz.offsetFromUtc(utc)).toString(h12 ? "h:mm AP" : "HH:mm");
+    const QString time = clock_short(utc, tz.offsetFromUtc(utc), h12);
     return "Local " + time + " · " + city + (suggested ? " (auto)" : "");
 }
 

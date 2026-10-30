@@ -175,11 +175,11 @@ Rectangle {
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap
-                        FormField { id: dxLat; label: "DX latitude"
-                                    text: appSettings.configured ? appSettings.dxLatitude : ""
+                        FormField { id: dxLat; label: "DX latitude (empty = no DX)"
+                                    text: appSettings.hasDx ? appSettings.dxLatitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                         FormField { id: dxLon; label: "DX longitude"
-                                    text: appSettings.configured ? appSettings.dxLongitude : ""
+                                    text: appSettings.hasDx ? appSettings.dxLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
                     function suggestZone(lat, lon) {
@@ -211,7 +211,7 @@ Rectangle {
 
                     function coordinate(field, latitude) { return locationTools.parseCoordinate(field.text, latitude) }
                     // Saves the station and DX zone when anything changed. DX is optional:
-                    // left empty it keeps the current target. Returns false with a message
+                    // left empty it means no DX target (stored as DX = DE). Returns false with a message
                     // in stationError when the input can't be saved.
                     function save() {
                         const typed = callsign.text.trim().length || deLat.text.trim().length || deLon.text.trim().length
@@ -222,8 +222,7 @@ Rectangle {
                             return false
                         }
                         const dxTyped = dxLat.text.trim().length || dxLon.text.trim().length
-                        const dx = dxTyped ? [coordinate(dxLat, true), coordinate(dxLon, false)]
-                                           : [appSettings.dxLatitude, appSettings.dxLongitude]
+                        const dx = dxTyped ? [coordinate(dxLat, true), coordinate(dxLon, false)] : de
                         if (dx.some(isNaN)) {
                             stationError.text = "For DX, enter both latitude and longitude, or leave both empty."
                             return false
