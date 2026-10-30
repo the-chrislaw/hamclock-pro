@@ -128,10 +128,13 @@ struct OtaWidget: View {
         // Spots come only from Live/Stale feeds, so the card is as good as its best feed;
         // the status line names the feeds that are out.
         let state = [WidgetState.live, .stale, .loading].first { states.contains($0) } ?? .offline
-        let out = all.filter { $0.state(now) == .offline }.map(\.source)
+        // The badge is the best feed's state, so the age is the newest fetch; feeds that are not
+        // Live are named in the status line ("WWFF stale"), so a Live badge never hides an old feed.
+        let lagging = zip(all, states).filter { $0.1 == .stale || $0.1 == .offline }
+            .map { "\($0.0.source) \($0.1 == .stale ? "stale" : "offline")" }
         Card(title: "On the air", chooser: true, state: state,
-             status: out.isEmpty || out.count == 3 ? "POTA · SOTA · WWFF" : "No " + out.joined(separator: ", "),
-             age: Age.text(all.compactMap(\.status.fetched).min(), now: now), focused: focused) {
+             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : lagging.joined(separator: " · "),
+             age: Age.text(all.compactMap(\.status.fetched).max(), now: now), focused: focused) {
             if spots.isEmpty { Note(text: state == .loading ? "Loading…" : "No spots") }
             Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
                 ForEach(spots.prefix(7)) { s in
