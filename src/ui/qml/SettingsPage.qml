@@ -61,6 +61,7 @@ Rectangle {
         udpSetsDx.on = Qt.binding(() => appSettings.udpSetsDx)
         accountCard.service = Qt.binding(() => appSettings.lookupService)
         for (const message of [stationError, clusterError, hardwareError, hamAlertError, hamsatKeyError, accountError]) message.text = ""
+        satAlerts.refreshSystemState()
         flick.contentY = 0
     }
 
@@ -607,6 +608,8 @@ Rectangle {
                     }
                 }
             }
+
+            SatelliteAlertsCard { Layout.fillWidth: true }
 
             Card {
                 title: "Demo mode"

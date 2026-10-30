@@ -117,7 +117,7 @@ Areas: A UI · B space weather/solar · C spots · D astronomy/satellites · E w
 |---|---|---|---|
 | Up to 2 satellites; path | earthsat.cpp | COVERED | D |
 | Sky plot, co-visibility planner, group schedule, AMSAT status/links | earthsat.cpp; sattool.cpp; satsked.cpp | PARTIAL/MISSING | D |
-| Sat rise/set alarm; user TLE; max TLE age | ArduinoLib.h:229; webserver.cpp:5006 | MISSING | D |
+| Sat rise/set alarm; user TLE; max TLE age | ArduinoLib.h:229; webserver.cpp:5006 | PARTIAL (rise alerts for any number of selected satellites: Apple notifications, in-app banner at lead time and AOS, Linux chime; no LOS alert, no GPIO sat-alarm pin, no user TLE; TLE age fixed at 30 days) | D |
 | EME tool | emetool.cpp | COVERED | D |
 | Yearly grayline chart | grayline.cpp | MISSING | D |
 

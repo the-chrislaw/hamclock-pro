@@ -42,7 +42,7 @@ QString StationModel::deTime() const {
     const auto now = QDateTime::currentDateTimeUtc();
     const auto offset = resolve_de_zone_offset(zone, {now.toSecsSinceEpoch()});
     if (!offset) return {};
-    return now.addSecs(offset->value).toString("HH:mm");
+    return clock_short(now, offset->value, settings_.clock12h());
 }
 
 QString StationModel::deClock() const {
@@ -111,7 +111,11 @@ QString StationModel::dxSun() const {
 }
 
 QString StationModel::dxLocal() const {
-    return configured() ? zone_local_text(settings_.dxZoneOverride().isEmpty() ? dx_zone_ : settings_.dxZoneOverride(), QDateTime::currentDateTimeUtc(), settings_.clock12h()) : QString();
+    if (!configured()) return {};
+    // A zone picked in Settings is not a guess, so it carries no "(auto)" mark.
+    const QString chosen = settings_.dxZoneOverride();
+    return zone_local_text(chosen.isEmpty() ? dx_zone_ : chosen, QDateTime::currentDateTimeUtc(), settings_.clock12h(),
+                           chosen.isEmpty());
 }
 
 void StationModel::reload() {

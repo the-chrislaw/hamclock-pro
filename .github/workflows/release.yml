@@ -56,6 +56,21 @@ jobs:
             sudo mv "$deb" "${deb%_${{ matrix.arch }}.deb}_${{ matrix.release }}_${{ matrix.arch }}.deb"
           done
           ls -l build-pi/*.deb
+      - name: Install the .deb on a clean ${{ matrix.release }} ${{ matrix.arch }} system and launch it
+        run: |
+          # Proves the package's Depends pull in every runtime piece (QML modules, Wayland
+          # platform plugin) and the app starts, as the Apple jobs do for theirs (#521).
+          platform=linux/arm64; [[ "${{ matrix.arch }}" == armhf ]] && platform=linux/arm/v7
+          docker run --rm --platform "$platform" -v "$PWD/build-pi":/pkg:ro debian:${{ matrix.release }} bash -euxc "
+            apt-get update
+            apt-get install -y /pkg/*.deb
+            ls /usr/lib/*/qt6/plugins/platforms/libqwayland*.so
+            hamclock-pro --version
+            hamclock-pro-cli --self-test
+            QT_QPA_PLATFORM=offscreen hamclock-pro --offline --first-run --config-dir /tmp/smoke \
+              --size 800x480 --screenshot /tmp/smoke.png --allow-truncation
+            test -s /tmp/smoke.png
+          "
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-raspberry-pi-${{ matrix.release }}-${{ matrix.arch }}
