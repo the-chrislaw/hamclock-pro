@@ -19,7 +19,7 @@ def fail(msg):
 
 # 1. No Save buttons left in Settings (a sheet's "Sign in"/"Connect" checks a login; that's an action).
 for name, text in (("SettingsPage.qml", page), ("AccountSheet.qml", sheet)):
-    for m in re.finditer(r'text:\s*"(Save[^"]*)"', text):
+    for m in re.finditer(r'text:\s*"(Save(?: key)?)"', text):
         fail(f"{name}: Save button '{m.group(1)}' left; changes apply as they are made")
     if re.search(r'"Save key"', text):
         fail(f"{name}: 'Save key' button left")

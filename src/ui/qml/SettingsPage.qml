@@ -60,7 +60,8 @@ Rectangle {
         flick.contentY = 0
     }
 
-    // --settings: "accounts", "display", "screen", "spots" or "hardware" scrolls to that section;
+    // --settings: "accounts", "display", "screen", "spots", "hardware", "advanced" or "about" scrolls
+    // to that section (and opens it);
     // "accounts:hamqth" also opens that account.
     function show(target) { showTimer.target = target; showTimer.restart() }
     // After the first layout pass, so the section's position is known.
@@ -69,12 +70,26 @@ Rectangle {
         property string target: ""
         interval: 50
         onTriggered: {
-            const sections = { accounts: accounts, display: displaySection, screen: screenSection, spots: spotsCard, hardware: hardwareSection }
-            const item = sections[target.split(":")[0]] || accounts
-            flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height, item.mapToItem(column, 0, 0).y - Theme.pad))
+            const sections = { accounts: accounts, display: displaySection, screen: screenSection, spots: spotsCard,
+                               hardware: hardwareSection, advanced: advancedSection, about: aboutSection }
+            const name = target.split(":")[0]
+            const item = sections[name] || accounts
+            // Opened for a screenshot or test: show what is inside the collapsed groups too.
+            if (name === "spots") clusterCard.groups.forEach(g => g.expanded = true)
+            if (item.expanded !== undefined) item.expanded = true
+            scrollTimer.item = item
+            scrollTimer.restart()
             const parts = target.split(":")
             if (parts[0] === "accounts" && parts.length > 1) accounts.open(parts[1])
         }
+    }
+    // Scroll once the opened groups have been laid out (the page is taller by then).
+    Timer {
+        id: scrollTimer
+        property Item item: null
+        interval: 50
+        onTriggered: if (item) flick.contentY = Math.max(0, Math.min(flick.contentHeight - flick.height,
+                                                                       item.mapToItem(column, 0, 0).y - Theme.pad))
     }
 
     function num(text) { const v = Number(text.trim()); return text.trim().length && isFinite(v) ? v : NaN }
@@ -287,68 +302,9 @@ Rectangle {
 
             ScreenSection { id: screenSection; Layout.fillWidth: true }
 
-            Card {
-                title: "Saved configurations"
-                Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.secondary; font.pixelSize: Theme.fontCaption
-                           text: "Snapshots of these options (not the station or passwords). Pane choices, blanking and alarms apply at once." }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: cfgName; label: "Name"; Layout.fillWidth: true; field.maximumLength: 24 }
-                        AppButton { text: "Add snapshot"; Layout.alignment: Qt.AlignBottom
-                                    onClicked: { cfgMsg.text = appSettings.saveConfig(cfgName.text) } }
-                        AppButton { text: "Rename to"; Layout.alignment: Qt.AlignBottom; visible: cfgPick.current.length > 0
-                                    onClicked: { cfgMsg.text = appSettings.renameConfig(cfgPick.current, cfgName.text); if (!cfgMsg.text.length) cfgPick.current = "" } }
-                    }
-                    Flow {
-                        id: cfgPick
-                        property string current: ""
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        Repeater {
-                            model: appSettings.configNames
-                            AppButton { text: modelData; primary: cfgPick.current === modelData
-                                        onClicked: { cfgPick.current = modelData; cfgName.text = modelData } }
-                        }
-                    }
-                    RowLayout {
-                        visible: cfgPick.current.length > 0
-                        spacing: Theme.gap * 0.6
-                        AppButton { text: "Restore " + cfgPick.current
-                                    onClicked: { cfgMsg.text = appSettings.restoreConfig(cfgPick.current); if (!cfgMsg.text.length) cfgMsg.text = "Restored. Restart to apply alarms." } }
-                        AppButton { text: "Delete"; onClicked: { cfgMsg.text = appSettings.deleteConfig(cfgPick.current); if (!cfgMsg.text.length) cfgPick.current = "" } }
-                    }
-                    Text { id: cfgMsg; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true; visible: text.length > 0 }
-                }
-            }
-
             SatelliteAlertsCard { Layout.fillWidth: true }
 
-            Card {
-                title: "Demo mode"
-                Layout.fillWidth: true
-                Flow {
-                    width: parent.width
-                    spacing: Theme.gap * 0.6
-                    AppButton {
-                        text: appSettings.demoMode ? "Stop demo" : "Start demo"
-                        primary: appSettings.demoMode
-                        onClicked: appSettings.demoMode = !appSettings.demoMode
-                    }
-                    Text {
-                        text: "Steps every pane through all widgets every 10 s, showing real data. Not saved: it ends when the app restarts, or from a pane's long-press menu."
-                        color: Theme.secondary
-                        font.pixelSize: Theme.fontCaption
-                        wrapMode: Text.WordWrap
-                        width: parent.width
-                    }
-                }
-            }
-
+            // Spots and feeds: one row per source with a summary of what is set; each opens in place.
             Card {
                 id: spotsCard
                 title: "Spots and feeds"
@@ -359,6 +315,12 @@ Rectangle {
                     readonly property var fields: [udpPort, udpGroup,
                         aprsHost, aprsPort, aprsRadius, meshHost, meshPort, pskMax, pskMatch, adifPath,
                         otaProgram, otaBand, otaMode, otaSort, otaAge, watchList]
+                    readonly property var groups: [watchGroup, pskGroup, otaGroup, aprsGroup, meshGroup, udpGroupRow, adifGroup, mapGroup]
+                    readonly property var sources: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"]]
+                                                   .concat(Qt.platform.os === "ios" ? [] : [["adif", "Log"]])
+                    // Map source options are read through functions; this re-evaluates summaries when options change.
+                    property int tick: 0
+                    Connections { target: appSettings; function onOptionsChanged() { clusterCard.tick++ } }
                     function changed() { return fields.some(f => f.edited) }
                     // Saves the groups whose fields were typed in (so editing the watch list doesn't
                     // reconnect APRS). Returns false with the message in clusterError on an error.
@@ -393,101 +355,141 @@ Rectangle {
                     Component.onCompleted: { for (const f of fields) f.editingFinished.connect(save) }
                     // Switches apply at once; a failure shows under the card.
                     function apply(message) { clusterError.text = message }
-                    spacing: Theme.gap * 0.8
+                    spacing: Theme.gap * 0.4
                     Text {
-                        text: "Choose the DX cluster node under Accounts. These options shape the spots, APRS, Meshtastic and PSKReporter panes."
+                        text: "Choose the DX cluster node under Accounts. These shape the spot, APRS, Meshtastic and PSKReporter panes."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
-                    // WSJT-X / JTDX spots over UDP: two fields side by side, then the switches,
-                    // which wrap at their natural width (no label is ever cut on a phone).
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
-                        // Multicast needs an Apple entitlement the app doesn't have.
-                        FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup
-                                    visible: Qt.platform.os !== "ios" }
+
+                    SettingsGroup {
+                        id: watchGroup; boxed: false; Layout.fillWidth: true; title: "Watch list"
+                        summary: appSettings.watchListText.trim().length ? appSettings.watchListText.trim() : "Nothing highlighted"
+                        FormField { id: watchList; label: "Calls or prefixes to highlight, space separated"
+                                    text: appSettings.watchListText; Layout.fillWidth: true
+                                    field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
+                        Text { text: "VP8* is a prefix; @VP8 a whole DXCC entity; NADXCC, NAPREF, NAGRID or NABAND spots your ADIF log still needs; OTA, POTA, SOTA, IOTA or WWFF spots naming a reference."
+                               color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap * 0.6
-                        // iOS always listens on the network (WSJT-X runs on another computer).
-                        ToggleChip { id: udpLan; label: "UDP from other computers"; on: appSettings.udpSpotLan
-                                    visible: Qt.platform.os !== "ios"
-                                    onFlipped: (on) => clusterCard.apply(appSettings.saveUdpSpots(appSettings.udpSpotPort, on)) }
-                        ToggleChip { id: udpMe; label: "Only my UDP spots"; on: appSettings.udpSpotByMe
-                                    onFlipped: (on) => clusterCard.apply(appSettings.saveUdpScope(on)) }
-                        ToggleChip { id: udpSetsDx; label: "UDP spot sets DX (10 min)"; on: appSettings.udpSetsDx
-                                    onFlipped: (on) => clusterCard.apply(appSettings.saveUdpSetsDx(on)) }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: aprsHost; label: "APRS-IS server (receive-only)"; text: appSettings.aprsHost; Layout.preferredWidth: 3 }
-                        FormField { id: aprsPort; label: "Port"; text: appSettings.aprsPort; Layout.preferredWidth: 1
+                    SettingsGroup {
+                        id: pskGroup; boxed: false; Layout.fillWidth: true; title: "PSKReporter"
+                        summary: (appSettings.pskMaxKm > 0 ? "Within " + appSettings.pskMaxKm + " km" : "Any distance")
+                                 + (appSettings.pskMatch.length ? " · " + appSettings.pskMatch : "")
+                                 + (appSettings.pskWspr ? " · WSPR" : "") + (appSettings.pskRbn ? " · RBN" : "")
+                        FormField { id: pskMax; label: "Only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
                                     field.inputMethodHints: Qt.ImhDigitsOnly }
-                        FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
-                    }
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        FormField { id: meshHost; label: "Meshtastic node on your LAN (receive-only; empty = off)"; text: appSettings.meshHost; Layout.preferredWidth: 3 }
-                        FormField { id: meshPort; label: "Port"; text: appSettings.meshPort; Layout.preferredWidth: 1
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
-                    }
-                    FormField { id: pskMax; label: "PSKReporter: only receivers within, km of DE (0 = any)"; text: appSettings.pskMaxKm; Layout.fillWidth: true
-                                field.inputMethodHints: Qt.ImhDigitsOnly }
-                    ToggleChip { id: pskWspr; label: "PSKReporter: include WSPR (wspr.live)"; on: appSettings.pskWspr
-                                onFlipped: (on) => clusterCard.apply(appSettings.savePskWspr(on)) }
-                    ToggleChip { id: pskRbn; label: "PSKReporter: include RBN skimmers (telnet)"; on: appSettings.pskRbn
-                                onFlipped: (on) => clusterCard.apply(appSettings.savePskRbn(on)) }
-                    FormField { id: pskMatch; label: "PSKReporter: only receivers starting with (calls/grids, e.g. VK, JA, PM95)"; text: appSettings.pskMatch; Layout.fillWidth: true }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        Text { text: "Show on map:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
-                        Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"]].concat(Qt.platform.os === "ios" ? [] : [["adif", "Log"]])
-                            ToggleChip { label: modelData[1]; on: appSettings.mapSourceVisible(modelData[0])
-                                        Connections { target: appSettings; function onOptionsChanged() { on = appSettings.mapSourceVisible(modelData[0]) } }
-                                        onFlipped: (on) => appSettings.saveMapSourceVisible(modelData[0], on) }
+                        FormField { id: pskMatch; label: "Only receivers starting with (calls or grids, e.g. VK JA PM95)"; text: appSettings.pskMatch
+                                    Layout.fillWidth: true }
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap * 0.6
+                            ToggleChip { id: pskWspr; label: "Include WSPR (wspr.live)"; on: appSettings.pskWspr
+                                        onFlipped: (on) => clusterCard.apply(appSettings.savePskWspr(on)) }
+                            ToggleChip { id: pskRbn; label: "Include RBN skimmers (telnet)"; on: appSettings.pskRbn
+                                        onFlipped: (on) => clusterCard.apply(appSettings.savePskRbn(on)) }
                         }
                     }
-                    Flow {
-                        Layout.fillWidth: true
-                        spacing: Theme.gap
-                        Text { text: "Map labels:"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; height: 32; verticalAlignment: Text.AlignVCenter }
-                        Repeater {
-                            model: [["dx", "DX"], ["psk", "PSK"], ["ota", "POTA"], ["hamalert", "HamAlert"], ["aprs", "APRS"], ["mesh", "Mesh"]].concat(Qt.platform.os === "ios" ? [] : [["adif", "Log"]])
-                            AppButton { property int mode: appSettings.mapSourceLabel(modelData[0]); checkable: false
-                                        text: modelData[1] + ": " + ["auto", "none", "prefix", "call", "dot"][mode + 1]
-                                        Connections { target: appSettings; function onOptionsChanged() { mode = appSettings.mapSourceLabel(modelData[0]) } }
-                                        onClicked: appSettings.saveMapSourceLabel(modelData[0], mode >= 3 ? -1 : mode + 1) }
+                    SettingsGroup {
+                        id: otaGroup; boxed: false; Layout.fillWidth: true; title: "Parks and summits on the air"
+                        summary: [appSettings.otaProgram || "POTA, SOTA and WWFF", appSettings.otaBand, appSettings.otaMode]
+                                 .filter(s => s.length).join(" · ")
+                        // Five filters: one row on wide screens, two columns on a phone.
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: width < 600 * Theme.scale ? 2 : 5
+                            columnSpacing: Theme.gap
+                            rowSpacing: Theme.gap * 0.8
+                            FormField { id: otaProgram; label: "POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
+                            FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
+                            FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
+                            FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; Layout.preferredWidth: 1 }
+                            FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
+                                        field.inputMethodHints: Qt.ImhDigitsOnly }
                         }
-                        AppButton { property int px: appSettings.mapMinLabelPx(); checkable: false
-                                    text: "Label gap: " + (px ? px + " px" : "auto")
-                                    Connections { target: appSettings; function onOptionsChanged() { px = appSettings.mapMinLabelPx() } }
-                                    onClicked: appSettings.saveMapMinLabelPx(px >= 100 ? 0 : px + 20) }
+                    }
+                    SettingsGroup {
+                        id: aprsGroup; boxed: false; Layout.fillWidth: true; title: "APRS"
+                        summary: appSettings.aprsHost.length ? appSettings.aprsHost + " · " + appSettings.aprsRadiusKm + " km" : "Off"
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap
+                            FormField { id: aprsHost; label: "APRS-IS server (receive-only)"; text: appSettings.aprsHost; Layout.preferredWidth: 3 }
+                            FormField { id: aprsPort; label: "Port"; text: appSettings.aprsPort; Layout.preferredWidth: 1
+                                        field.inputMethodHints: Qt.ImhDigitsOnly }
+                            FormField { id: aprsRadius; label: "Radius, km"; text: appSettings.aprsRadiusKm; Layout.preferredWidth: 1
+                                        field.inputMethodHints: Qt.ImhDigitsOnly }
+                        }
+                    }
+                    SettingsGroup {
+                        id: meshGroup; boxed: false; Layout.fillWidth: true; title: "Meshtastic"
+                        summary: appSettings.meshHost.length ? appSettings.meshHost : "Off"
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap
+                            FormField { id: meshHost; label: "Node on your network (receive-only; empty = off)"; text: appSettings.meshHost; Layout.preferredWidth: 3 }
+                            FormField { id: meshPort; label: "Port"; text: appSettings.meshPort; Layout.preferredWidth: 1
+                                        field.inputMethodHints: Qt.ImhDigitsOnly }
+                        }
+                    }
+                    SettingsGroup {
+                        id: udpGroupRow; boxed: false; Layout.fillWidth: true; title: "WSJT-X / JTDX (UDP)"
+                        summary: appSettings.udpSpotPort > 0 ? "Port " + appSettings.udpSpotPort + (appSettings.udpSetsDx ? " · sets DX" : "") : "Off"
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap
+                            FormField { id: udpPort; label: "UDP spot input port (0 = off)"; text: appSettings.udpSpotPort
+                                        field.inputMethodHints: Qt.ImhDigitsOnly }
+                            // Multicast needs an Apple entitlement the app doesn't have.
+                            FormField { id: udpGroup; label: "Multicast group (blank = off)"; text: appSettings.udpSpotGroup
+                                        visible: Qt.platform.os !== "ios" }
+                        }
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap * 0.6
+                            // iOS always listens on the network (WSJT-X runs on another computer).
+                            ToggleChip { id: udpLan; label: "UDP from other computers"; on: appSettings.udpSpotLan
+                                        visible: Qt.platform.os !== "ios"
+                                        onFlipped: (on) => clusterCard.apply(appSettings.saveUdpSpots(appSettings.udpSpotPort, on)) }
+                            ToggleChip { id: udpMe; label: "Only my UDP spots"; on: appSettings.udpSpotByMe
+                                        onFlipped: (on) => clusterCard.apply(appSettings.saveUdpScope(on)) }
+                            ToggleChip { id: udpSetsDx; label: "UDP spot sets DX (10 min)"; on: appSettings.udpSetsDx
+                                        onFlipped: (on) => clusterCard.apply(appSettings.saveUdpSetsDx(on)) }
+                        }
                     }
                     // A typed path can't reach a file inside the iOS sandbox; the log pane is off there too.
-                    FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true
-                                visible: Qt.platform.os !== "ios" }
-                    // Five filters: one row on wide screens, two columns on a phone.
-                    GridLayout {
-                        Layout.fillWidth: true
-                        columns: width < 600 * Theme.scale ? 2 : 5
-                        columnSpacing: Theme.gap
-                        rowSpacing: Theme.gap * 0.8
-                        FormField { id: otaProgram; label: "On the air: POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
-                        FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
-                        FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
-                        FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; Layout.preferredWidth: 1 }
-                        FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
-                                    field.inputMethodHints: Qt.ImhDigitsOnly }
+                    SettingsGroup {
+                        id: adifGroup; boxed: false; Layout.fillWidth: true; title: "ADIF log"
+                        visible: Qt.platform.os !== "ios"
+                        summary: appSettings.adifPath.length ? appSettings.adifPath.split("/").pop() : "None"
+                        FormField { id: adifPath; label: "ADIF log file (.adi, read-only; optional)"; text: appSettings.adifPath; Layout.fillWidth: true }
                     }
-                    FormField { id: watchList; label: "Watch list (calls, prefixes like VP8*, or @VP8 for a whole DXCC entity, NADXCC, NAPREF, NAGRID or NABAND for spots your ADIF log still needs, OTA/POTA/SOTA/IOTA/WWFF for spots naming a reference; space separated)"; text: appSettings.watchListText; Layout.fillWidth: true }
+                    SettingsGroup {
+                        id: mapGroup; boxed: false; Layout.fillWidth: true; title: "Spots on the map"
+                        summary: { clusterCard.tick
+                                   const shown = clusterCard.sources.filter(s => appSettings.mapSourceVisible(s[0])).length
+                                   return shown + " of " + clusterCard.sources.length + " shown" }
+                        Text { text: "Shown on map"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold }
+                        Flow {
+                            Layout.fillWidth: true
+                            spacing: Theme.gap * 0.6
+                            Repeater {
+                                model: clusterCard.sources
+                                ToggleChip { label: modelData[1]; on: { clusterCard.tick; return appSettings.mapSourceVisible(modelData[0]) }
+                                             onFlipped: (on) => appSettings.saveMapSourceVisible(modelData[0], on) }
+                            }
+                        }
+                        // B6: each style is a visible choice (it used to cycle on every tap of one chip).
+                        Repeater {
+                            model: clusterCard.sources
+                            ChoiceRow { label: modelData[1] + " labels"
+                                        choices: [[-1, "Auto"], [0, "None"], [1, "Prefix"], [2, "Call"], [3, "Dot"]]
+                                        current: { clusterCard.tick; return appSettings.mapSourceLabel(modelData[0]) }
+                                        onChosen: (v) => appSettings.saveMapSourceLabel(modelData[0], v) }
+                        }
+                        ChoiceRow { label: "Space between map labels"
+                                    choices: [[0, "Auto"], [20, "20 px"], [40, "40 px"], [60, "60 px"], [80, "80 px"], [100, "100 px"]]
+                                    current: { clusterCard.tick; return appSettings.mapMinLabelPx() }
+                                    onChosen: (v) => appSettings.saveMapMinLabelPx(v) }
+                    }
                     Text { id: clusterError; visible: text.length > 0; color: text.startsWith("Saved") ? Theme.warn : Theme.bad
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                 }
@@ -495,14 +497,21 @@ Rectangle {
 
             // Local station hardware. iPhone and iPad have none and do not list these panes
             // (widget_available), so the section is hidden there, like the ADIF path.
-            Card {
+            SettingsGroup {
                 id: hardwareSection
-                title: "On this computer: station hardware"
+                title: "Station hardware"
                 Layout.fillWidth: true
                 visible: Qt.platform.os !== "ios"
+                summary: {
+                    // Every program has an address (127.0.0.1 by default); name the ones looked for elsewhere.
+                    const elsewhere = [[appSettings.radioHost, "Radio"], [appSettings.rotatorHost, "Rotator"], [appSettings.adsbHost, "ADS-B"],
+                                       [appSettings.gpsDevice.length ? appSettings.gpsDevice : appSettings.gpsHost, "GPS"]]
+                                      .filter(p => p[0] !== "127.0.0.1" && p[0] !== "localhost").map(p => p[1] + " " + p[0])
+                    return elsewhere.length ? elsewhere.join(" · ") : "Looked for on this computer"
+                }
                 ColumnLayout {
                     id: hardwareCard
-                    width: parent.width
+                    Layout.fillWidth: true
                     spacing: Theme.gap * 0.8
                     readonly property var fields: [radioHost, radioPort, rotatorHost, rotatorPort, adsbHost, adsbPort,
                         gpsHost, gpsPort, gpsDevice, gpsBaud]
@@ -525,7 +534,7 @@ Rectangle {
                         return true
                     }
                     Text {
-                        text: "Programs that read your radio, rotator, ADS-B receiver and GPS. Read-only: nothing is sent that could change the rig or move the rotator. Use 127.0.0.1 when they run on this computer; changes apply at once."
+                        text: "Programs on this computer or your network that read your radio, rotator, ADS-B receiver and GPS. Read-only: nothing is sent that could change the rig or move the rotator. Use 127.0.0.1 when they run on this computer."
                         color: Theme.secondary; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true
                     }
                     RowLayout {
@@ -574,30 +583,86 @@ Rectangle {
                 }
             }
 
-
-            Card {
-                title: "Data sources"
+            // Rarely used: snapshots of the options, and demo mode.
+            SettingsGroup {
+                id: advancedSection
+                title: "Advanced"
                 Layout.fillWidth: true
-                ColumnLayout {
-                    width: parent.width
-                    spacing: Theme.gap * 0.5
+                summary: appSettings.configNames.length ? appSettings.configNames.length + " saved configuration"
+                                                          + (appSettings.configNames.length === 1 ? "" : "s") : "Saved configurations, demo"
+                Text { text: "Saved configurations"; color: Theme.ink; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold }
+                Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; color: Theme.secondary; font.pixelSize: Theme.fontCaption
+                       text: "Snapshots of these options (not the station or passwords). Pane choices, blanking and alarms apply at once." }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: Theme.gap
+                    FormField { id: cfgName; label: "Name"; Layout.fillWidth: true; field.maximumLength: 24 }
+                    AppButton { text: "Add snapshot"; Layout.alignment: Qt.AlignBottom
+                                onClicked: { cfgMsg.text = appSettings.saveConfig(cfgName.text) } }
+                    AppButton { text: "Rename to"; Layout.alignment: Qt.AlignBottom; visible: cfgPick.current.length > 0
+                                onClicked: { cfgMsg.text = appSettings.renameConfig(cfgPick.current, cfgName.text); if (!cfgMsg.text.length) cfgPick.current = "" } }
+                }
+                Flow {
+                    id: cfgPick
+                    property string current: ""
+                    Layout.fillWidth: true
+                    spacing: Theme.gap * 0.6
+                    Repeater {
+                        model: appSettings.configNames
+                        AppButton { text: modelData; primary: cfgPick.current === modelData
+                                    onClicked: { cfgPick.current = modelData; cfgName.text = modelData } }
+                    }
+                }
+                RowLayout {
+                    visible: cfgPick.current.length > 0
+                    spacing: Theme.gap * 0.6
+                    AppButton { text: "Restore " + cfgPick.current
+                                onClicked: { cfgMsg.text = appSettings.restoreConfig(cfgPick.current); if (!cfgMsg.text.length) cfgMsg.text = "Restored. Restart to apply alarms." } }
+                    AppButton { text: "Delete"; onClicked: { cfgMsg.text = appSettings.deleteConfig(cfgPick.current); if (!cfgMsg.text.length) cfgPick.current = "" } }
+                }
+                Text { id: cfgMsg; color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true; visible: text.length > 0 }
+
+                Text { text: "Demo mode"; color: Theme.ink; font.pixelSize: Theme.fontBody; font.weight: Font.DemiBold; Layout.topMargin: Theme.gap }
+                Flow {
+                    Layout.fillWidth: true
+                    spacing: Theme.gap * 0.6
+                    AppButton {
+                        text: appSettings.demoMode ? "Stop demo" : "Start demo"
+                        primary: appSettings.demoMode
+                        onClicked: appSettings.demoMode = !appSettings.demoMode
+                    }
                     Text {
-                        text: "HamClock Pro is independent and not affiliated with the providers below. Data is fetched directly from each source."
+                        text: "Steps every pane through all widgets every 10 s, showing real data. Not saved: it ends when the app restarts, or from a pane's long-press menu."
                         color: Theme.secondary
                         font.pixelSize: Theme.fontCaption
                         wrapMode: Text.WordWrap
-                        Layout.fillWidth: true
+                        width: parent.width
                     }
-                    Repeater {
-                        model: dataSources
-                        Text {
-                            required property var modelData
-                            text: modelData.name + ": " + modelData.usedFor + ". " + modelData.terms + " (" + modelData.url + ")"
-                            color: Theme.ink
-                            font.pixelSize: Theme.fontCaption
-                            wrapMode: Text.WordWrap
-                            Layout.fillWidth: true
-                        }
+                }
+            }
+
+            // Attribution, one tap away at the bottom of the page.
+            SettingsGroup {
+                id: aboutSection
+                title: "About and data sources"
+                Layout.fillWidth: true
+                summary: dataSources.length + " sources"
+                Text {
+                    text: "HamClock Pro is independent and not affiliated with the providers below. Data is fetched directly from each source."
+                    color: Theme.secondary
+                    font.pixelSize: Theme.fontCaption
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+                Repeater {
+                    model: dataSources
+                    Text {
+                        required property var modelData
+                        text: modelData.name + ": " + modelData.usedFor + ". " + modelData.terms + " (" + modelData.url + ")"
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontCaption
+                        wrapMode: Text.WordWrap
+                        Layout.fillWidth: true
                     }
                 }
             }

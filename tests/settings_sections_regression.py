@@ -35,6 +35,6 @@ if "!Theme.phone" not in display or 'Qt.platform.os === "ios"' not in display:
 # Data sources is the last card in the page.
 cards = [m.start() for m in re.finditer(r"^            [A-Z]\w*\s*\{", page, re.M)]
 last = page[cards[-1]:]
-if 'title: "Data sources"' not in last[:200]:
+if not re.search(r'title:\s*"(About and data sources|Data sources)"', last[:300]) or "dataSources" not in last:
     sys.exit("SettingsPage.qml: Data sources must be the last section")
 print("ok")
