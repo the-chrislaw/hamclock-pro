@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QThreadPool>
 #include <QTimeZone>
 #include <QTimer>
 #include <iostream>
@@ -16,6 +17,15 @@ int checks = 0, failures = 0;
 void check(bool ok, const char* label) {
     ++checks;
     if (!ok) { ++failures; std::cerr << "FAIL: " << label << '\n'; }
+}
+// Deliver the fixture fetches, let the pool threads parse, then apply the results
+// (queued back to the GUI thread).
+void settle() {
+    for (int round = 0; round < 3; ++round) {
+        for (int i = 0; i < 20; ++i) QCoreApplication::processEvents();
+        QThreadPool::globalInstance()->waitForDone();
+    }
+    QCoreApplication::processEvents();
 }
 QByteArray fixture(const QString& dir, const char* name) {
     QFile file(QDir(dir).filePath(name));
@@ -81,9 +91,17 @@ int main(int argc, char** argv) {
     };
     set_clock();
     for (auto* s : {&model.windSource(), &model.magSource()}) QFile::remove(s->cachePath());
+    // The megabyte JSON is parsed on a pool thread: values are not there yet while the
+    // download is being handed over, only once the parsed result comes back.
+    bool speed_during_update = true;
+    QObject::connect(&model.windSource(), &PolledSource::updated, [&] { speed_during_update = model.hasSpeed(); });
     model.start();
-    for (int i = 0; i < 20; ++i) app.processEvents();
+    settle();
     check(requests == 2, "two SWPC requests on start");
+    check(!speed_during_update && model.hasSpeed(), "solar wind JSON parsed off the GUI thread");
+    // The feeds are ~3.6 MB a fetch: polled every 5 minutes, not every 2.
+    check(model.windSource().nextDelay() == std::chrono::minutes(5) && model.magSource().nextDelay() == std::chrono::minutes(5),
+          "SWPC RTSW polled every 5 minutes");
     check(model.state() == "live", "fresh data -> live");
     check(model.hasSpeed() && model.speed() == 565.6 && model.speedText() == "Moderate", "model speed");
     check(model.hasBz() && model.bz() == 1.42 && model.bzText() == "Northward" && model.hasBt(), "model Bz/Bt");
@@ -96,7 +114,7 @@ int main(int argc, char** argv) {
     set_clock();
     model.windSource().refreshNow();
     model.magSource().refreshNow();
-    for (int i = 0; i < 20; ++i) app.processEvents();
+    settle();
     check(model.state() == "stale" && model.statusText().contains("old"), "old observation -> stale");
 
     // Outage keeps last values but marks stale.
@@ -105,7 +123,7 @@ int main(int argc, char** argv) {
     set_clock();
     model.windSource().refreshNow();
     model.magSource().refreshNow();
-    for (int i = 0; i < 20; ++i) app.processEvents();
+    settle();
     check(model.state() == "stale" && model.hasSpeed(), "outage -> stale with last value kept");
 
     std::cout << "Solar wind: " << checks << " checks, " << failures << " failures\n";

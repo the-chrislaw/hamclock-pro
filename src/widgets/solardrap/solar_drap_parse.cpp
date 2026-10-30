@@ -4,6 +4,11 @@
 
 namespace hamclock::solardrap {
 
+QString peak_text(double peak_mhz) {
+    if (!(peak_mhz >= kMinAbsorbedMhz)) return "No HF absorption";
+    return QString("Max %1 MHz").arg(peak_mhz, 0, 'f', 1);
+}
+
 ColorScale drap_scale() {
     return {"D-RAP", "MHz", {{1, QColor("#38bdf8")}, {5, QColor("#2ecc71")}, {10, QColor("#facc15")}, {15, QColor("#f97316")}, {25, QColor("#ef4444")}}};
 }
@@ -57,7 +62,7 @@ QImage to_image(const Grid& g) {
     for (int y = 0; y < 180; ++y) {
         for (int x = 0; x < 360; ++x) {
             const float v = g.mhz[static_cast<size_t>((y / 2) * kCols + x / 4)];
-            if (v < 1.0f) continue;
+            if (v < kMinAbsorbedMhz) continue;
             QColor c = color_at(drap_scale(), v);
             c.setAlphaF(std::min(1.0, 0.35 + v / 12.0));
             img.setPixelColor(x, y, c);

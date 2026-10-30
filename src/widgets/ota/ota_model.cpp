@@ -11,6 +11,8 @@ using namespace std::chrono_literals;
 // Activator spots are short lived (minutes); a 2 minute poll keeps the list
 // useful without hammering volunteer-run APIs.
 constexpr PollPolicy kPolicy{2min, 15min, 30min};
+// WWFF's static spots file answered 429 with Retry-After 1800 at a 2 minute poll.
+constexpr PollPolicy kWwffPolicy{10min, 30min, 30min};
 constexpr char kPotaUrl[] = "https://api.pota.app/spot/activator";
 constexpr char kSotaUrl[] = "https://api-db2.sota.org.uk/api/spots/50/all/all";
 constexpr char kWwffUrl[] = "https://spots.wwff.co/static/spots.json";
@@ -21,7 +23,7 @@ OtaModel::OtaModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("ota", "On the air", parent),
       pota_(new PolledSource("pota-activator-spots", QUrl(kPotaUrl), kPolicy, context.transport, this)),
       sota_(new PolledSource("sota-spots", QUrl(kSotaUrl), kPolicy, context.transport, this)),
-      wwff_(new PolledSource("wwff-spots", QUrl(kWwffUrl), kPolicy, context.transport, this)) {
+      wwff_(new PolledSource("wwff-spots", QUrl(kWwffUrl), kWwffPolicy, context.transport, this)) {
     connect(pota_, &PolledSource::updated, this, [this] {
         pota_feed_ = ota::parse_pota(pota_->body());
         reparse();
