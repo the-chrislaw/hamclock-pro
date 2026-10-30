@@ -29,6 +29,21 @@ int main(int argc, char** argv) {
     area.attach(nullptr);
     check(changes == 2, "attach(nullptr) harmless");
 
+    // Backdrop: the colour painted behind the status bar, home indicator and landscape
+    // side insets (iPhone showed black bands there in the light theme).
+    int backdrops = 0;
+    QObject::connect(&area, &hamclock::SafeArea::backdropChanged, [&] { ++backdrops; });
+    check(area.backdrop() == QColor(Qt::black) && area.darkBackdrop(), "backdrop defaults to black, light status bar text");
+    area.setBackdrop(QColor("#f4f3ee"));
+    check(backdrops == 1 && area.backdrop() == QColor("#f4f3ee"), "backdrop applied");
+    check(!area.darkBackdrop(), "light backdrop asks for dark status bar text");
+    area.setBackdrop(QColor("#f4f3ee"));
+    check(backdrops == 1, "no signal for same backdrop");
+    area.setBackdrop(QColor("#1f2428"));
+    check(backdrops == 2 && area.darkBackdrop(), "dark backdrop asks for light status bar text");
+    area.setBackdrop(QColor());
+    check(backdrops == 2 && area.backdrop() == QColor("#1f2428"), "invalid colour ignored");
+
     std::cout << (failures ? "FAILED\n" : "safe-area-regression: ok\n");
     return failures ? 1 : 0;
 }
