@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
+#include <QNetworkProxyFactory>
 #include <QNetworkReply>
 #include <QStandardPaths>
 #include <QTcpServer>
@@ -83,6 +84,9 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     QCoreApplication::setApplicationName("hamclock-pro-fetch-test");
     QDir(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)).removeRecursively();
+    // Only localhost is used; skip the system proxy lookup (Linux libproxy leaks
+    // a few bytes inside glib, which fails the ASan job).
+    QNetworkProxyFactory::setUseSystemConfiguration(false);
     using namespace hamclock;
     using namespace std::chrono_literals;
     const auto t0 = QDateTime(QDate(2026, 10, 29), QTime(12, 0), QTimeZone::utc());
