@@ -51,17 +51,24 @@ export function releaseStep(offset, velocity, span, flickSpeed, canPage) {
     return Math.abs(offset) > span * COMMIT_FRACTION ? directionOf(offset) : 0
 }
 
-// Keeps only the samples ({t, x}) newer than `windowMs`, as a new array.
-export function recentSamples(samples, now, windowMs) {
-    return samples.filter(function (s) { return now - s.t <= windowMs })
+// Finger samples kept for the release velocity.
+export const MAX_SAMPLES = 6
+
+// Appends a sample ({t, x}) and keeps the newest MAX_SAMPLES, as a new array.
+export function addSample(samples, t, x) {
+    return samples.concat([{ t: t, x: x }]).slice(-MAX_SAMPLES)
 }
 
-// Release velocity in px/s from the recent samples; 0 when there are too few.
+// Release velocity in px/s. 0 when the finger has not moved within `windowMs`
+// of `now`. Measured over the samples in that window, reaching back to the one
+// just before it when a busy main thread delivered too few moves.
 export function velocity(samples, now, windowMs) {
-    const recent = recentSamples(samples, now, windowMs)
-    if (recent.length < 2) return 0
-    const first = recent[0]
-    const last = recent[recent.length - 1]
+    if (samples.length < 2) return 0
+    const last = samples[samples.length - 1]
+    if (now - last.t > windowMs) return 0
+    let from = samples.length - 2
+    while (from > 0 && last.t - samples[from - 1].t <= windowMs) --from
+    const first = samples[from]
     const dt = last.t - first.t
     return dt > 0 ? (last.x - first.x) * 1000 / dt : 0
 }

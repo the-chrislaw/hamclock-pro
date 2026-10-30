@@ -160,8 +160,7 @@ Item {
     function dragTo(x) {
         const raw = dragBase + x - dragStartX
         offset = canPage ? Math.max(-span, Math.min(span, raw)) : Pager.rubberBand(raw, span)
-        const now = Date.now()
-        samples = Pager.recentSamples(samples, now, Pager.VELOCITY_WINDOW_MS).concat([{ t: now, x: offset }])
+        samples = Pager.addSample(samples, Date.now(), offset)
     }
     function endDrag() {
         const speed = Pager.velocity(samples, Date.now(), Pager.VELOCITY_WINDOW_MS)

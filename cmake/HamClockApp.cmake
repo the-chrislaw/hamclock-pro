@@ -284,6 +284,12 @@ if(BUILD_TESTING)
     target_link_libraries(pager-regression PRIVATE Qt6::Qml)
     add_test(NAME pager-regression COMMAND pager-regression ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml/pager.mjs)
     set_tests_properties(pager-regression PROPERTIES TIMEOUT 15)
+    # The real PaneSlot.qml driven by drags and keys (needs Qt's qmltestrunner; skipped without it).
+    find_program(HAMCLOCK_QMLTESTRUNNER qmltestrunner HINTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}" "${QT6_INSTALL_PREFIX}/bin")
+    if(HAMCLOCK_QMLTESTRUNNER)
+        add_test(NAME pane-swipe-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_swipe_regression.py ${HAMCLOCK_QMLTESTRUNNER})
+        set_tests_properties(pane-swipe-regression PROPERTIES TIMEOUT 120 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PYTHONDONTWRITEBYTECODE=1")
+    endif()
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)

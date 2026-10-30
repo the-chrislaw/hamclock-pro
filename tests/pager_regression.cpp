@@ -89,10 +89,17 @@ void checkVelocity() {
     CHECK(near(num("velocity", {samples, 1080, window}), -1000));      // 80 px in 80 ms
     // The finger stopped before lifting: the samples are stale, no flick.
     CHECK(num("velocity", {samples, 1080 + window + 100, window}) == 0);
-    // recentSamples returns a new array and leaves its input alone.
-    const QJSValue recent = call("recentSamples", {samples, 1040 + window - 5, window});
-    CHECK(recent.property("length").toInt() == 2);
+    // A busy main thread delivered one move inside the window: measure from the one before.
+    QJSValue sparse = engine->newArray(2);
+    sparse.setProperty(0, sample(1000, 0));
+    sparse.setProperty(1, sample(1000 + window + 50, -280));
+    CHECK(near(num("velocity", {sparse, 1000 + window + 50, window}), -280 * 1000 / (window + 50)));
+    // addSample returns a new, bounded array and leaves its input alone.
+    QJSValue grown = samples;
+    for (int i = 0; i < 10; ++i) grown = call("addSample", {grown, 2000 + i, -i});
+    CHECK(grown.property("length").toInt() == constant("MAX_SAMPLES"));
     CHECK(samples.property("length").toInt() == 3);
+    CHECK(grown.property(grown.property("length").toInt() - 1).property("x").toNumber() == -9);
 }
 
 void checkTiming() {
