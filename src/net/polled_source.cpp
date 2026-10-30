@@ -111,6 +111,27 @@ bool looks_like_html(const QByteArray& body) {
         head.startsWith("<body") || head.startsWith("<title") || head.startsWith("<meta");
 }
 
+FetchResult fetch_result_from_reply(QNetworkReply& reply, const QString& abort_reason, qint64 max_bytes) {
+    FetchResult result;
+    result.http_status = reply.attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    result.retry_after = parse_retry_after(reply.rawHeader("Retry-After"), QDateTime::currentDateTimeUtc());
+    if (!abort_reason.isEmpty()) {
+        result.http_status = 0;
+        result.error = abort_reason;
+    } else if (reply.error() != QNetworkReply::NoError) {
+        // Qt's errorString() repeats the URL (callsign, query); never show it.
+        result.error = result.http_status >= 400 ? describe_http_status(result.http_status)
+                                                 : describe_network_error(reply.error());
+    } else {
+        result.body = reply.read(max_bytes + 1);
+        if (result.body.size() > max_bytes) {
+            result.body.clear();
+            result.error = "Response too large";
+        }
+    }
+    return result;
+}
+
 AuthTransport make_authorized_transport(QObject* owner, TransportLimits limits) {
     auto* manager = new QNetworkAccessManager(owner);
     return [manager, limits](const QUrl& url, const QByteArray& bearer, FetchDone done) {
@@ -139,23 +160,7 @@ AuthTransport make_authorized_transport(QObject* owner, TransportLimits limits) 
         });
         QObject::connect(reply, &QNetworkReply::finished, reply,
                          [reply, abort_reason, max = limits.max_bytes, done = std::move(done)]() {
-            FetchResult result;
-            result.http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            result.retry_after = parse_retry_after(reply->rawHeader("Retry-After"), QDateTime::currentDateTimeUtc());
-            if (!abort_reason->isEmpty()) {
-                result.http_status = 0;
-                result.error = *abort_reason;
-            } else if (reply->error() != QNetworkReply::NoError) {
-                // Qt's errorString() repeats the URL (callsign, query); never show it.
-                result.error = result.http_status >= 400 ? describe_http_status(result.http_status)
-                                                         : describe_network_error(reply->error());
-            } else {
-                result.body = reply->read(max + 1);
-                if (result.body.size() > max) {
-                    result.body.clear();
-                    result.error = "Response too large";
-                }
-            }
+            FetchResult result = fetch_result_from_reply(*reply, *abort_reason, max);
             reply->deleteLater();
             done(std::move(result));
         });
