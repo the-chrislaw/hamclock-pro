@@ -94,7 +94,7 @@ qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
     src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
     src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
-    src/ui/qml/PaneSlot.qml src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
+    src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml src/ui/qml/SatAlertBanner.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
@@ -308,6 +308,17 @@ if(BUILD_TESTING)
     add_test(NAME location-tools-regression COMMAND location-tools-regression
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/sources/nominatim-search.json)
     set_tests_properties(location-tools-regression PROPERTIES TIMEOUT 30)
+    # Swipeable pane paging maths (pager.mjs) run in a plain JS engine.
+    add_executable(pager-regression tests/pager_regression.cpp)
+    target_link_libraries(pager-regression PRIVATE Qt6::Qml)
+    add_test(NAME pager-regression COMMAND pager-regression ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml/pager.mjs)
+    set_tests_properties(pager-regression PROPERTIES TIMEOUT 15)
+    # The real PaneSlot.qml driven by drags and keys (needs Qt's qmltestrunner; skipped without it).
+    find_program(HAMCLOCK_QMLTESTRUNNER qmltestrunner HINTS "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_BINS}" "${QT6_INSTALL_PREFIX}/bin")
+    if(HAMCLOCK_QMLTESTRUNNER)
+        add_test(NAME pane-swipe-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/pane_swipe_regression.py ${HAMCLOCK_QMLTESTRUNNER})
+        set_tests_properties(pane-swipe-regression PROPERTIES TIMEOUT 120 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PYTHONDONTWRITEBYTECODE=1")
+    endif()
     # The real app loads its QML without errors and renders a frame offscreen.
     add_test(NAME qml-app-smoke COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config
         --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke.png --size 1024x600)
