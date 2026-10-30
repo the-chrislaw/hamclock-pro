@@ -140,6 +140,20 @@ Rectangle {
                         AppButton { id: findButton; text: "Find"; Layout.alignment: Qt.AlignBottom
                                     onClicked: { placeStatus.text = "Searching..."; locationTools.search(place.text) } }
                     }
+                    // Apple devices only: one-shot fix from the OS location service.
+                    AppButton { objectName: "useMyLocation"; visible: deviceLocation.available; text: "Use my location"
+                                onClicked: { placeStatus.text = "Locating..."; deviceLocation.request() } }
+                    Connections {
+                        target: deviceLocation
+                        function onLocated(lat, lon) {
+                            deLat.text = lat.toFixed(4)
+                            deLon.text = lon.toFixed(4)
+                            deGrid.text = locationTools.gridFor(lat, lon)
+                            placeStatus.text = "Using your current location."
+                            stationCard.suggestZone(lat, lon)
+                        }
+                        function onFailed(reason) { placeStatus.text = reason }
+                    }
                     Text { id: placeStatus; visible: text.length > 0; color: Theme.secondary
                            font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     Connections {

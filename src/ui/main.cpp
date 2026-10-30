@@ -20,6 +20,7 @@
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include "../platform/apple_attribution.hpp"
+#include "../platform/apple_devicelocation.hpp"
 #include "../platform/apple_widgetshare.hpp"
 #include <QSettings>
 #include <QEventLoop>
@@ -219,6 +220,8 @@ int main(int argc, char** argv) {
     hamclock::StationModel station_model(settings);
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
+    hamclock::DeviceLocation device_location;
+    device_location.setAvailableOverride(hamclock::nativeLocationAvailable());
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
@@ -282,6 +285,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("blanking", &blanking);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
+    engine.rootContext()->setContextProperty("deviceLocation", &device_location);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
