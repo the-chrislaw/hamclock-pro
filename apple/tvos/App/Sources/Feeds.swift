@@ -92,6 +92,11 @@ final class Feeds: ObservableObject {
                               policy: .init(interval: hours(12), staleAfter: hours(72), offlineAfter: hours(216))) {
         TrendParse.sunspots($0)
     }
+    /// N0NBH HamQSL solar XML (SolarHamqslModel: hourly, stale after 3 h).
+    let hamqsl = PolledFeed(["https://www.hamqsl.com/solarxml.php"], source: "HamQSL",
+                            policy: .init(interval: hours(1), staleAfter: hours(3), offlineAfter: hours(12))) {
+        HamqslWidget.parse($0)
+    }
     let aurora = PolledFeed(["\(swpc)/json/ovation_aurora_latest.json"], source: "NOAA SWPC OVATION",
                             policy: .init(interval: minutes(10), staleAfter: hours(1), offlineAfter: hours(6))) { data -> AuroraData? in
         var info = HcpAurora()
@@ -153,6 +158,7 @@ final class Feeds: ObservableObject {
             group.addTask { await self.kpForecast.run() }
             group.addTask { await self.fluxHistory.run() }
             group.addTask { await self.sunspots.run() }
+            group.addTask { await self.hamqsl.run() }
             group.addTask { await self.aurora.run() }
             group.addTask { await self.drap.run() }
             group.addTask { await self.quakes.run() }
