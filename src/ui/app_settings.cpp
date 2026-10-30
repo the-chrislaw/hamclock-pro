@@ -6,6 +6,7 @@
 #include "blanking.hpp"
 #include "config_store.hpp"
 #include "pane_grid.hpp"
+#include "region_defaults.hpp"
 #include "../net/telnet_client.hpp"
 #include "../widgets/watchlist/watch_match.hpp"
 #include "../widgets/pskreporter/psk_overlay.hpp"
@@ -81,6 +82,7 @@ AppSettings::AppSettings(QString station_path, QString config_dir, QObject* pare
         }
     }
     loadOptions();
+    if (!configured_) applyRegionDefaults();
     loadAccounts();
 }
 
@@ -103,9 +105,19 @@ QString AppSettings::saveStation(const QString& callsign, double de_lat, double 
     next.de = {de_lat, de_lon};
     next.dx = kept_override ? saved_dx_ : hamclock::Location{dx_lat, dx_lon};
     next.de_zone = de_zone.trimmed().toStdString();
+    // The first save after an unreadable station file keeps that file beside the new
+    // one (station.conf.unreadable) so nothing typed by hand is lost.
+    const QString kept = station_path_ + ".unreadable";
+    const bool keep_unreadable = !load_error_.isEmpty() && QFileInfo::exists(station_path_);
+    if (keep_unreadable) {
+        QFile::remove(kept);
+        if (!QFile::copy(station_path_, kept))
+            return QString("Could not keep the unreadable station file as %1.").arg(kept);
+    }
     try {
         save_settings(station_path_.toStdString(), next);
     } catch (const std::exception& error) {
+        if (keep_unreadable) QFile::remove(kept); // the original is still in place
         return QString::fromUtf8(error.what());
     }
     if (kept_override) {
@@ -718,6 +730,23 @@ QString AppSettings::savePskMaxKm(int max_km) {
     psk_max_km_ = max_km;
     emit optionsChanged();
     return {};
+}
+
+// A new install (no station yet) takes units, 12/24 h, date order and week start from the
+// device region, for each choice not already in options.ini, and writes them down so they
+// stay once the station is saved. Existing installs never change under the user.
+void AppSettings::applyRegionDefaults() {
+    const RegionDefaults region = region_defaults(QLocale());
+    QSettings ini(config_dir_ + "/options.ini", QSettings::IniFormat);
+    if (!ini.contains("units/imperial")) { imperial_ = region.imperial; ini.setValue("units/imperial", imperial_); }
+    if (!ini.contains("clock/h12")) { clock_12h_ = region.clock12h; ini.setValue("clock/h12", clock_12h_); }
+    if (!ini.contains("clock/date_order")) { date_order_ = region.date_order; ini.setValue("clock/date_order", date_order_); }
+    if (!ini.contains("clock/week_start")) {
+        week_sunday_ = region.week_starts_sunday;
+        ini.setValue("clock/week_start", week_sunday_ ? 0 : 1);
+    }
+    ini.sync();
+    if (ini.status() != QSettings::NoError) qWarning("Could not save the region's display defaults.");
 }
 
 QString AppSettings::saveImperialUnits(bool imperial) {

@@ -42,6 +42,9 @@ if(IOS AND TARGET hamclock-pro)
     set(HAMCLOCK_SKY_FINDER_PLIST_KEYS "")
     if(HAMCLOCK_SKY_FINDER)
         file(READ "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/sky-finder-keys.plist.in" HAMCLOCK_SKY_FINDER_PLIST_KEYS)
+    else()
+        # "Use my location" in Settings needs its own string (the finder file carries one too).
+        file(READ "${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/location-key.plist.in" HAMCLOCK_SKY_FINDER_PLIST_KEYS)
     endif()
     set_target_properties(hamclock-pro PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "${HAMCLOCK_IOS_BUNDLE_ID}"

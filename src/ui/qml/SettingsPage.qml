@@ -51,7 +51,8 @@ Rectangle {
         for (const [field, value] of [[deLat, () => appSettings.deLatitude], [deLon, () => appSettings.deLongitude],
                                       [dxLat, () => appSettings.dxLatitude], [dxLon, () => appSettings.dxLongitude]])
             field.text = Qt.binding(() => appSettings.configured ? value() : "")
-        zone.zoneId = Qt.binding(() => appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone())
+        zone.zoneId = Qt.binding(() => timeZones.stationZone(appSettings.deZone, appSettings.configured ? appSettings.deLatitude : NaN,
+                                                             appSettings.configured ? appSettings.deLongitude : NaN))
         dxZone.zoneId = Qt.binding(() => appSettings.dxZoneOverride)
         for (const secret of [hamAlertPassword, hamsatKey, lookupPassword, place, deGrid]) secret.text = ""
         placeStatus.text = ""
@@ -124,6 +125,10 @@ Rectangle {
                     id: stationCard
                     width: parent.width
                     spacing: Theme.gap * 0.8
+                    // The saved station file could not be read: say why instead of looking new.
+                    Text { objectName: "stationLoadError"; visible: appSettings.loadError.length > 0
+                           text: appSettings.loadError + ". Saving here replaces it; the old file is kept as station.conf.unreadable."
+                           color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
                                 field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
                     RowLayout {
@@ -167,10 +172,12 @@ Rectangle {
                         spacing: Theme.gap
                         FormField { id: deLat; label: "Home latitude (e.g. 40.7 or 40:44:55N)"
                                     text: appSettings.configured ? appSettings.deLatitude : ""
-                                    field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
+                                    field.inputMethodHints: Qt.ImhFormattedNumbersOnly
+                                    Connections { target: deLat.field; function onEditingFinished() { stationCard.suggestFromTyped() } } }
                         FormField { id: deLon; label: "Home longitude (e.g. -74 or 74:00:21W)"
                                     text: appSettings.configured ? appSettings.deLongitude : ""
-                                    field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
+                                    field.inputMethodHints: Qt.ImhFormattedNumbersOnly
+                                    Connections { target: deLon.field; function onEditingFinished() { stationCard.suggestFromTyped() } } }
                     }
                     RowLayout {
                         Layout.fillWidth: true
@@ -182,19 +189,26 @@ Rectangle {
                                     text: appSettings.hasDx ? appSettings.dxLongitude : ""
                                     field.inputMethodHints: Qt.ImhFormattedNumbersOnly }
                     }
+                    // A new home location brings its time zone along (the picker can still override it).
                     function suggestZone(lat, lon) {
                         const id = timeZones.suggestZone(lat, lon)
-                        zoneHint.text = id.length ? "Suggested: " + timeZones.labelFor(id) + ". Check it before saving."
-                                                  : "No zone suggestion for these coordinates; pick one above."
+                        zoneHint.text = id.length ? "Time zone set from the location: " + timeZones.labelFor(id) + "."
+                                                  : "No time zone known near these coordinates; pick one above."
                         if (id.length) zone.zoneId = id
                     }
+                    // Hand-typed home coordinates: suggest once both parse and differ from what is saved.
+                    function suggestFromTyped() {
+                        const lat = locationTools.parseCoordinate(deLat.text, true)
+                        const lon = locationTools.parseCoordinate(deLon.text, false)
+                        if (isNaN(lat) || isNaN(lon)) return
+                        if (appSettings.configured && lat === appSettings.deLatitude && lon === appSettings.deLongitude) return
+                        suggestZone(lat, lon)
+                    }
+                    // Saved zone, else the zone at the saved home location; the device's zone
+                    // only while there is no location yet.
                     TimeZonePicker { id: zone; label: "Time zone"
-                                     zoneId: appSettings.deZone.length ? appSettings.deZone : timeZones.systemZone() }
-                    AppButton { text: "Suggest zone from home coordinates"
-                                onClicked: {
-                                    stationCard.suggestZone(locationTools.parseCoordinate(deLat.text, true),
-                                                locationTools.parseCoordinate(deLon.text, false))
-                                } }
+                                     zoneId: timeZones.stationZone(appSettings.deZone, appSettings.configured ? appSettings.deLatitude : NaN,
+                                                                   appSettings.configured ? appSettings.deLongitude : NaN) }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: Theme.gap

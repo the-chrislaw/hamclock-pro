@@ -16,7 +16,7 @@ callsign=N0CALL/P
 appearance=system
 ```
 
-All seven fields are required. Field order is unrestricted. Duplicate or unknown fields, unsupported versions, empty lines, malformed numbers, whitespace, and invalid values are rejected. Files are limited to 4096 bytes, including reads from a file that grows while being read. Numeric serialization uses the classic locale and 17 significant digits for double round trips.
+Six fields are required; `appearance` may be left out and then reads as `system` (saves always write it). The optional `de_zone` holds the station's IANA time zone. In the app, a file that still cannot be read is not silently treated as new: Settings shows the reason, and the first save keeps the old file as `station.conf.unreadable`. Field order is unrestricted. Duplicate or unknown fields, unsupported versions, empty lines, malformed numbers, whitespace, and invalid values are rejected. Files are limited to 4096 bytes, including reads from a file that grows while being read. Numeric serialization uses the classic locale and 17 significant digits for double round trips.
 
 Loading accepts regular files only and rejects final-path symlinks. It never substitutes defaults for missing or corrupted settings. Invalid content throws `std::invalid_argument`; filesystem failures throw `std::runtime_error`. The UI must surface a failed load and offer an explicit recovery decision before overwriting it.
 

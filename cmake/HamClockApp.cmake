@@ -48,10 +48,10 @@ if(APPLE)
         target_link_libraries(hamclock-widget-core PUBLIC ${HC_MAC_USERNOTIFICATIONS})
     endif()
 endif()
-if(APPLE AND NOT IOS)
-    # "Use my location" on the Mac app; iOS stays off until the sky finder option is on.
-    target_sources(hamclock-widget-core PRIVATE src/platform/apple_devicelocation_mac.mm)
-    set_source_files_properties(src/platform/apple_devicelocation_mac.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
+if(APPLE)
+    # "Use my location" on the Mac and iOS apps (one-shot, only when the button is tapped).
+    target_sources(hamclock-widget-core PRIVATE src/platform/apple_devicelocation_apple.mm)
+    set_source_files_properties(src/platform/apple_devicelocation_apple.mm PROPERTIES COMPILE_OPTIONS "-fobjc-arc")
     find_library(HC_MAC_CORELOCATION CoreLocation REQUIRED)
     target_link_libraries(hamclock-widget-core PUBLIC ${HC_MAC_CORELOCATION})
 endif()
@@ -186,6 +186,13 @@ if(BUILD_TESTING)
     add_test(NAME fetch-robustness-regression COMMAND fetch-robustness-regression)
     set_tests_properties(fetch-robustness-regression PROPERTIES TIMEOUT 60
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-fetch;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-fetch")
+    add_executable(station-file-regression tests/station_file_regression.cpp)
+    target_include_directories(station-file-regression PRIVATE src)
+    target_link_libraries(station-file-regression PRIVATE hamclock-widget-core)
+    set_target_properties(station-file-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME station-file-regression COMMAND station-file-regression)
+    set_tests_properties(station-file-regression PROPERTIES TIMEOUT 30
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-station;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-station")
     add_executable(app-lifecycle-regression tests/app_lifecycle_regression.cpp)
     target_link_libraries(app-lifecycle-regression PRIVATE hamclock-widget-core)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
@@ -306,6 +313,13 @@ if(BUILD_TESTING)
     target_link_libraries(config-store-regression PRIVATE Qt6::Core)
     add_test(NAME config-store-regression COMMAND config-store-regression)
     set_tests_properties(config-store-regression PROPERTIES TIMEOUT 30)
+    add_executable(region-defaults-regression tests/region_defaults_regression.cpp)
+    target_include_directories(region-defaults-regression PRIVATE src)
+    target_link_libraries(region-defaults-regression PRIVATE hamclock-widget-core)
+    set_target_properties(region-defaults-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME region-defaults-regression COMMAND region-defaults-regression)
+    set_tests_properties(region-defaults-regression PROPERTIES TIMEOUT 30
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-region;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-region")
     add_executable(banner-text-regression tests/banner_text_regression.cpp)
     target_include_directories(banner-text-regression PRIVATE src)
     target_link_libraries(banner-text-regression PRIVATE Qt6::Core)
@@ -354,6 +368,15 @@ if(BUILD_TESTING)
             --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
             --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-station-${size}.png --size ${size})
         set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
+    # An unreadable station file opens first-run Settings with the reason shown, not a blank form (no clipped text, no QML errors).
+    foreach(size 390x844 1024x600)
+        add_test(NAME qml-app-station-unreadable-${size} COMMAND hamclock-pro --offline --first-run
+            --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-unreadable-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-unreadable.conf
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-unreadable-${size}.png --size ${size})
+        set_tests_properties(qml-app-station-unreadable-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # Band conditions with SWPC fixture data in the phone pane: all eight bands (80m..10m) fit in portrait.
