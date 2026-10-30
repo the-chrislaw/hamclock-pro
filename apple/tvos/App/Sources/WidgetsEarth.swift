@@ -180,6 +180,7 @@ struct PaneWidget: View {
         case "solarimage": SolarImageWidget(now: now, focused: focused)
         case "sunmoon": SunMoonWidget(now: now, focused: focused)
         case "satellites": SatellitesWidget(now: now, focused: focused)
+        case "passes": PassesWidget(now: now, focused: focused)
         case "planets": PlanetsWidget(now: now, focused: focused)
         case "eclipse": EclipseWidget(now: now, focused: focused)
         case "launches": LaunchesWidget(now: now, focused: focused)

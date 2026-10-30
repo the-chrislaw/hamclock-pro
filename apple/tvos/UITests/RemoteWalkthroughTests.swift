@@ -418,6 +418,39 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertFalse(issAgain.isSelected, "ISS stays off")
     }
 
+    /// Passes (ported from the Qt widget): the next 48 h of passes at DE from the amateur elements,
+    /// or an honest Loading / Offline; pane options cycle the filter (All, Visible, Alerts), kept
+    /// across a relaunch.
+    func testPassesPane() {
+        launchWithStation(["-hcpPanes", "passes"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "passes")
+        XCTAssertTrue(waitFor(30) {
+            ["°", "No passes", "Waiting for satellite elements", "Computing", "Offline", "Loading"].contains { pane0.label.contains($0) }
+        }, "pass rows or an honest state: \(pane0.label)")
+        shot("tvos-passes")
+        openOptions(pane0)
+        let filter = app.buttons["optPassesFilter"]
+        XCTAssertTrue(filter.waitForExistence(timeout: 5), "Passes pane offers its filter")
+        XCTAssertTrue(filter.label.contains("All"), filter.label)
+        moveFocus(to: filter)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { filter.label.contains("Visible") }, filter.label)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { filter.label.contains("Alerts") }, filter.label)
+        remote.press(.menu)
+        XCTAssertTrue(waitFor(10) { pane0.label.contains("Alerts") }, "status names the filter: \(pane0.label)")
+
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertTrue(waitFor(10) { pane0.label.contains("Alerts") }, "filter kept across relaunch: \(pane0.label)")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_passes"].waitForExistence(timeout: 5), "Passes is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

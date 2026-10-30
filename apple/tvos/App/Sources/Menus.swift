@@ -103,6 +103,14 @@ struct PaneOptionsView: View {
                     settings.setRotation(slot, seconds: Self.steps[(i + 1) % Self.steps.count])
                 }
                 .buttonStyle(ChipStyle(wide: true)).accessibilityIdentifier("optRotate")
+                if settings.panes[slot] == "passes" {
+                    // The Qt card's filter row: All, Visible, Alerts.
+                    Button("Show passes: " + settings.passesFilter.title) {
+                        let all = PassesFilter.allCases
+                        settings.passesFilter = all[((all.firstIndex(of: settings.passesFilter) ?? 0) + 1) % all.count]
+                    }
+                    .buttonStyle(ChipStyle(wide: true)).accessibilityIdentifier("optPassesFilter")
+                }
                 Button("Empty pane") { settings.setPane(slot, "none"); close() }.buttonStyle(ChipStyle(wide: true))
                     .accessibilityIdentifier("optEmpty")
                 Button("Reset all panes") { settings.resetPanes(); close() }.buttonStyle(ChipStyle(wide: true))

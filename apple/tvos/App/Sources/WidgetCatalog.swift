@@ -41,7 +41,7 @@ enum WidgetCatalog {
         .init(id: "planets", title: "Planets", category: 4, tv: true),
         .init(id: "eclipse", title: "Next eclipse", category: 4, tv: true),
         .init(id: "launches", title: "Launches", category: 4, tv: true),
-        .init(id: "passes", title: "Passes", category: 4, tv: false),
+        .init(id: "passes", title: "Passes", category: 4, tv: true),
         .init(id: "hamsat", title: "hams.at", category: 4, tv: false),
         .init(id: "radio", title: "Radio", category: 5, tv: false),
         .init(id: "rotator", title: "Rotator", category: 5, tv: false),

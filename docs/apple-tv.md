@@ -178,7 +178,7 @@ Settings has the main app's Station, Appearance, Distance units, Clock format (d
 
 ### Persistence and iCloud
 
-Settings are flat `hcp.*` keys with plain property-list values (`AppSettings.swift`, `AppSettings.Key`): `hcp.station.*` (callsign, DE/DX latitude and longitude, zones, place name), `hcp.display.*`, `hcp.panes.slots` (12 widget ids), `hcp.panes.rotations`, `hcp.map.size`, `hcp.map.layers`, `hcp.tv.dimAfterHours`. Each write goes to `UserDefaults` and to `NSUbiquitousKeyValueStore`; external KVS changes are adopted. Builds before this one stored only `station.locator`; it is migrated to DE coordinates on first launch.
+Settings are flat `hcp.*` keys with plain property-list values (`AppSettings.swift`, `AppSettings.Key`): `hcp.station.*` (callsign, DE/DX latitude and longitude, zones, place name), `hcp.display.*`, `hcp.panes.slots` (12 widget ids), `hcp.panes.rotations`, `hcp.map.size`, `hcp.map.layers`, `hcp.tv.dimAfterHours`, `hcp.passes.filter`. Each write goes to `UserDefaults` and to `NSUbiquitousKeyValueStore`; external KVS changes are adopted. Builds before this one stored only `station.locator`; it is migrated to DE coordinates on first launch.
 
 **Next step for iCloud sync (not done here):** the app does not carry the `com.apple.developer.ubiquity-kvstore-identifier` entitlement yet, so the KVS writes stay on the device. Signing only happens in the TestFlight job on main, so a PR cannot show that the entitlement signs with the API-created tvOS profile. To turn it on: add `App/HamClockTV.entitlements` with `com.apple.developer.ubiquity-kvstore-identifier` = `$(TeamIdentifierPrefix)com.chrislaw.hamclockpro`, set `CODE_SIGN_ENTITLEMENTS` in `project.yml`, and check the next TestFlight archive. The iPhone/iPad app (Qt, `QSettings`) would also have to mirror the same `hcp.*` keys to KVS before settings typed on the phone reach the TV.
 
@@ -197,6 +197,7 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | Sun (SDO) | NASA SDO AIA 193 Å image | – |
 | Sun & Moon (DE/DX rise and set, Moon phase) | computed on device | `astro_sun`, `astro_moon` |
 | Satellites (above the horizon at DE; map overlay) | CelesTrak amateur TLEs, AMSAT `nasabare.txt` when CelesTrak fails; SGP4 on device | `astro_satellite` |
+| Passes (next 48 h at DE: when, peak elevation, rise → set; All / Visible / Alerts filter in pane options; Settings > Satellite pass alerts also puts a banner on the dashboard before and during passes of the chosen birds, from the shared amateur-satellites.json catalog) | the Satellites elements, SGP4 on device | `passes`, `satalert` |
 | Planets (up/below, next rise/set; map overlay) | computed on device | `astro_planets` |
 | Next eclipse (type, date, visibility from DE) | computed on device | `astro_eclipse` |
 | Launches (countdown, provider, ham hint; pads on map) | Launch Library 2 | `launches` |
@@ -206,11 +207,11 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | Active fires (US, 24 h; map overlay) | NASA FIRMS VIIRS | `fires` |
 | On the air (POTA/SOTA/WWFF spots; map overlay) | POTA, SOTA, WWFF | `ota` |
 
-Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), Passes (the pane; Satellites shows what is up now, and Settings > Satellite pass alerts puts a banner on the dashboard before and during passes of the chosen birds, from the same amateur-satellites.json catalog as the other apps), HF path reliability and Space weather impact (parsers not ported yet; Dst index, Space alerts, Solar trend and HamQSL are ported), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
+Not on TV yet, and why: DX cluster, HamAlert and Meshtastic (telnet/LAN sessions with a login; a foreground-only `NWConnection` client is the next piece of work), PSKReporter (feed not ported), HF path reliability and Space weather impact (parsers not ported yet; Dst index, Space alerts, Solar trend and HamQSL are ported), Beacons and Watch list (depend on the cluster), hams.at and Callsign lookup (personal API keys or accounts), Radio, Rotator, GPS, ADS-B, Host sensors and the ADIF log (station hardware and local files). A pane saved with one of these on another device says "Not available on Apple TV yet".
 
 ### Verification
 
-- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (27 tests; `tvos.yml` also runs them inside the tvOS Simulator).
+- Core: `cmake -S cmake/TvOSCore -B build-host && cmake --build build-host && ctest --test-dir build-host` (28 tests; `tvos.yml` also runs them inside the tvOS Simulator).
 - Threading: feed bodies are parsed (and written to the Caches copy) on a background task, never on the main actor, and satellite positions are computed every 5 s off the main actor with one batched core call. Parse times show up in Instruments as `parse` signpost intervals (subsystem `com.chrislaw.hamclockpro`).
 - App: `apple/tvos/UITests/RemoteWalkthroughTests.swift` drives the Siri Remote (`XCUIRemote`) through first-run setup, the pane chooser, pane options (hold Select and Play/Pause), the map menu and a settings change, then relaunches and checks that the station, the pane choice and the units were kept. Locally: `xcodebuild test -project apple/tvos/HamClockTV.xcodeproj -scheme HamClockTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation) (at 1080p)'`; set `TEST_RUNNER_HCP_SHOT_DIR=<dir>` to also write the screenshots. `tvos.yml` runs the same test and uploads the screenshots as the `tvos-simulator-screenshots` artifact.
 - Screenshots in `docs/images/tvos/` are tvOS Simulator captures with the live data of the moment they were taken, not photos of a TV. Nothing here has been checked on an Apple TV yet.
