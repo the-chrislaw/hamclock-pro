@@ -86,8 +86,10 @@ StationSettings parse(const std::string& data) {
         if (!fields.emplace(key, line.substr(equal + 1)).second)
             throw std::invalid_argument("Duplicate settings field");
     }
+    // A file without the appearance line (written by hand or an older helper) follows the system.
+    fields.emplace("appearance", "system");
     const bool has_zone = fields.count("de_zone") != 0;
-    if (fields.size() != (has_zone ? 8u : 7u) || fields.count("appearance") == 0 ||
+    if (fields.size() != (has_zone ? 8u : 7u) ||
         fields.count("version") == 0 || fields.at("version") != "1")
         throw std::invalid_argument("Missing settings field or unsupported version");
     if (has_zone && fields.at("de_zone").empty())

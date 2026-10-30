@@ -194,6 +194,13 @@ if(BUILD_TESTING)
     add_test(NAME fetch-robustness-regression COMMAND fetch-robustness-regression)
     set_tests_properties(fetch-robustness-regression PROPERTIES TIMEOUT 60
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-fetch;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-fetch")
+    add_executable(station-file-regression tests/station_file_regression.cpp)
+    target_include_directories(station-file-regression PRIVATE src)
+    target_link_libraries(station-file-regression PRIVATE hamclock-widget-core)
+    set_target_properties(station-file-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME station-file-regression COMMAND station-file-regression)
+    set_tests_properties(station-file-regression PROPERTIES TIMEOUT 30
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/test-cache-station;HOME=${CMAKE_CURRENT_BINARY_DIR}/test-home-station")
     add_executable(app-lifecycle-regression tests/app_lifecycle_regression.cpp)
     target_link_libraries(app-lifecycle-regression PRIVATE hamclock-widget-core)
     set_target_properties(app-lifecycle-regression PROPERTIES AUTOMOC ON)
@@ -375,6 +382,15 @@ if(BUILD_TESTING)
             set_tests_properties(qml-settings-${target_name}-${size} PROPERTIES TIMEOUT 30
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
         endforeach()
+    endforeach()
+    # An unreadable station file opens first-run Settings with the reason shown, not a blank form (no clipped text, no QML errors).
+    foreach(size 390x844 1024x600)
+        add_test(NAME qml-app-station-unreadable-${size} COMMAND hamclock-pro --offline --first-run
+            --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-unreadable-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-unreadable.conf
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-unreadable-${size}.png --size ${size})
+        set_tests_properties(qml-app-station-unreadable-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # Band conditions with SWPC fixture data in the phone pane: all eight bands (80m..10m) fit in portrait.
     foreach(size 390x844 440x956)

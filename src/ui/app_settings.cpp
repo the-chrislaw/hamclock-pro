@@ -100,9 +100,19 @@ QString AppSettings::saveStation(const QString& callsign, double de_lat, double 
     next.de = {de_lat, de_lon};
     next.dx = kept_override ? saved_dx_ : hamclock::Location{dx_lat, dx_lon};
     next.de_zone = de_zone.trimmed().toStdString();
+    // The first save after an unreadable station file keeps that file beside the new
+    // one (station.conf.unreadable) so nothing typed by hand is lost.
+    const QString kept = station_path_ + ".unreadable";
+    const bool keep_unreadable = !load_error_.isEmpty() && QFileInfo::exists(station_path_);
+    if (keep_unreadable) {
+        QFile::remove(kept);
+        if (!QFile::copy(station_path_, kept))
+            return QString("Could not keep the unreadable station file as %1.").arg(kept);
+    }
     try {
         save_settings(station_path_.toStdString(), next);
     } catch (const std::exception& error) {
+        if (keep_unreadable) QFile::remove(kept); // the original is still in place
         return QString::fromUtf8(error.what());
     }
     if (kept_override) {

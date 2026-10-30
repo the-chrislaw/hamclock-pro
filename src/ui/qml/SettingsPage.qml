@@ -135,6 +135,10 @@ Rectangle {
                     id: stationCard
                     width: parent.width
                     spacing: Theme.gap * 0.8
+                    // The saved station file could not be read: say why instead of looking new.
+                    Text { objectName: "stationLoadError"; visible: appSettings.loadError.length > 0
+                           text: appSettings.loadError + ". Saving here replaces it; the old file is kept as station.conf.unreadable."
+                           color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
                                 field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
                     RowLayout {

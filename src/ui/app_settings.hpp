@@ -27,6 +27,8 @@ class AppSettings : public QObject {
     Q_PROPERTY(QString deZone READ deZone NOTIFY stationChanged)
     Q_PROPERTY(QString appearance READ appearance WRITE setAppearance NOTIFY appearanceChanged)
     Q_PROPERTY(bool configured READ configured NOTIFY stationChanged)
+    // Why the station file could not be read at start ("" when it was fine or absent).
+    Q_PROPERTY(QString loadError READ loadError NOTIFY stationChanged)
     Q_PROPERTY(QString clusterHost READ clusterHost NOTIFY optionsChanged)
     Q_PROPERTY(int clusterPort READ clusterPort NOTIFY optionsChanged)
     Q_PROPERTY(int clusterSsid READ clusterSsid NOTIFY optionsChanged)

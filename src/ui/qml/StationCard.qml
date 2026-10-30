@@ -175,8 +175,9 @@ Card {
             Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             Text {
-                text: "Add callsign and location to see paths and local time."
-                color: Theme.secondary
+                text: appSettings.loadError.length ? "Your saved station could not be read. Open Settings to see why."
+                                                   : "Add callsign and location to see paths and local time."
+                color: appSettings.loadError.length ? Theme.bad : Theme.secondary
                 font.pixelSize: Theme.fontBody
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
