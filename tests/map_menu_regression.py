@@ -16,8 +16,10 @@ if "RowLayout" in qml:
     sys.exit("MapMenu.qml: chip rows must wrap (Flow), a RowLayout elides them on a phone")
 main = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml/Main.qml").read_text()
 menu_use = main.split("MapMenu {", 1)[1][:500]
-if re.search(r"width:[^\n]*\bimplicitWidth\b", menu_use) or "naturalWidth" not in menu_use:
-    sys.exit("Main.qml: size MapMenu from menu.naturalWidth, not the Popup implicitWidth")
+if re.search(r"^\s*width:", menu_use, re.M) or "maxWidth:" not in menu_use:
+    sys.exit("Main.qml: MapMenu takes a maxWidth and sizes itself on open (no width binding)")
+if "onAboutToShow: fitWidth()" not in qml:
+    sys.exit("MapMenu.qml: the width must be assigned on open (fitWidth)")
 
 # Settings: the hidden (iOS) station hardware card has width 0; its wrapped labels then loop the
 # layout polish. It lays out at its natural width while hidden.

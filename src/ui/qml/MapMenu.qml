@@ -11,6 +11,13 @@ Popup {
     property var map
     // Width the menu asks for, from its column alone (not the Popup implicit size, which loops).
     readonly property real naturalWidth: menuColumn.implicitWidth + leftPadding + rightPadding
+    // Widest the menu may be (the map width). The width is assigned, not bound: on iOS a
+    // binding through the popup's size re-entered itself ("Binding loop detected for width").
+    property real maxWidth: 0
+    function fitWidth() { width = Math.max(0, Math.min(naturalWidth, maxWidth)) }
+    onAboutToShow: fitWidth()
+    onMaxWidthChanged: if (opened) fitWidth()
+    onNaturalWidthChanged: if (opened) fitWidth()
     // Natural width of a chip row (its chips side by side, at least the toggle grid's width). A
     // Flow's own implicit width follows its width, so feeding that back into the popup width
     // loops; this sums the chips instead. Narrow screens (phones) wrap the row.
