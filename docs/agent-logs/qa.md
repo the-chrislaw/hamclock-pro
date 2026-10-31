@@ -580,3 +580,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: ce8afe7 (only my run 102 log #737 merged since bfbef21). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 104
+- Last reviewed commit: e0ae136 (merged since ce8afe7: #739 App Store metadata field-limit test, my run 103 log #738). The diff is one new test plus its CMake registration and an Apple agent log line; no src, QML, workflow or existing test change, and no assertions were removed. Build, full ctest and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
