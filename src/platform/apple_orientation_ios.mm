@@ -24,6 +24,10 @@ namespace hamclock {
 
 void applyOrientationLock(const QString& lock) {
     g_mask = maskFor(lock);
+    reapplyOrientationLock();
+}
+
+void reapplyOrientationLock() {
     for (UIScene* scene in UIApplication.sharedApplication.connectedScenes) {
         if (![scene isKindOfClass:[UIWindowScene class]]) continue;
         UIWindowScene* windowScene = (UIWindowScene*)scene;
