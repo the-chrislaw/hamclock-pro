@@ -168,6 +168,26 @@ int hcp_satalert_predict(const char* tle, size_t tle_len, const char* catalog, s
 int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAlertPrefs* prefs, const char* catalog,
                         size_t cat_len, int utc_offset_s, int64_t now_s, char* text, size_t cap, int* live);
 
+/* Passes pane (port of src/widgets/satellites/passes_model.cpp): the next 48 h of passes at the
+ * observer of every TLE with elements under 30 days old, soonest first, at most 24. filter: 0 all,
+ * 1 visible to the eye, 2 selected for pass alerts (prefs may be NULL: alerts off). *state: 0 live,
+ * 1 loading (no elements), 2 stale (every set too old). reason gets the empty-list text. Returns the
+ * rows written, or -1 for bad arguments. */
+typedef struct {
+    char name[24];
+    int64_t aos_s, los_s;
+    char day[12];      /* "Today", "Tomorrow", "Sun" (UTC days) */
+    char utc[8];       /* "14:05Z" */
+    int max_el_deg;
+    char from[4], to[4];
+    char duration[12]; /* "12 min" */
+    char mag[8];       /* "-1.8" for known large objects, else empty */
+    int visible, live, alert;
+} HcpPassRow;
+int hcp_passes_schedule(const char* tle, size_t tle_len, const char* catalog, size_t cat_len,
+                        const HcpSatAlertPrefs* prefs, double obs_lat_deg, double obs_lon_deg, int64_t now_s,
+                        int filter, HcpPassRow* out, size_t cap, int* state, char* reason, size_t reason_cap);
+
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
  * Fills out[] with up to cap bands (80m..10m); returns the number written. */

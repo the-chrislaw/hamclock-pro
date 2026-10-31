@@ -29,6 +29,7 @@ final class AppSettings: ObservableObject {
         static let mapSize = "hcp.map.size", mapLayers = "hcp.map.layers"
         static let mapCentre = "hcp.map.centre", mapZoom = "hcp.map.zoom", mapLongPath = "hcp.map.longPath"
         static let dimAfterHours = "hcp.tv.dimAfterHours"
+        static let passesFilter = "hcp.passes.filter"
         /// Satellite pass alerts: the Qt app's [satalerts] keys.
         static let satEnabled = "hcp.satalerts.enabled", satAllWorkable = "hcp.satalerts.allWorkable"
         static let satMuted = "hcp.satalerts.muted", satPicked = "hcp.satalerts.picked"
@@ -39,7 +40,7 @@ final class AppSettings: ObservableObject {
                                 satQuietStart, satQuietEnd, satDaylightOnly, satAnnounceStart]
         static let all = [callsign, deLat, deLon, dxLat, dxLon, deZone, dxZone, place, appearance, imperial,
                           clock12h, dateOrder, localPrimary, bannerStyle, bannerBackground, bannerTitle, accent,
-                          panes, rotations, mapSize, mapLayers, mapCentre, mapZoom, mapLongPath, dimAfterHours] + satAlerts
+                          panes, rotations, mapSize, mapLayers, mapCentre, mapZoom, mapLongPath, dimAfterHours, passesFilter] + satAlerts
     }
 
     private let defaults: UserDefaults
@@ -77,6 +78,8 @@ final class AppSettings: ObservableObject {
         }
     }
     @Published var dimAfterHours = 0 { didSet { put(Key.dimAfterHours, dimAfterHours) } }
+    /// Passes pane filter (the Qt app's [passes] filter=); unknown values read as All.
+    @Published var passesFilter = PassesFilter.all { didSet { put(Key.passesFilter, passesFilter.rawValue) } }
     @Published var satAlerts = SatAlertPrefs() {
         didSet {
             let s = satAlerts
@@ -207,6 +210,7 @@ final class AppSettings: ObservableObject {
         accentStyle = value(Key.accent) as? Int ?? 0
         mapSize = value(Key.mapSize) as? String ?? "large"
         dimAfterHours = value(Key.dimAfterHours) as? Int ?? 0
+        passesFilter = (value(Key.passesFilter) as? String).flatMap(PassesFilter.init(rawValue:)) ?? .all
         let d = SatAlertPrefs()
         satAlerts = SatAlertPrefs(
             enabled: value(Key.satEnabled) as? Bool ?? d.enabled,
