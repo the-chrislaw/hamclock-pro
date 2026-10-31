@@ -319,6 +319,14 @@ QStringList MapItem::styleIds() const {
     return ids;
 }
 
+QString MapItem::layerName(const QString& id) const { return overlay_layer_name(id); }
+
+QString MapItem::styleName(const QString& id) const {
+    for (const auto& st : MapStyles::instance().styles())
+        if (st.id == id) return st.name.isEmpty() ? id : st.name;
+    return id;
+}
+
 QVariantList MapItem::rotationChoices() const {
     QVariantList out;
     for (int s : style_rotation_intervals()) out << s;
