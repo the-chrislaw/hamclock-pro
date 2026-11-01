@@ -222,3 +222,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-01 (second hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). WIDGETS F4 slice: the macOS job now renders the app at the 11" iPad size (1180x820; 1366x1024 does not fit the runner display) with `--screenshot` and uploads them as the `ipad-size-layout-renders` artifact, so the touch-layout check has images to review. These are desktop-Qt renders, not Simulator or device. Not done: the Simulator-size assertions, #513 device check. No on-device claims.
+
+## 2026-11-01 (third hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (conflicting, left alone). F10 slice: the iPad Simulator job now also boots an iPhone Simulator, installs the same app, launches it and uploads `iphone.png` with the existing screenshot artifact. The step is informational (every failure path logs and exits 0) and the job only runs on main pushes, so the first screenshot appears after merge. Not done: portrait/landscape assertions, #513 device check. CI logs only; no on-device claims.
