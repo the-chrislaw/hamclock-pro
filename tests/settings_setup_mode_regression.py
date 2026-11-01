@@ -31,6 +31,24 @@ for text in ('"Set up HamClock Pro"', '"Later"', '"Start"'):
 if "closeRequested()" not in title_bar.split('"Later"', 1)[1].split("}", 1)[0]:
     fail("Later closes without asking for the missing station")
 
+# Start asks for the station: with nothing typed it used to close, exactly like Later.
+start = title_bar.split('"Start"', 1)[1].split("}", 1)[0]
+if "page.start()" not in start:
+    fail("Start must go through page.start(), which refuses an empty station")
+start_fn = page.split("function start()", 1)[1].split("\n    }\n", 1)[0]
+if not re.search(r"stationCard\.typed\(\)", start_fn) or "stationError.text" not in start_fn or "saveAndClose()" not in start_fn:
+    fail("start() must say what is missing when nothing is typed, and save otherwise")
+
+# Location before callsign is a fine order: no red text until the user tries to leave.
+auto = page.split("function autoSave()", 1)[1].split("\n                    }\n", 1)[0]
+if not re.search(r"callsign\.text\.trim\(\)", auto):
+    fail("autoSave() must wait quietly for the callsign")
+
+# A grid square that can't be read says so, instead of leaving the coordinates empty with no word.
+grid = page.split("id: deGrid", 1)[1].split("RowLayout", 1)[0]
+if "stationError.text" not in grid or "not a grid square" not in grid:
+    fail("an unreadable grid square must show a message")
+
 more = re.search(r"id:\s*moreSections.*?visible:\s*!page\.setupMode", page, re.S)
 if not more:
     fail("every section after Station sits in moreSections, hidden in setup mode")
