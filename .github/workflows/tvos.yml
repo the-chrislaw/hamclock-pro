@@ -33,7 +33,7 @@ concurrency:
 jobs:
   core:
     name: Qt-free core (host tests + tvOS Simulator build)
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
   app:
     name: SwiftUI app (tvOS Simulator build, Siri Remote UI test, screenshots)
     needs: core
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
