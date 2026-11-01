@@ -93,6 +93,13 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/qt/de_time_zone.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/widgets_generated.cpp)
 target_link_libraries(hamclock-pro PRIVATE hamclock-widgets Qt6::Quick Qt6::QuickControls2)
+# Apps linked against the iOS 27 SDK must use the UIScene life cycle or they
+# don't launch. Qt 6.8+ does this itself; older kits (the 6.5 LTS simulator
+# kit) get a small shim. Never part of the Qt 6.8 TestFlight build. See
+# docs/ios-uiscene.md.
+if(IOS AND Qt6_VERSION VERSION_LESS 6.8)
+    target_sources(hamclock-pro PRIVATE src/platform/apple_scene_ios.mm)
+endif()
 target_compile_definitions(hamclock-pro PRIVATE HAMCLOCK_VERSION="${PROJECT_VERSION}")
 set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_GUI_IDENTIFIER org.hamclockpro.app
