@@ -41,7 +41,7 @@ env:
 jobs:
   macos:
     name: macOS build and tests
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -103,7 +103,7 @@ jobs:
 
   macos-universal:
     name: macOS universal build
-    runs-on: macos-14
+    runs-on: macos-15
     # Produces the distributable dmg: universal (arm64+x86_64), signed/notarized when secrets exist.
     # Nothing downstream consumes it and the `macos` job already covers build+tests,
     # so it only runs on main — on PRs it doubled the macOS minutes for no signal.
@@ -338,7 +338,7 @@ jobs:
     # Informational only (continue-on-error below), so it runs on main pushes,
     # not on every PR sync; still runs even when the widget job failed.
     if: ${{ !cancelled() && github.event_name == 'push' }}
-    runs-on: macos-14
+    runs-on: macos-15
     # Informational until the Qt Widgets dependency is removed (area A, QPainter
     # map renderer); a failure here does not block merges yet.
     continue-on-error: true
