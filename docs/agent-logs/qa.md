@@ -605,3 +605,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: ebd2fdc (only my run 107 log #743 merged since 1c79f98). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 109
+- Last reviewed commit: 41b48c0 (merged since ebd2fdc: my run 108 log #744, spots run 61 log #745). Only docs/agent-logs changed; no source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
