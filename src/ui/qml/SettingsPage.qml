@@ -179,6 +179,7 @@ Rectangle {
                             deGrid.text = locationTools.gridFor(lat, lon)
                             placeStatus.text = "Using your current location."
                             stationCard.suggestZone(lat, lon)
+                            stationCard.autoSave()
                         }
                         function onFailed(reason) { placeStatus.text = reason }
                     }
