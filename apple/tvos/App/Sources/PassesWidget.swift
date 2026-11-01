@@ -98,21 +98,21 @@ struct PassesWidget: View {
     }
 
     private func rows(_ list: [HcpPassRow]) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 4) {
+        VStack(alignment: .leading, spacing: 4) {
             ForEach(Array(list.enumerated()), id: \.offset) { _, r in
                 let tint = r.live != 0 ? theme.accent : theme.secondary
-                GridRow {
+                HStack(spacing: 8) {
                     // Long names ("FUNCUBE-1") give way a little; time and direction never do.
                     Text(cText(r.name)).fontWeight(.semibold).foregroundStyle(r.live != 0 ? theme.accent : theme.ink)
-                        .minimumScaleFactor(0.9)
+                        .minimumScaleFactor(0.85).frame(maxWidth: .infinity, alignment: .leading)
                     if Self.isSoon(r) {
-                        Text(Self.when(r)).foregroundStyle(tint).fixedSize()
+                        Text(Self.when(r)).foregroundStyle(tint).fixedSize().frame(width: Self.whenWidth, alignment: .leading)
                         Text("\(r.max_el_deg)° \(cText(r.from))").foregroundStyle(tint).fixedSize()
+                            .frame(width: Self.directionWidth, alignment: .leading)
                             .accessibilityLabel("\(r.max_el_deg)° \(cText(r.from)) to \(cText(r.to))")
                     } else {
                         // A later day needs the width of both columns; the peak still fits, the direction does not.
                         Text("\(Self.when(r))  \(r.max_el_deg)°").foregroundStyle(tint).fixedSize()
-                            .gridCellColumns(2)
                     }
                 }
                 .font(.system(size: Theme.fontCaption))
@@ -120,6 +120,10 @@ struct PassesWidget: View {
             }
         }
     }
+
+    /// "19:06Z" and "64° WNW" at 29 pt.
+    private static let whenWidth: CGFloat = 94
+    private static let directionWidth: CGFloat = 130
 
     private static func isSoon(_ r: HcpPassRow) -> Bool { r.live != 0 || cText(r.day) == "Today" }
 

@@ -190,7 +190,8 @@ struct LaunchesWidget: View {
                 // rocket (or the provider, for a plain name) shares the line with the countdown.
                 let parts = cText(l.name).components(separatedBy: " | ")
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(parts.last ?? "").font(.system(size: Theme.fontCaption, weight: .medium))
+                    // Without any trailing note: "The Sea God Surveys (iQPS Launch 7)".
+                    Text((parts.last ?? "").components(separatedBy: " (")[0]).font(.system(size: Theme.fontCaption, weight: .medium))
                         .foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.85)
                     HStack(spacing: 8) {
                         Text((parts.count > 1 ? parts[0] : cText(l.provider)) + " · " + cText(l.status)
