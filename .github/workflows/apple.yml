@@ -395,52 +395,27 @@ jobs:
           ditto -x -k appex/HamClockWidgets-iphoneos.zip "$RUNNER_TEMP/appex-device"
           packaging/apple/embed_widgets.sh "$APP" "$RUNNER_TEMP/appex-device/HamClockWidgets.appex"
           ls "$APP/PlugIns"
-      # Simulator: Qt's prebuilt QML resource objects are device-only in this kit
-      # ("building for iOS-simulator, but linking object built for iOS"), so the
-      # Simulator build/screenshot is attempted separately and is informational.
+      # Simulator: Qt's prebuilt objects are device-only in this kit ("building for
+      # iOS-simulator, but linking object built for iOS"), so the Simulator
+      # build/screenshot runs separately, on a retagged copy, and is informational.
       - name: Simulator build, launch smoke test and screenshot (#521)
         run: |
-          # Qt's iOS kit ships its QML resource objects tagged for the device
-          # only (LC_BUILD_VERSION platform iOS), which the simulator link
-          # rejects. The code is plain arm64, so retag those objects for the
-          # simulator. The device build above has already run, so changing the
-          # local kit copy is safe (the cache is not saved on a hit).
-          QTIOS="$HOME/Qt/$IOS_QT_VERSION/ios"
-          find "$QTIOS" -path '*objects-*' -name '*.o' > objs.txt
-          echo "retagging $(wc -l < objs.txt) objects"
-          head -1 objs.txt | xargs xcrun vtool -show-build | head -8
-          # (a while loop: BSD xargs -I limits the replaced command to 255 bytes)
-          while IFS= read -r o; do
-            xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "$o" "$o" >/dev/null 2>&1 ||
-              xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "$o" "$o" >/dev/null ||
-              echo "retag failed: $o"
-          done < objs.txt
-          head -1 objs.txt | xargs xcrun vtool -show-build | head -8
-          # The kit's static libraries (libQt6Quick_debug.a, ...) carry the same
-          # device tag on their members: unpack, retag and repack each archive.
-          find "$QTIOS" -name '*.a' > archives.txt
-          echo "retagging members of $(wc -l < archives.txt) archives"
-          while IFS= read -r a; do
-            if [ -n "$(xcrun ar -t "$a" 2>/dev/null | grep -v '^__.SYMDEF' | sort | uniq -d | head -1)" ]; then
-              echo "skip (duplicate member names): $a"; continue
-            fi
-            d=$(mktemp -d)
-            ( cd "$d" && xcrun ar -x "$a" ) || { echo "unpack failed: $a"; rm -rf "$d"; continue; }
-            for m in "$d"/*.o; do
-              [ -e "$m" ] || continue
-              xcrun vtool -set-build-version 7 15.0 17.5 -replace -output "$m" "$m" >/dev/null 2>&1 ||
-                xcrun vtool -arch arm64 -set-build-version 7 15.0 17.5 -replace -output "$m" "$m" >/dev/null 2>&1 ||
-                echo "retag failed: $m"
-            done
-            xcrun libtool -static -o "$d/new.a" "$d"/*.o 2>/dev/null && cp "$d/new.a" "$a" || echo "repack failed: $a"
-            rm -rf "$d"
-          done < archives.txt
-          "$HOME/Qt/$IOS_QT_VERSION/ios/bin/qt-cmake" -S . -B build-sim -G Xcode \
+          # Qt's iOS kit tags the arm64 slice of its objects and static libraries
+          # for the device only (LC_BUILD_VERSION platform iOS), which the
+          # simulator link rejects. The code is plain arm64, so retag a private
+          # copy of the kit: ~/Qt is saved to the Qt cache on a miss, and a retagged
+          # kit there would break the device build above on the next run.
+          QTSIM="$RUNNER_TEMP/qt-sim/ios"
+          mkdir -p "$RUNNER_TEMP/qt-sim"
+          cp -cRp "$HOME/Qt/$IOS_QT_VERSION/ios" "$QTSIM"
+          python3 packaging/apple/retag_ios_kit_for_simulator.py "$QTSIM"
+          "$QTSIM/bin/qt-cmake" -S . -B build-sim -G Xcode \
             -DQT_HOST_PATH="$HOME/Qt/$IOS_QT_VERSION/macos" -DBUILD_TESTING=OFF
           if ! cmake --build build-sim --config Debug --target hamclock-pro -- \
               -sdk iphonesimulator -arch arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
               > sim-build.log 2>&1; then
-            grep -E "error:|ld: |BUILD FAILED" sim-build.log | head -40
+            # The kit's minimum-version warnings would otherwise push the real error out.
+            grep -E "error:|ld: |BUILD FAILED" sim-build.log | grep -v "warning:" | head -40
             exit 1
           fi
           APP=$(find build-sim -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
@@ -460,10 +435,13 @@ jobs:
           # Take the bundle id from the built app (the iOS target uses
           # HAMCLOCK_IOS_BUNDLE_ID, not the macOS identifier).
           BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
-          # The sky finder is off for 1.0: no camera/location/motion prompts, and
-          # the plist placeholder must have been substituted.
+          # The sky finder is off for 1.0: no camera/motion prompts, and the plist
+          # placeholder must have been substituted. A location string is expected,
+          # but only the "Use my location" one (location-key.plist.in); the finder's
+          # own (sky-finder-keys.plist.in) names the sky finder.
           if grep -q 'HAMCLOCK_SKY_FINDER' "$APP/Info.plist" ||
-             plutil -p "$APP/Info.plist" | grep -qE 'NS(Camera|LocationWhenInUse|Motion)UsageDescription'; then
+             plutil -p "$APP/Info.plist" | grep -qE 'NS(Camera|Motion)UsageDescription' ||
+             plutil -p "$APP/Info.plist" | grep -qi 'sky finder'; then
             echo "Info.plist has sky finder permission strings or an unsubstituted placeholder"
             plutil -p "$APP/Info.plist"
             exit 1
@@ -473,6 +451,7 @@ jobs:
           PID=$(awk -F': ' '{print $2}' launch.txt | tr -d ' ')
           sleep 15
           xcrun simctl io "$UDID" screenshot ipad.png
+          ls -l ipad.png
           # Launch smoke test (#521): the process must still be alive after
           # 15 s, otherwise the app crashed on start (e.g. a missing plugin).
           if ! xcrun simctl spawn "$UDID" launchctl list | grep -q "UIKitApplication:$BID"; then
