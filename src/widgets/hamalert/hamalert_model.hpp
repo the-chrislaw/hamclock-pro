@@ -42,6 +42,7 @@ private:
     AppSettings* settings_;
     TelnetClient client_;
     std::deque<dxcluster::DxSpot> spots_;
+    bool reached_ = false;         // HamAlert answered since the last start()
     QByteArray tried_, rejected_;  // SHA-256 of the user and password tried last / refused by HamAlert
 };
 
