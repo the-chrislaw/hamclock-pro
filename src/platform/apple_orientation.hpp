@@ -11,4 +11,9 @@ namespace hamclock {
 // ("auto") follows the device. Safe to call before or after the window shows.
 void applyOrientationLock(const QString& lock);
 
+// Applies the last lock again, to scenes that connected since. Used by the
+// UIScene shim for Qt < 6.8 (apple_scene_ios.mm), where the scene connects
+// after main() first applies the lock.
+void reapplyOrientationLock();
+
 } // namespace hamclock
