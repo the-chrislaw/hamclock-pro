@@ -4,10 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Tall pane: the full layout (every other storm with its detail), every line wrapped and laid
-    // out narrow so the card grows it until it fills the height instead of leaving it empty.
-    designWidth: (tall ? 180 : compact ? 260 : 420) * Theme.scale
-    readonly property bool full: !compact || tall
+    // Full layout (wide, tall or roomy pane): every other storm, with its detail in a tall pane;
+    // every line wraps.
+    readonly property bool full: !compact || tall || roomy
     readonly property bool available: widget !== null && widget.hasData
     readonly property string value: !available ? "" : widget.count === 0 ? "None active" : widget.headline
     readonly property string caption: available && widget.count > 0 ? widget.headlineIntensity : ""
@@ -17,21 +16,11 @@ Card {
         width: parent.width
         spacing: Theme.gap
         Metric {
-            visible: !root.tall
             label: root.full ? "Tropical storms" : "Storms" + (root.available ? " " + widget.count : "")
             available: root.available
             value: root.value
             valueColor: root.valueColor
             Layout.fillWidth: true
-        }
-        ColumnLayout {
-            visible: root.tall
-            spacing: 2 * Theme.scale
-            Layout.fillWidth: true
-            Text { text: "Tropical storms"; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
-                   font.capitalization: Font.AllUppercase; font.letterSpacing: 0.6; wrapMode: Text.WordWrap; Layout.fillWidth: true }
-            Text { text: root.available ? root.value : "—"; color: root.available ? root.valueColor : Theme.secondary
-                   font.pixelSize: Theme.fontValue; font.weight: Font.DemiBold; wrapMode: Text.WordWrap; Layout.fillWidth: true }
         }
         // Intensity (or why there is none) wraps instead of being cut short.
         Text {

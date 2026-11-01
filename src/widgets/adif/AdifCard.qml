@@ -5,7 +5,7 @@ import HamClock
 Card {
     id: root
     // Full layout (wide pane, tall pane, or a narrow one with room below, e.g. 1440p rows): the recent QSOs fill the leftover height.
-    readonly property bool full: !compact || tall || height >= 260 * Theme.scale
+    readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
         height: root.full ? parent.height : implicitHeight

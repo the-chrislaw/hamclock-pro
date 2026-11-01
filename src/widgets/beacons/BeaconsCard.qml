@@ -4,20 +4,20 @@ import HamClock
 
 Card {
     id: root
-    // Stacked layout: a tall pane, or a narrow one with room below (e.g. 1440p pane rows).
-    readonly property bool stacked: tall || (compact && height >= 260 * Theme.scale)
+    // Stacked layout: a tall pane, or a narrow one with room below (e.g. 1440p pane rows). Its five
+    // two-line rows need about 250 px of pane; a 7-inch pane keeps the one-line rows, grown by the card.
+    readonly property bool stacked: tall || (roomy && height >= 250 * Theme.scale)
     // Stacked: one row per band (MHz, then call over place), rows spread over the height.
     ColumnLayout {
         visible: root.stacked
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.6
         Repeater {
             model: root.stacked && root.widget ? root.widget.rows : []
             delegate: RowLayout {
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.maximumHeight: Theme.fontBody * 4
                 spacing: Theme.gap * 1.5
                 Text {

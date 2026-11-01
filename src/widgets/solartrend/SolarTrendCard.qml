@@ -59,8 +59,6 @@ Card {
             Layout.fillWidth: true
             Layout.fillHeight: true
             Layout.minimumHeight: 16 * Theme.scale
-            // The tuned 7-inch layout caps the bars; desktop panes let them take the leftover height.
-            Layout.maximumHeight: Theme.dense && !root.tall ? 90 * Theme.scale : Number.POSITIVE_INFINITY
         }
     }
 }

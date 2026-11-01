@@ -6,7 +6,7 @@ Card {
     id: root
     // Full layout in a roomy or tall pane: the next-nearest sondes fill the leftover height
     // (as many rows as fit, never a clipped one); a small slot shows the nearest one only.
-    readonly property bool full: !compact || tall
+    readonly property bool full: !compact || tall || roomy
     FontMetrics { id: rowFont; font.pixelSize: Theme.fontBody }
     readonly property real rowHeight: Math.ceil(rowFont.height)
     readonly property real rowSpacing: Theme.gap * 0.5

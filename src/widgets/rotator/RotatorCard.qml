@@ -6,7 +6,7 @@ Card {
     id: root
     readonly property real azimuthDeg: root.widget && root.widget.azimuth !== "" ? parseFloat(root.widget.azimuth) : NaN
     // Stacked layout: a tall pane, or a narrow one with room below (e.g. 1440p pane rows).
-    readonly property bool stacked: tall || (compact && height >= 260 * Theme.scale)
+    readonly property bool stacked: tall || roomy
     // Stacked: azimuth and elevation over a compass dial that takes the leftover height.
     designWidth: stacked ? Math.min(260 * Theme.scale, Math.max(150 * Theme.scale, values.implicitWidth))
                       : (compact ? 260 : 420) * Theme.scale
