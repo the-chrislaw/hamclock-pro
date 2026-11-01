@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
     model.magSource().refreshNow();
     settle();
     check(model.state() == "stale" && model.statusText().contains("old"), "old observation -> stale");
+    check(model.statusText().size() <= 28, "stale note short enough for the 800x480 footer");
 
     // Outage keeps last values but marks stale.
     fail_all = true;

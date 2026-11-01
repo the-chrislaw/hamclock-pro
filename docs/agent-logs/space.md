@@ -162,3 +162,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Space alerts: headlines wrap to two lines (then elide) instead of eliding at one, so "Geomagnetic Storm Category G1 Predicted" is fully readable at 800x480 and 1024x600; the issued/until caption sits under it in the full layout. Rendered with a synthetic far-future alerts fixture at 800x480, 1024x600 and 1920x1080: truncation guard clean.
 - Sun (SDO): could not reproduce a blank image from a cached body offline here (fresh and 2 h old caches both render). Most likely cause is the asynchronous decode of the data: URL not finishing before the screenshot grab on the slower Pi, so the Image is now synchronous (local 512 px JPEG, cheap). Not validated on the Pi; owner should re-check `--offline` render there. Age/"just now" comes from the cache file's own fetch stamp, so it does reflect the real fetch time.
 - Other open PR (#73) belongs to others; left alone.
+
+## 2026-11-01 (UTC): issue #753 Solar wind stale footer elided at 800x480
+
+- The stale footer read "NOAA SWPC (last reading is old)" and elided at 800x480. Stale notes are now short: "NOAA SWPC · old data" (also "feed late", "no speed", "no Bz", comma-joined). Test asserts the status text stays <= 28 chars.
+- Could not render a stale-state screenshot offline (the sources fixtures directory gave Offline cards here), so the 800x480 result rests on the shorter text only; not validated on device.
+- `qml-settings-setup-1512x982` fails on main too without my change (not mine, left alone). No PRs of mine to merge; #73 and others belong to others.
