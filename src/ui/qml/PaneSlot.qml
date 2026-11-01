@@ -24,7 +24,7 @@ Item {
     onRotateSecondsChanged: rotated = ""
     onRotationSetChanged: rotated = ""
     signal chooseRequested(int slot)
-    signal setupRequested()
+    signal setupRequested(string paneId)
     // Phone: the page dots get their own strip under the card instead of covering its footer.
     readonly property real dotsRoom: Theme.phone && pageList.length > 1 ? 12 * Theme.scale : 0
     signal optionsRequested(int slot)
@@ -208,7 +208,7 @@ Item {
                 item.chooser = true
                 item.adaptive = true
                 item.titleActivated.connect(function () { slot.chooseRequested(slot.index) })
-                item.setupRequested.connect(slot.setupRequested)
+                item.setupRequested.connect(function () { slot.setupRequested(wid) })
             }
         }
     }

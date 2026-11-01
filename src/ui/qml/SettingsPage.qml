@@ -85,6 +85,14 @@ Rectangle {
     // to that section (and opens it);
     // "accounts:hamqth" also opens that account.
     function show(target) { showTimer.target = target; showTimer.restart() }
+    // A pane's Open Settings: straight to what that pane needs. Panes not listed need the
+    // station, at the top of the page. With no station only the Station card shows anyway.
+    function showForPane(paneId) {
+        const targets = { dxcluster: "accounts:dxcluster", bandactivity: "accounts:dxcluster", hamalert: "accounts:hamalert",
+                          lookup: "accounts", radio: "hardware", rotator: "hardware", adsb: "hardware", gps: "hardware",
+                          mesh: "spots:mesh", adif: "spots:adif" }
+        if (appSettings.configured && targets[paneId]) show(targets[paneId])
+    }
     // After the first layout pass, so the section's position is known.
     Timer {
         id: showTimer
@@ -93,14 +101,16 @@ Rectangle {
         onTriggered: {
             const sections = { station: stationSection, accounts: accounts, display: displaySection, screen: screenSection, spots: spotsCard,
                                hardware: hardwareSection, advanced: advancedSection, about: aboutSection }
-            const name = target.split(":")[0]
-            const item = sections[name] || accounts
-            // Opened for a screenshot or test: show what is inside the collapsed groups too.
-            if (name === "spots") clusterCard.groups.forEach(g => g.expanded = true)
-            if (item.expanded !== undefined) item.expanded = true
-            scrollTimer.item = item
-            scrollTimer.restart()
             const parts = target.split(":")
+            const name = parts[0]
+            const item = sections[name] || accounts
+            // "spots:mesh": that group. Plain "spots" (screenshots, tests) opens all of them.
+            const group = name === "spots" ? ({ mesh: meshGroup, adif: adifGroup })[parts[1]] : undefined
+            if (group) group.expanded = true
+            else if (name === "spots") clusterCard.groups.forEach(g => g.expanded = true)
+            if (item.expanded !== undefined) item.expanded = true
+            scrollTimer.item = group || item
+            scrollTimer.restart()
             if (parts[0] === "accounts" && parts.length > 1) accounts.open(parts[1])
         }
     }

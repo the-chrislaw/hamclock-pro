@@ -201,7 +201,7 @@ ApplicationWindow {
                     width: parent.width
                     height: Math.max(0, stationColumn.spillHeight)
                     onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
-                    onSetupRequested: settingsLayer.visible = true
+                    onSetupRequested: function (paneId) { settingsLayer.visible = true; settingsPage.showForPane(paneId) }
                     onOptionsRequested: function (slotIndex) {
                         paneOptions.slot = slotIndex
                         paneOptions.open()
@@ -251,7 +251,7 @@ ApplicationWindow {
                         width: paneRow.slotWidth
                         height: paneRow.slotHeight
                         onChooseRequested: function (slotIndex) { paneChooser.openFor(slotIndex) }
-                        onSetupRequested: settingsLayer.visible = true
+                        onSetupRequested: function (paneId) { settingsLayer.visible = true; settingsPage.showForPane(paneId) }
                         onOptionsRequested: function (slotIndex) {
                             paneOptions.slot = slotIndex
                             paneOptions.open()
