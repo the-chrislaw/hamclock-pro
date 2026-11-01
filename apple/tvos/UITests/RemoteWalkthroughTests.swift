@@ -572,8 +572,8 @@ final class RemoteWalkthroughTests: XCTestCase {
 /// The last TV widget in the chooser's registry order (WidgetCatalog.onTV), where a backwards
 /// step from the first one wraps to.
 private enum PaneOrder {
-    static let last = "launches"
-    static let lastTitle = "Launches"
+    static let last = "passes"
+    static let lastTitle = "Passes"
 }
 
 extension XCUIElement {

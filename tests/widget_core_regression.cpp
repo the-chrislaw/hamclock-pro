@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
         check(stored(*values, "hamalert.password") == "alertpw" && settings.hasHamAlertPassword(), "old password moved to the secret store");
         check(!ini_text(secret_dir).contains("alertpw"), "moved password removed from credentials.ini");
         check(settings.saveAccount("hamqth", "N0CALL", "lookpw").isEmpty() && settings.saveHamsatKey("key123").isEmpty(), "accounts saved with a secret store");
-        check(stored(*values, "lookup.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
+        check(stored(*values, "hamqth.password") == "lookpw" && stored(*values, "hamsat.key") == "key123", "secrets in the store");
         check(!ini_text(secret_dir).contains("lookpw") && !ini_text(secret_dir).contains("key123") && ini_text(secret_dir).contains("N0CALL"),
               "only user names in the file");
         check(settings.saveHamsatKey("").isEmpty() && stored(*values, "hamsat.key").isEmpty(), "empty key removes it from the store");
