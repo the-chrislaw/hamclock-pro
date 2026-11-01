@@ -36,6 +36,9 @@ if not more:
     fail("every section after Station sits in moreSections, hidden in setup mode")
 station_at = page.index('title: "Station"')
 more_at = page.index("id: moreSections")
+# Hidden during setup, a layout would leave it at zero width and its wrapped labels loop the polish.
+if not re.search(r"id:\s*moreSections.*?\n\s*width:\s*column\.width", page, re.S):
+    fail("moreSections keeps the page width while hidden in setup mode")
 for marker in ("AccountsSection", "DisplaySection", "ScreenSection", 'id: spotsCard', 'id: advancedSection', 'id: aboutSection'):
     if page.index(marker) < more_at:
         fail(f"{marker} must be inside moreSections")

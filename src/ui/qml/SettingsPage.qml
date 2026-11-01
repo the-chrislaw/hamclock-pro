@@ -333,6 +333,8 @@ Rectangle {
             ColumnLayout {
                 id: moreSections
                 visible: !page.setupMode
+                // Keeps the page width while hidden; at zero width wrapped labels loop the polish.
+                width: column.width
                 Layout.fillWidth: true
                 spacing: Theme.gap
 
