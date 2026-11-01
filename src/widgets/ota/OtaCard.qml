@@ -5,7 +5,7 @@ import HamClock
 Card {
     id: root
     // Full layout (wide pane, tall pane, or a narrow one with room below, e.g. 1440p rows): the spot list fills the leftover height.
-    readonly property bool full: !compact || tall || height >= 260 * Theme.scale
+    readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
         height: root.full ? parent.height : implicitHeight
@@ -41,7 +41,7 @@ Card {
                     Text { visible: !root.compact; text: modelData.program; color: Theme.secondary; font.pixelSize: Theme.fontBody
                            Layout.preferredWidth: Math.max(implicitWidth, Theme.fontBody * 2.6) }
                     Text { text: modelData.call; color: Theme.ink; font.bold: true; font.pixelSize: Theme.fontBody
-                           Layout.preferredWidth: Theme.fontBody * 5 }
+                           Layout.preferredWidth: Theme.fontBody * 5.8 }  // room for a portable call (VK3OAK/P)
                     Text { text: modelData.ref; color: Theme.ink; font.pixelSize: Theme.fontBody
                            elide: Text.ElideRight; Layout.fillWidth: true; objectName: "elideOk" }
                     Text { text: modelData.freq + (root.compact ? "" : " " + modelData.mode); color: Theme.secondary; font.pixelSize: Theme.fontBody }

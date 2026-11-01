@@ -4,10 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property bool ok: root.widget && root.widget.hasData
     function tone(rank) { return rank >= 3 ? Theme.good : rank === 2 ? Theme.warn : rank === 1 ? Theme.bad : Theme.secondary }
     // Full card or tall pane: the Day/Night table with a header, rows spread over the height.
@@ -23,7 +22,7 @@ Card {
         id: tableCol
         visible: root.table
         width: parent.width
-        height: parent.height
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         spacing: Theme.gap * 0.3
         Text {
             visible: !root.ok
@@ -53,7 +52,6 @@ Card {
             Item {
                 required property var modelData
                 Layout.fillWidth: true
-                Layout.fillHeight: true
                 Layout.preferredHeight: Math.round(Theme.fontBody * 1.3)
                 Layout.minimumHeight: Math.round(Theme.fontBody * 1.2)
                 Layout.maximumHeight: Theme.fontBody * 3

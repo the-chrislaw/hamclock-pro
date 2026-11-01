@@ -13,6 +13,8 @@ ColumnLayout {
     property alias field: field
     // True once the user types here; Settings > Done saves only the sections they changed.
     property bool edited: false
+    // Typing finished here (Return, Tab or focus moved away): Settings saves on it.
+    signal editingFinished()
     spacing: 4 * Theme.scale
     Layout.fillWidth: true
     // Share the row's width instead of asking for the caption's full length, so a
@@ -32,6 +34,7 @@ ColumnLayout {
         // Typing drops the caller's `text: appSettings.x` binding, so another section
         // saving (which re-evaluates every binding) can't wipe an unsaved edit.
         onTextEdited: { parent.edited = true; text = text }
+        onEditingFinished: parent.editingFinished()
         Accessible.name: caption.text
         background: Rectangle {
             radius: 10 * Theme.scale

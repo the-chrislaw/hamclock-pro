@@ -19,5 +19,6 @@ platform and have only been checked for syntax in CI.
 7. Logs: `journalctl -u hamclock-pro-kiosk`. Stop with
    `sudo systemctl stop hamclock-pro-kiosk`.
 
-On-screen keyboard: decision pending (Qt Virtual Keyboard needs a separate
-module); until then, Settings text fields need a physical keyboard in kiosk mode.
+On-screen keyboard: `--touch-keyboard` (set in this unit and in the SD-card image) shows a
+built-in keyboard at the bottom of the screen whenever a text field is focused; Hide or
+Settings > Done closes it. A physical keyboard keeps working alongside it.

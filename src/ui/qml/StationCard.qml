@@ -14,9 +14,23 @@ Card {
     showTitle: !compact || !station.configured
     signal settingsRequested()
     signal timersRequested()
+    onHeightChanged: tightLater.restart()
+    // A short column (7-inch panels, when sunrise/sunset lines wrap) drops the coordinates and the
+    // time zone hint rather than cutting off the lines below them. `dropped` is what they take
+    // (their implicit height stays known while hidden), so hiding them cannot flip `tight` back.
+    readonly property real dropped: zoneHint.implicitHeight + 2 * Theme.fontCaption * 1.3
+    property bool tight: false
+    Timer { id: tightLater; interval: 0; onTriggered: root.updateTight() }
+    function updateTight() {
+        const room = stationColumn.parent ? stationColumn.parent.height : 0
+        tight = !compact && room > 0 && stationColumn.implicitHeight + (tight ? dropped : 0) > room + 1
+    }
 
     ColumnLayout {
+        id: stationColumn
         width: parent.width
+        onImplicitHeightChanged: tightLater.restart()
+        onParentChanged: tightLater.restart()
         spacing: Theme.gap * 0.8
 
         RowLayout {
@@ -108,7 +122,8 @@ Card {
             TapHandler { onTapped: station.cycleAuxTime() }
         }
         Text {
-            visible: !root.compact
+            id: zoneHint
+            visible: !root.compact && !root.tight
             text: station.deZoneLabel
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
@@ -137,7 +152,7 @@ Card {
                 Text { visible: !root.compact; text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: (root.compact ? modelData.label.split(" ")[0] + "  " : "") + modelData.grid
                        color: Theme.ink; font.pixelSize: Theme.fontTitle * (root.compact ? 1.05 : 1.3); font.weight: Font.DemiBold }
-                Text { visible: !root.compact; text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text { visible: !root.compact && !root.tight; text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text {
                     visible: modelData.local.length > 0
                     text: modelData.local

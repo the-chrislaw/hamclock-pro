@@ -4,10 +4,9 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property bool ok: root.widget && root.widget.hasData
     function tone(p) { return p >= 40 ? Theme.bad : p >= 15 ? Theme.warn : Theme.good }
     // Tall pane: both peaks with captions, then a 0-100 % bar per hemisphere filling the rest.

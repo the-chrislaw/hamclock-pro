@@ -4,15 +4,14 @@ import HamClock
 
 Card {
     id: root
-    // Stacked full layout: a tall pane, or a compact desktop pane with height to spare (two-row grids at
-    // 1280x800 and 2560x1440). The tuned 7-inch dense layout keeps its compact summary.
-    readonly property bool stacked: root.tall || (root.compact && !Theme.dense && root.height >= 240 * Theme.scale
-                                                     && root.width >= 240 * Theme.scale)
+    // Stacked full layout: a tall pane, or a compact pane with height to spare (Card.roomy: the
+    // 7-inch panels' panes, the two-row grids at 1280x800 and 2560x1440).
+    readonly property bool stacked: root.tall || root.roomy
     readonly property bool ok: root.widget && root.widget.hasData
     readonly property int level: ok ? root.widget.dst : 0
     readonly property color tone: level <= -100 ? Theme.bad : level <= -50 ? Theme.warn : level <= -30 ? Theme.warn : Theme.good
-    // Desktop panes (not the tuned 7-inch dense layout): the Dst line takes the leftover height.
-    readonly property bool fillPlot: root.stacked || !Theme.dense
+    // Every pane: the Dst line takes the leftover height.
+    readonly property bool fillPlot: true
     readonly property bool showDetail: root.ok && (!root.compact || root.stacked)
     ColumnLayout {
         width: parent.width
@@ -58,7 +57,7 @@ Card {
         }
         Text {
             visible: root.showDetail
-            text: "48 h · lines at 0 and −50 nT (storm)"
+            text: root.ok && Math.min.apply(null, root.widget.history) <= -30 ? "48 h · lines at 0 and −50 nT (storm)" : "48 h · line at 0 nT"
             color: Theme.secondary
             font.pixelSize: Theme.fontCaption
             wrapMode: Text.WordWrap

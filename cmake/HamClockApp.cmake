@@ -81,11 +81,13 @@ set_target_properties(hamclock-widgets PROPERTIES AUTOMOC ON)
 add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/main.cpp
     src/ui/station_model.cpp
+    src/ui/pane_fill.cpp
     src/ui/time_zone_search.cpp
     src/ui/location_tools.cpp
     src/ui/timers_model.cpp
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
+    src/ui/key_injector.cpp
     src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
@@ -106,10 +108,11 @@ set_target_properties(hamclock-pro PROPERTIES AUTOMOC ON
     MACOSX_BUNDLE_BUNDLE_NAME "HamClock Pro")
 qt_add_resources(hamclock-pro "hamclock_ui" PREFIX "/ui" BASE src/ui/qml FILES
     src/ui/qml/Main.qml src/ui/qml/Theme.qml src/ui/qml/Card.qml src/ui/qml/Metric.qml
-    src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/FormField.qml
-    src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml
-    src/ui/qml/PageDots.qml src/ui/qml/pager.mjs src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml
-    src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/SatelliteAlertsCard.qml
+    src/ui/qml/StatusBadge.qml src/ui/qml/AppButton.qml src/ui/qml/ToggleChip.qml src/ui/qml/ChoiceRow.qml src/ui/qml/DisplaySection.qml
+    src/ui/qml/ScreenSection.qml src/ui/qml/SettingsGroup.qml src/ui/qml/FormField.qml src/ui/qml/StationCard.qml src/ui/qml/SettingsPage.qml
+    src/ui/qml/AccountsSection.qml src/ui/qml/AccountSheet.qml src/ui/qml/PaneSlot.qml src/ui/qml/PageDots.qml src/ui/qml/pager.mjs
+    src/ui/qml/PaneChooser.qml src/ui/qml/PaneOptions.qml src/ui/qml/MapMenu.qml src/ui/qml/MapTapMenu.qml src/ui/qml/TimeZonePicker.qml
+    src/ui/qml/TimersPage.qml src/ui/qml/BigClockPage.qml src/ui/qml/TouchKeyboard.qml src/ui/qml/SatelliteAlertsCard.qml
     src/ui/qml/SatAlertBanner.qml src/ui/qml/MacMenuBar.qml)
 foreach(target hamclock-widget-core hamclock-widgets hamclock-pro)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -231,6 +234,9 @@ if(BUILD_TESTING)
     add_executable(pane-grid-regression tests/pane_grid_regression.cpp)
     target_link_libraries(pane-grid-regression PRIVATE hamclock-widget-core)
     add_test(NAME pane-grid-regression COMMAND pane-grid-regression)
+    add_executable(pane-fill-regression tests/pane_fill_regression.cpp src/ui/pane_fill.cpp)
+    target_link_libraries(pane-fill-regression PRIVATE Qt6::Quick)
+    add_test(NAME pane-fill-regression COMMAND pane-fill-regression)
     add_executable(safe-area-regression tests/safe_area_regression.cpp)
     target_link_libraries(safe-area-regression PRIVATE hamclock-widget-core)
     set_target_properties(safe-area-regression PROPERTIES AUTOMOC ON)
@@ -248,6 +254,19 @@ if(BUILD_TESTING)
     set_target_properties(attribution-regression PROPERTIES AUTOMOC ON)
     add_test(NAME attribution-regression COMMAND attribution-regression)
     set_tests_properties(attribution-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(key-injector-regression tests/key_injector_regression.cpp src/ui/key_injector.cpp)
+    target_include_directories(key-injector-regression PRIVATE src)
+    target_link_libraries(key-injector-regression PRIVATE Qt6::Quick)
+    set_target_properties(key-injector-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME key-injector-regression COMMAND key-injector-regression)
+    set_tests_properties(key-injector-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(touch-keyboard-regression tests/touch_keyboard_regression.cpp src/ui/key_injector.cpp)
+    target_include_directories(touch-keyboard-regression PRIVATE src)
+    target_compile_definitions(touch-keyboard-regression PRIVATE HC_QML_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml")
+    target_link_libraries(touch-keyboard-regression PRIVATE Qt6::Quick Qt6::QuickControls2)
+    set_target_properties(touch-keyboard-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME touch-keyboard-regression COMMAND touch-keyboard-regression)
+    set_tests_properties(touch-keyboard-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(appstore-metadata-regression tests/appstore_metadata_regression.cpp)
     target_link_libraries(appstore-metadata-regression PRIVATE Qt6::Core)
     target_compile_definitions(appstore-metadata-regression PRIVATE
@@ -391,9 +410,9 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-station-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
-    # Settings > Accounts and an open account sheet on a phone and the 7-inch panel: no clipped or cut text.
+    # Settings sections (Accounts and two open account sheets, Display, Screen, Spots, Hardware) on a phone and the 7-inch panel: no clipped or cut text.
     foreach(size 390x844 1024x600)
-        foreach(target accounts accounts:hamqth accounts:dxcluster)
+        foreach(target station accounts accounts:hamqth accounts:dxcluster display screen spots hardware advanced about)
             string(REPLACE ":" "-" target_name ${target})
             add_test(NAME qml-settings-${target_name}-${size} COMMAND hamclock-pro --offline
                 --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${target_name}-${size}
@@ -402,6 +421,14 @@ if(BUILD_TESTING)
             set_tests_properties(qml-settings-${target_name}-${size} PROPERTIES TIMEOUT 30
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
         endforeach()
+    endforeach()
+    # First run (no station): Settings in setup mode, the Station card with Later and Start only (no clipped text, no QML errors).
+    foreach(size 390x844 1024x600 1512x982)
+        add_test(NAME qml-settings-setup-${size} COMMAND hamclock-pro --offline --first-run
+            --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-setup-${size}
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-setup-${size}.png --size ${size})
+        set_tests_properties(qml-settings-setup-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
     # An unreadable station file opens first-run Settings with the reason shown, not a blank form (no clipped text, no QML errors).
     foreach(size 390x844 1024x600)
@@ -420,6 +447,21 @@ if(BUILD_TESTING)
             --pane 1=bands --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-bands-${size}.png --size ${size})
         set_tests_properties(qml-app-truncation-bands-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache-bands-${size}")
+    endforeach()
+    # Kiosk first boot on the Pi panels: Settings opens with the callsign focused; with
+    # --touch-keyboard the on-screen keyboard is up. Nothing may be cut off (exit 4).
+    foreach(size 800x480 1024x600)
+        foreach(variant first-run touch-keyboard)
+            set(extra --first-run)
+            if(variant STREQUAL "touch-keyboard")
+                list(APPEND extra --touch-keyboard)
+            endif()
+            add_test(NAME qml-app-${variant}-${size} COMMAND hamclock-pro --offline ${extra}
+                --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-${variant}-${size}
+                --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-${variant}-${size}.png --size ${size})
+            set_tests_properties(qml-app-${variant}-${size} PROPERTIES TIMEOUT 30
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+        endforeach()
     endforeach()
     # --version and --help work with no display (over SSH to a kiosk Pi) and report the project version.
     add_test(NAME app-version-headless COMMAND hamclock-pro --version)
@@ -446,5 +488,30 @@ if(BUILD_TESTING)
             --pane 1=${id} --allow-truncation --screenshot ${CMAKE_CURRENT_BINARY_DIR}/pane-${id}.png --size 800x480)
         set_tests_properties(qml-pane-${id} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/pane-cache-${id}")
+    endforeach()
+    # Adaptive panes (owner, Oct 29: "no matter where you put it it looks the best possible"): every widget
+    # with test fixtures, in pane 1 with data, may leave at most a third of its card body blank (exit 5)
+    # on the 7-inch panels, a 1080p TV and a 1440p monitor (two rows of panes).
+    foreach(id ${widget_ids})
+        set(fill_fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/${id}/tests/fixtures)
+        if(id STREQUAL "passes")
+            set(fill_fixtures ${CMAKE_CURRENT_SOURCE_DIR}/src/widgets/satellites/tests/fixtures)
+        endif()
+        # These fixtures parse to an empty state (dated data: no sondes, activations, launches, alerts or
+        # recent readings), which is a short line by design; the contact sheets cover them with live data.
+        # Others never reach data in a screenshot run: their fixtures are unit-test files that do not match
+        # the request URLs (solarhamqsl, ota, weather), or the widget needs an account or host (lookup, dxcluster).
+        if(NOT EXISTS ${fill_fixtures} OR id MATCHES "^(balloons|hamsat|launches|pskreporter|solaralerts|solaraurora|solardrap|solardst|solarhamqsl|ota|weather|lookup|dxcluster)$")
+            continue()
+        endif()
+        foreach(size 800x480 1024x600 1920x1080 2560x1440)
+            add_test(NAME qml-fill-${id}-${size} COMMAND hamclock-pro --fixtures ${fill_fixtures}
+                --config-dir ${CMAKE_CURRENT_BINARY_DIR}/fill-config-${id}-${size}
+                --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
+                --pane 1=${id} --allow-truncation --check-fill 1 --theme dark
+                --screenshot ${CMAKE_CURRENT_BINARY_DIR}/fill-${id}-${size}.png --size ${size})
+            set_tests_properties(qml-fill-${id}-${size} PROPERTIES TIMEOUT 30
+                ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/fill-cache-${id}-${size}")
+        endforeach()
     endforeach()
 endif()

@@ -5,8 +5,9 @@ import HamClock
 Card {
     id: root
     // Labels and values; the lower rows are dropped (not clipped) when the body is short.
-    // A tall pane shows every row, values wrapping, rows spread over the height.
-    readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
+    // A tall pane shows every row, values wrapping, the card grows and centres the table.
+    // One row's real pitch (line height plus spacing): a larger estimate drops a row that fits.
+    readonly property real rowH: Math.ceil(Theme.fontCaption * 1.3 * 1.2) + Theme.gap
     readonly property int rowsFit: tall ? 99 : Math.floor((grid.parent ? grid.parent.height : 0) / rowH)
     function v(s) { return s ? s : "—" }
     // A narrow slot drops the bracketed extra ("(6 h 24 min)", "(405600 km)") so the value fits.
@@ -28,7 +29,7 @@ Card {
     GridLayout {
         id: grid
         width: parent.width
-        height: root.tall ? parent.height : implicitHeight
+        // Rows keep their natural pitch (a spread table stops reading as one); the card grows the block and centres it.
         columns: 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
@@ -50,7 +51,6 @@ Card {
                 verticalAlignment: Text.AlignVCenter
                 Layout.fillWidth: !isLabel
                 Layout.preferredWidth: isLabel ? implicitWidth : 0
-                Layout.fillHeight: root.tall
                 Layout.maximumHeight: root.tall ? Theme.fontBody * 4 : Number.POSITIVE_INFINITY
             }
         }

@@ -46,9 +46,9 @@ if re.search(r"Number\(parts\[", big):
     sys.exit("BigClockPage.qml: analog hands must parse 12-hour time (use parseInt)")
 if "bigClockRequested" not in timers or "bigClockLayer" not in main or "BigClockPage" not in main:
     sys.exit("Big Clock is not wired from the Timers page")
-settings = (root / "SettingsPage.qml").read_text()
-if "Qt.quit()" not in settings or "exitCard.armed" not in settings:
-    sys.exit("SettingsPage.qml: Exit button must need a second tap")
+settings = (root / "ScreenSection.qml").read_text()   # Exit lives in Settings > Screen
+if "Qt.quit()" not in settings or "exitArmed" not in settings:
+    sys.exit("ScreenSection.qml: Exit button must need a second tap")
 # Every registered widget needs a category in the pane chooser, or it lands under "Other".
 chooser = (root / "PaneChooser.qml").read_text()
 ids = set()

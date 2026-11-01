@@ -5,7 +5,7 @@ import HamClock
 Card {
     id: root
     // Stacked layout: a tall pane, or a narrow one with room below (e.g. 1440p pane rows).
-    readonly property bool stacked: tall || (compact && height >= 260 * Theme.scale)
+    readonly property bool stacked: tall || roomy
     // Stacked: fix, grid and clock stack with their captions; the design width is the stack's own,
     // so the card grows it until it fills the pane (never past the compact width).
     designWidth: stacked ? Math.min(260 * Theme.scale, Math.max(150 * Theme.scale, stack.implicitWidth))
