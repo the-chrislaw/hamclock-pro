@@ -8,6 +8,7 @@
 #include "swpc.hpp"
 #include "satalert.hpp"
 #include "satpass.hpp"
+#include "passes.hpp"
 #include "weather.hpp"
 #include "map/coastline.hpp"
 #include "domain/locator_input.hpp"
@@ -236,6 +237,40 @@ int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAl
     copy(b->text, text, cap);
     if (live) *live = b->live ? 1 : 0;
     return 1;
+}
+
+int hcp_passes_schedule(const char* tle, size_t tle_len, const char* catalog, size_t cat_len,
+                        const HcpSatAlertPrefs* prefs, double lat, double lon, int64_t now_s, int filter,
+                        HcpPassRow* out, size_t cap, int* state, char* reason, size_t reason_cap) {
+    if (state) *state = 1;
+    if (reason && reason_cap) reason[0] = 0;
+    if (!tle || !out || lat < -90 || lat > 90 || lon < -180 || lon > 360 || filter < 0 || filter > 2) return -1;
+    const auto alerts = prefs ? prefs_from(*prefs) : hcp::satalert::Prefs{};
+    const auto r = hcp::passes::schedule(hamclock::parse_tle_set(std::string(tle, tle_len)), hamclock::Observer{lat, lon, 0.0},
+                                         now_s, static_cast<hcp::passes::Filter>(filter), alerts,
+                                         cached_catalog(catalog, cat_len));
+    if (state) *state = static_cast<int>(r.state);
+    copy(r.empty_reason, reason, reason_cap);
+    size_t n = 0;
+    for (; n < r.rows.size() && n < cap; ++n) {
+        const auto& row = r.rows[n];
+        HcpPassRow& o = out[n];
+        o = HcpPassRow{};
+        copy(row.name, o.name, sizeof o.name);
+        o.aos_s = row.aos;
+        o.los_s = row.los;
+        copy(row.day, o.day, sizeof o.day);
+        copy(row.utc, o.utc, sizeof o.utc);
+        o.max_el_deg = row.max_el_deg;
+        copy(row.from, o.from, sizeof o.from);
+        copy(row.to, o.to, sizeof o.to);
+        copy(row.duration, o.duration, sizeof o.duration);
+        copy(row.mag, o.mag, sizeof o.mag);
+        o.visible = row.visible ? 1 : 0;
+        o.live = row.live ? 1 : 0;
+        o.alert = row.alert ? 1 : 0;
+    }
+    return static_cast<int>(n);
 }
 }
 

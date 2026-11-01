@@ -1,16 +1,19 @@
-// C ABI: space-weather history, NOAA scales, OVATION aurora and D-RAP (see hcpcore.h).
+// C ABI: space-weather history, NOAA scales, OVATION aurora, D-RAP and HF path reliability (see hcpcore.h).
 #include "hcpcore.h"
 #include "abi_util.hpp"
 #include "alerts.hpp"
 #include "aurora.hpp"
 #include "drap.hpp"
 #include "hamqsl.hpp"
+#include "impact.hpp"
+#include "pathrel.hpp"
 #include "dst.hpp"
 #include "scales.hpp"
 #include "solarwind.hpp"
 #include "swpc.hpp"
 #include "trend.hpp"
 #include <algorithm>
+#include <cmath>
 
 using hcp::abi::copy;
 using hcp::abi::view;
@@ -115,6 +118,31 @@ int hcp_dst_parse(const char* b, size_t n, HcpDst* out, size_t cap) {
 
 int hcp_dst_word(int dst, char* buf, size_t cap) { return copy(hcp::dst::word(dst), buf, cap); }
 
+int hcp_impact_rank(const HcpScales* in, const HcpDst* dst, size_t dst_count, int64_t now_ms, HcpImpactRow* out,
+                    size_t cap, char* headline, size_t headline_cap) {
+    if (headline && headline_cap) headline[0] = 0;
+    if (!in || !in->valid) return 0;
+    hcp::scales::Scales s;
+    s.valid = true;
+    s.observed_ms = in->observed_ms;
+    s.current.r = in->current.r; s.current.s = in->current.s; s.current.g = in->current.g;
+    s.past24h.r = in->past24h.r; s.past24h.s = in->past24h.s; s.past24h.g = in->past24h.g;
+    std::vector<hcp::dst::Sample> samples;
+    for (size_t i = 0; dst && i < dst_count; ++i) samples.push_back({dst[i].time_ms, dst[i].dst});
+    copy(hcp::impact::headline(s, samples, now_ms), headline, headline_cap);
+    const auto rows = hcp::impact::ranked(s, samples, now_ms);
+    size_t n = 0;
+    for (; out && n < rows.size() && n < cap; ++n) {
+        out[n] = HcpImpactRow{};
+        out[n].letter = rows[n].letter;
+        out[n].level = rows[n].level;
+        copy(rows[n].word, out[n].word, sizeof out[n].word);
+        out[n].max24 = rows[n].max24;
+        copy(rows[n].effect, out[n].effect, sizeof out[n].effect);
+    }
+    return static_cast<int>(n);
+}
+
 int hcp_alerts_parse(const char* b, size_t n, HcpAlert* out, size_t cap) {
     const auto all = b ? hcp::alerts::parse(view(b, n)) : std::nullopt;
     if (!all) return -1;
@@ -218,5 +246,35 @@ int hcp_drap_parse(const char* b, size_t n, HcpDrap* out, float* grid) {
         else std::fill(grid, grid + kCells, 0.0f);
     }
     return out->valid;
+}
+
+int hcp_path_card(const HcpPathInput* in, int64_t now_s, double sfi, double kp, HcpPathCard* out) {
+    if (!in || !out) return 0;
+    const auto ok_lat = [](double v) { return std::isfinite(v) && v >= -90 && v <= 90; };
+    const auto ok_lon = [](double v) { return std::isfinite(v) && v >= -180 && v <= 360; };
+    if (!ok_lat(in->de_lat_deg) || !ok_lat(in->dx_lat_deg) || !ok_lon(in->de_lon_deg) || !ok_lon(in->dx_lon_deg)) return 0;
+    hcp::pathrel::PathInput p;
+    p.de_lat = in->de_lat_deg; p.de_lon = in->de_lon_deg;
+    p.dx_lat = in->dx_lat_deg; p.dx_lon = in->dx_lon_deg;
+    if (std::isfinite(in->power_w) && in->power_w >= 1 && in->power_w <= 1500) p.power_w = in->power_w;
+    if (std::isfinite(in->gain_db) && in->gain_db >= 0 && in->gain_db <= 30) p.gain_db = in->gain_db;
+    p.mode = in->mode == 1 ? hcp::pathrel::PathMode::Cw : in->mode == 2 ? hcp::pathrel::PathMode::Digital
+                                                                          : hcp::pathrel::PathMode::Ssb;
+    p.long_path = in->long_path != 0;
+    const auto card = hcp::pathrel::matrix_card(p, now_s, sfi, kp, HCP_PATH_HOURS);
+    *out = HcpPathCard{};
+    out->has_path = card.has_path ? 1 : 0;
+    out->distance_km = card.distance_km;
+    const size_t bands = std::min<size_t>(card.bands.size(), HCP_PATH_BANDS);
+    out->band_count = static_cast<int>(bands);
+    out->hours = bands ? static_cast<int>(std::min<size_t>(card.cells[0].size(), HCP_PATH_HOURS)) : 0;
+    for (size_t b = 0; b < bands; ++b) {
+        copy(card.bands[b], out->band[b], sizeof out->band[b]);
+        out->muf_mhz[b] = card.muf_mhz[b];
+        for (size_t h = 0; h < static_cast<size_t>(out->hours) && h < card.cells[b].size(); ++h) out->cells[b][h] = card.cells[b][h];
+    }
+    copy(card.best_text, out->best, sizeof out->best);
+    copy(card.start_text, out->start, sizeof out->start);
+    return 1;
 }
 }

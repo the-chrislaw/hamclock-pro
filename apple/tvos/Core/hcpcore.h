@@ -168,6 +168,26 @@ int hcp_satalert_predict(const char* tle, size_t tle_len, const char* catalog, s
 int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAlertPrefs* prefs, const char* catalog,
                         size_t cat_len, int utc_offset_s, int64_t now_s, char* text, size_t cap, int* live);
 
+/* Passes pane (port of src/widgets/satellites/passes_model.cpp): the next 48 h of passes at the
+ * observer of every TLE with elements under 30 days old, soonest first, at most 24. filter: 0 all,
+ * 1 visible to the eye, 2 selected for pass alerts (prefs may be NULL: alerts off). *state: 0 live,
+ * 1 loading (no elements), 2 stale (every set too old). reason gets the empty-list text. Returns the
+ * rows written, or -1 for bad arguments. */
+typedef struct {
+    char name[24];
+    int64_t aos_s, los_s;
+    char day[12];      /* "Today", "Tomorrow", "Sun" (UTC days) */
+    char utc[8];       /* "14:05Z" */
+    int max_el_deg;
+    char from[4], to[4];
+    char duration[12]; /* "12 min" */
+    char mag[8];       /* "-1.8" for known large objects, else empty */
+    int visible, live, alert;
+} HcpPassRow;
+int hcp_passes_schedule(const char* tle, size_t tle_len, const char* catalog, size_t cat_len,
+                        const HcpSatAlertPrefs* prefs, double obs_lat_deg, double obs_lon_deg, int64_t now_s,
+                        int filter, HcpPassRow* out, size_t cap, int* state, char* reason, size_t reason_cap);
+
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
  * Fills out[] with up to cap bands (80m..10m); returns the number written. */
@@ -213,6 +233,19 @@ typedef struct {
 } HcpDst;
 int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
 int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
+/* Space weather impact (port of src/widgets/solarimpact/solar_impact_model): R, S, G and, while the
+ * latest Dst record is under 6 h old, D, worst first (ties: higher 24 h max, then R, S, G, D).
+ * Returns the rows written (0 when scales->valid is 0); headline gets "All quiet" or
+ * "G3 Strong: <effect>". dst may be NULL; oldest first as hcp_dst_parse writes it. */
+typedef struct {
+    char letter;       /* 'R', 'S', 'G' or 'D' */
+    int level;         /* 0-5, -1 when SWPC states none */
+    char word[16];     /* "Severe"; empty for level 0 on R/S/G; Dst storm word for D */
+    int max24;         /* 24 h maximum level (Dst: level of the 24 h low) */
+    char effect[64];
+} HcpImpactRow;
+int hcp_impact_rank(const HcpScales* scales, const HcpDst* dst, size_t dst_count, int64_t now_ms,
+                    HcpImpactRow* out, size_t cap, char* headline, size_t headline_cap);
 /* NOAA SWPC alerts, watches and warnings (products/alerts.json), port of
  * src/widgets/solaralerts/solar_alerts_parse. Texts are UTF-8, truncated to fit. */
 typedef struct {
@@ -248,6 +281,29 @@ typedef struct {
 int hcp_trend_flux_daily(const char* body, size_t len, int days, HcpFluxDay* out, size_t cap);
 /* observed-solar-cycle-indices.json: newest month ("YYYY-MM") with a NOAA SSN; 1 found, 0 none or not the product. */
 int hcp_trend_sunspots(const char* body, size_t len, char* month, size_t month_cap, double* number);
+/* HF path reliability (port of src/widgets/bands/path_model and the bandsmatrix card): DE -> DX
+ * reliability by band, 80m..10m, for `hours` UTC hours from the current hour. In-house approximate
+ * model, NOT VOACAP. mode: 0 SSB, 1 CW, 2 digital. */
+typedef struct {
+    double de_lat_deg, de_lon_deg, dx_lat_deg, dx_lon_deg;
+    double power_w, gain_db; /* 100 W and 6 dBi (two dipoles) in the Qt app by default */
+    int mode, long_path;
+} HcpPathInput;
+#define HCP_PATH_BANDS 8
+#define HCP_PATH_HOURS 24
+typedef struct {
+    int has_path;          /* 0: DE and DX under 50 km apart (no DX target) */
+    double distance_km;    /* of the path being rated */
+    int band_count, hours;
+    char band[HCP_PATH_BANDS][8];
+    double muf_mhz[HCP_PATH_BANDS];
+    double cells[HCP_PATH_BANDS][HCP_PATH_HOURS]; /* 0..1 */
+    char best[40];         /* "Best now: 20m 87%" or "HF closed now" */
+    char start[8];         /* "14Z" */
+} HcpPathCard;
+/* 1 when filled (has_path may still be 0), 0 for NULL arguments or bad coordinates. */
+int hcp_path_card(const HcpPathInput* in, int64_t now_s, double sfi, double kp, HcpPathCard* out);
+
 /* HamQSL (N0NBH) solar XML, port of src/widgets/solarhamqsl/solar_hamqsl_parse. */
 typedef struct {
     char name[16];          /* "80m-40m" */

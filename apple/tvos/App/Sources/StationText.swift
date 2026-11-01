@@ -7,7 +7,8 @@ enum Memo {
     private static let limit = 400
 
     static func get<T>(_ key: String, _ make: () -> T) -> T {
-        if let hit = store[key] as? T { return hit }
+        // Unwrap first: with an Optional T, casting a missing entry "succeeds" as nil and make never runs.
+        if let stored = store[key], let hit = stored as? T { return hit }
         if store.count > limit { store.removeAll(keepingCapacity: true) }
         let value = make()
         store[key] = value

@@ -38,8 +38,10 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/scales.cpp
     ${HCP_ROOT}/apple/tvos/Core/xml_mini.cpp
     ${HCP_ROOT}/apple/tvos/Core/hamqsl.cpp
+    ${HCP_ROOT}/apple/tvos/Core/pathrel.cpp
     ${HCP_ROOT}/apple/tvos/Core/trend.cpp
     ${HCP_ROOT}/apple/tvos/Core/dst.cpp
+    ${HCP_ROOT}/apple/tvos/Core/impact.cpp
     ${HCP_ROOT}/apple/tvos/Core/alerts.cpp
     ${HCP_ROOT}/apple/tvos/Core/aurora.cpp
     ${HCP_ROOT}/apple/tvos/Core/drap.cpp
@@ -49,6 +51,7 @@ add_library(hamclock-core STATIC
     ${HCP_ROOT}/apple/tvos/Core/places.cpp
     ${HCP_ROOT}/apple/tvos/Core/satpass.cpp
     ${HCP_ROOT}/apple/tvos/Core/satalert.cpp
+    ${HCP_ROOT}/apple/tvos/Core/passes.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_space.cpp
     ${HCP_ROOT}/apple/tvos/Core/hcpcore_feeds.cpp
@@ -133,8 +136,10 @@ hcp_core_test(series spaceweather)
 hcp_core_test(scales solarscales)
 hcp_core_test(satalert satellites)
 hcp_core_test(hamqsl solarhamqsl)
+hcp_core_test(pathrel bands)
 hcp_core_test(trend solartrend)
 hcp_core_test(dst solardst)
+hcp_core_test(impact solarimpact)
 hcp_core_test(alerts solaralerts)
 hcp_core_test(aurora solaraurora)
 hcp_core_test(drap solardrap)
@@ -152,3 +157,11 @@ target_compile_definitions(core-satbatch-regression PRIVATE
     HCP_FIXTURE_DIR="${HCP_ROOT}/tests/fixtures/sources" HCP_WIDGET_FIXTURES="${HCP_ROOT}/src/widgets")
 set_target_properties(core-satbatch-regression PROPERTIES MACOSX_BUNDLE OFF)
 add_test(NAME core-satbatch-regression COMMAND core-satbatch-regression)
+
+# Passes pane (passes_model.cpp port) over the same CelesTrak amateur fixture.
+add_executable(core-passes-regression ${HCP_ROOT}/apple/tvos/Core/tests/passes_regression.cpp)
+target_link_libraries(core-passes-regression PRIVATE hamclock-core)
+target_compile_definitions(core-passes-regression PRIVATE
+    HCP_FIXTURE_DIR="${HCP_ROOT}/tests/fixtures/sources" HCP_WIDGET_FIXTURES="${HCP_ROOT}/src/widgets")
+set_target_properties(core-passes-regression PROPERTIES MACOSX_BUNDLE OFF)
+add_test(NAME core-passes-regression COMMAND core-passes-regression)

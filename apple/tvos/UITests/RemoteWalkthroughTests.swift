@@ -418,6 +418,71 @@ final class RemoteWalkthroughTests: XCTestCase {
         XCTAssertFalse(issAgain.isSelected, "ISS stays off")
     }
 
+    /// Passes (ported from the Qt widget): the next 48 h of passes at DE from the amateur elements,
+    /// or an honest Loading / Offline; pane options cycle the filter (All, Visible, Alerts), kept
+    /// across a relaunch.
+    func testPassesPane() {
+        launchWithStation(["-hcpPanes", "passes"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "passes")
+        XCTAssertTrue(waitFor(30) {
+            ["°", "No passes", "Waiting for satellite elements", "Computing", "Offline", "Loading"].contains { pane0.label.contains($0) }
+        }, "pass rows or an honest state: \(pane0.label)")
+        shot("tvos-passes")
+        openOptions(pane0)
+        let filter = app.buttons["optPassesFilter"]
+        XCTAssertTrue(filter.waitForExistence(timeout: 5), "Passes pane offers its filter")
+        XCTAssertTrue(filter.label.contains("All"), filter.label)
+        moveFocus(to: filter)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { filter.label.contains("Visible") }, filter.label)
+        remote.press(.select)
+        XCTAssertTrue(waitFor { filter.label.contains("Alerts") }, filter.label)
+        remote.press(.menu)
+        XCTAssertTrue(waitFor(10) { pane0.label.contains("Alerts") }, "status names the filter: \(pane0.label)")
+
+        app.terminate()
+        app.launchArguments = []
+        app.launch()
+        XCTAssertTrue(pane0.waitForExistence(timeout: 20))
+        XCTAssertTrue(waitFor(10) { pane0.label.contains("Alerts") }, "filter kept across relaunch: \(pane0.label)")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_passes"].waitForExistence(timeout: 5), "Passes is offered on TV")
+    }
+
+    /// HF path reliability (ported from the Qt bandsmatrix widget): the DE → DX band × 24 h grid
+    /// with the best band now, or an honest Loading / Offline / No data.
+    func testPathReliabilityPane() {
+        launchWithStation(["-hcpPanes", "bandsmatrix"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "bandsmatrix")
+        XCTAssertTrue(waitFor(30) {
+            ["Best now", "HF closed now", "Waiting for SFI", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "reliability grid or an honest state: \(pane0.label)")
+        XCTAssertFalse(pane0.label.contains("Not available on Apple TV"), pane0.label)
+        shot("tvos-path-reliability")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_bandsmatrix"].waitForExistence(timeout: 5), "HF path reliability is offered on TV")
+    }
+
+    /// Space weather impact (ported from the Qt solarimpact widget): R, S, G (and fresh Dst) ranked
+    /// worst first with their effects, or an honest Loading / Offline / No data.
+    func testImpactPane() {
+        launchWithStation(["-hcpPanes", "solarimpact"])
+        let pane0 = app.descendants(matching: .any)["pane0"]
+        XCTAssertEqual(pane0.value as? String, "solarimpact")
+        XCTAssertTrue(waitFor(30) {
+            ["All quiet", "HF", "Aurora", "radiation", "Offline", "No data"].contains { pane0.label.contains($0) }
+        }, "ranked effects or an honest state: \(pane0.label)")
+        XCTAssertFalse(pane0.label.contains("Not available on Apple TV"), pane0.label)
+        shot("tvos-impact")
+        moveFocus(to: pane0)
+        remote.press(.select)
+        XCTAssertTrue(app.buttons["choose_solarimpact"].waitForExistence(timeout: 5), "Space weather impact is offered on TV")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard
@@ -507,8 +572,8 @@ final class RemoteWalkthroughTests: XCTestCase {
 /// The last TV widget in the chooser's registry order (WidgetCatalog.onTV), where a backwards
 /// step from the first one wraps to.
 private enum PaneOrder {
-    static let last = "launches"
-    static let lastTitle = "Launches"
+    static let last = "passes"
+    static let lastTitle = "Passes"
 }
 
 extension XCUIElement {
