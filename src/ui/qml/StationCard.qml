@@ -80,7 +80,9 @@ Card {
             Text {
                 Layout.fillWidth: true
                 fontSizeMode: Text.HorizontalFit
-                minimumPixelSize: Theme.fontValue
+                // Low enough for the widest time ("12:05:01 AM", 10-12 o'clock in 12 h mode) in the
+                // narrow 800x480 column; fontValue here cut it off with the Pi's wide font.
+                minimumPixelSize: Theme.fontTitle
                 text: clockBox.showLocal ? station.deClock : station.utcTime
                 color: Theme.ink
                 font.pixelSize: Theme.fontClock
