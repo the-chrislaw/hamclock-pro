@@ -14,8 +14,8 @@ constexpr int kMaxAgeSecs = 3 * 3600;
 SolarAuroraModel::SolarAuroraModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solaraurora", "Aurora", parent),
       source_(new PolledSource("swpc-ovation-aurora", QUrl(kUrl), kPolicy, context.transport, this)) {
-    trackSource(*source_, "NOAA SWPC OVATION");
-    connect(source_, &PolledSource::updated, this, &SolarAuroraModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarAuroraModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "NOAA SWPC OVATION", [this] { return hasData(); });
 }
 
 SolarAuroraModel::~SolarAuroraModel() { MapStyles::instance().remove_style("aurora"); }

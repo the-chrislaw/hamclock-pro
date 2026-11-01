@@ -75,6 +75,7 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     settle();
     check(!model.hasData() && model.bands().isEmpty(), "old report never shown as current");
+    check(model.state() == "stale", "a fresh answer with only an old report is stale, not live");
 
     SolarHamqslModel offline(context);
     down = true;

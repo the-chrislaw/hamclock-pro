@@ -14,8 +14,8 @@ constexpr int kMaxAgeSecs = 6 * 3600;
 SolarDstModel::SolarDstModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solardst", "Dst index", parent),
       source_(new PolledSource("swpc-kyoto-dst", QUrl(kUrl), kPolicy, context.transport, this)) {
-    trackSource(*source_, "NOAA SWPC / Kyoto WDC");
-    connect(source_, &PolledSource::updated, this, &SolarDstModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarDstModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "NOAA SWPC / Kyoto WDC", [this] { return hasData(); });
 }
 
 void SolarDstModel::start() { source_->start(); }

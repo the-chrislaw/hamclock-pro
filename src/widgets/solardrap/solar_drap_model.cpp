@@ -14,8 +14,8 @@ constexpr int kMaxAgeSecs = 2 * 3600;
 SolarDrapModel::SolarDrapModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solardrap", "D-RAP", parent),
       source_(new PolledSource("swpc-drap", QUrl(kUrl), kPolicy, context.transport, this)) {
-    trackSource(*source_, "NOAA SWPC D-RAP");
-    connect(source_, &PolledSource::updated, this, &SolarDrapModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarDrapModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "NOAA SWPC D-RAP", [this] { return hasData(); });
 }
 
 SolarDrapModel::~SolarDrapModel() { MapStyles::instance().remove_style("drap"); }

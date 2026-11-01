@@ -46,10 +46,13 @@ protected:
     void setState(const QString& state, const QString& status_text, const QDateTime& updated_at = {});
     // Standard mapping for a widget backed by one PolledSource: live when fresh,
     // stale when older than the policy, offline/error with the last error text.
-    void trackSource(PolledSource& source, const QString& source_label);
+    // has_usable_data (optional): the feed answered, but with nothing current or readable
+    // to show. That is stale too, never "live" over an empty card. Connect the model's
+    // parse to `updated` before calling this, so the check sees the new body.
+    void trackSource(PolledSource& source, const QString& source_label, std::function<bool()> has_usable_data = {});
     // That mapping applied once, for a model that puts its own condition ahead of it and so
     // cannot let trackSource overwrite the state on every source event and age tick.
-    void applySourceState(const PolledSource& source, const QString& source_label);
+    void applySourceState(const PolledSource& source, const QString& source_label, const std::function<bool()>& has_usable_data = {});
     // No answer yet (neither data, cached or fresh, nor an error): its first
     // request is still in flight. Multi-feed cards show that as loading, never as
     // missing or unusable data.

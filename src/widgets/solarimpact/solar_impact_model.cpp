@@ -46,8 +46,8 @@ SolarImpactModel::SolarImpactModel(const WidgetContext& context, QObject* parent
     : WidgetModel("solarimpact", "Space weather impact", parent),
       source_(new PolledSource("swpc-impact-scales", QUrl(kUrl), kPolicy, context.transport, this)),
       dst_source_(new PolledSource("swpc-impact-dst", QUrl(kDstUrl), kDstPolicy, context.transport, this)) {
-    trackSource(*source_, "NOAA SWPC");
-    connect(source_, &PolledSource::updated, this, &SolarImpactModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarImpactModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "NOAA SWPC", [this] { return hasData(); });
     connect(dst_source_, &PolledSource::updated, this, [this] {
         dst_ = solardst::parse_dst(dst_source_->body());
         emit valuesChanged();

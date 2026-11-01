@@ -26,8 +26,8 @@ QString outlook(char letter, const solarscales::Day& d) {
 SolarScalesModel::SolarScalesModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solarscales", "NOAA scales", parent),
       source_(new PolledSource("swpc-noaa-scales", QUrl(kUrl), kPolicy, context.transport, this)) {
-    trackSource(*source_, "NOAA SWPC");
-    connect(source_, &PolledSource::updated, this, &SolarScalesModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarScalesModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "NOAA SWPC", [this] { return hasData(); });
 }
 
 void SolarScalesModel::start() { source_->start(); }

@@ -40,7 +40,7 @@ bool WidgetModel::awaitingFirstAnswer(const PolledSource& source) {
     return !source.fetchedAt().isValid() && source.lastError().isEmpty();
 }
 
-void WidgetModel::applySourceState(const PolledSource& source, const QString& source_label) {
+void WidgetModel::applySourceState(const PolledSource& source, const QString& source_label, const std::function<bool()>& has_usable_data) {
     const auto now_utc = clock_();
     if (!source.fetchedAt().isValid()) {
         if (source.lastError().isEmpty()) setState("loading", "Loading " + source_label + "…");
@@ -53,11 +53,17 @@ void WidgetModel::applySourceState(const PolledSource& source, const QString& so
                  source.fetchedAt());
         return;
     }
+    if (has_usable_data && !has_usable_data()) {
+        setState("stale", source_label + " has no current data", source.fetchedAt());
+        return;
+    }
     setState("live", source_label, source.fetchedAt());
 }
 
-void WidgetModel::trackSource(PolledSource& source, const QString& source_label) {
-    auto refresh = [this, &source, source_label]() { applySourceState(source, source_label); };
+void WidgetModel::trackSource(PolledSource& source, const QString& source_label, std::function<bool()> has_usable_data) {
+    auto refresh = [this, &source, source_label, has_usable_data = std::move(has_usable_data)]() {
+        applySourceState(source, source_label, has_usable_data);
+    };
     connect(&source, &PolledSource::updated, this, refresh);
     connect(&source, &PolledSource::failed, this, refresh);
     connect(&age_timer_, &QTimer::timeout, this, refresh);
