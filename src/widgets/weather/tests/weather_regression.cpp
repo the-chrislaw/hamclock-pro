@@ -125,13 +125,14 @@ int main(int argc, char** argv) {
     context.settings = &settings;
     int requests = 0;
     bool fail_all = false;
+    QByteArray unusable;  // when set, the forecast answers with this
     int place_requests = 0;
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult r;
         const bool place = url.host().contains("nominatim");
         (place ? place_requests : requests)++;
         if (fail_all) r.error = "Host unreachable";
-        else { r.http_status = 200; r.body = place ? rev_body : body; }
+        else { r.http_status = 200; r.body = place ? rev_body : !unusable.isEmpty() ? unusable : body; }
         QTimer::singleShot(0, [done, r] { done(r); });
     };
     WeatherModel model(context);
@@ -176,6 +177,54 @@ int main(int argc, char** argv) {
     for (auto* s : {model.deSource(), model.dxSource()}) { s->setClock([&] { return now.addSecs(3 * 3600); }); s->refreshNow(); }
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(model.state() == "stale" && model.deTemp() == "15.7 °C", "outage keeps last value, marked stale");
+
+    // An answer that can't be used is not "still loading": it would say Loading for ever.
+    {
+        QTemporaryDir bad_dir;
+        AppSettings bad_settings(bad_dir.filePath("station.conf"), bad_dir.path());
+        bad_settings.saveStation("N0CALL", 10.0, 20.0, 30.0, 40.0, "");
+        fail_all = false;
+        unusable = "{\"latitude\":10,\"longitude\":20}";
+        WidgetContext bad_context = context;
+        bad_context.settings = &bad_settings;
+        WeatherModel bad(bad_context);
+        bad.setClock([&] { return now; });
+        bad.start();
+        for (auto* s : {bad.deSource(), bad.dxSource()}) { s->setClock([&] { return now; }); s->refreshNow(); }
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(bad.state() == "stale", "both ends answered with nothing usable -> stale, not loading");
+        unusable.clear();
+    }
+
+    // No DX target (saved as DX = DE, which is how first-run setup leaves it): one end, not DE twice.
+    {
+        QTemporaryDir nodx_dir;
+        AppSettings nodx_settings(nodx_dir.filePath("station.conf"), nodx_dir.path());
+        nodx_settings.saveStation("N0CALL", 37.77, -122.42, 37.77, -122.42, "");
+        fail_all = false;
+        WidgetContext nodx_context = context;
+        nodx_context.settings = &nodx_settings;
+        WeatherModel nodx(nodx_context);
+        nodx.setClock([&] { return now; });
+        requests = 0;
+        nodx.start();
+        check(nodx.deSource() && !nodx.dxSource() && requests == 1, "no DX: one request");
+        nodx.deSource()->setClock([&] { return now; });
+        nodx.deSource()->refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(nodx.deTemp() == "15.7 °C" && nodx.dxTemp().isEmpty(), "no DX: DE only");
+        check(nodx.state() == "live", "no DX: fresh DE alone is live");
+        nodx_settings.saveStation("N0CALL", 37.77, -122.42, 37.76, -122.41, "");
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(nodx.dxSource() != nullptr, "DX end appears when a target is set");
+        nodx.dxSource()->setClock([&] { return now; });
+        nodx.dxSource()->refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(nodx.dxTemp() == "15.7 °C", "DX values once a target is set");
+        nodx_settings.saveStation("N0CALL", 37.77, -122.42, 37.77, -122.42, "");
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(!nodx.dxSource() && nodx.dxTemp().isEmpty(), "DX end goes when the target is cleared");
+    }
 
     std::cout << "Weather: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
