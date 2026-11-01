@@ -18,6 +18,15 @@ void SafeArea::setInsets(const QMarginsF& insets) {
     emit changed();
 }
 
+void SafeArea::setBackdrop(const QColor& color) {
+    if (!color.isValid() || color == backdrop_) return;
+    backdrop_ = color;
+    emit backdropChanged();
+#if defined(Q_OS_IOS)
+    if (window_) nativeApplyBackdrop(window_, backdrop_, darkBackdrop());
+#endif
+}
+
 void SafeArea::attach(QWindow* window) {
     if (window_ == window) return;
     if (window_) disconnect(window_, nullptr, this, nullptr);
@@ -32,7 +41,9 @@ void SafeArea::attach(QWindow* window) {
 
 void SafeArea::refresh() {
 #if defined(Q_OS_IOS)
-    if (window_) setInsets(nativeSafeAreaInsets(window_));
+    if (!window_) return;
+    setInsets(nativeSafeAreaInsets(window_));
+    nativeApplyBackdrop(window_, backdrop_, darkBackdrop());
 #endif
 }
 
