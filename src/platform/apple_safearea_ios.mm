@@ -34,8 +34,8 @@ void nativeApplyBackdrop(QWindow* window, const QColor& color, bool dark) {
     UIWindow* host = view.window;
     if (!host) return;
     UIColor* fill = [UIColor colorWithRed:color.redF() green:color.greenF() blue:color.blueF() alpha:1.0];
-    // Qt keeps its view inside the safe area; everything around it shows the host
-    // window and its root view (black by default).
+    // When Qt keeps its view inside the safe area, everything around it shows the
+    // host window and its root view (black by default).
     host.backgroundColor = fill;
     UIViewController* root = host.rootViewController;
     root.view.backgroundColor = fill;

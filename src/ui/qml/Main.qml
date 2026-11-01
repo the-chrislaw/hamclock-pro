@@ -78,6 +78,9 @@ ApplicationWindow {
     onOverlayOpenChanged: if (overlayOpen) { pageInputBlocked = true; unblockTimer.stop() } else unblockTimer.restart()
     Timer { id: unblockTimer; interval: 350; onTriggered: window.pageInputBlocked = false }
 
+    // The status bar inset still owed by content at the top of the content item.
+    readonly property real contentTopInset: appHeader.visible ? 0 : safeArea.top
+
     readonly property real overscanX: width * appSettings.overscanPercent / 100
     readonly property real overscanY: height * appSettings.overscanPercent / 100
 
@@ -93,15 +96,19 @@ ApplicationWindow {
 
     // The header sits outside contentItem, so the full-screen layers below cannot
     // cover it: hide it while one is open (its buttons are input-blocked anyway).
+    // It starts at the top of the window, so on iPad it takes the status bar inset itself
+    // (its background runs under the status bar); the page below then needs none.
     header: Rectangle {
+        id: appHeader
         visible: !Theme.dense && !window.overlayOpen
         enabled: !window.pageInputBlocked
         color: Theme.canvas
-        implicitHeight: Theme.dense ? 0 : Theme.touch + Theme.gap
+        implicitHeight: Theme.dense ? 0 : safeArea.top + Theme.touch + Theme.gap
         RowLayout {
             anchors.fill: parent
-            anchors.leftMargin: Theme.pad
-            anchors.rightMargin: Theme.pad
+            anchors.topMargin: safeArea.top
+            anchors.leftMargin: Theme.pad + safeArea.left
+            anchors.rightMargin: Theme.pad + safeArea.right
             spacing: Theme.gap
             Text {
                 text: "HamClock Pro"
@@ -124,13 +131,14 @@ ApplicationWindow {
     // holds as many panes as fit (at least three; a second row when Map size allows).
     GridLayout {
         id: page
+        objectName: "pageGrid"
         enabled: !window.pageInputBlocked
         columns: window.phone ? 1 : 2
         rowSpacing: Theme.gap
         columnSpacing: Theme.gap
         anchors.fill: parent
         anchors.margins: Theme.pad
-        anchors.topMargin: (Theme.dense ? Theme.pad : 0) + safeArea.top + window.overscanY
+        anchors.topMargin: (Theme.dense ? Theme.pad : 0) + window.contentTopInset + window.overscanY
         anchors.leftMargin: Theme.pad + safeArea.left + window.overscanX
         anchors.rightMargin: Theme.pad + safeArea.right + window.overscanX
         anchors.bottomMargin: Theme.pad + safeArea.bottom + window.overscanY
@@ -368,7 +376,7 @@ ApplicationWindow {
         z: 9
         // Swallow taps and wheel events so they never reach the page underneath.
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
-        TimersPage { anchors.fill: parent; onCloseRequested: timersLayer.visible = false; onBigClockRequested: bigClockLayer.visible = true }
+        TimersPage { anchors.fill: parent; anchors.topMargin: safeArea.top; anchors.leftMargin: safeArea.left; anchors.rightMargin: safeArea.right; anchors.bottomMargin: safeArea.bottom; onCloseRequested: timersLayer.visible = false; onBigClockRequested: bigClockLayer.visible = true }
     }
 
     Rectangle {
@@ -379,7 +387,7 @@ ApplicationWindow {
         z: 10
         // Swallow taps and wheel events so they never reach the page underneath.
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
-        BigClockPage { anchors.fill: parent; onCloseRequested: bigClockLayer.visible = false }
+        BigClockPage { anchors.fill: parent; anchors.topMargin: safeArea.top; anchors.leftMargin: safeArea.left; anchors.rightMargin: safeArea.right; anchors.bottomMargin: safeArea.bottom; onCloseRequested: bigClockLayer.visible = false }
     }
 
     // Any touch counts as activity (passive: children still get their taps).
@@ -404,6 +412,7 @@ ApplicationWindow {
         z: 20
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
+        anchors.topMargin: window.contentTopInset
         width: Math.min(parent.width, 420 * Theme.scale)
         height: Theme.touch + Theme.pad
         radius: Theme.radius
@@ -421,7 +430,7 @@ ApplicationWindow {
         z: 9
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: alarmBanner.visible ? alarmBanner.bottom : parent.top
-        anchors.topMargin: alarmBanner.visible ? Theme.gap : safeArea.top
+        anchors.topMargin: alarmBanner.visible ? Theme.gap : window.contentTopInset
         width: Math.min(parent.width - 2 * Theme.pad, 520 * Theme.scale)
     }
 
@@ -434,6 +443,6 @@ ApplicationWindow {
         // Swallow taps and wheel events so they never reach the page underneath.
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: function (wheel) { wheel.accepted = true } }
         onVisibleChanged: if (visible) { settingsPage.reload(); settingsPage.forceActiveFocus() }
-        SettingsPage { id: settingsPage; anchors.fill: parent; onCloseRequested: settingsLayer.visible = false }
+        SettingsPage { id: settingsPage; anchors.fill: parent; anchors.topMargin: safeArea.top; anchors.leftMargin: safeArea.left; anchors.rightMargin: safeArea.right; anchors.bottomMargin: safeArea.bottom; onCloseRequested: settingsLayer.visible = false }
     }
 }
