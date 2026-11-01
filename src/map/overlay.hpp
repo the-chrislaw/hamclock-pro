@@ -46,6 +46,9 @@ QString overlay_path_text(std::optional<Location> de, Location where);
 // Label priority of a layer id (lower wins a collision): satellites, then
 // spots and everything else, then hazards (quakes, fires, storms).
 int overlay_label_priority(const QString& layer_id);
+// Display name for a layer id in the map menu ("dx-cluster" -> "DX cluster"); unknown ids
+// become sentence case with hyphens as spaces.
+QString overlay_layer_name(const QString& layer_id);
 // Rects along the polyline `px` (consecutive points closer than `max_gap` are
 // joined), so labels can avoid a drawn line.
 std::vector<QRectF> line_obstacles(const std::vector<QPointF>& px, double max_gap, double pad);
