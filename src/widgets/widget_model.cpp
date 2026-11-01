@@ -40,22 +40,24 @@ bool WidgetModel::awaitingFirstAnswer(const PolledSource& source) {
     return !source.fetchedAt().isValid() && source.lastError().isEmpty();
 }
 
+void WidgetModel::applySourceState(const PolledSource& source, const QString& source_label) {
+    const auto now_utc = clock_();
+    if (!source.fetchedAt().isValid()) {
+        if (source.lastError().isEmpty()) setState("loading", "Loading " + source_label + "…");
+        else setState("offline", "No data from " + source_label + ": " + source.lastError());
+        return;
+    }
+    if (source.isStale(now_utc)) {
+        setState("stale", source_label + " data is out of date" +
+                 (source.lastError().isEmpty() ? QString() : " (" + source.lastError() + ")"),
+                 source.fetchedAt());
+        return;
+    }
+    setState("live", source_label, source.fetchedAt());
+}
+
 void WidgetModel::trackSource(PolledSource& source, const QString& source_label) {
-    auto refresh = [this, &source, source_label]() {
-        const auto now_utc = clock_();
-        if (!source.fetchedAt().isValid()) {
-            if (source.lastError().isEmpty()) setState("loading", "Loading " + source_label + "…");
-            else setState("offline", "No data from " + source_label + ": " + source.lastError());
-            return;
-        }
-        if (source.isStale(now_utc)) {
-            setState("stale", source_label + " data is out of date" +
-                     (source.lastError().isEmpty() ? QString() : " (" + source.lastError() + ")"),
-                     source.fetchedAt());
-            return;
-        }
-        setState("live", source_label, source.fetchedAt());
-    };
+    auto refresh = [this, &source, source_label]() { applySourceState(source, source_label); };
     connect(&source, &PolledSource::updated, this, refresh);
     connect(&source, &PolledSource::failed, this, refresh);
     connect(&age_timer_, &QTimer::timeout, this, refresh);

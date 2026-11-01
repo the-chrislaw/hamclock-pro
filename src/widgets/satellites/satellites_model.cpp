@@ -197,14 +197,21 @@ SatellitesModel::SatellitesModel(const WidgetContext& context, QObject* parent)
     connect(tx_source_, &PolledSource::updated, this, &SatellitesModel::load_transmitters);
     detail_timer_.setInterval(1000);
     connect(&detail_timer_, &QTimer::timeout, this, &SatellitesModel::refresh_detail);
-    trackSource(*source_, "CelesTrak");
+    // State follows the source through recompute (on every update and timer tick), not trackSource:
+    // without a station the pane asks for one, whatever the elements download is doing.
     connect(source_, &PolledSource::updated, this, &SatellitesModel::load);
+    connect(source_, &PolledSource::failed, this, &SatellitesModel::refresh_state);
     timer_.setInterval(30 * 1000);
     connect(&timer_, &QTimer::timeout, this, &SatellitesModel::recompute);
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &SatellitesModel::recompute);
 }
 
-void SatellitesModel::start() { source_->start(); tx_source_->start(); timer_.start(); }
+void SatellitesModel::start() { refresh_state(); source_->start(); tx_source_->start(); timer_.start(); }
+
+void SatellitesModel::refresh_state() {
+    if (!settings_ || !settings_->configured()) setState("unconfigured", "Set your station location in Settings");
+    else applySourceState(*source_, "CelesTrak");
+}
 
 void SatellitesModel::load() {
     tles_.clear();
@@ -254,6 +261,7 @@ QString SatellitesModel::saveUserTles(const QString& text) {
 }
 
 void SatellitesModel::recompute() {
+    refresh_state();
     rows_.clear();
     sky_track_.clear();
     listed_.clear();
