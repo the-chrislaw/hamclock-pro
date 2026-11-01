@@ -15,7 +15,7 @@ Environment=QT_QPA_PLATFORM=eglfs
 # Touch and keyboard through libinput; no incoming listeners are opened.
 Environment=QT_QPA_EGLFS_KMS_ATOMIC=1
 Environment=QT_QPA_EGLFS_ALWAYS_SET_MODE=1
-ExecStart=/usr/bin/hamclock-pro --fullscreen
+ExecStart=/usr/bin/hamclock-pro --fullscreen --first-run --touch-keyboard
 Restart=on-failure
 RestartSec=5
 # The dashboard needs no privileges.

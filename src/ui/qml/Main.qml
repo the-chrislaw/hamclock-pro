@@ -15,9 +15,10 @@ ApplicationWindow {
     title: "HamClock Pro"
     color: Theme.canvas
 
-    // Kiosk first boot (--first-run): no station yet, so start in Settings.
+    // Kiosk first boot (--first-run): no station yet, so start in Settings with the callsign
+    // ready to type (the on-screen keyboard opens with it under --touch-keyboard).
     Component.onCompleted: {
-        if (firstRun && !station.configured) settingsLayer.visible = true
+        if (firstRun && !station.configured) { settingsLayer.visible = true; settingsPage.focusFirstField() }
         if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
         if (nativeMenuBar) createMacMenuBar()
     }
@@ -42,6 +43,8 @@ ApplicationWindow {
         bar.appearanceRequested.connect(value => appSettings.appearance = value)
     }
 
+    TouchKeyboard { id: touchKeys; target: touchKeyboard ? window.activeFocusItem : null }
+    Binding { target: Theme; property: "keyboardInset"; value: touchKeys.visible ? touchKeys.height : 0 }
     // iPhone/iPad: the status bar, home indicator and landscape side insets take the
     // page colour (they showed black bands in the light theme).
     Binding { target: safeArea; property: "backdrop"; value: Theme.canvas }
@@ -89,7 +92,8 @@ ApplicationWindow {
     Shortcut { sequences: ["Ctrl+,"]; enabled: !nativeMenuBar && !window.overlayOpen; onActivated: settingsLayer.visible = true }
     Shortcut { sequences: ["Escape", "Back"]; enabled: bigClockLayer.visible; onActivated: bigClockLayer.visible = false }
     Shortcut { sequences: ["Escape", "Back"]; enabled: timersLayer.visible && !bigClockLayer.visible; onActivated: timersLayer.visible = false }
-    Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsLayer.visible = false }
+    // Escape keeps what was typed, like Done (Settings applies changes as they are made).
+    Shortcut { sequences: ["Escape", "Back"]; enabled: settingsLayer.visible; onActivated: settingsPage.saveAndClose() }
 
     // The header sits outside contentItem, so the full-screen layers below cannot
     // cover it: hide it while one is open (its buttons are input-blocked anyway).
@@ -125,6 +129,10 @@ ApplicationWindow {
     GridLayout {
         id: page
         enabled: !window.pageInputBlocked
+        // Settings covers the whole window: skip drawing the dashboard under it. With the
+        // window header hidden there (#675) the station card re-lays out and its clock texts
+        // could report as clipped in Settings screenshots, depending on the time of day.
+        visible: !settingsLayer.visible
         columns: window.phone ? 1 : 2
         rowSpacing: Theme.gap
         columnSpacing: Theme.gap
