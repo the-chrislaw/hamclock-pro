@@ -866,7 +866,8 @@ Rectangle {
                 visible: Qt.platform.os !== "ios"
                 ColumnLayout {
                     id: hardwareCard
-                    width: parent.width
+                    // Hidden on iOS, the card has zero width; wrapped labels at zero width loop the polish.
+                    width: parent.width > 0 ? parent.width : implicitWidth
                     spacing: Theme.gap * 0.8
                     readonly property var fields: [radioHost, radioPort, rotatorHost, rotatorPort, adsbHost, adsbPort,
                         gpsHost, gpsPort, gpsDevice, gpsBaud]
