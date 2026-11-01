@@ -436,11 +436,13 @@ jobs:
           # HAMCLOCK_IOS_BUNDLE_ID, not the macOS identifier).
           BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
           # The sky finder is off for 1.0: no camera/motion prompts, and the plist
-          # placeholder must have been substituted. The location string stays: it
-          # is for "Use my location" (location-key.plist.in).
+          # placeholder must have been substituted. A location string is expected,
+          # but only the "Use my location" one (location-key.plist.in); the finder's
+          # own (sky-finder-keys.plist.in) names the sky finder.
           if grep -q 'HAMCLOCK_SKY_FINDER' "$APP/Info.plist" ||
-             plutil -p "$APP/Info.plist" | grep -qE 'NS(Camera|Motion)UsageDescription'; then
-            echo "Info.plist has sky finder camera/motion permission strings or an unsubstituted placeholder"
+             plutil -p "$APP/Info.plist" | grep -qE 'NS(Camera|Motion)UsageDescription' ||
+             plutil -p "$APP/Info.plist" | grep -qi 'sky finder'; then
+            echo "Info.plist has sky finder permission strings or an unsubstituted placeholder"
             plutil -p "$APP/Info.plist"
             exit 1
           fi
