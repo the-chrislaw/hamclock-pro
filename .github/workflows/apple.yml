@@ -82,7 +82,18 @@ jobs:
           test -d build-mac/hamclock-pro.app/Contents/Resources/qml/QtQuick
           build-mac/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-mac" --offline --size 1024x600 --screenshot "$RUNNER_TEMP/smoke-mac.png"
           test -s "$RUNNER_TEMP/smoke-mac.png"
+          # iPad-sized layout render (WIDGETS F4): 11" landscape. 1366x1024 does not fit the
+          # runner's display (the window is clamped and the app's crop guard fails), so it is not rendered here.
+          mkdir -p ipad-size-shots
+          for sz in 1180x820; do
+            build-mac/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-$sz" --offline --size "$sz" --screenshot "ipad-size-shots/ipad-$sz.png"
+            test -s "ipad-size-shots/ipad-$sz.png"
+          done
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ipad-size-layout-renders
+          path: ipad-size-shots/*.png
       - uses: actions/upload-artifact@v4
         with:
           name: hamclock-pro-macos-unsigned
