@@ -6,6 +6,7 @@
 
 namespace hcp::pathrel {
 
+using hamclock::SubsolarPoint;
 using hamclock::solar_elevation_deg;
 using hamclock::subsolar_point;
 namespace {
@@ -14,6 +15,10 @@ constexpr double kEarthKm = 6371.0;
 constexpr double kF2HeightKm = 300.0;
 constexpr double kDHeightKm = 100.0;
 constexpr double kMaxHopKm = 3000.0;
+constexpr double kMaxF2HopKm = 4000.0; // P.533 sec 3.5.1: dmax restricted to 4000 km when finding the MUF
+constexpr double kMagneticPoleLat = 80.7, kMagneticPoleLon = -72.7; // centred dipole, IGRF-13
+constexpr double kAuroralMagLat = 60.0;
+constexpr double kMaxSolarIndex = 160.0; // P.533 sec 3.4: R12 saturates here for foF2
 constexpr double kKtbDbw = -170.0; // kT0 * 2.5 kHz
 struct BandDef { const char* name; double mhz; };
 constexpr BandDef kBands[] = {{"80m", 3.6}, {"40m", 7.1}, {"30m", 10.12}, {"20m", 14.2},
@@ -38,12 +43,6 @@ Point along(Point a, Point b, double fraction) {
     const double z = s1 * std::sin(rad(a.lat)) + s2 * std::sin(rad(b.lat));
     return {deg(std::atan2(z, std::hypot(x, y))), deg(std::atan2(y, x))};
 }
-// Incidence angle at a layer of height h for a hop spanning angle 2*theta.
-double incidence(double theta, double h) {
-    const double top = kEarthKm + h;
-    const double len = std::sqrt(kEarthKm * kEarthKm + top * top - 2 * kEarthKm * top * std::cos(theta));
-    return std::asin(std::clamp(kEarthKm * std::sin(theta) / len, 0.0, 0.999));
-}
 double takeoff(double theta, double h) {
     const double top = kEarthKm + h;
     return std::atan2(top * std::cos(theta) - kEarthKm, top * std::sin(theta));
@@ -61,11 +60,68 @@ double noise_dbw(double mhz) {
 }
 double logistic(double x) { return 1.0 / (1.0 + std::exp(-x)); }
 
-double fo_f2(double sfi, double elevation_deg, double lat) {
-    const double noon = 5.5 + 0.06 * (sfi - 70);
-    const double day = std::pow(std::max(0.0, std::sin(rad(elevation_deg))), 0.6);
-    const double value = noon * (0.45 + 0.55 * day);
-    return value * (1.0 - 0.4 * std::pow(std::sin(rad(lat)), 2));
+double wrap_longitude(double lon) { return std::fmod(std::fmod(lon + 180.0, 360.0) + 360.0, 360.0) - 180.0; }
+double geomagnetic_lat(Point p) {
+    const double s = std::sin(rad(p.lat)) * std::sin(rad(kMagneticPoleLat)) +
+                     std::cos(rad(p.lat)) * std::cos(rad(kMagneticPoleLat)) * std::cos(rad(p.lon - kMagneticPoleLon));
+    return deg(std::asin(std::clamp(s, -1.0, 1.0)));
+}
+// F2 layer at a control point: a compact fit to the monthly median CCIR maps behind ITU-R P.1239
+// (all months, 5 solar levels, global; see the header for the error against them).
+struct F2Layer { double fo_mhz, m3000, season, mag_lat, daylight; };
+F2Layer f2_layer(double sfi, SubsolarPoint sun, Point p) {
+    const double r12 = std::sqrt(std::max(0.0, 167273.0 + (sfi - 63.7) * 1123.6)) - 408.99; // P.371
+    const double activity = std::clamp(r12, 0.0, kMaxSolarIndex) / 100.0;
+    const double mag_lat = std::abs(geomagnetic_lat(p));
+    const double season = sun.latitude_deg / 23.44 * std::clamp(p.lat / 30.0, -1.0, 1.0); // +1 local summer, -1 winter
+    const double crest = std::exp(-std::pow((mag_lat - 11.11) / 24.0, 2)); // equatorial anomaly
+    // The layer lags the sun by about 50 minutes and fills and drains gradually around sunrise and sunset.
+    const double daylight = logistic((solar_elevation_deg(sun, p.lat, p.lon - 12.45) + 1.49) / 10.0);
+    const double local_hour = 12.0 + (p.lon - sun.longitude_deg) / 15.0;
+    const double day_mhz = (5.99 + 3.16 * activity) * (1 + 0.33 * crest) * (1 - 0.05 * season * (1 + 2.07 * activity)) *
+                           (1 - 0.33 * std::pow(mag_lat / 90.0, 2)); // winter anomaly: more by day in winter
+    const double night_mhz = (1.95 + 1.61 * activity) * (1 + 0.99 * crest) * (1 + 0.28 * season) *
+                             (1 + 0.37 * std::cos(2 * kPi * (local_hour - 19.99) / 24.0)); // decays to a pre-dawn low
+    const double m3000 = 3.23 - 0.32 * activity + daylight * (-0.06 - 0.24 * season);
+    return {night_mhz + (day_mhz - night_mhz) * daylight, m3000, season, mag_lat, daylight};
+}
+// F2 basic MUF for a hop of d km, P.533 eqs 3-6 with dmax at its 4000 km limit and foF2/foE = 3.
+double f2_basic_muf(const F2Layer& layer, double d) {
+    const auto distance_term = [](double km) {
+        const double z = 1 - 2 * km / kMaxF2HopKm;
+        return 0.74 + z * (-0.591 + z * (-0.424 + z * (-0.090 + z * (0.088 + z * (0.181 + z * 0.096)))));
+    };
+    d = std::min(d, kMaxF2HopKm);
+    const double b = layer.m3000 - 0.124 + (layer.m3000 * layer.m3000 - 4) * 0.0245;
+    const double gyro = 0.87 * std::pow(kEarthKm / (kEarthKm + kF2HeightKm), 3) *
+                        std::sqrt(1 + 3 * std::pow(std::sin(rad(layer.mag_lat)), 2));
+    return (1 + distance_term(d) / distance_term(3000.0) * (b - 1)) * layer.fo_mhz + gyro / 2 * (1 - d / kMaxF2HopKm);
+}
+// E layer basic MUF for a hop of d <= 2000 km, P.1239 eqs 12-18 and P.1240 sec 5.1. Zero after dark.
+double e_basic_muf(double sfi, SubsolarPoint sun, Point p, double d) {
+    const double elevation = solar_elevation_deg(sun, p.lat, p.lon);
+    if (elevation <= 0) return 0;
+    const double chi = 90.0 - elevation, cos_lat = std::cos(rad(p.lat));
+    const bool tropics = std::abs(p.lat) < 32.0;
+    const double a = std::max(0.0, 1 + 0.0094 * (sfi - 66));
+    const double b = std::pow(std::cos(rad(std::min(std::abs(p.lat - sun.latitude_deg), 80.0))),
+                              tropics ? -1.93 + 1.92 * cos_lat : 0.11 - 0.49 * cos_lat);
+    const double c = tropics ? 23 + 116 * cos_lat : 92 + 35 * cos_lat;
+    const double bent = chi > 73 ? chi - 6.27e-13 * std::pow(chi - 50, 8) : chi;
+    const double fo_e = std::pow(a * b * c * std::pow(std::cos(rad(bent)), 1.2), 0.25);
+    const double x = (std::min(d, 2000.0) - 1150.0) / 1150.0;
+    return fo_e * (3.94 + 2.80 * x - 1.70 * x * x - 0.60 * x * x * x + 0.96 * x * x * x * x);
+}
+// Ratio of operational to basic F2 MUF, P.1240 Table 1: season, day to night, and EIRP.
+double operational_ratio(double season, double daylight, double eirp_dbw) {
+    return 1.25 - 0.10 * daylight - 0.05 * season + (eirp_dbw >= 30 ? 0.05 : 0.0);
+}
+// P(the operational MUF supports f on a given day of the month), P.533 eqs 9-10. The decile ratios
+// are the mid-latitude values of P.1239 Tables 2 and 3, night to day.
+double muf_support(double mhz, double muf, double daylight) {
+    const double lower = 0.78 + 0.07 * daylight, upper = 1.25 - 0.12 * daylight;
+    if (mhz <= muf) return std::min(1.0, 1.3 - 0.8 / (1 + (1 - mhz / muf) / (1 - lower)));
+    return std::max(0.0, 0.8 / (1 + (mhz / muf - 1) / (upper - 1)) - 0.3);
 }
 double need_db(PathMode mode) {
     switch (mode) {
@@ -80,8 +136,8 @@ double need_db(PathMode mode) {
 double muf_3000_mhz(double sfi, double lat, double lon, UtcSeconds utc) {
     lat = std::clamp(lat, -90.0, 90.0);
     lon = std::fmod(lon + 540.0, 360.0) - 180.0;
-    const double elev = solar_elevation_deg(subsolar_point(utc), lat, lon);
-    return fo_f2(sfi, elev, lat) / std::cos(incidence(1500.0 / kEarthKm, 300.0));
+    const auto layer = f2_layer(std::isfinite(sfi) ? std::clamp(sfi, 60.0, 300.0) : 60.0, subsolar_point(utc), {lat, lon});
+    return layer.fo_mhz * layer.m3000;
 }
 
 double path_distance_km(const PathInput& p) {
@@ -97,29 +153,49 @@ std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sf
     const int hops = std::max(1, static_cast<int>(std::ceil(dist / kMaxHopKm)));
     const double hop_km = dist / hops;
     const double theta = hop_km / (2 * kEarthKm);
-    const double sec_f2 = 1.0 / std::cos(incidence(theta, kF2HeightKm));
     const double sec_d = 1.0 / std::cos(d_layer_incidence(takeoff(theta, kF2HeightKm)));
     const double r12 = std::max(0.0, (sfi - 67) / 0.7);
     const auto sun = subsolar_point(utc);
 
-    double muf = 1e9, polar = 0;
-    std::vector<double> zenith;
-    for (int i = 0; i < hops; ++i) {
-        const double t = (i + 0.5) / hops;
-        // Long path: continue away from DX, covering 2*pi minus the short angle.
-        const double short_angle = central_angle(de, dx);
+    const double short_angle = central_angle(de, dx);
+    const auto point_at_km = [&](double km) { // along the rated path from DE; long path continues away from DX
+        const double t = km / dist;
         const Point c = p.long_path && short_angle > 1e-9 ? along(de, dx, -t * (2 * kPi - short_angle) / short_angle)
                                                           : along(de, dx, t);
-        const double elev = solar_elevation_deg(sun, std::clamp(c.lat, -90.0, 90.0), std::fmod(c.lon + 540.0, 360.0) - 180.0);
-        muf = std::min(muf, fo_f2(sfi, elev, c.lat) * sec_f2);
-        zenith.push_back(90.0 - elev);
-        polar = std::max(polar, std::abs(c.lat));
+        return Point{std::clamp(c.lat, -90.0, 90.0), wrap_longitude(c.lon)};
+    };
+    double auroral = std::abs(geomagnetic_lat(point_at_km(dist / 2))); // highest geomagnetic latitude sampled
+    std::vector<double> zenith;
+    for (int i = 0; i < hops; ++i) {
+        const Point c = point_at_km(dist * (i + 0.5) / hops);
+        zenith.push_back(90.0 - solar_elevation_deg(sun, c.lat, c.lon));
+        auroral = std::max(auroral, std::abs(geomagnetic_lat(c)));
+    }
+    // Path MUF, P.533 Table 1a and P.1240 sec 3.2: mid-path up to dmax, beyond it the lower
+    // F2(dmax)MUF of the two points half a lowest-order hop from each end. Mid-path darkness on a
+    // long path does not set the MUF. The operational MUF scales the F2 value only (P.1240 sec 6).
+    const double power_dbw = 10 * std::log10(std::max(p.power_w, 0.01));
+    const int f2_hops = static_cast<int>(std::ceil(dist / kMaxF2HopKm));
+    const double f2_hop_km = dist / f2_hops;
+    std::vector<Point> f2_points{point_at_km(dist / 2)};
+    if (f2_hops > 1) f2_points = {point_at_km(f2_hop_km / 2), point_at_km(dist - f2_hop_km / 2)};
+    double muf = 1e9, daylight = 1;
+    for (const Point c : f2_points) {
+        const auto layer = f2_layer(sfi, sun, c);
+        const double f2 = f2_basic_muf(layer, f2_hops > 1 ? kMaxF2HopKm : dist) *
+                          operational_ratio(layer.season, layer.daylight, power_dbw + p.gain_db / 2);
+        if (f2 < muf) { muf = f2; daylight = layer.daylight; }
+    }
+    if (dist <= kMaxF2HopKm) { // E modes: the higher of E and F2 gives the path MUF (P.533 sec 3.1)
+        const double e = dist <= 2000.0 ? e_basic_muf(sfi, sun, point_at_km(dist / 2), dist)
+                                        : std::min(e_basic_muf(sfi, sun, point_at_km(1000.0), 2000.0),
+                                                   e_basic_muf(sfi, sun, point_at_km(dist - 1000.0), 2000.0));
+        muf = std::max(muf, e);
     }
     const double slant_km = hops * 2 * std::sqrt(kEarthKm * kEarthKm + std::pow(kEarthKm + kF2HeightKm, 2) -
                                                   2 * kEarthKm * (kEarthKm + kF2HeightKm) * std::cos(theta));
-    const double power_dbw = 10 * std::log10(std::max(p.power_w, 0.01)) ;
     double storm = kp >= 7 ? 0.3 : kp >= 5 ? 0.7 : 1.0;
-    if (polar > 60 && kp >= 3) storm *= std::max(0.3, 1.0 - 0.1 * kp);
+    if (auroral > kAuroralMagLat && kp >= 3) storm *= std::max(0.3, 1.0 - 0.1 * kp);
 
     std::vector<PathBand> out;
     for (const auto& def : kBands) {
@@ -131,7 +207,7 @@ std::vector<PathBand> path_outlook(const PathInput& p, UtcSeconds utc, double sf
         const double fspl = 32.45 + 20 * std::log10(def.mhz) + 20 * std::log10(slant_km);
         const double noise = noise_dbw(def.mhz);
         const double snr = power_dbw + p.gain_db - fspl - absorb - 2.0 * (hops - 1) - noise;
-        const double rel = logistic((muf - def.mhz) / (0.06 * def.mhz) ) * logistic((snr - need_db(p.mode)) / 4.0) * storm;
+        const double rel = muf_support(def.mhz, muf, daylight) * logistic((snr - need_db(p.mode)) / 4.0) * storm;
         out.push_back({def.name, def.mhz, muf, snr, std::clamp(rel, 0.0, 1.0), deg(takeoff(theta, kF2HeightKm)), hops});
     }
     return out;

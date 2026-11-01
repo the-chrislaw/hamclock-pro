@@ -3,7 +3,9 @@
 #include "../hcpcore.h"
 #include "../pathrel.hpp"
 #include <cstring>
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 
 namespace {
@@ -22,6 +24,8 @@ const PathBand& band(const std::vector<PathBand>& v, const char* name) {
 // 2026-10-13 12:00 UTC and 00:00 UTC.
 constexpr std::int64_t kNoonUtc = 1760356800, kMidnightUtc = 1760313600;
 } // namespace
+
+#include "../../../../src/widgets/bands/tests/path_sanity_checks.inc"
 
 int main() {
     // London -> New York, ~5570 km, 2 hops.
@@ -136,6 +140,7 @@ int main() {
               cw_out.cells[3][0] == matrix_card(PathInput{51.5, -0.1, 40.7, -74.0, 100, 6, PathMode::Cw}, kNoonUtc + 15 * 3600,
                                                 150, 2).cells[3][0],
           "C ABI mode and power clamp");
+    path_sanity::run_sanity_cases();
     std::cout << "pathrel: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }

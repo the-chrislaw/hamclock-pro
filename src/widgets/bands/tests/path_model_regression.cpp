@@ -1,6 +1,8 @@
 // Path reliability model: physical sanity of the in-house estimate (offline).
 #include "../path_model.hpp"
+#include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 
 namespace {
@@ -19,6 +21,8 @@ const PathBand& band(const std::vector<PathBand>& v, const char* name) {
 // 2026-10-13 12:00 UTC and 00:00 UTC.
 constexpr std::int64_t kNoonUtc = 1760356800, kMidnightUtc = 1760313600;
 } // namespace
+
+#include "path_sanity_checks.inc"
 
 int main() {
     // London -> New York, ~5570 km, 2 hops.
@@ -95,6 +99,7 @@ int main() {
         for (double v : row) ok = ok && v >= 0 && v <= 1;
     }
     check(ok, "matrix shape and range");
+    path_sanity::run_sanity_cases();
     std::cout << "Path model: " << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
 }
