@@ -466,11 +466,28 @@ jobs:
             exit 1
           fi
           echo "app still running after 15 s (pid ${PID:-unknown})"
+      # F10: the same Simulator app on an iPhone, portrait. Informational: a
+      # missing iPhone runtime or a launch problem here only logs a message.
+      - name: iPhone Simulator screenshot (F10)
+        run: |
+          APP=$(find build-sim -name 'hamclock-pro.app' -path '*Debug-iphonesimulator*' | head -1)
+          [ -n "$APP" ] || { echo "no Simulator app built"; exit 0; }
+          UDID=$(xcrun simctl list devices available | grep -m1 'iPhone' | grep -oE '[0-9A-F-]{36}' || true)
+          [ -n "$UDID" ] || { echo "no iPhone Simulator available"; exit 0; }
+          BID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl install "$UDID" "$APP" || { echo "install on iPhone failed"; exit 0; }
+          xcrun simctl launch "$UDID" "$BID" || { echo "launch on iPhone failed"; exit 0; }
+          sleep 15
+          xcrun simctl io "$UDID" screenshot iphone.png || true
+          ls -l iphone.png || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ipad-simulator-screenshot
-          path: ipad.png
+          path: |
+            ipad.png
+            iphone.png
           if-no-files-found: ignore
 
   # TestFlight upload of the iPhone + iPad device build (issue #269). Main pushes only;
