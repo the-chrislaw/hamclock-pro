@@ -200,6 +200,11 @@ DxClusterModel::DxClusterModel(const WidgetContext& context, TelnetSocketFactory
             else publishOverlay();
         });
     }
+    // A new node, port, callsign, SSID or command list (Settings > Accounts) reconnects at once.
+    if (settings_) {
+        connect(settings_, &AppSettings::optionsChanged, this, &DxClusterModel::restartIfChanged);
+        connect(settings_, &AppSettings::stationChanged, this, &DxClusterModel::restartIfChanged);
+    }
     connect(&client_, &TelnetClient::lineReceived, this, &DxClusterModel::on_line);
     connect(&client_, &TelnetClient::stateChanged, this, &DxClusterModel::on_state);
     if (settings_) {
@@ -259,8 +264,22 @@ QString DxClusterModel::cluster_login(const QString& callsign, int ssid) {
     return call + '-' + QString::number(ssid);
 }
 
+QString DxClusterModel::loginKey() const {
+    if (!settings_) return {};
+    return QStringList{settings_->clusterHost(), QString::number(settings_->clusterPort()),
+                       cluster_login(settings_->callsign(), settings_->clusterSsid()), settings_->clusterCommands().join('\n')}
+        .join('\t');
+}
+
+void DxClusterModel::restartIfChanged() {
+    if (started_ && loginKey() != started_key_) start();
+}
+
 void DxClusterModel::start() {
     refreshUdp();
+    reached_ = false;
+    started_ = true;
+    started_key_ = loginKey();
     const QString host = settings_ ? settings_->clusterHost() : QString();
     const QString call = cluster_login(settings_ ? settings_->callsign() : QString(), settings_ ? settings_->clusterSsid() : 0);
     client_.start(host, settings_ ? settings_->clusterPort() : 0, call,
@@ -275,8 +294,15 @@ void DxClusterModel::on_state(TelnetClient::State state) {
     using S = TelnetClient::State;
     switch (state) {
     case S::Connecting: case S::LoggingIn: setState("loading", "Connecting to cluster…"); break;
-    case S::Online: setState("live", "Cluster " + (settings_ ? settings_->clusterHost() : QString()), now()); break;
-    case S::Waiting: setState("offline", "Cluster connection lost; retrying"); break;
+    case S::Online:
+        reached_ = true;
+        setState("live", "Cluster " + (settings_ ? settings_->clusterHost() : QString()), now());
+        break;
+    case S::Waiting:
+        if (reached_ || !settings_) setState("offline", "Cluster connection lost; retrying");
+        else setState("offline", QString("Cannot reach %1:%2; check the host and port, or pick another node")
+                                     .arg(settings_->clusterHost()).arg(settings_->clusterPort()));
+        break;
     case S::Idle: break;
     }
     publishOverlay();

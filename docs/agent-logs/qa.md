@@ -560,3 +560,63 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 7a40add (merged since d997638: #671 satellite pass alerts, #636 bands phone fit, #675/#676/#677/#680/#684/#689, #691/#692/#693 unit and clock fixes, #700 device location, my run 98 log). Main builds; 203 of 204 tests pass. `widget-satellites-sat_alert_service_regression` times out at 60 s under ctest; run directly it passes (32 checks) but takes about 97 s. Screenshots at 800x480 and 1024x600 (light, dark) are correct, with only the known truncated stale footers at 800x480. The 1920x1080 shots rendered without error but were not inspected.
 - Opened: #715 ([D] sat alert service test takes ~97 s, times out). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy on the Pi sizes, but #671 added a test slow enough to make CI flaky and a possible slow pass recompute on the Pi. Remaining risk is Apple code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-30 (UTC) QA run 100
+- Last reviewed commit: e844520 (merged since 7a40add: #720 sat alert test 97 s to 7 s, #704 station file load error, #705 time zone follows station location, #706 poll rates, #673 data polling robustness, #717 macOS location, #703 Mac menu bar, #688 phone swipe carousel, tvOS/iPhone QA fixes, #681 release pipeline). Main builds and passes 214/214 tests, including the sat alert test (#715 is fixed by #720). The src diff adds no QtWidgets, scrolling containers or password exposure, and no test assertions were removed. Screenshots at 800x480 and 1024x600 (light, dark) are correct; stale and set-up states are honest.
+- Opened: none. Closed: none (#715 was already closed). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy on the Pi sizes and CI is no longer flaky on the sat alert test. Remaining risk is Apple code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-30 (UTC) QA run 101
+- Last reviewed commit: d47a0f6 (merged since e844520: #707 new installs take units/clock/date from the device region, #705/#706 already covered, #730/#729/#724 Apple location, #725/#722/#721/#699 tvOS panes, #731 fetch test DNS determinism, #732 iCloud duplicate-file CI check, run 100 log). Main builds and passes 215/215 tests. The Qt-side src diff (11 files) adds no QtWidgets, scrolling, password exposure or new network code; #707 only writes region defaults when options.ini lacks the keys, so existing installs are unchanged. Screenshots were not repeated: no widget QML changed apart from the Apple-only "Use my location" button in Settings, which is hidden on Linux.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy on the Pi sizes. Remaining risk is Apple/tvOS code Linux CI cannot exercise and data freshness on the real Pi (#150).
+
+## 2026-10-30 (UTC) QA run 102
+- Last reviewed commit: bfbef21 (merged since d47a0f6: #683 one Accounts section in Settings for HamQTH, QRZ, HamAlert, hams.at and DX cluster, #728 tvOS satellite pass banner, my run 101 log). Main builds and passes 224/224 tests. The #683 src diff adds no QtWidgets or scrolling container, and passwords and keys stay in C++ (`lookupPasswordFor`, `hamAlertPassword` are not Q_PROPERTY or Q_INVOKABLE getters; QML only calls the save methods). New regression tests cover the lookup, DX cluster, HamAlert and hams.at account paths and no assertions were removed. Settings is not covered by the widget fixture renders, so the Accounts layout was not inspected at 800x480.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy on the Pi sizes. Remaining risk is the unviewed Accounts layout on the 7-inch Pi and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-30 (UTC) QA run 103
+- Last reviewed commit: ce8afe7 (only my run 102 log #737 merged since bfbef21). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 104
+- Last reviewed commit: e0ae136 (merged since ce8afe7: #739 App Store metadata field-limit test, my run 103 log #738). The diff is one new test plus its CMake registration and an Apple agent log line; no src, QML, workflow or existing test change, and no assertions were removed. Build, full ctest and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 105
+- Last reviewed commit: 4a2d5a1 (only my run 104 log #740 merged since e0ae136). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 106
+- Last reviewed commit: 6e5aef5 (only my run 105 log #741 merged since 4a2d5a1). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 107
+- Last reviewed commit: 1c79f98 (only my run 106 log #742 merged since 6e5aef5). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-10-31 (UTC) QA run 108
+- Last reviewed commit: ebd2fdc (only my run 107 log #743 merged since 1c79f98). No source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 109
+- Last reviewed commit: 41b48c0 (merged since ebd2fdc: my run 108 log #744, spots run 61 log #745). Only docs/agent-logs changed; no source, test, QML or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 110
+- Last reviewed commit: 4001580 (merged since 41b48c0: my run 109 log #746, Apple #747). #747 removes step-level `continue-on-error` from the Simulator launch step in apple.yml (job-level stays informational, per #521); no source, QML, test or doc-contract change. Build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 111
+- Last reviewed commit: cb0f23d (merged since 4001580: my run 110 log #748, Apple #749). #749 only adds iPad-size screenshot rendering to the macOS job in apple.yml (informational job); no source, QML, test or doc-contract change. Build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.

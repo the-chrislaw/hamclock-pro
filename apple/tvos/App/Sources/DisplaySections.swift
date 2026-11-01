@@ -45,13 +45,14 @@ struct DisplaySections: View {
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
             Button("Reset all panes") { settings.resetPanes() }.buttonStyle(ChipStyle())
         }
+        SatAlertSection()
         SettingsCard(title: "Screen") {
             choices([(0, "Never dim"), (2, "Dim after 2 h"), (4, "Dim after 4 h"), (8, "Dim after 8 h")], $settings.dimAfterHours, id: "dim")
             Text("Dims to 25 % after that long without the remote; any press restores it. The layout also drifts a few points each minute against burn-in.")
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
         }
         SettingsCard(title: "Data sources") {
-            Text("NOAA Space Weather Prediction Center · NOAA National Hurricane Center · USGS Earthquake Hazards Program · NASA FIRMS · NASA SDO · Open-Meteo · OpenStreetMap Nominatim · CelesTrak · AMSAT · Launch Library 2 (The Space Devs) · POTA · SOTA · WWFF · Natural Earth. Every pane shows its source, the age of its data and Live, Stale or Offline.")
+            Text("NOAA Space Weather Prediction Center (incl. Kyoto WDC Dst) · NOAA National Hurricane Center · USGS Earthquake Hazards Program · NASA FIRMS · NASA SDO · Open-Meteo · OpenStreetMap Nominatim · CelesTrak · AMSAT · Launch Library 2 (The Space Devs) · N0NBH HamQSL · POTA · SOTA · WWFF · Natural Earth. Every pane shows its source, the age of its data and Live, Stale or Offline.")
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
             Text("HamClock Pro \(Net.version)").font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary)
         }

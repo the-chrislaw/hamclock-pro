@@ -6,6 +6,15 @@ struct MapView: Equatable {
     var centre = Centre.world
     var zoom = 1.0
     var longPath = false
+
+    static let zooms: [Double] = [1, 2, 3, 4]
+
+    /// A saved view; anything unknown or out of range falls back to the default.
+    static func restored(centre: String?, zoom: Double?, longPath: Bool?) -> MapView {
+        MapView(centre: centre.flatMap(Centre.init(rawValue:)) ?? .world,
+                zoom: zoom.flatMap { zooms.contains($0) ? $0 : nil } ?? 1,
+                longPath: longPath ?? false)
+    }
 }
 
 /// Equirectangular world map drawn with Canvas from the shared Natural Earth tables
@@ -58,7 +67,8 @@ struct WorldMapView: View {
             }
         }
         var markers = MapMarkers(ctx: ctx, theme: theme, now: now, pt: proj.point, settings: settings, feeds: feeds, sats: sats,
-                                 sub: hasSun ? sub : nil, longPath: view.longPath)
+                                 sub: hasSun ? sub : nil, longPath: view.longPath,
+                                 bounds: CGRect(origin: .zero, size: size))
         markers.draw()
     }
 

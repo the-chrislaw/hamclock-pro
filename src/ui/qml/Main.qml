@@ -18,6 +18,7 @@ ApplicationWindow {
     // Kiosk first boot (--first-run): no station yet, so start in Settings.
     Component.onCompleted: {
         if (firstRun && !station.configured) settingsLayer.visible = true
+        if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
         if (nativeMenuBar) createMacMenuBar()
     }
 
@@ -40,6 +41,10 @@ ApplicationWindow {
         bar.pathToggleRequested.connect(() => worldMap.showPath = !worldMap.showPath)
         bar.appearanceRequested.connect(value => appSettings.appearance = value)
     }
+
+    // iPhone/iPad: the status bar, home indicator and landscape side insets take the
+    // page colour (they showed black bands in the light theme).
+    Binding { target: safeArea; property: "backdrop"; value: Theme.canvas }
 
     SystemPalette { id: systemPalette }
     Binding {
@@ -304,7 +309,7 @@ ApplicationWindow {
                     map: worldMap
                     x: 4 * Theme.scale
                     y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
-                    width: Math.min(implicitWidth, worldMap.width - 8 * Theme.scale)
+                    maxWidth: worldMap.width - 8 * Theme.scale
                     height: Math.min(implicitHeight, worldMap.height - y - 4 * Theme.scale)
                     onClosed: mapMenuButton.closedAt = Date.now()
                 }

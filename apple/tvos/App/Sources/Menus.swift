@@ -132,18 +132,24 @@ struct MapMenuView: View {
                 ForEach(MapView.Centre.allCases, id: \.self) { c in
                     Button(c == .world ? "World" : c == .de ? "DE" : "DX") { view.centre = c }
                         .buttonStyle(ChipStyle(primary: view.centre == c))
+                        .accessibilityIdentifier("centre_\(c.rawValue)")
+                        .accessibilityAddTraits(view.centre == c ? .isSelected : [])
                         .focused($centreFocus, equals: c)
                         .disabled(c != .world && !settings.configured)
                 }
             }
             row("Zoom") {
-                ForEach([1.0, 2, 3, 4], id: \.self) { z in
+                ForEach(MapView.zooms, id: \.self) { z in
                     Button("\(Int(z))×") { view.zoom = z }.buttonStyle(ChipStyle(primary: view.zoom == z))
+                        .accessibilityIdentifier("zoom_\(Int(z))")
+                        .accessibilityAddTraits(view.zoom == z ? .isSelected : [])
                 }
             }
             row("Path") {
                 Button("Short path") { view.longPath = false }.buttonStyle(ChipStyle(primary: !view.longPath))
+                    .accessibilityIdentifier("path_short")
                 Button("Long path") { view.longPath = true }.buttonStyle(ChipStyle(primary: view.longPath))
+                    .accessibilityIdentifier("path_long")
             }
             Text("Show on map").font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary)
             LayerGrid()

@@ -210,11 +210,18 @@ std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double fro
     double aos = from;
     bool in_pass = up;
     double best_t = from, best_el = up ? elev(from) : -90;
-    for (double t = from + step; t <= from + horizon_s && static_cast<int>(out.size()) < max_passes; t += step) {
+    // Far below the horizon the elevation cannot change faster than ~0.3 deg/s (range >= 1600 km at
+    // LEO speed), so the scan may leap towards min_el instead of sampling every 20 s. 0.5 deg/s
+    // leaves a margin; a pass is never skipped because the leap ends before min_el can be reached.
+    constexpr double kMaxElRateDegS = 0.5, kMaxLeapS = 600.0;
+    double dt = step, prev_t = from;
+    for (double t = from + step; t <= from + horizon_s && static_cast<int>(out.size()) < max_passes; t += dt) {
         const double el = elev(t);
+        const double gap = min_el - el;
+        dt = (el < min_el) ? std::clamp(0.9 * gap / kMaxElRateDegS, step, kMaxLeapS) : step;
         const bool now_up = el >= min_el;
         if (now_up && !in_pass) {
-            aos = cross(t - step, t);
+            aos = cross(prev_t, t);
             in_pass = true;
             best_el = el;
             best_t = t;
@@ -222,7 +229,7 @@ std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double fro
             if (el > best_el) { best_el = el; best_t = t; }
         } else if (in_pass) {
             cur.aos = static_cast<std::int64_t>(std::llround(aos));
-            cur.los = static_cast<std::int64_t>(std::llround(cross(t - step, t)));
+            cur.los = static_cast<std::int64_t>(std::llround(cross(prev_t, t)));
             // Refine the peak around the best sample.
             double lo = best_t - step, hi = best_t + step;
             for (int i = 0; i < 30; ++i) {
@@ -235,6 +242,7 @@ std::vector<SatPass> SatellitePropagator::passes(const Observer& obs, double fro
             in_pass = false;
             best_el = -90;
         }
+        prev_t = t;
     }
     return out;
 }

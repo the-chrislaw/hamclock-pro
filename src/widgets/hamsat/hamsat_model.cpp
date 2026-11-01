@@ -1,6 +1,7 @@
 #include "hamsat_model.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include <QCryptographicHash>
 #include <QTimer>
 
 namespace hamclock {
@@ -42,19 +43,35 @@ HamsatModel::HamsatModel(const WidgetContext& context, QObject* parent)
             key_rejected_ = true;
             source_->refreshNow();
         }
+        emit activationsChanged();
         refreshState();
     });
-    if (settings_) connect(settings_, &AppSettings::accountsChanged, this, [this] {
-        const bool has_key = !settings_->hamsatKey().isEmpty();
-        if (has_key != attempt_with_key_ || key_rejected_) {
-            key_rejected_ = false;
-            source_->refreshNow();
-        }
+    const auto digest = [this] {
+        return QCryptographicHash::hash(settings_->hamsatKey().toUtf8(), QCryptographicHash::Sha256);
+    };
+    if (settings_) key_digest_ = digest();
+    if (settings_) connect(settings_, &AppSettings::accountsChanged, this, [this, digest] {
+        // Only a new, replaced or removed key refetches; other accounts changing do not.
+        if (digest() == key_digest_) return;
+        key_digest_ = digest();
+        key_rejected_ = false;
+        fetched_with_key_ = false;
+        emit activationsChanged();
+        source_->refreshNow();
     });
     connect(this, &WidgetModel::ageChanged, this, [this] { emit activationsChanged(); refreshState(); });
 }
 
 void HamsatModel::start() { source_->start(); }
+
+QString HamsatModel::keyStatus() const {
+    if (!settings_ || !settings_->hasHamsatKey()) return "none";
+    if (key_rejected_) return "rejected";
+    if (personalised()) return "accepted";
+    if (!fetched_with_key_) return "checking";
+    // hams.at answers a key it does not know with 200 and the public list.
+    return feed_.activations.empty() ? "unknown" : "rejected";
+}
 
 bool HamsatModel::hasNext() const { return !hamsat::upcoming(feed_, now(), 1).empty(); }
 

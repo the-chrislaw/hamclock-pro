@@ -24,6 +24,11 @@ jobs:
           - { name: asan-ubsan, flags: "-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=undefined" }
     steps:
       - uses: actions/checkout@v4
+      # iCloud Drive (Documents sync) makes "name 2.ext" copies in checkouts; never let them in.
+      - name: Reject iCloud duplicate files
+        run: |
+          dups=$(git ls-files | grep -E '(^|/)[^/]* [0-9]+(\.[^/]*)?$' || true)
+          if [ -n "$dups" ]; then echo "iCloud-style duplicate files are tracked:"; echo "$dups" | head -50; exit 1; fi
       - name: Install dependencies
         run: |
           sudo apt-get update

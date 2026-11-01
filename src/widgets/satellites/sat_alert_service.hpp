@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QVariantList>
 #include <functional>
+#include <set>
 #include <vector>
 
 namespace hamclock {
@@ -113,7 +114,7 @@ private:
     QTimeZone zone() const;
     void apply(const SatAlertPrefs& next);
     void predict();
-    QString predictionKey(const std::vector<Tle>& fresh) const;
+    QString predictionKey() const;
     void replan();
     void pushToSystem();
     void tick();
@@ -131,6 +132,7 @@ private:
     bool predicted_ = false;
     int prediction_runs_ = 0;
     int elements_version_ = 0;
+    std::set<int> predicted_norads_;   // satellites whose passes are in raw_passes_
     QString raw_key_;                  // inputs of raw_passes_ (see predictionKey)
     std::vector<AlertPass> raw_passes_; // every selected pass, horizon to horizon, unfiltered      // a prediction ran (not just "waiting for elements")
     bool push_in_flight_ = false;

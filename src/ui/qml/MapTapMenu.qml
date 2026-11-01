@@ -44,8 +44,10 @@ Popup {
         else error = "Satellite not in the pass list"
     }
     function setDe() {
+        // The station's time zone moves with it (kept only where no zone is known, e.g. mid-ocean).
+        const zone = timeZones.suggestZone(latitude, longitude)
         error = appSettings.saveStation(appSettings.callsign, latitude, longitude,
-                                        appSettings.dxLatitude, appSettings.dxLongitude, appSettings.deZone)
+                                        appSettings.dxLatitude, appSettings.dxLongitude, zone.length ? zone : appSettings.deZone)
         if (error === "") close()
     }
     function setDx() {

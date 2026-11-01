@@ -30,12 +30,16 @@ HCLocationDelegate* g_delegate = nil;
     [self finishWithFix:fix error:nil];
 }
 - (void)locationManager:(CLLocationManager*)m didFailWithError:(NSError*)e {
-    [self finishWithFix:hamclock::LocationFix() error:@"The position could not be determined. Check Location Services in System Settings."];
+    [self finishWithFix:hamclock::LocationFix() error:@"The position could not be determined. Check Location Services in Settings."];
 }
 - (void)locationManagerDidChangeAuthorization:(CLLocationManager*)m {
     if (m.authorizationStatus == kCLAuthorizationStatusDenied || m.authorizationStatus == kCLAuthorizationStatusRestricted)
-        [self finishWithFix:hamclock::LocationFix() error:@"Location access is off for HamClock Pro. Allow it in System Settings > Privacy & Security."];
-    else if (m.authorizationStatus == kCLAuthorizationStatusAuthorizedAlways)
+        [self finishWithFix:hamclock::LocationFix() error:@"Location access is off for HamClock Pro. Allow it in Settings > Privacy & Security."];
+    else if (m.authorizationStatus == kCLAuthorizationStatusAuthorizedAlways
+#if TARGET_OS_IPHONE
+             || m.authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse // iOS only; unavailable in the macOS SDK
+#endif
+             )
         [m requestLocation];
 }
 @end
