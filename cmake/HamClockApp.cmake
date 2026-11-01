@@ -406,6 +406,21 @@ if(BUILD_TESTING)
         set_tests_properties(qml-app-truncation-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
+    # Text and buttons stay out of the safe-area insets, and the page does not add them on top of the header
+    # (exit 7). The header, page and overlays ignored the top inset on iPad when the window filled the screen.
+    foreach(layout 834x1210=0,24,0,20 1210x834=0,24,0,20 393x852=0,59,0,34 852x393=59,0,59,21 1024x800=0,0,0,0)
+        string(REPLACE "=" ";" layout_parts ${layout})
+        list(GET layout_parts 0 size)
+        list(GET layout_parts 1 insets)
+        add_test(NAME qml-safe-area-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-safe-${size}
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-safe-${size}.png --size ${size} --safe-area ${insets} --allow-truncation)
+        add_test(NAME qml-safe-area-settings-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-safe-settings-${size}
+            --settings accounts --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-safe-settings-${size}.png --size ${size} --safe-area ${insets} --allow-truncation)
+        add_test(NAME qml-safe-area-first-run-${size} COMMAND hamclock-pro --offline --first-run --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-safe-first-${size}
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-safe-first-${size}.png --size ${size} --safe-area ${insets} --allow-truncation)
+        set_tests_properties(qml-safe-area-${size} qml-safe-area-settings-${size} qml-safe-area-first-run-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
     # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
     # 1920x1080 and 2560x1440 add the adaptive grid with a station (#638: all slots were 0x0; exit 4 reports an empty pane slot).
     foreach(size 800x480 1024x600 1920x1080 2560x1440)

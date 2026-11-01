@@ -2,10 +2,11 @@
 // Safe-area insets (notch, home indicator, rounded corners) for the QML root.
 // On iPad the native UIView reports them in points; everywhere else they stay
 // zero, so layouts are unchanged on the Pi and macOS. QML binds its page
-// margins to left/top/right/bottom. On iOS the window stays inside the safe
-// area; `backdrop` is painted behind the status bar, home indicator and the
-// landscape side insets (black bands by default), with status bar text that
-// stays readable on it.
+// margins to left/top/right/bottom. The insets are relative to the window: zero
+// when Qt keeps it inside the safe area, the full status bar height when it fills
+// the screen (the iPad Simulator with Qt 6.5). `backdrop` is painted behind the
+// status bar, home indicator and the landscape side insets (black bands by
+// default), with status bar text that stays readable on it.
 #include <QColor>
 #include <QObject>
 #include <QMarginsF>

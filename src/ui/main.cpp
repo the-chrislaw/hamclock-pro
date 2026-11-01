@@ -43,9 +43,26 @@
 #include <QScreen>
 #include <QTimer>
 #include <QtQml>
+#include <array>
+#include <cmath>
 #include <cstdio>
+#include <optional>
 
 namespace {
+    constexpr qreal kSafeAreaToleranceDp = 0.5;
+
+    std::optional<QMarginsF> parse_insets(const QString& text) {
+        const auto parts = text.split(',');
+        if (parts.size() != 4) return std::nullopt;
+        std::array<qreal, 4> values{};
+        for (int i = 0; i < 4; ++i) {
+            bool ok = false;
+            values[i] = parts[i].toDouble(&ok);
+            if (!ok) return std::nullopt;
+        }
+        return QMarginsF(values[0], values[1], values[2], values[3]);
+    }
+
     // Counts visible, non-empty Text-like items whose text is cut off (issue
     // #152). Items that elide on purpose set objectName "elideOk".
     int count_clipped(QQuickItem* item);
@@ -66,6 +83,42 @@ namespace {
         found += count_clipped(item);
         for (auto* child : item->childItems()) found += count_truncated(child);
         return found;
+    }
+
+    // --safe-area: counts visible text and buttons that reach into the given insets of
+    // the window (the status bar, notch and home indicator on iPhone and iPad). `shown` is
+    // the part of the window that clipping ancestors leave visible, so scrolled-away
+    // content does not count.
+    int count_safe_area_overlaps(QQuickItem* item, const QMarginsF& insets, const QRectF& window, const QRectF& shown) {
+        if (!item || !item->isVisible() || item->opacity() <= 0.0) return 0;
+        int found = 0;
+        const QRectF box = item->mapRectToScene(item->boundingRect());
+        const QRectF part = box & shown;
+        if (!item->property("text").toString().isEmpty() && !part.isEmpty()) {
+            // Only the top and sides: content running off the bottom is free to scroll there.
+            if (part.top() < insets.top() - kSafeAreaToleranceDp || part.left() < insets.left() - kSafeAreaToleranceDp ||
+                part.right() > window.right() - insets.right() + kSafeAreaToleranceDp) {
+                std::fprintf(stderr, "IN SAFE AREA: \"%s\" at %.1f,%.1f %.1fx%.1f\n",
+                             qPrintable(item->property("text").toString()), part.x(), part.y(), part.width(), part.height());
+                ++found;
+            }
+        }
+        const QRectF child_shown = item->clip() ? part : shown;
+        for (auto* child : item->childItems()) found += count_safe_area_overlaps(child, insets, window, child_shown);
+        return found;
+    }
+
+    // The header and the page must share one inset: with the header showing, the page
+    // starts right under it instead of adding the status bar height a second time.
+    bool page_gap_below_header(const QQuickWindow& window) {
+        const auto* header = window.property("header").value<QQuickItem*>();
+        const auto* page = window.findChild<QQuickItem*>("pageGrid");
+        if (!header || !page || !header->isVisible()) return false;
+        const qreal header_bottom = header->mapToScene({0, header->height()}).y();
+        const qreal page_top = page->mapToScene({0, 0}).y();
+        if (std::abs(page_top - header_bottom) <= kSafeAreaToleranceDp) return false;
+        std::fprintf(stderr, "PAGE GAP: header ends at %.1f, page starts at %.1f\n", header_bottom, page_top);
+        return true;
     }
 
     // Text whose painted extent runs outside the nearest clipping ancestor or the
@@ -199,7 +252,8 @@ int main(int argc, char** argv) {
     const QCommandLineOption open_settings("settings", "Open Settings at a section at start: station, accounts, display, screen, spots, hardware, advanced or about, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
-    for (const auto& option : {check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    const QCommandLineOption fake_safe_area("safe-area", "With --screenshot, lay out as if the iOS safe-area insets were L,T,R,B and fail (exit 7) when text or a button reaches into them.", "L,T,R,B");
+    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -307,6 +361,12 @@ int main(int argc, char** argv) {
     // Declared before the engine so it outlives it: QML bindings on safeArea
     // re-evaluate during engine teardown and must not see a null object.
     hamclock::SafeArea safe_area;
+    const auto insets = parse_insets(parser.value(fake_safe_area));
+    if (parser.isSet(fake_safe_area) && !insets) {
+        std::fprintf(stderr, "--safe-area %s: expected L,T,R,B.\n", qPrintable(parser.value(fake_safe_area)));
+        return 2;
+    }
+    if (insets) safe_area.setInsets(*insets);
     hamclock::TextEntryHint text_entry_hint;
     text_entry_hint.refresh();
     QQmlApplicationEngine engine;
@@ -382,7 +442,7 @@ int main(int argc, char** argv) {
         if (window->contentItem()->size().toSize() != wanted) window->contentItem()->setSize(wanted);
         const auto out = parser.value(screenshot);
         QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation),
-                                                fill_slot = parser.isSet(check_fill) ? check_fill_slot : -1] {
+                                                fill_slot = parser.isSet(check_fill) ? check_fill_slot : -1, insets] {
             if (window->contentItem()->size().toSize() != window->size()) {
                 std::fprintf(stderr, "Content item is not window-sized: layout would be cropped\n");
                 QCoreApplication::exit(6);
@@ -390,12 +450,15 @@ int main(int argc, char** argv) {
             }
             wait_for_settled_panes(window->contentItem());
             const int truncated = count_truncated(window->contentItem());
+            const QRectF whole(QPointF(0, 0), QSizeF(window->size()));
+            const bool unsafe = insets && (count_safe_area_overlaps(window->contentItem(), *insets, whole, whole) > 0 ||
+                                           page_gap_below_header(*window));
             const QImage image = window->grabWindow();
             const bool underfilled = fill_slot >= 0 && report_pane_fill(window->contentItem(), image, fill_slot);
             const bool saved = image.save(out);
             std::fprintf(saved ? stdout : stderr, saved ? "Saved %s\n" : "Could not save %s\n",
                          qPrintable(out));
-            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : underfilled ? 5 : 0);
+            QCoreApplication::exit(!saved ? 1 : qml_warnings ? 3 : truncated && !report_only ? 4 : underfilled ? 5 : unsafe ? 7 : 0);
         });
     }
     return app.exec();
