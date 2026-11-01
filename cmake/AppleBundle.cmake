@@ -2,10 +2,19 @@
 # after the app target exists; does nothing on Linux. The macOS part is skipped on
 # iOS, which has its own block at the end (Qt generates the iOS plist).
 if(APPLE AND NOT IOS AND TARGET hamclock-pro)
+    # The Mac App Store build shares the iOS App Store record (universal purchase),
+    # so CI passes -DHAMCLOCK_MACOS_BUNDLE_ID=com.chrislaw.hamclockpro and a rising
+    # -DHAMCLOCK_BUILD_NUMBER. The Developer ID dmg keeps the defaults.
+    set(HAMCLOCK_MACOS_BUNDLE_ID "org.hamclockpro.app" CACHE STRING "macOS bundle identifier")
+    set(_mac_build_number "${PROJECT_VERSION}")
+    if(HAMCLOCK_BUILD_NUMBER)
+        set(_mac_build_number "${HAMCLOCK_BUILD_NUMBER}")
+    endif()
     set_target_properties(hamclock-pro PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${HAMCLOCK_MACOS_BUNDLE_ID}"
         MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/packaging/apple/Info.plist.in
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
-        MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
+        MACOSX_BUNDLE_BUNDLE_VERSION "${_mac_build_number}")
 endif()
 
 # App icon: AppIcon.icns is built from packaging/apple/AppIcon.png with the

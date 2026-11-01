@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Create (or delete) an iOS or tvOS App Store provisioning profile through the App Store
+"""Create (or delete) an iOS, tvOS or macOS App Store provisioning profile through the App Store
 Connect API, for CI archives signed manually with an imported Apple Distribution
 certificate. Needs `pip install pyjwt cryptography`. Secrets come from the
 environment and are never printed.
 
   asc_profile.py create <bundle-id> <cert.pem> <profile-name> <out.mobileprovision> [profile-type]
-      profile-type defaults to IOS_APP_STORE (TVOS_APP_STORE for Apple TV);
+      profile-type defaults to IOS_APP_STORE (TVOS_APP_STORE for Apple TV, MAC_APP_STORE for the Mac App Store);
       prints the profile id and uuid as "ID UUID"
   asc_profile.py delete <profile-id>
 

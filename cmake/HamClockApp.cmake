@@ -27,8 +27,15 @@ add_library(hamclock-widget-core STATIC
     src/ui/app_settings.cpp
     src/ui/app_settings_accounts.cpp
     src/ui/pane_grid.cpp
+    src/platform/file_access.cpp
     src/platform/settings.cpp)
 target_link_libraries(hamclock-widget-core PUBLIC hamclock-map-core hamclock-credential-store Qt6::Core Qt6::Gui Qt6::Network)
+# Open panel and security-scoped bookmarks for the sandboxed Mac App Store build.
+if(APPLE AND NOT IOS)
+    enable_language(OBJCXX)
+    target_sources(hamclock-widget-core PRIVATE src/platform/file_access_mac.mm)
+    target_link_libraries(hamclock-widget-core PUBLIC "-framework AppKit")
+endif()
 set_target_properties(hamclock-widget-core PROPERTIES AUTOMOC ON)
 # "Find it in the sky" (#573) has no screen yet. Until it does, iOS builds leave
 # out its sensor code, frameworks and permission prompts (see AppleBundle.cmake)
