@@ -5,8 +5,9 @@ import HamClock
 Card {
     id: root
     // Planets above the horizon at DE, highest first; rows that do not fit are dropped, not clipped.
-    // A tall pane spreads the rows over its height (each row at most about three lines high).
-    readonly property real rowH: Theme.fontCaption * 1.3 * 1.25 + Theme.gap
+    // A pane with height to spare grows the rows (Card scales short content to fill) instead of spreading them.
+    // One row's real pitch (line height plus spacing): a larger estimate drops a row that fits.
+    readonly property real rowH: Math.ceil(Theme.fontCaption * 1.3 * 1.2) + Theme.gap
     readonly property int rowsFit: Math.max(1, Math.floor((grid.parent ? grid.parent.height : 0) / rowH))
     readonly property int shown: root.widget ? Math.min(root.widget.rows.length, rowsFit) : 0
     Text {
@@ -18,7 +19,6 @@ Card {
     GridLayout {
         id: grid
         width: parent.width
-        height: root.tall ? parent.height : implicitHeight
         columns: 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
@@ -35,8 +35,6 @@ Card {
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
                 Layout.fillWidth: !first
-                Layout.fillHeight: root.tall
-                Layout.maximumHeight: Theme.fontBody * 3
             }
         }
     }

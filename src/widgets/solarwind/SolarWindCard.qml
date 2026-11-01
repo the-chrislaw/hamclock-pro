@@ -5,8 +5,8 @@ import HamClock
 Card {
     id: root
     readonly property bool bzSouth: widget && widget.hasBz && widget.bz <= -5
-    // Desktop panes (not the tuned 7-inch dense layout): the sparklines take the leftover height.
-    readonly property bool fillPlots: !Theme.dense
+    // Every pane, the 7-inch panels too: the sparklines take the leftover height.
+    readonly property bool fillPlots: true
     readonly property bool hasSpeed: widget !== null && widget.hasSpeed
     readonly property bool hasBz: widget !== null && widget.hasBz
     readonly property color speedColor: hasSpeed && widget.speed >= 800 ? Theme.bad
@@ -70,17 +70,21 @@ Card {
         width: parent.width
         height: root.fillPlots ? parent.height : implicitHeight
         spacing: Theme.gap * 0.4
+        // A fixed two-row model: the rows read their values through bindings. A model array rebuilt
+        // on every reading destroyed and recreated both rows, sometimes while the layout was placing
+        // them (a freed item in Qt's grid engine: SEGV on Linux CI).
         Repeater {
-            model: [
-                { label: "Wind", ok: root.hasSpeed,
-                  value: root.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
-                  color: root.speedColor, history: root.widget ? root.widget.speedHistory : [], zero: false },
-                { label: "Bz", ok: root.hasBz,
-                  value: root.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
-                  color: root.bzColor, history: root.widget ? root.widget.bzHistory : [], zero: true }
-            ]
+            model: 2
             Item {
-                required property var modelData
+                required property int index
+                readonly property bool isSpeed: index === 0
+                readonly property var modelData: isSpeed
+                    ? { label: "Wind", ok: root.hasSpeed,
+                        value: root.hasSpeed ? Math.round(root.widget.speed) + " km/s" : "",
+                        color: root.speedColor, history: root.widget ? root.widget.speedHistory : [], zero: false }
+                    : { label: "Bz", ok: root.hasBz,
+                        value: root.hasBz ? root.widget.bz.toFixed(1) + " nT" : "",
+                        color: root.bzColor, history: root.widget ? root.widget.bzHistory : [], zero: true }
                 readonly property real textWidth: Math.max(84 * Theme.scale, Math.ceil(widestValue.advanceWidth) + 2)
                 Layout.fillWidth: true
                 Layout.preferredHeight: 36 * Theme.scale
@@ -118,7 +122,9 @@ Card {
         visible: !root.compact
         width: parent.width
         height: parent.height
-        columns: width < 360 * Theme.scale ? 1 : 2
+        // From the card's size and scale, not this layout's own width: a column count that flips
+        // while the grid is laying itself out made Qt's grid engine read a freed item (Linux CI crash).
+        columns: (root.width - 2 * Theme.pad) / root.fit < 360 * Theme.scale ? 1 : 2
         columnSpacing: Theme.gap * 1.5
         rowSpacing: Theme.gap
         ColumnLayout {

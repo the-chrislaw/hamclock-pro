@@ -33,6 +33,10 @@ ColumnLayout {
         color: parent.available ? parent.valueColor : Theme.secondary
         font.pixelSize: Theme.fontValue
         font.weight: Font.DemiBold
+        // A value wider than the slot shrinks to fit instead of running out of the card.
+        fontSizeMode: Text.HorizontalFit
+        minimumPixelSize: Theme.fontBody
+        Layout.fillWidth: true
     }
     Text {
         visible: text.length > 0

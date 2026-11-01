@@ -5,10 +5,11 @@ import HamClock
 Card {
     id: root
     // Full layout (wide pane, tall pane, or a narrow one with room below, e.g. 1440p rows): summary lines, then the reports list fills the leftover height.
-    readonly property bool full: !compact || tall || height >= 260 * Theme.scale
+    readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        // A few reports: no long list to stretch, so the card grows and centres the block.
+        height: root.full && widget && widget.count > 4 ? parent.height : implicitHeight
         spacing: Theme.gap
         Metric {
             label: root.compact ? "Heard by" : "Stations hearing me"
@@ -37,8 +38,10 @@ Card {
             visible: widget && widget.hasData && widget.farthest !== ""
             text: widget ? widget.farthest : ""
             color: Theme.secondary; font.pixelSize: Theme.fontBody
-            elide: root.tall ? Text.ElideNone : Text.ElideRight
-            wrapMode: root.tall ? Text.WordWrap : Text.NoWrap
+            // Wraps (two lines in a small slot) rather than cutting the distance or band short.
+            wrapMode: Text.WordWrap
+            maximumLineCount: root.tall ? 100 : 2
+            elide: Text.ElideRight
             Layout.fillWidth: true
         }
         Text {
