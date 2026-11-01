@@ -23,6 +23,7 @@ QString describeVerdict(FixVerdict v);
 
 class DeviceLocation : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool available READ available CONSTANT)
 public:
     explicit DeviceLocation(QObject* parent = nullptr) : QObject(parent) {}
 
@@ -35,7 +36,7 @@ public:
     void fail(const QString& why);
 
     // Ask the OS for one fix; the result arrives as located() or failed().
-    void request();
+    Q_INVOKABLE void request();
 
 signals:
     void located(double lat, double lon);

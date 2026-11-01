@@ -11,7 +11,8 @@ Card {
     property bool exitArmed: false
 
     ColumnLayout {
-        width: parent.width
+        // Hidden on iOS, the card has zero width; wrapped labels at zero width loop the polish.
+        width: parent.width > 0 ? parent.width : implicitWidth
         spacing: Theme.gap
 
         ChoiceRow { label: "Turn the screen black when idle"
