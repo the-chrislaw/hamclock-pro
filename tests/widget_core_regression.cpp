@@ -158,6 +158,7 @@ int main(int argc, char** argv) {
         AppSettings settings({}, dir.path());
         check(!settings.configured(), "fresh install is unconfigured");
         check(!settings.saveStation("N0CALL", 95, 0, 0, 0, "").isEmpty(), "invalid latitude rejected");
+        check(settings.saveStation("  ", 37.77, -122.42, 51.5, -0.1, "") == "Add your callsign first.", "no callsign: says what to do");
         check(settings.saveStation("n0call", 37.77, -122.42, 51.5, -0.1, "America/Los_Angeles").isEmpty() &&
               settings.configured() && settings.callsign() == "N0CALL", "valid station saved, callsign uppercased");
         check(settings.hasDx(), "a DX target away from DE is set");

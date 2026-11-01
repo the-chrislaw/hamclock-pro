@@ -95,6 +95,8 @@ void AppSettings::setAppearance(const QString& appearance) {
 
 QString AppSettings::saveStation(const QString& callsign, double de_lat, double de_lon,
                                  double dx_lat, double dx_lon, const QString& de_zone) {
+    // Settings and the map's Set DE and Set DX all show this; the validator's own wording is for bad files.
+    if (callsign.trimmed().isEmpty()) return "Add your callsign first.";
     auto next = station_;
     // Set-DE passes the displayed (override) DX back; only a different value is an explicit DX edit.
     const bool kept_override = dx_override_ && dx_lat == station_.dx.latitude && dx_lon == station_.dx.longitude;
