@@ -216,3 +216,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-10-30 (fifth hourly run)
 - No qa issues for area F; no open PR of mine; #73 is another area's (left alone). F5 slice: `appstore-metadata-regression` checks `docs/appstore/metadata.md` against Apple's limits (name/subtitle 30, promotional text 170, description 4000, keywords 100 with no spaces after commas and no app name) for both the iOS and tvOS sections, so later edits cannot silently break App Store Connect pasting. Linux-only text test; no Apple code touched. Not done: screenshots, owner paste into App Store Connect. No on-device claims.
+
+## 2026-11-01 (hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (conflicting, left alone). #521: the Simulator build/launch/screenshot step was passing (per the issue comments) but still `continue-on-error`, so a launch crash would not show. Removed step-level `continue-on-error` so a crash on start fails that step; the job itself stays informational (`continue-on-error` at job level) until the Simulator flow has proven stable. Not done: tvOS launch check (needs Qt-free code), #513 device check. CI logs only; no on-device claims.

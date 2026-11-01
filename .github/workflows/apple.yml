@@ -386,8 +386,7 @@ jobs:
       # Simulator: Qt's prebuilt QML resource objects are device-only in this kit
       # ("building for iOS-simulator, but linking object built for iOS"), so the
       # Simulator build/screenshot is attempted separately and is informational.
-      - name: Simulator build and screenshot (experimental)
-        continue-on-error: true
+      - name: Simulator build, launch smoke test and screenshot (#521)
         run: |
           # Qt's iOS kit ships its QML resource objects tagged for the device
           # only (LC_BUILD_VERSION platform iOS), which the simulator link
