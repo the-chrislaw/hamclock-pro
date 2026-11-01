@@ -2,20 +2,25 @@
 // Path-specific HF reliability estimate for a DE -> DX pair. This is our own
 // compact, offline model (item B13 option C): it is NOT VOACAP or ITU-R P.533
 // and is labelled approximate wherever it is shown. Method, per band:
-//   * Path is split into equal F2 hops of at most 3000 km; each hop's midpoint
-//     is a control point.
-//   * foF2 at a control point: the noon value 5.5 + 0.06 * (SFI - 70) MHz,
-//     blended toward 45% of it at night by sin(solar elevation)^0.6, and
-//     reduced up to 40% toward the poles. MUF = foF2 / cos(incidence angle at
-//     300 km); the path MUF is the lowest control-point MUF.
+//   * Signal: the path is split into equal F2 hops of at most 3000 km; each hop's midpoint is a
+//     point for the loss sums below.
+//   * foF2 and M(3000)F2 at a control point: a compact fit to the CCIR maps of ITU-R P.1239 in
+//     SFI, season, geomagnetic latitude and time of day. Against those maps (all months, SFI 72
+//     to 203, |lat| <= 75) foF2 is within 17% rms with no bias, M(3000)F2 within 0.2.
+//   * Path MUF, after P.533 and P.1240: up to 4000 km, F2 MUF at mid-path and E MUF for short
+//     hops, the higher wins. Beyond that, F2(4000)MUF at the two points half a lowest-order hop
+//     from each end, the lower wins; the middle of a long path does not set it. F2 values are
+//     raised to the operational MUF by the P.1240 Table 1 ratio.
 //   * Absorption: ITU-R P.533-style D-layer loss per hop (scaled by 0.6, tuned so a daytime
 //     transatlantic 20m path loses about 10 dB), by solar zenith angle, summed. The secant is
 //     taken where the F2 ray crosses the D layer (P.533 i110).
 //   * SNR in 2.5 kHz = power + gain - free-space loss over the slanted path -
 //     absorption - 2 dB per extra ground reflection - noise (ITU-R P.372 quiet-rural
 //     man-made plus galactic, power-summed). Mode sets the SNR needed.
-//   * Reliability = P(f below the median MUF, logistic, +-6%) * P(SNR above
-//     the need, logistic, 4 dB) * geomagnetic factor (Kp >= 5 and polar paths).
+//   * Reliability = P(MUF supports f on a day of the month, P.533 eqs 9-10) * P(SNR above the
+//     need, logistic, 4 dB) * geomagnetic factor (Kp >= 5, and Kp >= 3 for paths reaching 60
+//     degrees geomagnetic). It lacks P.533's long-path field model, antenna patterns and E-layer
+//     screening, and takes SFI as if it were the smoothed index.
 // Short path by default, or the long path (other way round the globe) with `long_path`; takeoff angle is the ground elevation of the first hop.
 #include "../../domain/clock_state.hpp"
 #include <QString>
