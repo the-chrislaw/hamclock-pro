@@ -41,7 +41,7 @@ env:
 jobs:
   macos:
     name: macOS build and tests
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -82,11 +82,12 @@ jobs:
           test -d build-mac/hamclock-pro.app/Contents/Resources/qml/QtQuick
           build-mac/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-mac" --offline --size 1024x600 --screenshot "$RUNNER_TEMP/smoke-mac.png"
           test -s "$RUNNER_TEMP/smoke-mac.png"
-          # iPad-sized layout render (WIDGETS F4): 11" landscape. 1366x1024 does not fit the
-          # runner's display (the window is clamped and the app's crop guard fails), so it is not rendered here.
+          # iPad-sized layout render (WIDGETS F4): 11" landscape, from the offscreen truncation test.
+          # It can't be rendered on the runner's real display: macos-15's is smaller than 1180x820,
+          # so the window is clamped and the app's crop guard fails.
           mkdir -p ipad-size-shots
           for sz in 1180x820; do
-            build-mac/hamclock-pro.app/Contents/MacOS/hamclock-pro --config-dir "$RUNNER_TEMP/smoke-$sz" --offline --size "$sz" --screenshot "ipad-size-shots/ipad-$sz.png"
+            cp "build-mac/smoke-$sz.png" "ipad-size-shots/ipad-$sz.png"
             test -s "ipad-size-shots/ipad-$sz.png"
           done
           mv build-mac/hamclock-pro.dmg hamclock-pro-macos-unsigned.dmg
@@ -103,7 +104,7 @@ jobs:
 
   macos-universal:
     name: macOS universal build
-    runs-on: macos-14
+    runs-on: macos-15
     # Produces the distributable dmg: universal (arm64+x86_64), signed/notarized when secrets exist.
     # Nothing downstream consumes it and the `macos` job already covers build+tests,
     # so it only runs on main — on PRs it doubled the macOS minutes for no signal.
@@ -338,7 +339,7 @@ jobs:
     # Informational only (continue-on-error below), so it runs on main pushes,
     # not on every PR sync; still runs even when the widget job failed.
     if: ${{ !cancelled() && github.event_name == 'push' }}
-    runs-on: macos-14
+    runs-on: macos-15
     # Informational until the Qt Widgets dependency is removed (area A, QPainter
     # map renderer); a failure here does not block merges yet.
     continue-on-error: true
