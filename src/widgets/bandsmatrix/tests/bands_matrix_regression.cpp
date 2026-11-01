@@ -35,10 +35,16 @@ int main(int argc, char** argv) {
 
     WidgetContext context;
     bool fail_all = false;
+    QByteArray flux_override, kp_override;  // when set, the feed answers with this instead of the fixture
     context.transport = [&](const QUrl& url, FetchDone done) {
         FetchResult result;
+        const auto name = QFileInfo(url.path()).fileName();
         if (fail_all) result.error = "Host unreachable";
-        else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
+        else {
+            result.http_status = 200;
+            const auto& override_body = name == "10cm-flux.json" ? flux_override : kp_override;
+            result.body = !override_body.isEmpty() ? override_body : fixture(dir, name.toUtf8().constData());
+        }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
 
@@ -88,8 +94,58 @@ int main(int argc, char** argv) {
     // The hour turns: the matrix is recomputed from the new hour.
     const auto later = now.addSecs(3 * 3600);
     model.setClock([&] { return later; });
-    for (int i = 0; i < 40; ++i) app.processEvents();
-    check(model.startText() == "16Z" || model.startText() == "19Z", "recompute follows the clock when it ticks");
+    emit model.ageChanged();
+    check(model.startText() == "19Z", "the next tick after the hour turns moves the columns");
+
+    // New SFI in the same UTC hour reaches the path pane at once, not at the next hour.
+    {
+        BandsMatrixModel fresh(context);
+        for (auto* source : {&fresh.kpSource(), &fresh.fluxSource()}) { source->setClock([&] { return now; }); QFile::remove(source->cachePath()); }
+        fresh.setClock([&] { return now; });
+        fresh.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(fresh.hasMatrix(), "matrix before the new SFI");
+        const auto before = fresh.rows();
+        int changes = 0;
+        QObject::connect(&fresh, &BandsMatrixModel::matrixChanged, &fresh, [&] { ++changes; });
+        flux_override = R"([{"flux":230,"time_tag":"2026-10-12T21:00:00"}])";
+        fresh.fluxSource().refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        flux_override.clear();
+        check(changes == 1, "new SFI recomputes once");
+        check(fresh.rows() != before, "new SFI changes the matrix within the hour");
+
+        const auto before_kp = fresh.rows();
+        changes = 0;
+        kp_override = R"([{"time_tag":"2026-10-13T15:00:00","Kp":8.0,"a_running":207,"station_count":8}])";
+        fresh.kpSource().refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        kp_override.clear();
+        check(changes == 1, "new Kp recomputes once");
+        check(fresh.rows() != before_kp, "new Kp changes the matrix within the hour");
+
+        // Age ticks in the same hour do no work, with or without a matrix.
+        changes = 0;
+        emit fresh.ageChanged();
+        check(changes == 0, "age tick with a matrix does not recompute");
+    }
+    {
+        // No DX target: nothing to rate, so an age tick must not re-read options and notify the UI.
+        QTemporaryDir empty_dir;
+        AppSettings no_dx(empty_dir.filePath("station.conf"), empty_dir.path());
+        WidgetContext no_dx_context = context;
+        no_dx_context.settings = &no_dx;
+        BandsMatrixModel idle(no_dx_context);
+        for (auto* source : {&idle.kpSource(), &idle.fluxSource()}) { source->setClock([&] { return now; }); QFile::remove(source->cachePath()); }
+        idle.setClock([&] { return now; });
+        idle.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(!idle.hasMatrix(), "no station, no matrix");
+        int changes = 0;
+        QObject::connect(&idle, &BandsMatrixModel::matrixChanged, &idle, [&] { ++changes; });
+        emit idle.ageChanged();
+        check(changes == 0, "age tick with no matrix does not recompute");
+    }
 
     // Options file: mode and power change the label; out-of-range power is ignored.
     {

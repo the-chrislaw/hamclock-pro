@@ -26,11 +26,15 @@ BandsMatrixModel::BandsMatrixModel(const WidgetContext& context, QObject* parent
         connect(source, &PolledSource::updated, this, [this] { parse(); refreshState(); });
         connect(source, &PolledSource::failed, this, &BandsMatrixModel::refreshState);
     }
-    // The columns start at the current UTC hour, so recompute when the hour turns.
-    connect(this, &WidgetModel::ageChanged, this, [this] { recompute(); refreshState(); });
-    if (settings_) connect(settings_, &AppSettings::stationChanged, this, [this] { start_hour_ = -1; recompute(); refreshState(); });
+    // The columns start at the current UTC hour, so a tick only recomputes when the hour has
+    // turned. New data, a new station or new options recompute at once through their own signals.
+    connect(this, &WidgetModel::ageChanged, this, [this] {
+        if (has_matrix_ && now().toSecsSinceEpoch() / 3600 != start_hour_) recompute();
+        refreshState();
+    });
+    if (settings_) connect(settings_, &AppSettings::stationChanged, this, [this] { recompute(); refreshState(); });
     // Distance units (and the [bandsmatrix] options) can change without a station edit.
-    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, [this] { start_hour_ = -1; recompute(); });
+    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &BandsMatrixModel::recompute);
 }
 
 void BandsMatrixModel::start() {
@@ -55,14 +59,11 @@ void BandsMatrixModel::parse() {
     // Both indices are needed; a matrix from one would be a guess.
     have_inputs_ = kp && flux;
     if (have_inputs_) { kp_ = kp->value; sfi_ = flux->value; }
-    start_hour_ = -1;
     recompute();
 }
 
 void BandsMatrixModel::recompute() {
-    const bool was = has_matrix_;
     const qint64 hour = now().toSecsSinceEpoch() / 3600;
-    if (hour == start_hour_ && was) return;
     has_matrix_ = false;
     cells_.clear();
     muf_.clear();
