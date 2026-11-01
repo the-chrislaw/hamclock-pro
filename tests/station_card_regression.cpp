@@ -98,10 +98,14 @@ int main(int argc, char** argv) {
     QObject* station = stub.create();
     check(station != nullptr, "station stub loads: " + stub.errorString().toStdString());
     if (!station) return 1;
+    station->setParent(&engine);
     engine.rootContext()->setContextProperty("station", station);
     QQmlComponent settings_stub(&engine);
     settings_stub.setData("import QtQml\nQtObject { property int bannerBackground: 0; property int bannerStyle: 0; property string loadError: \"\" }", QUrl());
     QObject* settings = settings_stub.create();
+    check(settings != nullptr, "settings stub loads");
+    if (!settings) return 1;
+    settings->setParent(&engine);
     engine.rootContext()->setContextProperty("appSettings", settings);
 
     // The 800x480 panel's station column: Main.qml's scale and dense mode, 165 * 0.85 wide.
