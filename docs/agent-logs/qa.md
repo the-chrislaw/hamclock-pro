@@ -625,3 +625,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 82b7713 (merged since cb0f23d: adaptive pane fill #701, space weather rows #723, iPhone safe-area/map-menu/UIScene #697 #698 #718, macOS-15 runners #751, my run 111 log #750). Built main, 289/289 ctest pass; rendered light/dark at 800x480, 1024x600 and 1920x1080 and viewed them. Layouts fill panes with no clipping, except the item below.
 - Opened: #753 (Solar wind stale footer elided at 800x480). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy and the adaptive pane work looks good on the Pi sizes. Remaining risk is elided footer text the truncation guard misses (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 113
+- Last reviewed commit: d4dde95 (merged since 82b7713: settings rewrite #714 with instant save, setup mode, collapsed groups and touch keyboard; solar wind footer fix #758 for #753; station card 800x480 #757; iPad header safe area #755; Satellites no-station #760; tvOS panes #736; CI #756). Built main; ctest 1 failure, `qml-settings-setup-1512x982` (Find button elided). Viewed the 800x480 and 1024x600 smoke renders.
+- Opened: #762 (setup-mode Find button collapses to "..." at 1512x982). Closed: none (#753 not verified as fixed from renders; offline footers still elide, noted on #532 in #762). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is mostly healthy on the Pi sizes. The settings rewrite is large and landed with a failing local test, so watch Settings layouts closely.
