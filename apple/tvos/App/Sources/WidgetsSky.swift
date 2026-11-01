@@ -180,19 +180,27 @@ struct LaunchesWidget: View {
     let focused: Bool
     var body: some View {
         let nowMs = Int64(now.timeIntervalSince1970 * 1000)
-        let list = (feeds.launches.value ?? []).filter { $0.net_ms >= nowMs - 2 * 3_600_000 }.prefix(4)
+        // Three two-line rows fit a 390 pt dashboard pane, so no row loses its second line.
+        let list = (feeds.launches.value ?? []).filter { $0.net_ms >= nowMs - 2 * 3_600_000 }.prefix(3)
         Card(title: "Launches", chooser: true, state: feeds.launches.state(now), status: "Launch Library 2",
              age: Age.text(feeds.launches.status.fetched, now: now), focused: focused) {
             if list.isEmpty { Note(text: feeds.launches.value == nil ? "No data" : "No upcoming launches listed.") }
             ForEach(Array(list.enumerated()), id: \.offset) { _, l in
+                // Library names read "Rocket | Mission": the mission gets the full width, the
+                // rocket (or the provider, for a plain name) shares the line with the countdown.
+                let parts = cText(l.name).components(separatedBy: " | ")
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text(cText(l.name)).foregroundStyle(theme.ink).lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text(cString(32) { hcp_launch_countdown(l.net_ms, nowMs, $0, $1) }).foregroundStyle(theme.accent).fixedSize()
-                    }.font(.system(size: Theme.fontCaption, weight: .medium))
-                    Text(cText(l.provider) + " · " + cText(l.status) + (cText(l.hint).isEmpty ? "" : " · " + cText(l.hint)))
-                        .font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary).lineLimit(1)
+                    Text(parts.last ?? "").font(.system(size: Theme.fontCaption, weight: .medium))
+                        .foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.85)
+                    HStack(spacing: 8) {
+                        Text((parts.count > 1 ? parts[0] : cText(l.provider)) + " · " + cText(l.status)
+                             + (cText(l.hint).isEmpty ? "" : " · " + cText(l.hint)))
+                            .font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary)
+                            .lineLimit(1).minimumScaleFactor(0.85)
+                        Spacer(minLength: 0)
+                        Text(cString(32) { hcp_launch_countdown(l.net_ms, nowMs, $0, $1) })
+                            .font(.system(size: Theme.fontCaption - 3, weight: .medium)).foregroundStyle(theme.accent).fixedSize()
+                    }
                 }
             }
         }

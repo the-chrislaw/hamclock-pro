@@ -8,6 +8,14 @@ final class RemoteWalkthroughTests: XCTestCase {
     private let remote = XCUIRemote.shared
     private var app: XCUIApplication!
 
+    /// In two CI runs, screenshots taken about 30 to 120 s into the first test showed the tvOS
+    /// boot logo while the app kept answering (tvos-widgets-2/3, then tvos-dense-2 to 4).
+    /// Wait that window out once, so every screenshot shows the app.
+    override class func setUp() {
+        super.setUp()
+        sleep(120)
+    }
+
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()

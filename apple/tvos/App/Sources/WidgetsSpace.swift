@@ -114,7 +114,7 @@ struct BandsWidget: View {
                 let bands = outlook(sfi: sfi, kp: kp)
                 // Two-up, as BandsCard.qml in a narrow pane: 80–20 m beside 17–10 m.
                 // The two tables just fill the pane: wider gaps clip the last "Night".
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: 6) {
                     table(Array(bands.prefix(4)))
                     table(Array(bands.dropFirst(4)))
                 }
@@ -134,7 +134,7 @@ struct BandsWidget: View {
     }
 
     private func table(_ bands: [HcpBand]) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 4, verticalSpacing: 2) {
+        Grid(alignment: .leading, horizontalSpacing: 5, verticalSpacing: 2) {
             GridRow {
                 Text("")
                 Text("Day").foregroundStyle(theme.secondary)

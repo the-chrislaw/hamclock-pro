@@ -55,17 +55,23 @@ struct QuakesWidget: View {
             if let top {
                 Text(String(format: "M%.1f %@", top.magnitude, SpaceText.quakeClass(top.magnitude)))
                     .font(.system(size: Theme.fontValue * 0.85, weight: .semibold)).foregroundStyle(top.magnitude >= 6 ? theme.bad : theme.ink)
-                Text(top.place).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink).lineLimit(1)
-                ForEach(list.prefix(4)) { q in
-                    HStack {
-                        Text(String(format: "M%.1f", q.magnitude)).frame(width: 90, alignment: .leading)
-                        Text(q.place).lineLimit(1)
-                        Spacer(minLength: 4)
-                        Text(Age.text(q.time, now: now)).fixedSize()
+                Text(top.place).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink)
+                    .lineLimit(1).minimumScaleFactor(0.85)
+                // Three rows fit a 390 pt dashboard pane; the place gets all the width left over.
+                ForEach(list.prefix(3)) { q in
+                    HStack(spacing: 8) {
+                        Text(String(format: "M%.1f", q.magnitude)).frame(width: 76, alignment: .leading)
+                        Text(Self.region(q.place)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(Age.text(q.time, now: now).replacingOccurrences(of: " ago", with: "")).fixedSize()
                     }.font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary)
                 }
             } else { Note(text: feeds.quakes.value == nil ? "No data" : "No M2.5+ quakes in the past day.") }
         }
+    }
+
+    /// USGS "165 km NW of Port-Olry, Vanuatu" without the offset: "Port-Olry, Vanuatu".
+    private static func region(_ place: String) -> String {
+        place.range(of: " of ").map { String(place[$0.upperBound...]) } ?? place
     }
 }
 
