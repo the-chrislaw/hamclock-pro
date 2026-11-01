@@ -48,6 +48,7 @@ Card {
                 ctx.reset()
                 const label = Theme.fontCaption
                 const r = Math.min(width, height) / 2 - label - 2
+                if (r <= 0) return   // not laid out yet; arc() throws on a negative radius
                 if (r <= 4 || isNaN(azimuth)) return
                 const cx = width / 2, cy = height / 2
                 ctx.strokeStyle = Theme.divider

@@ -45,7 +45,9 @@ Card {
                 // counter-clockwise tilt away from the default (lit right when waxing, left when waning)
                 ctx.rotate(-(tilt - (elong < 180 ? -90 : 90)) * Math.PI / 180);
                 ctx.translate(-width / 2, -height / 2);
-                const r = Math.min(width, height) / 2 - root.fit, cx = width / 2, cy = height / 2;
+                const r = Math.min(width, height) / 2 - root.fit
+                if (r <= 0) return   // not laid out yet; arc() throws on a negative radius
+                const cx = width / 2, cy = height / 2;
                 const k = Math.cos(elong * Math.PI / 180);   // 1 new .. -1 full
                 const litRight = elong < 180;
                 ctx.beginPath(); ctx.arc(cx, cy, r, 0, 2 * Math.PI);
