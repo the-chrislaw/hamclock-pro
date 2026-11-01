@@ -21,7 +21,9 @@ Transport with_fallback(Transport primary, QUrl fallback);
 bool is_tracked_satellite(const QString& tle_name);
 
 // Next amateur-satellite passes at the DE station: CelesTrak TLEs (cached,
-// refreshed daily) propagated offline with SGP4 from the system clock.
+// refreshed daily) propagated offline with SGP4 from the system clock. Without a station no
+// pass is computed and the state is "unconfigured"; elements still load, for the map's markers
+// and the Passes pane and pass alerts they feed.
 class SatellitesModel : public WidgetModel {
     Q_OBJECT
     Q_PROPERTY(bool hasData READ hasData NOTIFY changed)
@@ -86,6 +88,7 @@ private:
     void load();
     void load_transmitters();
     void refresh_detail();
+    void refresh_state();
 
     AppSettings* settings_;
     PolledSource* source_;

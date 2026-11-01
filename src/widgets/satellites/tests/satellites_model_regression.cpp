@@ -106,9 +106,41 @@ int main(int argc, char** argv) {
     QFile::remove(model.source().cachePath());
     QFile::remove(model.transmitterSource().cachePath());
     // Station not configured yet: data loads but no passes are invented.
+    const QString set_station = "Set your station location in Settings";
+    auto wants_station = [&] { return model.state() == "unconfigured" && model.statusText() == set_station; };
     model.start();
+    check(wants_station(), "no station -> asks for one before the first download answers");
     settle();
     check(model.hasData() && model.rows().isEmpty(), "no station -> no rows");
+    check(wants_station(), "no station -> asks for one once elements are in, never says live");
+    // Nothing is computed for a default position such as 0,0: no list, sky plot, alert or schedule.
+    check(model.skyTrack().isEmpty() && model.alert().isEmpty() && model.schedule().isEmpty(), "no station -> no pass products");
+    check(!model.selectByName("AO-7") && model.detail().isEmpty(), "no station -> no detail box");
+    {
+        // The map needs no station: the first two satellites are still drawn.
+        int labelled = 0;
+        for (const auto& l : MapOverlays::instance().layers())
+            if (l.id == "satellites") for (const auto& m : l.markers) if (!m.call.isEmpty()) ++labelled;
+        check(labelled == 2, "no station -> map markers still drawn");
+    }
+    model.recompute();
+    check(wants_station(), "no station -> periodic recompute keeps asking");
+    down = true;
+    model.source().refreshNow();
+    settle();
+    check(wants_station() && model.hasData(), "no station -> a failed refresh does not replace the request");
+    down = false;
+    model.source().refreshNow();
+    settle();
+    check(wants_station(), "no station -> a good refresh does not replace the request");
+    {
+        const QDateTime later = t0.addDays(60);
+        model.setClock([later] { return later; });
+        model.recompute();
+        check(wants_station() && model.allStale(), "no station -> old elements still ask for a station first");
+        model.setClock([&] { return t0; });
+        model.recompute();
+    }
 
     check(settings.saveStation("W1AW", 45.52, -122.68, 51.5, -0.12, "").isEmpty(), "station saved");
     settle();
@@ -238,6 +270,7 @@ int main(int argc, char** argv) {
         bool layer = false;
         for (const auto& l : MapOverlays::instance().layers()) if (l.id == "satellites") layer = true;
         check(model.hasData() && model.allStale() && model.rows().isEmpty() && !layer, "60-day-old elements -> stale, no rows or tracks");
+        check(model.state() == "stale", "old elements with a station keep the card's stale-elements text");
         model.setClock([&] { return t0; });
         model.recompute();
         check(!model.allStale() && !model.rows().isEmpty(), "fresh again");
@@ -255,6 +288,35 @@ int main(int argc, char** argv) {
     bad.start();
     settle();
     check(!bad.hasData() && bad.rows().isEmpty() && bad.state() == "offline", "no data and down -> offline, no rows");
+
+    {
+        // A real "no passes" result: with a station, a 5 degree inclination orbit never gets above
+        // the horizon at FN31pr. The card shows its text only when the model stays live with no rows.
+        QTemporaryDir empty_sky_dir;
+        AppSettings empty_sky_settings(empty_sky_dir.filePath("station.conf"), empty_sky_dir.path());
+        check(empty_sky_settings.saveStation("W1AW", 41.73, -72.71, 51.5, -0.12, "").isEmpty(), "FN31pr station saved");
+        WidgetContext empty_sky_context;
+        empty_sky_context.settings = &empty_sky_settings;
+        empty_sky_context.transport = [](const QUrl& url, FetchDone done) {
+            FetchResult r;
+            r.http_status = 200;
+            r.body = url.host() == "db.satnogs.org" ? QByteArray("[]")
+                : QByteArray("ISS (ZARYA)\n"
+                             "1 25544U 98067A   26286.11204827  .00005858  00000+0  11499-3 0  9991\n"
+                             "2 25544   5.0000  76.5194 0006724 256.4602 103.5638 15.48846742 59002\n");
+            QTimer::singleShot(0, [done, r] { done(r); });
+        };
+        SatellitesModel empty_sky(empty_sky_context);
+        empty_sky.setClock([&] { return t0; });
+        empty_sky.source().setClock([&] { return t0; });
+        empty_sky.transmitterSource().setClock([&] { return t0; });
+        QFile::remove(empty_sky.source().cachePath());
+        QFile::remove(empty_sky.transmitterSource().cachePath());
+        empty_sky.start();
+        settle();
+        check(empty_sky.hasData() && !empty_sky.allStale() && empty_sky.rows().isEmpty() && empty_sky.state() == "live",
+              "station set, no passes -> live with no rows, so the card says no passes");
+    }
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures ? 1 : 0;
