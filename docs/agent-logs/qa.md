@@ -620,3 +620,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: cb0f23d (merged since 4001580: my run 110 log #748, Apple #749). #749 only adds iPad-size screenshot rendering to the macOS job in apple.yml (informational job); no source, QML, test or doc-contract change. Build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is the unviewed Accounts layout at 800x480 and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-01 (UTC) QA run 112
+- Last reviewed commit: 82b7713 (merged since cb0f23d: adaptive pane fill #701, space weather rows #723, iPhone safe-area/map-menu/UIScene #697 #698 #718, macOS-15 runners #751, my run 111 log #750). Built main, 289/289 ctest pass; rendered light/dark at 800x480, 1024x600 and 1920x1080 and viewed them. Layouts fill panes with no clipping, except the item below.
+- Opened: #753 (Solar wind stale footer elided at 800x480). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy and the adaptive pane work looks good on the Pi sizes. Remaining risk is elided footer text the truncation guard misses (#532) and Apple/tvOS code Linux CI cannot exercise.
