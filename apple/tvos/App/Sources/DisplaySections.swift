@@ -45,6 +45,7 @@ struct DisplaySections: View {
                 .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary).fixedSize(horizontal: false, vertical: true)
             Button("Reset all panes") { settings.resetPanes() }.buttonStyle(ChipStyle())
         }
+        SatAlertSection()
         SettingsCard(title: "Screen") {
             choices([(0, "Never dim"), (2, "Dim after 2 h"), (4, "Dim after 4 h"), (8, "Dim after 8 h")], $settings.dimAfterHours, id: "dim")
             Text("Dims to 25 % after that long without the remote; any press restores it. The layout also drifts a few points each minute against burn-in.")
