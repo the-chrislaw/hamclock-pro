@@ -108,11 +108,11 @@ void SolarWindModel::refreshState() {
     for (const auto* s : {&speed_, &bz_})
         if (!s->empty() && (!newest.isValid() || s->back().time > newest)) newest = s->back().time;
     QStringList notes;
-    if (!hasSpeed()) notes << "missing: speed";
-    if (!hasBz()) notes << "missing: Bz";
-    if (wind_source_->isStale(now_utc) || mag_source_->isStale(now_utc)) notes << "feed out of date";
-    if (newest.secsTo(now_utc) > kMaxSampleAgeSecs) notes << "last reading is old";
-    if (!notes.isEmpty()) setState("stale", "NOAA SWPC (" + notes.join("; ") + ")", newest);
+    if (!hasSpeed()) notes << "no speed";
+    if (!hasBz()) notes << "no Bz";
+    if (wind_source_->isStale(now_utc) || mag_source_->isStale(now_utc)) notes << "feed late";
+    if (newest.secsTo(now_utc) > kMaxSampleAgeSecs) notes << "old data";
+    if (!notes.isEmpty()) setState("stale", "NOAA SWPC · " + notes.join(", "), newest);
     else setState("live", "NOAA SWPC RTSW (L1)", newest);
 }
 
