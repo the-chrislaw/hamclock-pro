@@ -14,7 +14,10 @@ Rectangle {
     property bool boxed: true
     default property alias content: body.data
 
-    implicitHeight: column.implicitHeight + (boxed ? 2 * Theme.pad : 0)
+    readonly property real inset: boxed ? Theme.pad : 0
+    readonly property real contentWidth: width - 2 * inset
+
+    implicitHeight: column.implicitHeight + 2 * inset
     radius: boxed ? Theme.radius : 0
     color: boxed ? Theme.surface : "transparent"
     border.color: boxed ? Theme.divider : "transparent"
@@ -22,16 +25,18 @@ Rectangle {
     Accessible.role: Accessible.Grouping
     Accessible.name: title
 
-    ColumnLayout {
+    // A plain Column, not a layout: a layout leaves a hidden child at zero width, and the
+    // closed body's wrapped labels then loop the layout polish (seen on iPhone, #697).
+    Column {
         id: column
-        x: group.boxed ? Theme.pad : 0
-        y: group.boxed ? Theme.pad : 0
-        width: group.width - 2 * x
+        x: group.inset
+        y: group.inset
+        width: group.contentWidth > 0 ? group.contentWidth : implicitWidth
         spacing: Theme.gap * 0.8
 
         Button {
             id: header
-            Layout.fillWidth: true
+            width: column.width
             implicitHeight: Theme.touch
             padding: 0
             focusPolicy: Qt.StrongFocus
@@ -58,7 +63,7 @@ Rectangle {
         ColumnLayout {
             id: body
             visible: group.expanded
-            Layout.fillWidth: true
+            width: column.width
             spacing: Theme.gap * 0.8
         }
     }

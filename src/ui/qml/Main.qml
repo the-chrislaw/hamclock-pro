@@ -45,6 +45,9 @@ ApplicationWindow {
 
     TouchKeyboard { id: touchKeys; target: touchKeyboard ? window.activeFocusItem : null }
     Binding { target: Theme; property: "keyboardInset"; value: touchKeys.visible ? touchKeys.height : 0 }
+    // iPhone/iPad: the status bar, home indicator and landscape side insets take the
+    // page colour (they showed black bands in the light theme).
+    Binding { target: safeArea; property: "backdrop"; value: Theme.canvas }
 
     SystemPalette { id: systemPalette }
     Binding {
@@ -298,7 +301,7 @@ ApplicationWindow {
                     map: worldMap
                     x: 4 * Theme.scale
                     y: mapMenuButton.y + mapMenuButton.height + 4 * Theme.scale
-                    width: Math.min(implicitWidth, worldMap.width - 8 * Theme.scale)
+                    maxWidth: worldMap.width - 8 * Theme.scale
                     height: Math.min(implicitHeight, worldMap.height - y - 4 * Theme.scale)
                     onClosed: mapMenuButton.closedAt = Date.now()
                 }

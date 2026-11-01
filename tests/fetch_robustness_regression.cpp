@@ -2,13 +2,15 @@
 // Retry-After, captive-portal HTML, schema change, slow trickle, huge body, DNS
 // failure, restart with a fresh cache, network coming back) must leave the last
 // good data in place, say what went wrong in plain words and never hammer the
-// server. The real transport is exercised against a local HTTP server.
+// server. The real transport is exercised against a local HTTP server; DNS
+// failure goes through the transport's reply mapping with a synthetic reply.
 #include "../src/net/polled_source.hpp"
 #include <QCoreApplication>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QEventLoop>
 #include <QFile>
+#include <QNetworkAccessManager>
 #include <QNetworkProxyFactory>
 #include <QNetworkReply>
 #include <QStandardPaths>
@@ -71,6 +73,24 @@ hamclock::FetchResult fetch_once(QCoreApplication& app, const hamclock::Transpor
     if (!done) out.error = "TEST: transport never answered";
     return out;
 }
+
+// A finished reply that failed the way Qt reports a DNS miss, with Qt's own
+// errorString() wording (which names the host). Lets the transport's reply
+// mapping be checked without a real lookup, whose outcome depends on the
+// machine's resolver (hijacking, IPv6, timeouts).
+class FailedReply : public QNetworkReply {
+public:
+    FailedReply(const QUrl& url, NetworkError error, const QString& qt_text) {
+        setUrl(url);
+        setOperation(QNetworkAccessManager::GetOperation);
+        open(QIODevice::ReadOnly);
+        setError(error, qt_text);
+        setFinished(true);
+    }
+    void abort() override {}
+protected:
+    qint64 readData(char*, qint64) override { return -1; }
+};
 
 void reply(QTcpSocket* s, const QByteArray& status, const QByteArray& headers, const QByteArray& body) {
     s->write("HTTP/1.1 " + status + "\r\n" + headers + "Content-Length: " + QByteArray::number(body.size()) +
@@ -291,8 +311,29 @@ int main(int argc, char** argv) {
         r = fetch_once(app, transport, hangup.url());
         check(!r.error.isEmpty() && r.body.isEmpty(), "connection dropped reported");
 
-        r = fetch_once(app, transport, QUrl("http://does-not-exist.invalid/feed.json"));
-        check(r.http_status == 0 && r.error.contains("DNS") && !r.error.contains("invalid"), "DNS failure friendly");
+    }
+
+    // DNS failure: the transport's reply mapping turns Qt's HostNotFoundError
+    // (whose errorString names the host) into the friendly text, and PolledSource
+    // shows that text. Synthetic reply: a real lookup is not deterministic.
+    {
+        const QUrl url("https://does-not-exist.invalid/feed.json?call=N0CALL");
+        FailedReply dns(url, QNetworkReply::HostNotFoundError, "Host does-not-exist.invalid not found");
+        const FetchResult r = fetch_result_from_reply(dns, {}, 64 * 1024);
+        check(r.http_status == 0 && r.body.isEmpty() &&
+              r.error.startsWith("Server not found (DNS lookup failed"), "DNS failure friendly");
+        check(!r.error.contains("does-not-exist") && !r.error.contains("invalid") && !r.error.contains("N0CALL"),
+              "DNS failure text has no URL");
+
+        net.next = r;
+        PolledSource s("fr-dns", url, policy, net.transport());
+        s.start(); spin(app);
+        check(s.lastError().startsWith("Server not found (DNS lookup failed") && !s.lastError().contains("invalid"),
+              "DNS failure shown by the source without the URL");
+
+        FailedReply aborted(url, QNetworkReply::OperationCanceledError, "Operation canceled");
+        const FetchResult t = fetch_result_from_reply(aborted, "Timed out", 64 * 1024);
+        check(t.http_status == 0 && t.error == "Timed out", "transport's own abort reason wins over Qt's error");
     }
 
     std::cout << checks << " checks, " << failures << " failures\n";
