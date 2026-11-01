@@ -31,6 +31,11 @@ for card in ("clusterCard", "hardwareCard", "stationCard"):
     if "editingFinished.connect" not in block[1][:12000]:
         fail(f"SettingsPage.qml: {card} fields must save on editingFinished")
 
+# A location from Use my location saves like one from Find or the grid (nothing else would save it).
+located = re.search(r"function onLocated\(lat, lon\)\s*\{(.*?)\n\s*\}", page, re.S)
+if not located or "stationCard.autoSave()" not in located.group(1):
+    fail("SettingsPage.qml: Use my location must save the station when the fix arrives")
+
 # 3. B3: the banner title saves when editing finishes (it used to need its own Save; Done dropped it).
 if not re.search(r"id:\s*bannerTitle[^\n]*\n?.*?onEditingFinished:\s*appSettings\.saveBannerTitle", page, re.S):
     fail("SettingsPage.qml: banner title must save on editingFinished")
