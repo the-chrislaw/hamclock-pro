@@ -22,7 +22,7 @@ struct ImpactWidget: View {
     var body: some View {
         let state = feeds.scales.state(now)
         let ranking = feeds.scales.value.flatMap { Self.rank($0, dst: feeds.dst.value ?? [], now: now) }
-        Card(title: "Space weather impact", chooser: true, state: state, status: "NOAA SWPC scales · Kyoto Dst",
+        Card(title: "Solar impact", chooser: true, state: state, status: "NOAA · Kyoto Dst",
              age: Age.text(feeds.scales.status.fetched, now: now), focused: focused) {
             if let ranking, state != .offline {
                 // The short headline ("G4 Severe"): each row below carries its own effect.
@@ -32,7 +32,8 @@ struct ImpactWidget: View {
                     ForEach(Array(ranking.rows.enumerated()), id: \.offset) { _, r in
                         GridRow {
                             Text(r.tag).fontWeight(.bold).foregroundStyle(tone(r.level))
-                            Text(r.effect).foregroundStyle(theme.secondary).lineLimit(1).minimumScaleFactor(0.7)
+                            Text(Self.compact(r.effect)).foregroundStyle(theme.secondary).lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .font(.system(size: Theme.fontCaption))
                     }
@@ -44,6 +45,14 @@ struct ImpactWidget: View {
     }
 
     private func tone(_ level: Int) -> Color { level >= 3 ? theme.bad : level >= 1 ? theme.warn : theme.good }
+
+    /// The core's storm-level wording in two lines at TV size ("Aurora to about 50 deg;
+    /// intermittent HF and GPS problems" becomes "Aurora to 50°; HF and GPS problems").
+    static func compact(_ effect: String) -> String {
+        effect.replacingOccurrences(of: "about ", with: "")
+            .replacingOccurrences(of: " deg", with: "°")
+            .replacingOccurrences(of: "intermittent ", with: "")
+    }
 
     static func rank(_ scales: HcpScales, dst: [DstReading], now: Date) -> Ranking? {
         var s = scales

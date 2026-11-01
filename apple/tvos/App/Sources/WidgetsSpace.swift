@@ -47,7 +47,7 @@ struct SpaceWeatherWidget: View {
         let state = combined([feeds.kp.state(now), feeds.flux.state(now), feeds.xray.state(now),
                               observed(kp?.time, now, staleAfter: 6 * 3600), observed(xray?.time, now, staleAfter: 1800)])
         let oldest = [feeds.kp.status.fetched, feeds.flux.status.fetched, feeds.xray.status.fetched].compactMap { $0 }.min()
-        Card(title: "Space weather", chooser: true, state: state, status: "NOAA SWPC",
+        Card(title: "Space Wx", chooser: true, state: state, status: "NOAA SWPC",
              age: Age.text(oldest, now: now), focused: focused) {
             VStack(alignment: .leading, spacing: 10) {
                 row("KP", kp.map { String(format: "%.1f ", $0.value) + SpaceText.kpWord($0.value) })
@@ -108,12 +108,13 @@ struct BandsWidget: View {
     let focused: Bool
     var body: some View {
         let state = combined([feeds.kp.state(now), feeds.flux.state(now)])
-        Card(title: "Band conditions", chooser: true, state: state, status: "SFI + Kp estimate",
+        Card(title: "HF bands", chooser: true, state: state, status: "SFI + Kp estimate",
              age: Age.text(feeds.kp.status.fetched, now: now), focused: focused) {
             if let sfi = feeds.flux.value?.value, let kp = feeds.kp.value?.last?.value, state != .offline {
                 let bands = outlook(sfi: sfi, kp: kp)
                 // Two-up, as BandsCard.qml in a narrow pane: 80–20 m beside 17–10 m.
-                HStack(alignment: .top, spacing: 10) {
+                // The two tables just fill the pane: wider gaps clip the last "Night".
+                HStack(alignment: .top, spacing: 6) {
                     table(Array(bands.prefix(4)))
                     table(Array(bands.dropFirst(4)))
                 }
@@ -133,7 +134,7 @@ struct BandsWidget: View {
     }
 
     private func table(_ bands: [HcpBand]) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 2) {
+        Grid(alignment: .leading, horizontalSpacing: 5, verticalSpacing: 2) {
             GridRow {
                 Text("")
                 Text("Day").foregroundStyle(theme.secondary)

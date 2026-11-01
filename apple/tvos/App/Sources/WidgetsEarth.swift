@@ -55,17 +55,23 @@ struct QuakesWidget: View {
             if let top {
                 Text(String(format: "M%.1f %@", top.magnitude, SpaceText.quakeClass(top.magnitude)))
                     .font(.system(size: Theme.fontValue * 0.85, weight: .semibold)).foregroundStyle(top.magnitude >= 6 ? theme.bad : theme.ink)
-                Text(top.place).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink).lineLimit(1)
-                ForEach(list.prefix(4)) { q in
-                    HStack {
-                        Text(String(format: "M%.1f", q.magnitude)).frame(width: 90, alignment: .leading)
-                        Text(q.place).lineLimit(1)
-                        Spacer(minLength: 4)
-                        Text(Age.text(q.time, now: now)).fixedSize()
+                Text(top.place).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink)
+                    .lineLimit(1).minimumScaleFactor(0.85)
+                // Three rows fit a 390 pt dashboard pane; the place gets all the width left over.
+                ForEach(list.prefix(3)) { q in
+                    HStack(spacing: 8) {
+                        Text(String(format: "M%.1f", q.magnitude)).frame(width: 76, alignment: .leading)
+                        Text(Self.region(q.place)).lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(Age.text(q.time, now: now).replacingOccurrences(of: " ago", with: "")).fixedSize()
                     }.font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary)
                 }
             } else { Note(text: feeds.quakes.value == nil ? "No data" : "No M2.5+ quakes in the past day.") }
         }
+    }
+
+    /// USGS "165 km NW of Port-Olry, Vanuatu" without the offset: "Port-Olry, Vanuatu".
+    private static func region(_ place: String) -> String {
+        place.range(of: " of ").map { String(place[$0.upperBound...]) } ?? place
     }
 }
 
@@ -75,7 +81,7 @@ struct StormsWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        Card(title: "Tropical storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC",
+        Card(title: "Storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC",
              age: Age.text(feeds.storms.status.fetched, now: now), focused: focused) {
             if let list = feeds.storms.value {
                 if list.isEmpty { Note(text: "No active storms.") }
@@ -121,6 +127,10 @@ struct OtaWidget: View {
     @Environment(\.theme) private var theme
     let now: Date
     let focused: Bool
+
+    /// Rows that fit a 390 pt dashboard pane at 29 pt, so no row is cut in half.
+    private static let shownRows = 6
+
     var body: some View {
         let spots = feeds.otaSpots(now)
         let all = [feeds.pota, feeds.sota, feeds.wwff]
@@ -131,19 +141,21 @@ struct OtaWidget: View {
         // The badge is the best feed's state, so the age is the newest fetch; feeds that are not
         // Live are named in the status line ("WWFF stale"), so a Live badge never hides an old feed.
         let lagging = zip(all, states).filter { $0.1 == .stale || $0.1 == .offline }
-            .map { "\($0.0.source) \($0.1 == .stale ? "stale" : "offline")" }
+        let laggingText = lagging.count == 1
+            ? "\(lagging[0].0.source) \(lagging[0].1 == .stale ? "stale" : "offline")"
+            : lagging.map(\.0.source).joined(separator: ", ") + " late"
         Card(title: "On the air", chooser: true, state: state,
-             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : lagging.joined(separator: " · "),
+             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : laggingText,
              age: Age.text(all.compactMap(\.status.fetched).max(), now: now), focused: focused) {
             if spots.isEmpty { Note(text: state == .loading ? "Loading…" : "No spots") }
-            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
-                ForEach(spots.prefix(7)) { s in
+            // Call, frequency and reference, as OtaCard.qml's compact layout: the mode has no room at 29 pt.
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
+                ForEach(spots.prefix(Self.shownRows)) { s in
                     GridRow {
-                        Text(s.call).foregroundStyle(theme.ink).fontWeight(.semibold).lineLimit(1)
-                        Text(String(format: "%.3f", s.freqKhz / 1000)).foregroundStyle(theme.ink)
-                        Text(s.mode).foregroundStyle(theme.secondary)
-                        Text(s.reference).foregroundStyle(theme.secondary).lineLimit(1)
-                    }.font(.system(size: Theme.fontCaption - 2))
+                        Text(s.call).foregroundStyle(theme.ink).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(0.9)
+                        Text(String(format: "%.3f", s.freqKhz / 1000)).foregroundStyle(theme.ink).fixedSize()
+                        Text(s.reference).foregroundStyle(theme.secondary).fixedSize()
+                    }.font(.system(size: Theme.fontCaption))
                 }
             }
         }

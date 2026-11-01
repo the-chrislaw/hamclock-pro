@@ -9,20 +9,19 @@ struct AlertsWidget: View {
     let now: Date
     let focused: Bool
 
-    private static let rowsShown = 3
+    /// Rows that fit a 390 pt dashboard pane, each with its headline complete on up to two lines.
+    private static let rowsShown = 2
 
     var body: some View {
         let state = feeds.alerts.state(now)
         let active = feeds.alerts.value.map { SpaceAlerts.active($0, at: now) }
-        Card(title: "Space alerts", chooser: true, state: state, status: "NOAA SWPC",
+        let hidden = max(0, (active?.count ?? 0) - Self.rowsShown)
+        Card(title: "Space alerts", chooser: true, state: state,
+             status: hidden > 0 && state != .offline ? "+\(hidden) more · NOAA" : "NOAA SWPC",
              age: Age.text(feeds.alerts.status.fetched, now: now), focused: focused) {
             if let active, state != .offline {
                 if active.isEmpty { Note(text: "No alerts, watches or warnings in force.") }
                 ForEach(Array(active.prefix(Self.rowsShown).enumerated()), id: \.offset) { _, a in row(a) }
-                if active.count > Self.rowsShown {
-                    Text("+\(active.count - Self.rowsShown) more").font(.system(size: Theme.fontCaption))
-                        .foregroundStyle(theme.secondary)
-                }
             } else {
                 // Offline with nothing cached is "no data", never "nothing in force".
                 Note(text: state == .loading ? "Loading…" : "No data")
@@ -34,15 +33,12 @@ struct AlertsWidget: View {
         let color = a.level >= 2 ? theme.bad : a.level == 1 ? theme.warn : theme.good
         let scale = cText(a.scale)
         return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Text(scale.isEmpty ? cText(a.kind) : scale)
-                    .font(.system(size: Theme.fontCaption, weight: .bold)).foregroundStyle(color)
-                    .lineLimit(1).fixedSize()
-                Text(cText(a.headline)).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink)
-                    .lineLimit(1).minimumScaleFactor(0.75)
-            }
-            Text(SpaceAlerts.when(a)).font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary)
-                .lineLimit(1)
+            // The scale (if any) and kind lead; the headline below gets the pane's whole width.
+            Text((scale.isEmpty ? "" : scale + " · ") + SpaceAlerts.when(a))
+                .font(.system(size: Theme.fontCaption, weight: .bold)).foregroundStyle(color)
+                .lineLimit(1).minimumScaleFactor(0.85)
+            Text(cText(a.headline)).font(.system(size: Theme.fontCaption)).foregroundStyle(theme.ink)
+                .lineLimit(2).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

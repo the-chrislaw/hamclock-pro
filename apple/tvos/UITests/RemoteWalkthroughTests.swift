@@ -8,6 +8,14 @@ final class RemoteWalkthroughTests: XCTestCase {
     private let remote = XCUIRemote.shared
     private var app: XCUIApplication!
 
+    /// In two CI runs, screenshots taken about 30 to 120 s into the first test showed the tvOS
+    /// boot logo while the app kept answering (tvos-widgets-2/3, then tvos-dense-2 to 4).
+    /// Wait that window out once, so every screenshot shows the app.
+    override class func setUp() {
+        super.setUp()
+        sleep(120)
+    }
+
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
@@ -481,6 +489,27 @@ final class RemoteWalkthroughTests: XCTestCase {
         moveFocus(to: pane0)
         remote.press(.select)
         XCTAssertTrue(app.buttons["choose_solarimpact"].waitForExistence(timeout: 5), "Space weather impact is offered on TV")
+    }
+
+    /// Long pane titles use their short form on the dashboard (the chooser keeps the full name),
+    /// and the panes with the longest rows are captured beside the map, the narrowest layout,
+    /// for the PR's screenshot check of titles and rows.
+    func testDensePanesBesideTheMap() {
+        let pages: [(panes: [String], titles: [String])] = [
+            (["solarimpact", "bandsmatrix", "solarhamqsl"], ["Solar impact", "HF paths", "HamQSL"]),
+            (["passes", "satellites", "ota"], ["Passes", "Satellites", "On the air"]),
+            (["solaralerts", "spaceweather", "bands"], ["Space alerts", "Space Wx", "HF bands"]),
+            (["quakes", "storms", "launches"], ["Earthquakes", "Storms", "Launches"]),
+        ]
+        for (n, page) in pages.enumerated() {
+            launchWithStation(["-hcpPanes", page.panes.joined(separator: ",")])
+            for (i, title) in page.titles.enumerated() {
+                let pane = app.descendants(matching: .any)["pane\(i)"]
+                XCTAssertTrue(waitFor(10) { pane.label.contains(title) }, "pane \(i) is titled \(title): \(pane.label)")
+            }
+            sleep(15) // feeds arrive
+            shot("tvos-dense-\(n + 1)")
+        }
     }
 
     // MARK: helpers

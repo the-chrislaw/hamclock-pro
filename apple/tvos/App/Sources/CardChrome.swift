@@ -6,11 +6,11 @@ struct StatusBadge: View {
     let state: WidgetState
     var body: some View {
         let c = theme.stateColor(state)
-        HStack(spacing: 10) {
-            Circle().fill(c).frame(width: 14, height: 14)
+        HStack(spacing: 6) {
+            Circle().fill(c).frame(width: 12, height: 12)
             Text(state.label).font(.system(size: Theme.fontCaption, weight: .semibold)).foregroundStyle(c)
         }
-        .padding(.horizontal, 16).padding(.vertical, 4)
+        .padding(.horizontal, 10).padding(.vertical, 4)
         .background(Capsule().fill(c.opacity(0.14)))
         .fixedSize()
         .accessibilityElement(children: .combine)
@@ -19,6 +19,10 @@ struct StatusBadge: View {
 
 /// Standard widget card (Card.qml): title (with ▾ when it opens the chooser) and badge, the
 /// content, then a status line with the source and the data age.
+///
+/// Titles stay at Theme.fontTitle and the ▾ is its own view, so neither can shrink or be cut off.
+/// A pane has room for about 206 pt of title beside the widest badge (Loading): keep pane titles
+/// that short, using a shorter word than the chooser's name where needed ("Solar impact").
 struct Card<Content: View>: View {
     @Environment(\.theme) private var theme
     let title: String
@@ -33,10 +37,13 @@ struct Card<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.gap * 0.6) {
             if showTitle {
-                HStack(alignment: .center, spacing: 12) {
-                    Text(title + (chooser ? " ▾" : ""))
-                        .font(.system(size: Theme.fontTitle, weight: .semibold))
-                        .foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.7)
+                HStack(alignment: .center, spacing: 8) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(title).lineLimit(1)
+                        if chooser { Text("▾").fixedSize().accessibilityHidden(true) }
+                    }
+                    .font(.system(size: Theme.fontTitle, weight: .semibold))
+                    .foregroundStyle(theme.ink)
                     Spacer(minLength: 0)
                     if let state { StatusBadge(state: state) }
                 }

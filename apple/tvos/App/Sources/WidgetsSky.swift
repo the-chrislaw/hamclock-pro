@@ -74,14 +74,14 @@ struct SatellitesWidget: View {
             : fetchAge > SatelliteStore.offlineAfter ? .offline
             : (fetchAge > 86400 * 2 || oldestDays > 14) ? .stale : .live
         Card(title: "Satellites", chooser: true, state: state,
-             status: oldestDays > 14 ? String(format: "Elements %.0f days old", oldestDays) : "\(sats.source) · SGP4",
+             status: oldestDays > 14 ? String(format: "TLEs %.0f days old", oldestDays) : "\(sats.source) · SGP4",
              age: Age.text(sats.fetched, now: now), focused: focused) {
             if settings.de != nil, sats.tle != nil, state != .offline {
                 if up.isEmpty { Note(text: "None above the horizon now.") }
                 Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 4) {
                     ForEach(up) { s in
                         GridRow {
-                            Text(s.name).foregroundStyle(theme.ink).lineLimit(1)
+                            Text(s.shortName).foregroundStyle(theme.ink).lineLimit(1)
                             Text(String(format: "%.0f°", s.azimuth)).foregroundStyle(theme.secondary)
                             Text(String(format: "el %.0f°", s.elevation)).foregroundStyle(s.elevation > 30 ? theme.good : theme.ink)
                         }.font(.system(size: Theme.fontCaption))
@@ -180,19 +180,28 @@ struct LaunchesWidget: View {
     let focused: Bool
     var body: some View {
         let nowMs = Int64(now.timeIntervalSince1970 * 1000)
-        let list = (feeds.launches.value ?? []).filter { $0.net_ms >= nowMs - 2 * 3_600_000 }.prefix(4)
+        // Three two-line rows fit a 390 pt dashboard pane, so no row loses its second line.
+        let list = (feeds.launches.value ?? []).filter { $0.net_ms >= nowMs - 2 * 3_600_000 }.prefix(3)
         Card(title: "Launches", chooser: true, state: feeds.launches.state(now), status: "Launch Library 2",
              age: Age.text(feeds.launches.status.fetched, now: now), focused: focused) {
             if list.isEmpty { Note(text: feeds.launches.value == nil ? "No data" : "No upcoming launches listed.") }
             ForEach(Array(list.enumerated()), id: \.offset) { _, l in
+                // Library names read "Rocket | Mission": the mission gets the full width, the
+                // rocket (or the provider, for a plain name) shares the line with the countdown.
+                let parts = cText(l.name).components(separatedBy: " | ")
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text(cText(l.name)).foregroundStyle(theme.ink).lineLimit(1)
-                        Spacer(minLength: 8)
-                        Text(cString(32) { hcp_launch_countdown(l.net_ms, nowMs, $0, $1) }).foregroundStyle(theme.accent).fixedSize()
-                    }.font(.system(size: Theme.fontCaption, weight: .medium))
-                    Text(cText(l.provider) + " · " + cText(l.status) + (cText(l.hint).isEmpty ? "" : " · " + cText(l.hint)))
-                        .font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary).lineLimit(1)
+                    // Without any trailing note: "The Sea God Surveys (iQPS Launch 7)".
+                    Text((parts.last ?? "").components(separatedBy: " (")[0]).font(.system(size: Theme.fontCaption, weight: .medium))
+                        .foregroundStyle(theme.ink).lineLimit(1).minimumScaleFactor(0.85)
+                    HStack(spacing: 8) {
+                        Text((parts.count > 1 ? parts[0] : cText(l.provider)) + " · " + cText(l.status)
+                             + (cText(l.hint).isEmpty ? "" : " · " + cText(l.hint)))
+                            .font(.system(size: Theme.fontCaption - 3)).foregroundStyle(theme.secondary)
+                            .lineLimit(1).minimumScaleFactor(0.85)
+                        Spacer(minLength: 0)
+                        Text(cString(32) { hcp_launch_countdown(l.net_ms, nowMs, $0, $1) })
+                            .font(.system(size: Theme.fontCaption - 3, weight: .medium)).foregroundStyle(theme.accent).fixedSize()
+                    }
                 }
             }
         }
