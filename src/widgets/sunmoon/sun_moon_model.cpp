@@ -76,7 +76,7 @@ void SunMoonModel::recompute() {
     }
     const UtcSeconds t{now().toSecsSinceEpoch()};
     de_ = summarize_sun(t, settings_->deLatitude(), settings_->deLongitude());
-    dx_ = summarize_sun(t, settings_->dxLatitude(), settings_->dxLongitude());
+    dx_ = settings_->hasDx() ? summarize_sun(t, settings_->dxLatitude(), settings_->dxLongitude()) : SunSummary{};  // no DX: the card shows dashes, not DE twice
     moon_ = summarize_moon(t, settings_->deLatitude(), settings_->deLongitude());
     season_ = summarize_season(t);
     has_station_ = true;
