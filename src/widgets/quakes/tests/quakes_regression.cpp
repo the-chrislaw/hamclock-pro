@@ -5,6 +5,7 @@
 #include "../quakes_parse.hpp"
 #include "../../../net/polled_source.hpp"
 #include <QCoreApplication>
+#include <QLocale>
 #include "../../../ui/app_settings.hpp"
 #include <QDir>
 #include <QTemporaryDir>
@@ -28,6 +29,7 @@ QByteArray fixture(const QString& dir, const char* name) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     const QString dir = argv[1];
@@ -87,6 +89,15 @@ int main(int argc, char** argv) {
     check(settings.saveStation("W1AW", 41.7, -72.7, 51.5, -0.1, "").isEmpty(), "station saved");
     const auto near = model.nearestText();
     check(near.startsWith("M") && near.contains(" km ") && near.contains(" of DE · "), "nearest line with station");
+    {
+        int notified = 0;
+        const auto link = QObject::connect(&model, &QuakesModel::quakesChanged, &model, [&] { ++notified; });
+        check(settings.saveImperialUnits(true).isEmpty(), "miles saved");
+        check(model.nearestText().contains(" mi ") && !model.nearestText().contains(" km "), "nearest line follows Miles");
+        check(notified > 0, "the pane hears about it");
+        QObject::disconnect(link);
+        check(settings.saveImperialUnits(false).isEmpty(), "km restored");
+    }
     check(model.recent().size() >= 6 && model.recent().size() <= 15, "recent: at least six, capped at 15");
     check(model.updatedAt() == feed.generated, "updatedAt is the feed build time");
     {

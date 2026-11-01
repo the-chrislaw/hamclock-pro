@@ -9,6 +9,7 @@
 #include "../../../ui/app_settings.hpp"
 #include <QTemporaryDir>
 #include <QCoreApplication>
+#include <QLocale>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -31,6 +32,7 @@ QByteArray fixture(const QString& dir, const char* name) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     const QString dir = argv[1];
@@ -81,6 +83,15 @@ int main(int argc, char** argv) {
     check(settings.saveStation("K5ABC", 32.0, -86.5, 51.5, -0.1, "").isEmpty(), "station saved");
     const auto near = model.nearestText();
     check(near.startsWith("Nearest ") && near.contains(" km ") && near.contains(" of DE · ") && near.endsWith("Z"), "nearest line with station");
+    {
+        int notified = 0;
+        const auto link = QObject::connect(&model, &FiresModel::firesChanged, &model, [&] { ++notified; });
+        check(settings.saveImperialUnits(true).isEmpty(), "miles saved");
+        check(model.nearestText().contains(" mi ") && !model.nearestText().contains(" km "), "nearest line follows Miles");
+        check(notified > 0, "the pane hears about it");
+        QObject::disconnect(link);
+        check(settings.saveImperialUnits(false).isEmpty(), "km restored");
+    }
     {
         const auto& layers = MapOverlays::instance().layers();
         check(layers.size() == 1 && layers[0].id == "fires", "live -> fires on the map");
