@@ -61,7 +61,8 @@ final class PassesStore: ObservableObject {
 }
 
 /// "Passes over you" (PassesCard.qml, compact layout): satellite, when, peak elevation and the
-/// rise → set direction, soonest first; a pass in progress says "now" in the accent colour.
+/// rise direction, soonest first; a pass in progress says "now" in the accent colour. A pane is
+/// too narrow at 29 pt for the Qt card's rise → set pair, so the set direction is only spoken.
 struct PassesWidget: View {
     @EnvironmentObject var sats: SatelliteStore
     @EnvironmentObject var settings: AppSettings
@@ -82,7 +83,7 @@ struct PassesWidget: View {
             : snap.state == 2 ? .stale : snap.state == 1 ? .loading : .live
         let filter = settings.passesFilter
         Card(title: "Passes", chooser: true, state: state,
-             status: (filter == .all ? "" : filter.title + " · ") + "\(sats.source) · SGP4 on device",
+             status: (filter == .all ? sats.source : filter.title) + " · SGP4",
              age: Age.text(sats.fetched, now: now), focused: focused) {
             if !settings.configured {
                 Note(text: "Set your station in Settings.")
@@ -97,13 +98,22 @@ struct PassesWidget: View {
     }
 
     private func rows(_ list: [HcpPassRow]) -> some View {
-        Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 4) {
+        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 4) {
             ForEach(Array(list.enumerated()), id: \.offset) { _, r in
-                let live = r.live != 0
+                let tint = r.live != 0 ? theme.accent : theme.secondary
                 GridRow {
-                    Text(cText(r.name)).fontWeight(.semibold).foregroundStyle(live ? theme.accent : theme.ink)
-                    Text(Self.when(r)).foregroundStyle(live ? theme.accent : theme.secondary)
-                    Text("\(r.max_el_deg)° \(cText(r.from))→\(cText(r.to))").foregroundStyle(live ? theme.accent : theme.secondary)
+                    // Long names ("FUNCUBE-1") give way a little; time and direction never do.
+                    Text(cText(r.name)).fontWeight(.semibold).foregroundStyle(r.live != 0 ? theme.accent : theme.ink)
+                        .minimumScaleFactor(0.9)
+                    if Self.isSoon(r) {
+                        Text(Self.when(r)).foregroundStyle(tint).fixedSize()
+                        Text("\(r.max_el_deg)° \(cText(r.from))").foregroundStyle(tint).fixedSize()
+                            .accessibilityLabel("\(r.max_el_deg)° \(cText(r.from)) to \(cText(r.to))")
+                    } else {
+                        // A later day needs the width of both columns; the peak still fits, the direction does not.
+                        Text("\(Self.when(r))  \(r.max_el_deg)°").foregroundStyle(tint).fixedSize()
+                            .gridCellColumns(2)
+                    }
                 }
                 .font(.system(size: Theme.fontCaption))
                 .lineLimit(1)
@@ -111,10 +121,13 @@ struct PassesWidget: View {
         }
     }
 
-    /// PassesCard.when for a compact slot: "now", "14:05Z" today, else "Tomorrow 14:05Z".
+    private static func isSoon(_ r: HcpPassRow) -> Bool { r.live != 0 || cText(r.day) == "Today" }
+
+    /// PassesCard.when for a compact slot: "now", "14:05Z" today, else "Tmrw 14:05Z" or "Mon 14:05Z".
     static func when(_ r: HcpPassRow) -> String {
         if r.live != 0 { return "now" }
         let day = cText(r.day), utc = cText(r.utc)
-        return day == "Today" ? utc : day + " " + utc
+        if day == "Today" { return utc }
+        return (day == "Tomorrow" ? "Tmrw" : day) + " " + utc
     }
 }

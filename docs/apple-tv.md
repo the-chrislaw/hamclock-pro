@@ -195,6 +195,8 @@ Each TV widget shows what the Qt card shows. Parsers are Qt-free ports in `apple
 | NOAA scales (R/S/G, 24 h max, today's probabilities) | NOAA SWPC | `scales` |
 | Space weather impact (R/S/G and fresh Dst ranked worst first, effect on HF/aurora/GPS) | NOAA SWPC scales, Kyoto Dst | `impact` |
 | Dst index, Space alerts, Solar trend, HamQSL conditions | NOAA SWPC, Kyoto, N0NBH | `dst`, `alerts`, `trend`, `hamqsl` |
+
+Pane titles must fit beside the widest status badge at full title size, so six panes use a shorter title on the dashboard than in the chooser: Space Wx, HF bands, HF paths, Solar impact, HamQSL and Storms.
 | Aurora (hemisphere peaks; map overlay) | NOAA SWPC OVATION | `aurora` |
 | D-RAP (highest affected frequency; map overlay) | NOAA SWPC | `drap` |
 | Sun (SDO) | NASA SDO AIA 193 Å image | – |

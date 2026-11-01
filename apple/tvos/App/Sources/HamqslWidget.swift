@@ -16,7 +16,7 @@ struct HamqslWidget: View {
         let current = report.map { $0.updated_ms > 0 && now.timeIntervalSince(updated!) <= Self.maxReportAge } ?? false
         let feedState = feeds.hamqsl.state(now)
         let state: WidgetState = report != nil && !current && feedState == .live ? .stale : feedState
-        Card(title: "HamQSL conditions", chooser: true, state: state, status: "N0NBH hamqsl.com",
+        Card(title: "HamQSL", chooser: true, state: state, status: "N0NBH hamqsl.com",
              age: Age.text(feeds.hamqsl.status.fetched, now: now), focused: focused) {
             if let report, current, state != .offline {
                 bands(report)

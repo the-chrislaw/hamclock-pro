@@ -75,7 +75,7 @@ struct StormsWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        Card(title: "Tropical storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC",
+        Card(title: "Storms", chooser: true, state: feeds.storms.state(now), status: "NOAA NHC",
              age: Age.text(feeds.storms.status.fetched, now: now), focused: focused) {
             if let list = feeds.storms.value {
                 if list.isEmpty { Note(text: "No active storms.") }
@@ -121,6 +121,10 @@ struct OtaWidget: View {
     @Environment(\.theme) private var theme
     let now: Date
     let focused: Bool
+
+    /// Rows that fit a 390 pt dashboard pane at 29 pt, so no row is cut in half.
+    private static let shownRows = 6
+
     var body: some View {
         let spots = feeds.otaSpots(now)
         let all = [feeds.pota, feeds.sota, feeds.wwff]
@@ -131,19 +135,21 @@ struct OtaWidget: View {
         // The badge is the best feed's state, so the age is the newest fetch; feeds that are not
         // Live are named in the status line ("WWFF stale"), so a Live badge never hides an old feed.
         let lagging = zip(all, states).filter { $0.1 == .stale || $0.1 == .offline }
-            .map { "\($0.0.source) \($0.1 == .stale ? "stale" : "offline")" }
+        let laggingText = lagging.count == 1
+            ? "\(lagging[0].0.source) \(lagging[0].1 == .stale ? "stale" : "offline")"
+            : lagging.map(\.0.source).joined(separator: ", ") + " late"
         Card(title: "On the air", chooser: true, state: state,
-             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : lagging.joined(separator: " · "),
+             status: lagging.isEmpty || lagging.count == 3 ? "POTA · SOTA · WWFF" : laggingText,
              age: Age.text(all.compactMap(\.status.fetched).max(), now: now), focused: focused) {
             if spots.isEmpty { Note(text: state == .loading ? "Loading…" : "No spots") }
-            Grid(alignment: .leading, horizontalSpacing: 14, verticalSpacing: 3) {
-                ForEach(spots.prefix(7)) { s in
+            // Call, frequency and reference, as OtaCard.qml's compact layout: the mode has no room at 29 pt.
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 3) {
+                ForEach(spots.prefix(Self.shownRows)) { s in
                     GridRow {
-                        Text(s.call).foregroundStyle(theme.ink).fontWeight(.semibold).lineLimit(1)
-                        Text(String(format: "%.3f", s.freqKhz / 1000)).foregroundStyle(theme.ink)
-                        Text(s.mode).foregroundStyle(theme.secondary)
-                        Text(s.reference).foregroundStyle(theme.secondary).lineLimit(1)
-                    }.font(.system(size: Theme.fontCaption - 2))
+                        Text(s.call).foregroundStyle(theme.ink).fontWeight(.semibold).lineLimit(1).minimumScaleFactor(0.9)
+                        Text(String(format: "%.3f", s.freqKhz / 1000)).foregroundStyle(theme.ink).fixedSize()
+                        Text(s.reference).foregroundStyle(theme.secondary).fixedSize()
+                    }.font(.system(size: Theme.fontCaption))
                 }
             }
         }

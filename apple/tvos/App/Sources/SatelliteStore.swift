@@ -14,6 +14,17 @@ struct SatPass: Identifiable, Equatable {
     var rangeKm: Double
     var sunlit: Bool
     var epoch: Date
+
+    /// The name hams use, as the Passes pane shows it (core hcp::sats::short_name):
+    /// "GREENCUBE (IO-117)" is "IO-117", "ISS (ZARYA)" is "ISS".
+    var shortName: String {
+        if name.contains("ZARYA") { return "ISS" }
+        if let open = name.lastIndex(of: "("), let close = name.lastIndex(of: ")"), open < close {
+            let inner = name[name.index(after: open)..<close]
+            if !inner.isEmpty { return String(inner) }
+        }
+        return name.components(separatedBy: " &").first ?? name
+    }
 }
 
 /// CelesTrak amateur-radio TLEs. Swift fetches (at most every 12 h, CelesTrak asks for >= 2 h),

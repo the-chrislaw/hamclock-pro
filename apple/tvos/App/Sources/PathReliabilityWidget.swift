@@ -22,14 +22,15 @@ struct PathReliabilityWidget: View {
         let state: WidgetState = settings.configured ? combined([feeds.kp.state(now), feeds.flux.state(now)]) : .unconfigured
         let sfi = feeds.flux.value?.value, kp = feeds.kp.value?.last?.value
         let grid = (sfi != nil && kp != nil && state != .offline) ? Self.card(de: settings.de, dx: settings.dx, now: now, sfi: sfi!, kp: kp!) : nil
-        Card(title: "HF path reliability", chooser: true, state: state, status: status(grid),
+        // The model is labelled an estimate (not VOACAP); the Station card already shows the distance.
+        Card(title: "HF paths", chooser: true, state: state, status: grid == nil ? "SFI + Kp estimate" : "SSB 100 W · est.",
              age: Age.text(feeds.kp.status.fetched, now: now), focused: focused) {
             if !settings.configured {
                 Note(text: "Set your station in Settings.")
             } else if sfi == nil || kp == nil || state == .offline {
                 Note(text: state == .loading ? "Waiting for SFI and Kp…" : "No data")
             } else if let grid {
-                Text(grid.best + " · UTC from " + grid.start)
+                Text(grid.best + " · from " + grid.start)
                     .font(.system(size: Theme.fontCaption, weight: .semibold)).foregroundStyle(theme.ink)
                     .lineLimit(1).minimumScaleFactor(0.8)
                 heat(grid)
@@ -37,12 +38,6 @@ struct PathReliabilityWidget: View {
                 Note(text: "Set a DX target in Settings.")
             }
         }
-    }
-
-    private func status(_ g: PathGrid?) -> String {
-        guard let g else { return "SFI + Kp · approximate, not VOACAP" }
-        let dist = Int((settings.imperialUnits ? g.km / 1.609344 : g.km).rounded())
-        return "\(dist) \(settings.imperialUnits ? "mi" : "km") · SSB 100 W · approximate, not VOACAP"
     }
 
     /// One row per band, one cell per hour, shaded good / warn / bad like BandsMatrixCard.shade.

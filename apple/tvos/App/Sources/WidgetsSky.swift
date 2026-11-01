@@ -74,14 +74,14 @@ struct SatellitesWidget: View {
             : fetchAge > SatelliteStore.offlineAfter ? .offline
             : (fetchAge > 86400 * 2 || oldestDays > 14) ? .stale : .live
         Card(title: "Satellites", chooser: true, state: state,
-             status: oldestDays > 14 ? String(format: "Elements %.0f days old", oldestDays) : "\(sats.source) · SGP4",
+             status: oldestDays > 14 ? String(format: "TLEs %.0f days old", oldestDays) : "\(sats.source) · SGP4",
              age: Age.text(sats.fetched, now: now), focused: focused) {
             if settings.de != nil, sats.tle != nil, state != .offline {
                 if up.isEmpty { Note(text: "None above the horizon now.") }
                 Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 4) {
                     ForEach(up) { s in
                         GridRow {
-                            Text(s.name).foregroundStyle(theme.ink).lineLimit(1)
+                            Text(s.shortName).foregroundStyle(theme.ink).lineLimit(1)
                             Text(String(format: "%.0f°", s.azimuth)).foregroundStyle(theme.secondary)
                             Text(String(format: "el %.0f°", s.elevation)).foregroundStyle(s.elevation > 30 ? theme.good : theme.ink)
                         }.font(.system(size: Theme.fontCaption))
