@@ -80,7 +80,9 @@ Card {
             Text {
                 Layout.fillWidth: true
                 fontSizeMode: Text.HorizontalFit
-                minimumPixelSize: Theme.fontValue
+                // Low enough for the widest time ("12:05:01 AM", 10-12 o'clock in 12 h mode) in the
+                // narrow 800x480 column; fontValue here cut it off with the Pi's wide font.
+                minimumPixelSize: Theme.fontTitle
                 text: clockBox.showLocal ? station.deClock : station.utcTime
                 color: Theme.ink
                 font.pixelSize: Theme.fontClock
@@ -139,31 +141,35 @@ Card {
             columnSpacing: Theme.gap
             rowSpacing: Theme.gap * 0.8
         Repeater {
-            model: !station.configured ? [] : [
-                { label: "DE · Home", grid: station.deGrid, coords: station.deCoordinates, sun: station.deSun, local: "" }
-            ].concat(station.hasDx ? [
-                { label: "DX · Target", grid: station.dxGrid, coords: station.dxCoordinates, sun: station.dxSun, local: station.dxLocal }
-            ] : [])
+            // A count, not a list of the values: the values change every second (tick), and a
+            // new list would rebuild these items each time, losing taps and showing unwrapped
+            // lines until the next layout pass.
+            model: !station.configured ? 0 : (station.hasDx ? 2 : 1)
             delegate: ColumnLayout {
+                readonly property bool isDx: index === 1
+                readonly property string label: isDx ? "DX · Target" : "DE · Home"
+                readonly property string sun: isDx ? station.dxSun : station.deSun
+                readonly property string local: isDx ? station.dxLocal : ""
                 spacing: 1
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
                 Layout.alignment: Qt.AlignTop
-                Text { visible: !root.compact; text: modelData.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
-                Text { text: (root.compact ? modelData.label.split(" ")[0] + "  " : "") + modelData.grid
+                Text { visible: !root.compact; text: parent.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text { text: (root.compact ? parent.label.split(" ")[0] + "  " : "") + (parent.isDx ? station.dxGrid : station.deGrid)
                        color: Theme.ink; font.pixelSize: Theme.fontTitle * (root.compact ? 1.05 : 1.3); font.weight: Font.DemiBold }
-                Text { visible: !root.compact && !root.tight; text: modelData.coords; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
+                Text { visible: !root.compact && !root.tight; text: parent.isDx ? station.dxCoordinates : station.deCoordinates
+                       color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text {
-                    visible: modelData.local.length > 0
-                    text: modelData.local
+                    visible: parent.local.length > 0
+                    text: parent.local
                     color: Theme.secondary
                     font.pixelSize: Theme.fontCaption
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
                 }
                 Text {
-                    visible: modelData.sun.length > 0
-                    text: "☀ " + modelData.sun
+                    visible: parent.sun.length > 0
+                    text: "☀ " + parent.sun
                     color: Theme.secondary
                     font.pixelSize: Theme.fontCaption
                     Layout.fillWidth: true
