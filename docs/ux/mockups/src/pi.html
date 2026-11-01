@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Pi 7-inch</title><link rel="stylesheet" href="wire.css"></head>
+<body><div class="row-of-frames" style="flex-direction:column">
+
+<div><p class="cap">Pi first boot, step 2 of 3 <small>1024×600, on-screen keyboard (PR #672) docked; big targets</small></p>
+<div class="frame flat" style="width:1024px;height:600px">
+  <div style="display:flex;gap:24px;padding:18px 24px">
+    <div style="flex:1">
+      <div class="step">Step 2 of 3</div>
+      <div class="q" style="font-size:24px">Where is your station?</div>
+      <div class="label">City, grid square or coordinates</div>
+      <div class="field">FN31pr<span class="ph">|</span></div>
+      <div class="hint">GPS found? <b>Use GPS</b> appears here when gpsd answers. No GPS: type a grid.</div>
+    </div>
+    <div style="width:330px">
+      <div class="map" style="height:120px"><div class="land" style="left:20px;top:20px;width:150px;height:70px"></div><div class="pin" style="left:120px;top:48px"></div></div>
+      <div class="hint" style="margin-top:6px">FN31pr · 41.73 N 72.71 W · New York (auto)</div>
+      <div style="display:flex;gap:10px;margin-top:10px"><span class="btn">Back</span><span class="btn primary" style="flex:1;text-align:center">Next</span></div>
+    </div>
+  </div>
+  <div class="kbd">
+    <div><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b><b>9</b><b>0</b></div>
+    <div><b>Q</b><b>W</b><b>E</b><b>R</b><b>T</b><b>Y</b><b>U</b><b>I</b><b>O</b><b>P</b></div>
+    <div><b>A</b><b>S</b><b>D</b><b>F</b><b>G</b><b>H</b><b>J</b><b>K</b><b>L</b><b>&#x232B;</b></div>
+    <div><b>&#x21E7;</b><b>Z</b><b>X</b><b>C</b><b>V</b><b>B</b><b>N</b><b>M</b><b>,</b><b>Done</b></div>
+  </div>
+</div></div>
+
+<div><p class="cap">Pi Settings <small>list on the left, one section on the right; nothing scrolls past ~1.3 screens</small></p>
+<div class="frame flat" style="width:1024px;height:600px;display:flex">
+  <div class="sidebar" style="width:300px;padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h1 style="margin:0;font-size:22px">Settings</h1></div>
+    <div class="group" style="margin:0">
+      <div class="item"><span>Station</span><span class="v">W1AW</span></div>
+      <div class="item"><span>Display</span></div>
+      <div class="item sel"><span>Screen</span><span class="tag">kiosk</span></div>
+      <div class="item"><span>Accounts</span><span class="v ok">2</span></div>
+      <div class="item"><span>Spots and feeds</span></div>
+      <div class="item"><span>Station hardware</span></div>
+      <div class="item"><span>Advanced</span></div>
+      <div class="item"><span>About</span></div>
+    </div>
+  </div>
+  <div style="flex:1;padding:14px 22px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h1 style="margin:0;font-size:20px">Screen</h1><span class="btn primary">Done</span></div>
+    <div class="group">
+      <div class="item"><span>Turn screen black when idle</span><span class="seg"><span class="on">Off</span><span>5</span><span>15</span><span>30</span><span>60 min</span></span></div>
+      <div class="item"><span>Night: black overnight</span><span class="seg"><span class="on">Off</span><span>22–06</span><span>23–07</span><span>00–06</span></span></div>
+      <div class="item"><span>TV edge inset</span><span class="v chev">Off</span></div>
+      <div class="item"><span>Big clock face</span><span class="seg"><span class="on">Digital</span><span>Analog</span></span></div>
+    </div>
+    <div class="group">
+      <div class="item"><span>Exit HamClock Pro</span><span class="v">tap twice</span></div>
+    </div>
+    <div class="note">Same sections and wording on every device; sections that don't apply (Screen, Station hardware on iPhone) are simply absent.</div>
+  </div>
+</div></div>
+
+</div></body></html>
