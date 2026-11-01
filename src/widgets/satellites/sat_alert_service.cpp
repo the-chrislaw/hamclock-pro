@@ -170,15 +170,12 @@ void SatAlertService::apply(const SatAlertPrefs& next) {
     predict();
 }
 
-// What the SGP4 prediction depends on: the element set, the station and which satellites are
-// selected. Thresholds, lead time, quiet hours and daylight only filter its result.
-QString SatAlertService::predictionKey(const std::vector<Tle>& fresh) const {
-    QStringList ids;
-    for (const Tle& tle : fresh)
-        if (const int norad = tle_norad_id(tle); isSelected(norad)) ids.append(QString::number(norad));
-    ids.sort();
-    return QString("%1|%2,%3|%4").arg(elements_version_).arg(settings_->deLatitude(), 0, 'g', 10)
-        .arg(settings_->deLongitude(), 0, 'g', 10).arg(ids.join(','));
+// What the SGP4 prediction depends on: the element set and the station. Which satellites are
+// selected only decides which cached per-satellite results are used (and which are computed).
+// Thresholds, lead time, quiet hours and daylight only filter the result.
+QString SatAlertService::predictionKey() const {
+    return QString("%1|%2,%3").arg(elements_version_).arg(settings_->deLatitude(), 0, 'g', 10)
+        .arg(settings_->deLongitude(), 0, 'g', 10);
 }
 
 void SatAlertService::predict() {
@@ -199,17 +196,32 @@ void SatAlertService::predict() {
         replan();
         return;
     }
-    // Reuse the last run while its inputs are unchanged and its 48 h window is recent enough.
-    const QString key = predictionKey(fresh);
+    // Reuse earlier results while the elements and station are unchanged and the 48 h window is
+    // recent enough; a newly selected satellite costs one prediction, a deselected one none.
+    const QString key = predictionKey();
     if (key != raw_key_ || now < predicted_at_ || now - predicted_at_ >= kRepredictS) {
-        const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
-        const auto selected = [this](int norad) { return isSelected(norad); };
-        raw_passes_ = predict_alert_passes(fresh, selected, catalog_, obs, now);
+        raw_passes_.clear();
+        predicted_norads_.clear();
         raw_key_ = key;
         predicted_at_ = now;
+    }
+    const auto missing = [this](int norad) { return isSelected(norad) && !predicted_norads_.count(norad); };
+    std::vector<Tle> to_predict;
+    for (const Tle& tle : fresh)
+        if (missing(tle_norad_id(tle))) to_predict.push_back(tle);
+    if (!to_predict.empty()) {
+        const Observer obs{settings_->deLatitude(), settings_->deLongitude(), 0.0};
+        std::vector<AlertPass> added = predict_alert_passes(to_predict, missing, catalog_, obs, now);
+        for (const Tle& tle : to_predict) predicted_norads_.insert(tle_norad_id(tle));
+        raw_passes_.insert(raw_passes_.end(), added.begin(), added.end());
+        std::stable_sort(raw_passes_.begin(), raw_passes_.end(),
+                         [](const AlertPass& x, const AlertPass& y) { return x.aos < y.aos; });
         ++prediction_runs_;
     }
-    passes_ = alert_passes(raw_passes_, prefs_, catalog_, zone(), now);
+    std::vector<AlertPass> chosen;
+    for (const AlertPass& p : raw_passes_)
+        if (isSelected(p.norad)) chosen.push_back(p);
+    passes_ = alert_passes(chosen, prefs_, catalog_, zone(), now);
     predicted_ = true;
     replan();
 }

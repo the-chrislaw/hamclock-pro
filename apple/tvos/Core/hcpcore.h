@@ -130,6 +130,44 @@ int hcp_tle_short_name(const char* text, size_t len, int index, char* buf, size_
 /* Index of the first TLE whose short name equals short_name (ASCII case-insensitive), or -1. */
 int hcp_tle_find_short_name(const char* text, size_t len, const char* short_name);
 
+/* Satellite pass alerts (port of src/widgets/satellites/sat_catalog, sat_alert_prefs and the banner in
+ * sat_alert_plan). `catalog` is amateur-satellites.json; it is parsed once and cached per content. */
+typedef struct {
+    int norad;
+    char name[24];   /* "SO-50" */
+    char status[16]; /* active / intermittent / inactive */
+    char mode[12];   /* first transponder: FM / Linear / APRS / Digital */
+    int workable;    /* active or intermittent: what "All workable" alerts on */
+} HcpSatCatalogEntry;
+/* Catalog entries in file order (malformed ones skipped); returns the count written. */
+int hcp_satalert_catalog(const char* catalog, size_t len, HcpSatCatalogEntry* out, size_t cap);
+typedef struct {
+    int enabled, all_workable;
+    int min_elevation_deg, lead_minutes;
+    int quiet_start_hour, quiet_end_hour; /* local hours, -1 = none */
+    int daylight_only, announce_start;
+    const int* muted;
+    size_t muted_count;
+    const int* picked;
+    size_t picked_count;
+} HcpSatAlertPrefs;
+/* 1 when the NORAD id is selected for alerts under prefs (is_alert_selected). */
+int hcp_satalert_selected(const HcpSatAlertPrefs* prefs, const char* catalog, size_t len, int norad);
+typedef struct {
+    int norad;
+    char name[24];
+    int64_t aos_s, tca_s, los_s;
+    double max_el_deg, sun_el_deg;
+    char aos_compass[4], los_compass[4];
+} HcpAlertPass;
+/* Passes of the selected birds in the TLE text over the next 48 h (and in progress), sorted by AOS. */
+int hcp_satalert_predict(const char* tle, size_t tle_len, const char* catalog, size_t cat_len, const HcpSatAlertPrefs* prefs,
+                         double obs_lat_deg, double obs_lon_deg, int64_t now_s, HcpAlertPass* out, size_t cap);
+/* The in-app banner at now_s: 1 and text ("SO-50 in 4 min · AOS 14:05 · ...") when one is due, live = 1 while
+ * the bird is up; 0 otherwise. Local times are UTC + utc_offset_s. */
+int hcp_satalert_banner(const HcpAlertPass* passes, size_t count, const HcpSatAlertPrefs* prefs, const char* catalog,
+                        size_t cat_len, int utc_offset_s, int64_t now_s, char* text, size_t cap, int* live);
+
 /* HF band outlook (shared band_outlook heuristic; NOT VOACAP). Conditions: 0 Poor, 1 Fair, 2 Good.
  * Pass a_index = 0 when the A index is unknown (only the Kp storm rule then applies).
  * Fills out[] with up to cap bands (80m..10m); returns the number written. */
@@ -167,6 +205,68 @@ typedef struct {
     HcpScaleDay forecast[3];  /* today, tomorrow, day after */
 } HcpScales;
 int hcp_scales_parse(const char* body, size_t len, HcpScales* out);   /* returns out->valid */
+/* Kyoto Dst (products/kyoto-dst.json), port of src/widgets/solardst/solar_dst_parse. Fills out[] with
+ * the most recent cap hourly records, OLDEST FIRST; returns the count, or -1 when the body is not the product. */
+typedef struct {
+    int64_t time_ms; /* UTC, start of the hour */
+    int dst;         /* nT */
+} HcpDst;
+int hcp_dst_parse(const char* body, size_t len, HcpDst* out, size_t cap);
+int hcp_dst_word(int dst, char* buf, size_t cap); /* Quiet / Weak / Moderate / Intense / Super */
+/* NOAA SWPC alerts, watches and warnings (products/alerts.json), port of
+ * src/widgets/solaralerts/solar_alerts_parse. Texts are UTF-8, truncated to fit. */
+typedef struct {
+    char code[16];      /* SWPC product id, e.g. "K05A" */
+    char kind[24];      /* Alert, Warning, Extended warning, Watch, Summary, Cancel */
+    char headline[160];
+    char scale[4];      /* "G1", "S2", "R3"...; empty when none stated */
+    int64_t issued_ms;  /* UTC */
+    int64_t until_ms;   /* UTC end of validity; 0 when the message has none */
+    int cancelled;      /* 1 for a cancellation notice */
+    int level;          /* 0 info, 1 minor/moderate or a watch/warning, 2 strong+ (scale >= 3) */
+} HcpAlert;
+/* Every parseable message, NEWEST FIRST, up to cap; returns the count or -1 when the body is not the product. */
+int hcp_alerts_parse(const char* body, size_t len, HcpAlert* out, size_t cap);
+/* The messages in force at now_ms out of a parsed list (newest per product, no cancellations, warnings
+ * until their end time, alerts/summaries 24 h, watches 48 h). Returns the count written to out. */
+int hcp_alerts_active(const HcpAlert* all, size_t count, int64_t now_ms, HcpAlert* out, size_t cap);
+/* Solar trend (port of src/widgets/solartrend/solar_trend_parse). Each returns -1 when the body is not the product. */
+typedef struct {
+    int64_t time_ms; /* UTC start of the 3-hour interval */
+    double kp;
+    int predicted;   /* 1 forecast, 0 observed/estimated */
+    int level;       /* 0 quiet, 1 active (Kp 4), 2 storm (Kp >= 5) */
+} HcpKpBar;
+/* noaa-planetary-k-index-forecast.json: 36 h before the newest observation to the end of the forecast,
+ * OLDEST FIRST, up to cap; 0 bars when there is no observation. */
+int hcp_trend_kp_bars(const char* body, size_t len, HcpKpBar* out, size_t cap);
+typedef struct {
+    int64_t day_ms; /* UTC midnight */
+    double flux;    /* sfu, the Noon reading */
+} HcpFluxDay;
+/* f107_cm_flux.json: at most `days` newest days (and cap), OLDEST FIRST. */
+int hcp_trend_flux_daily(const char* body, size_t len, int days, HcpFluxDay* out, size_t cap);
+/* observed-solar-cycle-indices.json: newest month ("YYYY-MM") with a NOAA SSN; 1 found, 0 none or not the product. */
+int hcp_trend_sunspots(const char* body, size_t len, char* month, size_t month_cap, double* number);
+/* HamQSL (N0NBH) solar XML, port of src/widgets/solarhamqsl/solar_hamqsl_parse. */
+typedef struct {
+    char name[16];          /* "80m-40m" */
+    char day[12], night[12]; /* "Poor" / "Fair" / "Good" */
+    int day_rank, night_rank; /* 0 unknown, 1 poor, 2 fair, 3 good */
+} HcpHfCondition;
+typedef struct {
+    char name[24];     /* "E-Skip", "vhf-aurora" */
+    char location[24]; /* "europe", "north_america", "northern_hemi" */
+    char status[32];   /* "Band Closed" or an opening */
+} HcpVhfCondition;
+typedef struct {
+    int64_t updated_ms; /* UTC from <updated>; 0 when missing */
+    int hf_count, vhf_count;
+    HcpHfCondition hf[8];
+    HcpVhfCondition vhf[12];
+} HcpHamqsl;
+/* 1 with at least one complete HF band, 0 otherwise (not well-formed, truncated, or no bands). */
+int hcp_hamqsl_parse(const char* body, size_t len, HcpHamqsl* out);
 int hcp_scale_word(int level, char* buf, size_t cap);                  /* "Minor".."Extreme"; 0 and empty for 0/out of range */
 
 /* OVATION aurora nowcast (json/ovation_aurora_latest.json), port of solar_aurora_parse.

@@ -105,6 +105,13 @@ int run_settings_tests() {
         check(rejects_load(valid + "version=1\n"), "duplicate field");
         check(rejects_load(valid + "unknown=1\n"), "unknown field");
         check(rejects_load("version=1\n"), "missing fields");
+        {
+            std::string no_appearance = valid;
+            no_appearance.erase(no_appearance.find("appearance="));
+            { std::ofstream file(path, std::ios::binary | std::ios::trunc); file << no_appearance; }
+            check(load_settings(path).appearance == "system", "missing appearance means system");
+            check(rejects_load(no_appearance.substr(no_appearance.find("de_lat"))), "missing version still rejected");
+        }
         auto bad = valid; bad.replace(8, 1, "2");
         check(rejects_load(bad), "unsupported version");
         bad = valid; bad.replace(bad.find("37.7"), 4, "nan");

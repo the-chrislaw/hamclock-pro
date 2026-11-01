@@ -200,4 +200,11 @@ QString TimeZoneSearch::systemZone() const {
     return QTimeZone::isTimeZoneIdAvailable(id.toUtf8()) ? id : QString();
 }
 
+QString TimeZoneSearch::stationZone(const QString& saved, double latitude, double longitude) const {
+    const QString chosen = saved.trimmed();
+    if (!chosen.isEmpty()) return chosen;
+    const QString suggested = suggestZone(latitude, longitude);
+    return suggested.isEmpty() ? systemZone() : suggested;
+}
+
 } // namespace hamclock

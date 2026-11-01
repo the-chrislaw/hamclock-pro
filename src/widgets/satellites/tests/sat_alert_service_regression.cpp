@@ -38,8 +38,20 @@ int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     if (argc < 3) { std::cerr << "usage: test CATALOG.json AMATEUR.tle\n"; return 2; }
     const SatCatalog catalog = parse_sat_catalog(read_file(argv[1])).catalog;
-    const std::vector<Tle> tles = parse_tle_set(read_file(argv[2]).toStdString());
-    check(!catalog.entries.isEmpty() && tles.size() > 50, "fixtures");
+    const std::vector<Tle> all_tles = parse_tle_set(read_file(argv[2]).toStdString());
+    check(!catalog.entries.isEmpty() && all_tles.size() > 50, "fixtures");
+    // Each 48 h prediction costs seconds in a debug build; a dozen catalog sets (ISS among them, enough
+    // for the mode groups and default selection) and two outside it keep the whole test to a few runs.
+    std::vector<Tle> tles;
+    int in_catalog = 0, outside = 0;
+    for (const Tle& t : all_tles) {
+        const int norad = tle_norad_id(t);
+        const bool known = catalog.find(norad) != nullptr;
+        if (norad == kIss || (known && in_catalog < 14) || (!known && outside < 2)) {
+            tles.push_back(t);
+            if (norad != kIss) (known ? in_catalog : outside)++;
+        }
+    }
     const Tle* iss_tle = nullptr;
     for (const Tle& t : tles) if (tle_norad_id(t) == kIss) iss_tle = &t;
     check(iss_tle != nullptr, "ISS in fixture");
@@ -107,7 +119,14 @@ int main(int argc, char** argv) {
     check(service.predictionRuns() == runs, "filter-only settings do not re-run the prediction");
     service.toggleSatellite(other_norad);
     service.toggleSatellite(other_norad);
-    check(service.predictionRuns() == runs + 2 && service.isSelected(other_norad), "selection changes do re-run it");
+    check(service.predictionRuns() == runs && service.isSelected(other_norad),
+          "deselecting and reselecting a predicted satellite reuses its passes");
+    const int second_other = others.size() > 1 ? others.at(1).toMap().value("norad").toInt() : 0;
+    check(second_other != 0, "a second non-catalog bird");
+    service.toggleSatellite(second_other);
+    check(service.predictionRuns() == runs + 1 && service.isSelected(second_other),
+          "selecting a new satellite predicts only that one");
+    service.toggleSatellite(second_other);
 
     // Persistence: a new service (next launch) reads what was chosen.
     {

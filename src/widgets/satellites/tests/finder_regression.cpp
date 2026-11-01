@@ -70,6 +70,23 @@ int main(int argc, char** argv) {
         check(rise->t <= p0.aos, "horizon rise is no later than the 10 deg AOS");
     }
 
+    // The pass search leaps over the hours far below the horizon; a brute-force 5 s scan of the same
+    // 48 h must find the same passes (same count, AOS within a scan step).
+    {
+        const auto fast = sat.passes(obs, from, 48 * 3600, 0.0, 64);
+        std::vector<double> brute_aos;
+        bool was_up = false;
+        for (double t = from; t <= from + 48 * 3600; t += 5.0) {
+            LookAngle la;
+            const bool up = sat.look(t, obs, la) && la.el_deg >= 0.0;
+            if (up && !was_up) brute_aos.push_back(t);
+            was_up = up;
+        }
+        bool same = fast.size() == brute_aos.size();
+        for (std::size_t i = 0; same && i < fast.size(); ++i) same = std::fabs(static_cast<double>(fast[i].aos) - brute_aos[i]) <= 6.0;
+        check(same, "leaping pass search matches a 5 s brute-force scan");
+    }
+
     // Schedule: sorted, filter only removes, visible ones satisfy the rule.
     const std::vector<std::pair<std::string, const SatellitePropagator*>> sats{{"ISS", &sat}};
     const auto all = pass_schedule(sats, obs, from, 48 * 3600, 10.0, PassFilter::All, 0);

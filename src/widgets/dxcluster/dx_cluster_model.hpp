@@ -108,6 +108,11 @@ private:
     AppSettings* settings_;
     TelnetClient client_;
     bool iota_started_ = false;
+    bool reached_ = false;
+    bool started_ = false;
+    QString started_key_;      // loginKey() at the last start()
+    QString loginKey() const;  // host, port, login and commands now in Settings
+    void restartIfChanged(); // the node answered since the last start(); picks "lost" over "cannot reach"
     PolledSource* iota_ = nullptr; // IOTA group names, weekly, only polled once the cluster is configured
     DxSpotList list_;
     dxcluster::UdpSpotListener udp_;

@@ -117,6 +117,22 @@ int main(int argc, char** argv) {
               "a later connection loss still retries");
     }
 
+    // No network / HamAlert down: say it cannot be reached, not that the login was refused.
+    {
+        QTemporaryDir net_dir;
+        AppSettings net_settings(net_dir.filePath("station.conf"), net_dir.path());
+        check(net_settings.saveHamAlert("K1ABC", "pw!").isEmpty(), "login saved");
+        WidgetContext net_ctx;
+        net_ctx.settings = &net_settings;
+        FakeSocket* ns = nullptr;
+        HamAlertModel unreachable(net_ctx, [&](QObject* parent) -> TelnetSocket* { return ns = new FakeSocket(parent); });
+        unreachable.start();
+        emit ns->closed("Host not found");
+        check(unreachable.state() == "offline" && unreachable.statusText().contains("Cannot reach hamalert.org"),
+              "unreachable server named, retrying");
+        check(unreachable.client().state() == TelnetClient::State::Waiting, "unreachable server is retried");
+    }
+
     // Without a password the client behaves as before (cluster login only).
     TelnetClient plain([&](QObject* p) -> TelnetSocket* { return sock = new FakeSocket(p); });
     plain.start("cluster.example", 7300, "K1ABC");

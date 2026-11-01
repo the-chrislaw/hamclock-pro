@@ -84,6 +84,8 @@ public:
     QVariantList rotationChoices() const;
     // Map View menu: per-layer visibility, independent of which panes are shown.
     Q_INVOKABLE bool layerVisible(const QString& id) const { return options_.layer_visible(id); }
+    Q_INVOKABLE QString layerName(const QString& id) const;  // "DX cluster" for "dx-cluster"
+    Q_INVOKABLE QString styleName(const QString& id) const;  // the style's own name ("D-RAP"), else the id
     Q_INVOKABLE void setLayerVisible(const QString& id, bool on);
     // Distance and bearing from DE to a point, for the tap popup (empty without DE).
     Q_INVOKABLE QString pathText(double latitude, double longitude) const;

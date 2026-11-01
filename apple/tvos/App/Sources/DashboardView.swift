@@ -10,17 +10,19 @@ enum DashOverlay: Equatable { case chooser(Int), options(Int), mapMenu }
 /// world map on the right (or two rows of panes when the map is hidden).
 struct DashboardView: View {
     @EnvironmentObject var settings: AppSettings
+    @EnvironmentObject var satAlerts: SatAlertStore
     @FocusState private var focus: DashFocus?
     @State private var overlay: DashOverlay?
     @State private var showSettings = false
     @State private var setupMode = false
     @State private var bannerMode = 0
     @State private var showLocal = false
-    @State private var map = MapView()
     @State private var lastInput = Date()
     /// When each rotating slot was last stepped by hand (its rotation restarts from there).
     @State private var rotationRestart: [Int: Date] = [:]
 
+    /// Station zone for the banner's local AOS time and quiet hours (UTC when none is set).
+    private var stationZone: TimeZone { TimeZone(identifier: settings.deZone) ?? StationText.utc }
     private var theme: Theme { Theme(dark: settings.dark, accentStyle: settings.accentStyle) }
     private var paneCount: Int { settings.mapSize == "hidden" ? 6 : 3 }
 
@@ -32,6 +34,10 @@ struct DashboardView: View {
                     .offset(BurnInShift.offset(at: ctx.date))
                     .disabled(overlay != nil || showSettings)
                     .opacity(DimPolicy.opacity(idle: ctx.date.timeIntervalSince(lastInput), afterHours: settings.dimAfterHours))
+                if overlay == nil, !showSettings, let b = satAlerts.banner(at: ctx.date, prefs: settings.satAlerts, zone: stationZone) {
+                    VStack { SatAlertBanner(text: b.text, live: b.live).padding(.top, 8); Spacer() }
+                        .allowsHitTesting(false)
+                }
                 if let overlay { overlayView(overlay) }
                 if showSettings {
                     SettingsView(setup: setupMode) { closeSettings() }
@@ -80,7 +86,7 @@ struct DashboardView: View {
             HStack(alignment: .top, spacing: Theme.gap) {
                 RemoteTile(select: { woke(); settings.configured ? showLocal.toggle() : openSettings() }, hold: { woke(); openSettings() }) {
                     StationCardView(now: now, focused: focus == .station, bannerMode: bannerMode,
-                                    showLocal: showLocal, longPath: map.longPath)
+                                    showLocal: showLocal, longPath: settings.mapView.longPath)
                 }
                 .frame(width: 400)
                 .focused($focus, equals: .station)
@@ -124,16 +130,22 @@ struct DashboardView: View {
 
     private func mapCard(_ now: Date) -> some View {
         RemoteTile(select: { overlay = .mapMenu }, hold: { overlay = .mapMenu }) {
-            Card(title: "World map" + (map.centre == .world ? "" : map.centre == .de ? " · DE" : " · DX"), chooser: true,
-                 focused: focus == .map) {
-                WorldMapView(now: now, view: map)
+            Card(title: "World map" + mapTitleSuffix, chooser: true, focused: focus == .map) {
+                WorldMapView(now: now, view: settings.mapView)
             }
         }
         .focused($focus, equals: .map)
         .accessibilityLabel("World map")
+        .accessibilityValue("\(settings.mapView.centre.rawValue) \(Int(settings.mapView.zoom))x\(settings.mapView.longPath ? " long" : "")")
         .accessibilityIdentifier("mapCard")
     }
 
+
+    private var mapTitleSuffix: String {
+        let v = settings.mapView
+        let centre = v.centre == .world ? "" : v.centre == .de ? " · DE" : " · DX"
+        return centre + (v.zoom > 1 ? " · \(Int(v.zoom))×" : "")
+    }
 
     /// The saved widget, or the current stop of the slot's automatic rotation (never saved).
     private func shownWidget(_ i: Int, _ now: Date) -> String {
@@ -167,7 +179,7 @@ struct DashboardView: View {
         case .options(let slot):
             PaneOptionsView(slot: slot, change: { overlay = .chooser(slot) }) { overlay = nil; focus = .pane(slot) }
         case .mapMenu:
-            MapMenuView(view: $map) { overlay = nil; focus = .map }
+            MapMenuView(view: $settings.mapView) { overlay = nil; focus = .map }
         }
     }
 

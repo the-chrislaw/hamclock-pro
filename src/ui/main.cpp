@@ -21,6 +21,7 @@
 #include "../platform/apple_safearea.hpp"
 #include "../platform/apple_textentry.hpp"
 #include "../platform/apple_attribution.hpp"
+#include "../platform/apple_devicelocation.hpp"
 #include "../platform/apple_widgetshare.hpp"
 #include <QSettings>
 #include <QEventLoop>
@@ -193,9 +194,10 @@ int main(int argc, char** argv) {
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
+    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: accounts, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
-    for (const auto& option : {check_fill, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    for (const auto& option : {check_fill, open_settings, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -256,6 +258,8 @@ int main(int argc, char** argv) {
     hamclock::StationModel station_model(settings);
     hamclock::TimeZoneSearch time_zone_search;
     hamclock::LocationTools location_tools;
+    hamclock::DeviceLocation device_location;
+    device_location.setAvailableOverride(hamclock::nativeLocationAvailable());
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
@@ -319,11 +323,13 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("blanking", &blanking);
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
+    engine.rootContext()->setContextProperty("deviceLocation", &device_location);
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
+    engine.rootContext()->setContextProperty("openSettings", parser.value(open_settings));
 #ifdef Q_OS_MACOS
     // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
     engine.rootContext()->setContextProperty("nativeMenuBar", !parser.isSet(screenshot));

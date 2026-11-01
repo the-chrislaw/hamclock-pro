@@ -108,7 +108,7 @@ struct BandsWidget: View {
     let focused: Bool
     var body: some View {
         let state = combined([feeds.kp.state(now), feeds.flux.state(now)])
-        Card(title: "Band conditions", chooser: true, state: state, status: "Estimate from SFI and Kp, not VOACAP",
+        Card(title: "Band conditions", chooser: true, state: state, status: "SFI + Kp estimate",
              age: Age.text(feeds.kp.status.fetched, now: now), focused: focused) {
             if let sfi = feeds.flux.value?.value, let kp = feeds.kp.value?.last?.value, state != .offline {
                 let bands = outlook(sfi: sfi, kp: kp)
@@ -117,7 +117,8 @@ struct BandsWidget: View {
                     table(Array(bands.prefix(4)))
                     table(Array(bands.dropFirst(4)))
                 }
-                Text(String(format: "SFI %.0f · Kp %.1f", sfi, kp)).font(.system(size: Theme.fontCaption))
+                Text(String(format: "SFI %.0f · Kp %.1f · not VOACAP", sfi, kp)).font(.system(size: Theme.fontCaption))
+                    .lineLimit(1).minimumScaleFactor(0.8)
                     .foregroundStyle(theme.secondary)
             } else {
                 Note(text: state == .loading ? "Waiting for SFI and Kp…" : "No data")
@@ -196,7 +197,7 @@ struct AuroraWidget: View {
     let focused: Bool
     var body: some View {
         let a = feeds.aurora.value?.info
-        Card(title: "Aurora", chooser: true, state: feeds.aurora.state(now), status: "NOAA SWPC OVATION",
+        Card(title: "Aurora", chooser: true, state: feeds.aurora.state(now), status: "NOAA OVATION",
              age: Age.text(a.map { Date(timeIntervalSince1970: Double($0.observed_ms) / 1000) }, now: now), focused: focused) {
             if let a {
                 HStack(spacing: 30) {
@@ -216,10 +217,10 @@ struct DrapWidget: View {
     let focused: Bool
     var body: some View {
         let d = feeds.drap.value?.info
-        Card(title: "D-RAP", chooser: true, state: feeds.drap.state(now), status: "NOAA SWPC D-RAP",
+        Card(title: "D-RAP", chooser: true, state: feeds.drap.state(now), status: "NOAA D-RAP",
              age: Age.text(d.map { Date(timeIntervalSince1970: Double($0.valid_ms) / 1000) }, now: now), focused: focused) {
             if let d {
-                Metric(label: "Highest affected frequency", value: String(format: "%.1f MHz", d.peak_mhz),
+                Metric(label: "Highest affected freq.", value: String(format: "%.1f MHz", d.peak_mhz),
                        caption: d.peak_mhz < 1 ? "No HF absorption" : "HF absorbed below this on the day side")
                 Note(text: cText(d.xray))
                 Note(text: cText(d.proton))
@@ -238,7 +239,7 @@ struct SolarImageWidget: View {
     private static let url = URL(string: "https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg")!
     var body: some View {
         let state: WidgetState = loadedAt.map { now.timeIntervalSince($0) > 7200 ? .stale : .live } ?? (failed ? .offline : .loading)
-        Card(title: "Sun (SDO)", chooser: true, state: state, status: "NASA SDO · AIA 193 Å",
+        Card(title: "Sun (SDO)", chooser: true, state: state, status: "SDO AIA 193 Å",
              age: Age.text(loadedAt, now: now), focused: focused) {
             AsyncImage(url: Self.url, transaction: Transaction(animation: .easeIn)) { phase in
                 switch phase {

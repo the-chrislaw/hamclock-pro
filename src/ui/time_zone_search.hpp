@@ -23,6 +23,9 @@ public:
     Q_INVOKABLE QString suggestZone(double latitude, double longitude) const;
     // The system zone id when it is a known IANA id, else empty.
     Q_INVOKABLE QString systemZone() const;
+    // The zone to use for the station: the saved one when set, else the zone suggested
+    // from the station's coordinates, and only without a usable location the system zone.
+    Q_INVOKABLE QString stationZone(const QString& saved, double latitude, double longitude) const;
 };
 
 } // namespace hamclock
