@@ -21,10 +21,13 @@ if re.search(r"^\s*width:", menu_use, re.M) or "maxWidth:" not in menu_use:
 if "onAboutToShow: fitWidth()" not in qml or not re.search(r"^    width: 0\b", qml, re.M):
     sys.exit("MapMenu.qml: the width must be assigned on open (fitWidth)")
 
-# Settings: the hidden (iOS) station hardware card has width 0; its wrapped labels then loop the
-# layout polish. It lays out at its natural width while hidden.
-settings = (pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml/SettingsPage.qml").read_text()
-hardware = settings.split("id: hardwareCard", 1)[1][:200]
-if not re.search(r"width:\s*parent\.width\s*>\s*0\s*\?\s*parent\.width\s*:\s*implicitWidth", hardware):
-    sys.exit("SettingsPage.qml: hardwareCard must not lay out at zero width (polish loop)")
+# Settings: a hidden group (the iOS station hardware section, any closed group) has zero width in a
+# layout; its wrapped labels then loop the layout polish. It lays out at its natural width instead.
+qml = pathlib.Path(__file__).resolve().parent.parent / "src/ui/qml"
+group = (qml / "SettingsGroup.qml").read_text()
+if not re.search(r"width:\s*group\.contentWidth\s*>\s*0\s*\?\s*group\.contentWidth\s*:\s*implicitWidth", group):
+    sys.exit("SettingsGroup.qml: must not lay out at zero width (polish loop)")
+screen = (qml / "ScreenSection.qml").read_text()
+if not re.search(r"width:\s*parent\.width\s*>\s*0\s*\?\s*parent\.width\s*:\s*implicitWidth", screen):
+    sys.exit("ScreenSection.qml: must not lay out at zero width (polish loop)")
 print("ok")

@@ -6,6 +6,7 @@
 #include "pane_fill.hpp"
 #include "alarms_model.hpp"
 #include "blanking_model.hpp"
+#include "key_injector.hpp"
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
@@ -241,17 +242,18 @@ int main(int argc, char** argv) {
     const QCommandLineOption fullscreen("fullscreen", "Start fullscreen.");
     const QCommandLineOption windowed("windowed", "Start in a window even on small screens.");
     const QCommandLineOption first_run("first-run", "Open Settings at start when no station is configured (kiosk first boot).");
+    const QCommandLineOption touch_keyboard("touch-keyboard", "Show an on-screen keyboard for text fields (touch-only kiosks).");
     const QCommandLineOption offline("offline", "Do not use the network (cached data only).");
     const QCommandLineOption fixtures("fixtures", "Serve data from files in DIR instead of the network.", "dir");
     const QCommandLineOption screenshot("screenshot", "Render once to PNG and exit.", "png");
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
     const QCommandLineOption pane("pane", "Show widget ID in pane N (1-based); repeatable. For screenshots.", "N=id");
-    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: accounts, or accounts:ID to open one account (screenshots).", "section");
+    const QCommandLineOption open_settings("settings", "Open Settings at a section at start: station, accounts, display, screen, spots, hardware, advanced or about, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
     const QCommandLineOption fake_safe_area("safe-area", "With --screenshot, lay out as if the iOS safe-area insets were L,T,R,B and fail (exit 7) when text or a button reaches into them.", "L,T,R,B");
-    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -317,6 +319,7 @@ int main(int argc, char** argv) {
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
+    hamclock::KeyInjector key_injector;
     const auto apply_blanking = [&] {
         blanking.setConfig({settings.blankIdleMinutes(), settings.blankOffHour(), settings.blankOnHour(), settings.blankDays()});
     };
@@ -389,6 +392,8 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
     engine.rootContext()->setContextProperty("startFullScreen", start_fullscreen);
     engine.rootContext()->setContextProperty("firstRun", parser.isSet(first_run));
+    engine.rootContext()->setContextProperty("touchKeyboard", parser.isSet(touch_keyboard));
+    engine.rootContext()->setContextProperty("keyInjector", &key_injector);
     engine.rootContext()->setContextProperty("openSettings", parser.value(open_settings));
 #ifdef Q_OS_MACOS
     // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
