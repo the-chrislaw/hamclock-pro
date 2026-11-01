@@ -42,6 +42,10 @@ ApplicationWindow {
         bar.appearanceRequested.connect(value => appSettings.appearance = value)
     }
 
+    // iPhone/iPad: the status bar, home indicator and landscape side insets take the
+    // page colour (they showed black bands in the light theme).
+    Binding { target: safeArea; property: "backdrop"; value: Theme.canvas }
+
     SystemPalette { id: systemPalette }
     Binding {
         target: Theme; property: "dark"
