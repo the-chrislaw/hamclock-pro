@@ -19,12 +19,15 @@ struct PathReliabilityWidget: View {
     }
 
     var body: some View {
-        let state: WidgetState = settings.configured ? combined([feeds.kp.state(now), feeds.flux.state(now)]) : .unconfigured
+        let check = feeds.hfAge(now)
+        let state: WidgetState = settings.configured
+            ? combined([feeds.kp.state(now), feeds.flux.state(now), check?.stale == true ? .stale : .live]) : .unconfigured
+        let old = state == .stale ? check : nil
         let sfi = feeds.flux.value?.value, kp = feeds.kp.value?.last?.value
         let grid = (sfi != nil && kp != nil && state != .offline) ? Self.card(de: settings.de, dx: settings.dx, now: now, sfi: sfi!, kp: kp!) : nil
         // The model is labelled an estimate (not VOACAP); the Station card already shows the distance.
         Card(title: "HF paths", chooser: true, state: state, status: grid == nil ? "SFI + Kp estimate" : "SSB 100 W · est.",
-             age: Age.text(feeds.kp.status.fetched, now: now), focused: focused) {
+             age: Age.text(old?.oldest ?? feeds.hfFetched, now: now), focused: focused, statusForms: old?.notes ?? []) {
             if !settings.configured {
                 Note(text: "Set your station in Settings.")
             } else if sfi == nil || kp == nil || state == .offline {

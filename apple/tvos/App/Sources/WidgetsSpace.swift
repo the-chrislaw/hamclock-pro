@@ -43,12 +43,15 @@ struct SpaceWeatherWidget: View {
     let focused: Bool
     var body: some View {
         let kp = feeds.kp.value?.last, flux = feeds.flux.value, xray = feeds.xray.value?.last
+        let feedStates: [WidgetState] = [feeds.kp.state(now), feeds.flux.state(now), feeds.xray.state(now)]
+        let times: [Date?] = [kp?.time, flux?.time, xray?.time]
         // A product can keep answering with frozen rows: the observation time counts too.
-        let state = combined([feeds.kp.state(now), feeds.flux.state(now), feeds.xray.state(now),
-                              observed(kp?.time, now, staleAfter: 6 * 3600), observed(xray?.time, now, staleAfter: 1800)])
+        let check = IndexAge.spaceWeather(kp: IndexAge.input(times[0], feedStates[0]), sfi: IndexAge.input(times[1], feedStates[1]),
+                                          xray: IndexAge.input(times[2], feedStates[2]), now: now)
+        let state = Self.cardState(feedStates, times, stale: check.stale)
         let oldest = [feeds.kp.status.fetched, feeds.flux.status.fetched, feeds.xray.status.fetched].compactMap { $0 }.min()
         Card(title: "Space Wx", chooser: true, state: state, status: "NOAA SWPC",
-             age: Age.text(oldest, now: now), focused: focused) {
+             age: Age.text(check.oldest ?? oldest, now: now), focused: focused, statusForms: check.notes) {
             VStack(alignment: .leading, spacing: 10) {
                 row("KP", kp.map { String(format: "%.1f ", $0.value) + SpaceText.kpWord($0.value) })
                 row("SFI", flux.map { String(format: "%.0f", $0.value) })
@@ -59,6 +62,15 @@ struct SpaceWeatherWidget: View {
                 }
             }
         }
+    }
+
+    /// One index with no answer leaves the others on screen: Stale, naming it, as the main app.
+    private static func cardState(_ feeds: [WidgetState], _ times: [Date?], stale: Bool) -> WidgetState {
+        let anyValue = times.contains { $0 != nil }
+        let perFeed: [WidgetState] = zip(feeds, times).map { feed, time in
+            anyValue && time == nil && feed == .offline ? .stale : feed
+        }
+        return combined(perFeed + [stale ? .stale : .live])
     }
 
     private func row(_ label: String, _ value: String?) -> some View {
@@ -107,9 +119,11 @@ struct BandsWidget: View {
     let now: Date
     let focused: Bool
     var body: some View {
-        let state = combined([feeds.kp.state(now), feeds.flux.state(now)])
+        let check = feeds.hfAge(now)
+        let state = combined([feeds.kp.state(now), feeds.flux.state(now), check?.stale == true ? .stale : .live])
+        let old = state == .stale ? check : nil
         Card(title: "HF bands", chooser: true, state: state, status: "SFI + Kp estimate",
-             age: Age.text(feeds.kp.status.fetched, now: now), focused: focused) {
+             age: Age.text(old?.oldest ?? feeds.hfFetched, now: now), focused: focused, statusForms: old?.notes ?? []) {
             if let sfi = feeds.flux.value?.value, let kp = feeds.kp.value?.last?.value, state != .offline {
                 let bands = outlook(sfi: sfi, kp: kp)
                 // Two-up, as BandsCard.qml in a narrow pane: 80–20 m beside 17–10 m.

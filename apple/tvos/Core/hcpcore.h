@@ -18,6 +18,27 @@ HcpReading hcp_swpc_latest_kp(const char* body, size_t len);
 HcpReading hcp_swpc_latest_solar_flux(const char* body, size_t len);
 HcpReading hcp_swpc_latest_xray(const char* body, size_t len);
 
+/* Are the values a pane shows too old? Compares each time tag with the limits in swpc.hpp. */
+typedef struct {
+    int has_value;      /* a value is on screen */
+    int waiting;        /* no value and no answer from the feed yet */
+    int feed_late;      /* the feed is past its fetch limit */
+    int64_t time_ms;    /* the value's own time tag, UTC */
+} HcpIndexInput;
+typedef struct {
+    int stale;          /* 1: something is old or missing */
+    int64_t oldest_ms;  /* time tag of the oldest old reading; 0 when none is old */
+    /* Footer text, longest first: show the first that fits. Empty when not stale. */
+    char note[48];       /* "SWPC · old Kp, SFI, no X-ray" */
+    char short_note[32]; /* "old Kp, SFI" */
+    char tiny_note[16];  /* "old data" */
+} HcpIndexCheck;
+/* Space weather pane: Kp, SFI and X-ray. Returns out->stale; 0 for NULL arguments. */
+int hcp_swpc_check_space_weather(const HcpIndexInput* kp, const HcpIndexInput* sfi, const HcpIndexInput* xray,
+                                 int64_t now_ms, HcpIndexCheck* out);
+/* HF bands and HF paths panes: SFI and Kp. Returns out->stale; 0 for NULL arguments. */
+int hcp_swpc_check_hf(const HcpIndexInput* sfi, const HcpIndexInput* kp, int64_t now_ms, HcpIndexCheck* out);
+
 /* NOAA rtsw_*_1m.json: latest active-spacecraft value (see solarwind.hpp). */
 HcpReading hcp_solarwind_latest_speed(const char* body, size_t len);   /* km/s */
 HcpReading hcp_solarwind_latest_density(const char* body, size_t len); /* p/cm^3 */

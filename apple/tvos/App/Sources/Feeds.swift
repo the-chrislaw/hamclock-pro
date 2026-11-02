@@ -146,10 +146,19 @@ final class Feeds: ObservableObject {
 
     /// Starts every feed's refresh loop; they run while the app is in the foreground.
     func run() async {
+        #if DEBUG
+        let seededAges = IndexSeed.ages
+        if let seededAges { applyIndexSeed(seededAges, now: Date()) }
+        let pollIndices = seededAges == nil
+        #else
+        let pollIndices = true
+        #endif
         await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.kp.run() }
-            group.addTask { await self.flux.run() }
-            group.addTask { await self.xray.run() }
+            if pollIndices {
+                group.addTask { await self.kp.run() }
+                group.addTask { await self.flux.run() }
+                group.addTask { await self.xray.run() }
+            }
             group.addTask { await self.wind.run() }
             group.addTask { await self.mag.run() }
             group.addTask { await self.scales.run() }
