@@ -15,7 +15,12 @@ Card {
     readonly property int shown: Math.max(0, Math.min(widget ? widget.rows.length : 0,
         Math.floor((stageHeight - headerHeight + Theme.gap * 0.3) / pitch)))
     // Narrow slots: today's passes show the UTC time alone so the direction column keeps its room.
-    function when(row) { return row.live ? "now" : compact && row.day === "Today" ? row.utc : row.day + " " + row.utc }
+    // A compact pane shortens the day so the elevation and direction column keeps its full width.
+    function when(row) {
+        if (row.live) return "now"
+        if (!compact) return row.day + " " + row.utc
+        return row.day === "Today" ? row.utc : row.day === "Tomorrow" ? "Tmrw " + row.utc : row.day + " " + row.utc
+    }
     ColumnLayout {
         id: passColumn
         width: parent.width
