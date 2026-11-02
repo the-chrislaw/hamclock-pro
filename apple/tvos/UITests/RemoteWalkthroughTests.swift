@@ -512,6 +512,38 @@ final class RemoteWalkthroughTests: XCTestCase {
         }
     }
 
+    /// Old SFI, Kp and X-ray readings beside the map, the narrowest layout, from the DEBUG-only
+    /// seed (real feeds are healthy): values stay, the badge says Stale, the footer names what is
+    /// old in a form that fits, and a healthy feed at the late end of its limits stays Live.
+    func testOldIndicesBesideTheMap() {
+        let panes = ["spaceweather", "bands", "bandsmatrix"].joined(separator: ",")
+        let values = ["3.7", "Kp 3.7", "Best now|HF closed now"]
+        // KP hours, SFI hours, X-ray minutes; "-" is a feed that answered with nothing.
+        let scenes: [(ages: String, name: String, footers: [String])] = [
+            ("8.9,76,5", "healthy-late", []),
+            ("10,2,5", "old-kp", ["SWPC · old Kp", "SWPC · old Kp", "SWPC · old Kp"]),
+            ("2,100,5", "old-sfi", ["SWPC · old SFI", "SWPC · old SFI", "SWPC · old SFI"]),
+            ("10,100,45", "all-old", ["old", "old", "old"]),
+            ("10,100,-", "longest", ["old", "old", "old"]),
+        ]
+        for scene in scenes {
+            launchWithStation(["-hcpPanes", panes, "-hcpSeedIndexAges", scene.ages])
+            for i in 0..<3 {
+                let pane = app.descendants(matching: .any)["pane\(i)"]
+                let wanted = scene.footers.isEmpty ? "Live" : "Stale"
+                XCTAssertTrue(waitFor(10) { pane.label.contains(wanted) }, "\(scene.name) pane \(i) is \(wanted): \(pane.label)")
+                XCTAssertTrue(values[i].split(separator: "|").contains { pane.label.contains($0) },
+                              "\(scene.name) pane \(i) keeps its values: \(pane.label)")
+                if scene.footers.isEmpty {
+                    XCTAssertFalse(pane.label.contains("old "), "\(scene.name) pane \(i) raises no alarm: \(pane.label)")
+                } else {
+                    XCTAssertTrue(pane.label.contains(scene.footers[i]), "\(scene.name) pane \(i) names what is old: \(pane.label)")
+                }
+            }
+            shot("tvos-stale-\(scene.name)")
+        }
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard

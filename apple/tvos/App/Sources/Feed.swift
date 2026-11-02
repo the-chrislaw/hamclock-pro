@@ -88,6 +88,14 @@ final class PolledFeed<Value: Sendable>: ObservableObject {
 
     func state(_ now: Date) -> WidgetState { status.state(now, policy) }
 
+    #if DEBUG
+    /// UI-test hook (IndexSeed): this feed answered at `now` with `seeded`, or with nothing when nil.
+    func seed(_ seeded: Value?, now: Date) {
+        value = seeded
+        status = FeedStatus(fetched: seeded == nil ? nil : now, failed: seeded == nil, tried: true)
+    }
+    #endif
+
     func run() async {
         if !cacheLoaded { await loadCache() }
         while !Task.isCancelled {

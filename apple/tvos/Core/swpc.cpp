@@ -75,6 +75,31 @@ std::string format(const char* fmt, char letter, double v, int digits) {
 }
 } // namespace
 
+bool is_old(int64_t time_ms, int64_t now_ms, int64_t max_age_ms) {
+    return time_ms > 0 && now_ms - time_ms > max_age_ms;
+}
+
+IndexCheck check_indices(const std::vector<Index>& indices, int64_t now_ms) {
+    IndexCheck out;
+    std::string old_labels, missing_labels;
+    const auto add = [](std::string& list, const char* label) { list += (list.empty() ? "" : ", ") + std::string(label); };
+    for (const auto& index : indices) {
+        if (index.waiting) continue;
+        if (!index.has_value) { add(missing_labels, index.label); continue; }
+        if (!index.feed_late && !is_old(index.time_ms, now_ms, index.max_age_ms)) continue;
+        add(old_labels, index.label);
+        if (out.oldest_ms == 0 || index.time_ms < out.oldest_ms) out.oldest_ms = index.time_ms;
+    }
+    if (old_labels.empty() && missing_labels.empty()) return out;
+    const std::string old_part = old_labels.empty() ? "" : "old " + old_labels;
+    const std::string missing_part = missing_labels.empty() ? "" : "no " + missing_labels;
+    out.stale = true;
+    out.note = "SWPC · " + old_part + (!old_part.empty() && !missing_part.empty() ? ", " : "") + missing_part;
+    out.short_note = old_part.empty() ? missing_part : old_part;
+    out.tiny_note = old_part.empty() ? "no data" : "old data";
+    return out;
+}
+
 std::optional<int64_t> parse_iso_utc_ms(std::string_view text) {
     while (!text.empty() && text.front() == ' ') text.remove_prefix(1);
     while (!text.empty() && text.back() == ' ') text.remove_suffix(1);

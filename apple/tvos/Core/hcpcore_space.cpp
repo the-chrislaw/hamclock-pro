@@ -64,9 +64,44 @@ hcp::alerts::Alert from_abi(const HcpAlert& o) {
 }
 
 HcpScaleDay day(const hcp::scales::Day& d) { return HcpScaleDay{d.r, d.s, d.g, d.r_minor, d.r_major, d.s_prob}; }
+
+hcp::swpc::Index index(const char* label, int64_t max_age_ms, const HcpIndexInput& in) {
+    hcp::swpc::Index i;
+    i.label = label;
+    i.max_age_ms = max_age_ms;
+    i.has_value = in.has_value != 0;
+    i.waiting = in.waiting != 0;
+    i.feed_late = in.feed_late != 0;
+    i.time_ms = in.time_ms;
+    return i;
+}
+
+int fill_check(const hcp::swpc::IndexCheck& c, HcpIndexCheck* out) {
+    *out = HcpIndexCheck{};
+    out->stale = c.stale ? 1 : 0;
+    out->oldest_ms = c.oldest_ms;
+    hcp::abi::copy(c.note, out->note, sizeof out->note);
+    hcp::abi::copy(c.short_note, out->short_note, sizeof out->short_note);
+    hcp::abi::copy(c.tiny_note, out->tiny_note, sizeof out->tiny_note);
+    return out->stale;
+}
 } // namespace
 
 extern "C" {
+int hcp_swpc_check_space_weather(const HcpIndexInput* kp, const HcpIndexInput* sfi, const HcpIndexInput* xray,
+                                 int64_t now_ms, HcpIndexCheck* out) {
+    if (!kp || !sfi || !xray || !out) return 0;
+    using namespace hcp::swpc;
+    return fill_check(check_indices({index("Kp", kKpMaxAgeMs, *kp), index("SFI", kSolarFluxMaxAgeMs, *sfi),
+                                     index("X-ray", kXrayMaxAgeMs, *xray)}, now_ms), out);
+}
+
+int hcp_swpc_check_hf(const HcpIndexInput* sfi, const HcpIndexInput* kp, int64_t now_ms, HcpIndexCheck* out) {
+    if (!sfi || !kp || !out) return 0;
+    using namespace hcp::swpc;
+    return fill_check(check_indices({index("SFI", kSolarFluxMaxAgeMs, *sfi), index("Kp", kKpMaxAgeMs, *kp)}, now_ms), out);
+}
+
 int hcp_swpc_kp_series(const char* b, size_t n, HcpReading* out, size_t cap) {
     const auto s = hcp::swpc::kp_history(view(b, n));
     return s ? fill_tail(*s, out, cap, [](const auto& r) { return reading(r); }) : -1;

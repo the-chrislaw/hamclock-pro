@@ -32,6 +32,9 @@ struct Card<Content: View>: View {
     var age = ""
     var focused = false
     var showTitle = true
+    /// Footer wording, longest first, when `status` may not fit beside the age: the first form that
+    /// fits at full size is shown, whole. The last must always fit. Empty uses `status` alone.
+    var statusForms: [String] = []
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -55,7 +58,18 @@ struct Card<Content: View>: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
                 .clipped()
-            if !status.isEmpty || !age.isEmpty {
+            if !statusForms.isEmpty {
+                ViewThatFits(in: .horizontal) {
+                    ForEach(statusForms, id: \.self) { form in
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Text(form).lineLimit(1).fixedSize()
+                            Spacer(minLength: 0)
+                            Text(age).lineLimit(1).fixedSize()
+                        }
+                    }
+                }
+                .font(.system(size: Theme.fontCaption)).foregroundStyle(theme.secondary)
+            } else if !status.isEmpty || !age.isEmpty {
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     // Sources are short names; scale a little before truncating (29 pt at 1080p).
                     Text(status).lineLimit(1).minimumScaleFactor(0.8).truncationMode(.tail)
