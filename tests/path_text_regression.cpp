@@ -10,7 +10,7 @@ static int failures = 0;
 #define CHECK(c) do { if (!(c)) { std::fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #c); ++failures; } } while (0)
 
 int main() {
-    CHECK(path_summary("0 KM", "BEARING UNDEFINED") == "Set a DX target in Settings");
+    CHECK(path_summary("0 KM", "BEARING UNDEFINED") == "Tap the map to set a DX target");
     CHECK(path_summary("8123 KM", "45 DEG / TRUE").startsWith("8123 KM"));
     CHECK(path_summary("8123 KM", "45 DEG / TRUE").endsWith("45 DEG / TRUE"));
     const auto g = hamclock::geometry({0, 0}, {0, 90});
@@ -25,6 +25,6 @@ int main() {
     // Issue #401: three lines, and lines 2 and 3 have no breakable space (no orphan separator or unit).
     const auto lines = path_detail(g, false).split('\n');
     CHECK(lines.size() == 3 && lines[0] == "Short path" && !lines[1].contains(' ') && !lines[2].contains(' ') && lines[2].endsWith("TRUE"));
-    CHECK(path_detail(hamclock::geometry({0, 0}, {0, 0}), true) == "Set a DX target in Settings");
+    CHECK(path_detail(hamclock::geometry({0, 0}, {0, 0}), true) == "Tap the map to set a DX target");
     return failures ? 1 : 0;
 }

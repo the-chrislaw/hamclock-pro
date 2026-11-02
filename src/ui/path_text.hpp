@@ -16,7 +16,7 @@ inline QString distance_label(double km, bool imperial) {
 // DE == DX gives "0 KM" and "BEARING UNDEFINED", which reads as broken.
 // Show a prompt instead; any other distance/bearing pair is shown as is.
 inline QString path_summary(const QString& distance, const QString& bearing) {
-    if (bearing.contains("UNDEFINED", Qt::CaseInsensitive)) return "Set a DX target in Settings";
+    if (bearing.contains("UNDEFINED", Qt::CaseInsensitive)) return "Tap the map to set a DX target";
     return distance + "  ·  " + bearing;
 }
 
