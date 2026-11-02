@@ -57,6 +57,10 @@ enum IndexSeed {
         let parts = args[i + 1].split(separator: ",").map { Double($0) }
         return parts.count == 3 ? parts : nil
     }()
+
+    /// `-hcpSeedBandsAllGood`: every HF bands cell reads Good, the widest table. The outlook itself
+    /// never gives this (80 m by day is always Poor), though high SFI makes every column as wide.
+    static let allGoodBands = ProcessInfo.processInfo.arguments.contains("-hcpSeedBandsAllGood")
 }
 
 extension Feeds {

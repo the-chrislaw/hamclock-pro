@@ -127,8 +127,9 @@ struct BandsWidget: View {
             if let sfi = feeds.flux.value?.value, let kp = feeds.kp.value?.last?.value, state != .offline {
                 let bands = outlook(sfi: sfi, kp: kp)
                 // Two-up, as BandsCard.qml in a narrow pane: 80–20 m beside 17–10 m.
-                // The two tables just fill the pane: wider gaps clip the last "Night".
-                HStack(alignment: .top, spacing: 6) {
+                // Sized so every column at its widest ("Good" under "Night") fits beside the map:
+                // about 376 pt in a 381 pt pane. Larger text or gaps clip the last "Night".
+                HStack(alignment: .top, spacing: 10) {
                     table(Array(bands.prefix(4)))
                     table(Array(bands.dropFirst(4)))
                 }
@@ -144,8 +145,21 @@ struct BandsWidget: View {
     private func outlook(sfi: Double, kp: Double) -> [HcpBand] {
         var out = [HcpBand](repeating: HcpBand(), count: 8)
         let n = Int(hcp_hf_outlook(sfi, kp, 0, &out, out.count))
-        return Array(out.prefix(n))
+        let bands = Array(out.prefix(n))
+        #if DEBUG
+        if IndexSeed.allGoodBands {
+            return bands.map { band in
+                var good = band
+                good.day = 2
+                good.night = 2
+                return good
+            }
+        }
+        #endif
+        return bands
     }
+
+    private static let tableFontSize: CGFloat = 25
 
     private func table(_ bands: [HcpBand]) -> some View {
         Grid(alignment: .leading, horizontalSpacing: 5, verticalSpacing: 2) {
@@ -153,13 +167,13 @@ struct BandsWidget: View {
                 Text("")
                 Text("Day").foregroundStyle(theme.secondary)
                 Text("Night").foregroundStyle(theme.secondary)
-            }.font(.system(size: 26, weight: .semibold))
+            }.font(.system(size: Self.tableFontSize, weight: .semibold))
             ForEach(0..<bands.count, id: \.self) { i in
                 GridRow {
                     Text(cText(bands[i].band)).foregroundStyle(theme.ink).fontWeight(.semibold)
                     cond(bands[i].day)
                     cond(bands[i].night)
-                }.font(.system(size: 26))
+                }.font(.system(size: Self.tableFontSize))
             }
         }
         .fixedSize()

@@ -544,6 +544,17 @@ final class RemoteWalkthroughTests: XCTestCase {
         }
     }
 
+    /// HF bands at its widest, every cell Good (DEBUG-only seed), beside the map, the narrowest
+    /// layout. The accessibility label holds the text even when it is clipped, so the screenshot
+    /// is what shows the last "Night" whole.
+    func testHfBandsAllGoodBesideTheMap() {
+        launchWithStation(["-hcpPanes", "spaceweather,bands,bandsmatrix", "-hcpSeedIndexAges", "2,16,5", "-hcpSeedBandsAllGood"])
+        let bands = app.descendants(matching: .any)["pane1"]
+        XCTAssertTrue(waitFor(10) { bands.label.contains("Good") }, "the table is shown: \(bands.label)")
+        XCTAssertFalse(bands.label.contains("Poor") || bands.label.contains("Fair"), "every cell is Good: \(bands.label)")
+        shot("tvos-bands-all-good")
+    }
+
     // MARK: helpers
 
     /// Fresh launch with the test station (W1AW, FN31pr, DX PM95uq); waits until the dashboard
