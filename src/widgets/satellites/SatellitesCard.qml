@@ -43,7 +43,9 @@ Card {
                 const ctx = getContext("2d");
                 ctx.reset();
                 const k = root.fit;
-                const r = Math.min(width, height) / 2 - 2 * k, cx = width / 2, cy = height / 2;
+                const r = Math.min(width, height) / 2 - 2 * k
+                if (r <= 0) return   // not laid out yet; arc() throws on a negative radius
+                const cx = width / 2, cy = height / 2;
                 ctx.strokeStyle = Theme.secondary; ctx.lineWidth = k;
                 for (const f of [1, 2 / 3, 1 / 3]) { ctx.beginPath(); ctx.arc(cx, cy, r * f, 0, 2 * Math.PI); ctx.stroke(); }
                 ctx.beginPath(); ctx.moveTo(cx - r, cy); ctx.lineTo(cx + r, cy); ctx.moveTo(cx, cy - r); ctx.lineTo(cx, cy + r); ctx.stroke();
