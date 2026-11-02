@@ -4,6 +4,7 @@
 #include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include <cmath>
 #include <QTimer>
 
@@ -22,6 +23,7 @@ QuakesModel::QuakesModel(const WidgetContext& context, QObject* parent)
       settings_(context.settings),
       source_(new PolledSource("usgs-quakes-2-5-day", QUrl(kUrl), kPolicy, context.transport, this)) {
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &QuakesModel::quakesChanged);
+    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &QuakesModel::quakesChanged);  // Miles or km
     // Unusable answers (schema change, cut-off body) keep the last good data.
     source_->setValidator([](const QByteArray& body) { return quakes::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
@@ -62,7 +64,7 @@ QString QuakesModel::nearestText() const {
         if (!best || g.distance_km < best_g.distance_km) { best = &q; best_g = g; }
     }
     static const char* const kPoints[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
-    QString where = QString::number(std::lround(best_g.distance_km)) + " km";
+    QString where = distance_label(best_g.distance_km, settings_->imperialUnits());
     if (best_g.status == BearingStatus::Defined)
         where += QString(" ") + kPoints[static_cast<int>(std::floor(best_g.short_bearing_deg / 45.0 + 0.5)) % 8] + " of DE";
     return "M" + QString::number(best->magnitude, 'f', 1) + " · " + where + " · " + formatAge(best->time, now());

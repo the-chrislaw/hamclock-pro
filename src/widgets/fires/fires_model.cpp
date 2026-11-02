@@ -4,6 +4,7 @@
 #include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include <cmath>
 #include <QLocale>
 #include <QTimer>
@@ -22,6 +23,7 @@ FiresModel::FiresModel(const WidgetContext& context, QObject* parent)
       settings_(context.settings),
       source_(new PolledSource("firms-viirs-usa", QUrl(kUrl), kPolicy, context.transport, this)) {
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, &FiresModel::firesChanged);
+    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, &FiresModel::firesChanged);  // Miles or km
     // Unusable answers (schema change, cut-off body) keep the last good data.
     source_->setValidator([](const QByteArray& body) { return fires::parse(body).ok; });
     connect(source_, &PolledSource::updated, this, [this] {
@@ -70,7 +72,7 @@ QString FiresModel::nearestText() const {
     }
     if (!best) return {};
     static const char* const kPoints[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
-    QString where = QString::number(std::lround(best_g.distance_km)) + " km";
+    QString where = distance_label(best_g.distance_km, settings_->imperialUnits());
     if (best_g.status == BearingStatus::Defined)
         where += QString(" ") + kPoints[static_cast<int>(std::floor(best_g.short_bearing_deg / 45.0 + 0.5)) % 8] + " of DE";
     return "Nearest " + where + " · " + best->acquired.toString("dd HH:mm") + "Z";

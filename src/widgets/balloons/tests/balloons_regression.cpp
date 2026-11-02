@@ -6,6 +6,7 @@
 #include "../../../net/polled_source.hpp"
 #include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
+#include <QLocale>
 #include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
@@ -26,6 +27,7 @@ QDateTime utc(int y, int mo, int d, int h, int mi) {
 
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
+    QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
     using namespace hamclock;
     if (argc < 2) { std::cerr << "usage: test FIXTURE_DIR\n"; return 2; }
     QFile f(QDir(argv[1]).filePath("telemetry"));
@@ -125,6 +127,17 @@ int main(int argc, char** argv) {
     check(model.nearest().endsWith("NE") || model.nearest().endsWith("E"), "nearest is north-east/east of Denver");
     check(model.nearestDetail().startsWith("RS41 V1710894 · 18.5 km up · climbing"), "detail line");
     check(model.later().size() >= 3 && model.later().size() <= 10, "later rows: at least three, capped at ten");
+    {
+        int notified = 0;
+        const auto link = QObject::connect(&model, &BalloonsModel::balloonsChanged, &model, [&] { ++notified; });
+        check(model.nearest().contains(" km "), "nearest in km by default");
+        check(settings.saveImperialUnits(true).isEmpty(), "miles saved");
+        check(model.nearest().contains(" mi ") && !model.nearest().contains(" km "), "nearest follows Miles");
+        check(model.later().first().toMap()["dist"].toString().contains(" mi "), "later rows follow Miles");
+        check(notified > 0, "the pane hears about it");
+        QObject::disconnect(link);
+        check(settings.saveImperialUnits(false).isEmpty(), "km restored");
+    }
     {
         bool found = false;
         for (const auto& l : MapOverlays::instance().layers())

@@ -2,6 +2,7 @@
 #include "../../domain/geometry.hpp"
 #include "../../net/polled_source.hpp"
 #include "../../ui/app_settings.hpp"
+#include "../../ui/path_text.hpp"
 #include <QTimer>
 
 namespace hamclock {
@@ -18,7 +19,6 @@ QString compass(double deg) {
     static const char* names[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
     return names[static_cast<int>((deg + 22.5) / 45.0) % 8];
 }
-QString km_text(double km) { return QString::number(km, 'f', 0) + " km"; }
 } // namespace
 
 BalloonsModel::BalloonsModel(const WidgetContext& context, QObject* parent)
@@ -35,6 +35,7 @@ BalloonsModel::BalloonsModel(const WidgetContext& context, QObject* parent)
     connect(source_, &PolledSource::failed, this, &BalloonsModel::refreshState);
     connect(this, &WidgetModel::ageChanged, this, [this] { emit balloonsChanged(); refreshState(); updateMapLayer(); });
     if (settings_) connect(settings_, &AppSettings::stationChanged, this, [this] { emit balloonsChanged(); });
+    if (settings_) connect(settings_, &AppSettings::optionsChanged, this, [this] { emit balloonsChanged(); });  // Miles or km
 }
 
 void BalloonsModel::start() { source_->start(); }
@@ -55,7 +56,7 @@ int BalloonsModel::count() const {
 
 QString BalloonsModel::nearest() const {
     const auto n = near(1);
-    return n.empty() ? QString() : km_text(n.front().distance_km) + " " + compass(n.front().bearing_deg);
+    return n.empty() ? QString() : distance_label(n.front().distance_km, settings_ && settings_->imperialUnits()) + " " + compass(n.front().bearing_deg);
 }
 
 QString BalloonsModel::nearestDetail() const {
@@ -71,7 +72,7 @@ QString BalloonsModel::nearestDetail() const {
     double llat = 0, llon = 0;
     if (balloons::landing_point(s, s.time.secsTo(now()), llat, llon)) {
         const auto g = geometry({settings_->deLatitude(), settings_->deLongitude()}, {llat, llon});
-        parts << QString("lands ~%1 %2 from you").arg(km_text(g.distance_km), compass(g.short_bearing_deg));
+        parts << QString("lands ~%1 %2 from you").arg(distance_label(g.distance_km, settings_->imperialUnits()), compass(g.short_bearing_deg));
     }
     if (s.freq_mhz > 0) parts << QString::number(s.freq_mhz, 'f', 3) + " MHz";
     return parts.join(" · ");
@@ -81,7 +82,7 @@ QVariantList BalloonsModel::later() const {
     QVariantList out;
     const auto n = near(1 + kLaterRows);
     for (size_t i = 1; i < n.size(); ++i)
-        out.push_back(QVariantMap{{"dist", km_text(n[i].distance_km) + " " + compass(n[i].bearing_deg)},
+        out.push_back(QVariantMap{{"dist", distance_label(n[i].distance_km, settings_ && settings_->imperialUnits()) + " " + compass(n[i].bearing_deg)},
                                     {"text", (n[i].sonde.type + " " + n[i].sonde.serial).trimmed()}});
     return out;
 }
