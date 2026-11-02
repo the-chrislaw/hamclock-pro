@@ -640,3 +640,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 10b38e8 (merged since bf8edd2: stale-index-age #778, my run 114 log #779). Built main; 333/333 ctest pass. #778 flags old SFI/Kp/X-ray readings by reading timestamp on Space weather, Bands and HF path; diff reviewed, tests added, no contract issue found. Screenshots not repeated (state text only changed).
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy on the Pi sizes. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-02 (UTC) QA run 116
+- Last reviewed commit: 2a008ee (merged since 10b38e8: CI stapler-validate retry #780, my run 115 log #781). #780 only touches a workflow's retry logic; no source, QML, test or doc-contract change. Build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
