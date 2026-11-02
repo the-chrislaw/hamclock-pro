@@ -44,6 +44,7 @@ private:
     PolledSource* flux_source_;
     bool has_outlook_ = false;
     double sfi_ = 0, kp_ = 0, a_ = 0;
+    QDateTime sfi_time_, kp_time_;  // observation times from the products
     std::vector<bands::BandOutlook> outlook_;
     QString period_ = "unknown";
     qint64 muf_bucket_ = -1;

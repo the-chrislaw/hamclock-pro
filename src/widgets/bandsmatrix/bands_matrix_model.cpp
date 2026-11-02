@@ -6,6 +6,7 @@
 #include "../spaceweather/swpc_parse.hpp"
 #include <QSettings>
 #include <QTimer>
+#include <algorithm>
 
 namespace hamclock {
 namespace {
@@ -58,7 +59,10 @@ void BandsMatrixModel::parse() {
     const auto flux = swpc::latest_solar_flux(flux_source_->body());
     // Both indices are needed; a matrix from one would be a guess.
     have_inputs_ = kp && flux;
-    if (have_inputs_) { kp_ = kp->value; sfi_ = flux->value; }
+    if (have_inputs_) {
+        kp_ = kp->value; sfi_ = flux->value;
+        kp_time_ = kp->time; sfi_time_ = flux->time;
+    }
     recompute();
 }
 
@@ -130,10 +134,13 @@ void BandsMatrixModel::refreshState() {
         else setState("loading", "Contacting NOAA SWPC…");
         return;
     }
-    const auto oldest = std::min(kp_source_->fetchedAt(), flux_source_->fetchedAt());
-    if (kp_source_->isStale(now_utc) || flux_source_->isStale(now_utc))
-        setState("stale", "Estimated from out-of-date NOAA SWPC indices", oldest);
-    else setState("live", "Estimated from NOAA SWPC SFI/Kp (approximate, not VOACAP)", oldest);
+    const bool sfi_old = flux_source_->isStale(now_utc) || swpc::is_old(sfi_time_, now_utc, swpc::kSolarFluxMaxAgeSecs);
+    const bool kp_old = kp_source_->isStale(now_utc) || swpc::is_old(kp_time_, now_utc, swpc::kKpMaxAgeSecs);
+    if (sfi_old && kp_old) setState("stale", swpc::stale_note({"SFI", "Kp"}), std::min(sfi_time_, kp_time_));
+    else if (sfi_old) setState("stale", swpc::stale_note({"SFI"}), sfi_time_);
+    else if (kp_old) setState("stale", swpc::stale_note({"Kp"}), kp_time_);
+    else setState("live", "Estimated from NOAA SWPC SFI/Kp (approximate, not VOACAP)",
+                  std::min(kp_source_->fetchedAt(), flux_source_->fetchedAt()));
 }
 
 void register_widget_bandsmatrix(WidgetRegistry& registry, const WidgetContext& context) {

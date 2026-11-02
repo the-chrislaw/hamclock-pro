@@ -26,6 +26,16 @@ QByteArray fixture(const QString& dir, const char* name) {
 }
 } // namespace
 
+namespace {
+QByteArray kp_row(const QDateTime& time, double kp = 3.0) {
+    return QString(R"([{"time_tag":"%1","Kp":%2,"a_running":15,"station_count":8}])")
+        .arg(time.toString("yyyy-MM-ddTHH:mm:ss")).arg(kp).toUtf8();
+}
+QByteArray flux_row(const QDateTime& time) {
+    return QString(R"([{"flux":123,"time_tag":"%1"}])").arg(time.toString("yyyy-MM-ddTHH:mm:ss")).toUtf8();
+}
+} // namespace
+
 int main(int argc, char** argv) {
     QCoreApplication app(argc, argv);
     QLocale::setDefault(QLocale::c()); // a new install takes units from the region; these checks expect km
@@ -186,6 +196,42 @@ int main(int argc, char** argv) {
     longp.start();
     for (int i = 0; i < 20; ++i) app.processEvents();
     check(longp.pathText().contains("long path"), "long_path option is shown in the label");
+
+    // The age of the values themselves, with both feeds answering on time.
+    {
+        struct Seen { QString state, status; bool has_matrix; QDateTime updated; };
+        const auto seen = [&](double kp_hours, double sfi_hours) {
+            kp_override = kp_row(now.addSecs(qint64(-kp_hours * 3600)));
+            flux_override = flux_row(now.addSecs(qint64(-sfi_hours * 3600)));
+            BandsMatrixModel aged(context);
+            aged.setClock([&] { return now; });
+            for (auto* source : {&aged.kpSource(), &aged.fluxSource()}) {
+                source->setClock([&] { return now; });
+                QFile::remove(source->cachePath());
+            }
+            aged.start();
+            for (int i = 0; i < 20; ++i) app.processEvents();
+            return Seen{aged.state(), aged.statusText(), aged.hasMatrix(), aged.updatedAt()};
+        };
+        check(seen(3.8, 4.8).state == "live", "Kp and SFI as the real feeds looked -> live");
+        check(seen(8, 24).state == "live", "Kp row running late, SFI a day old -> live");
+        check(seen(3, 73).state == "live", "SFI from Friday, on Monday -> live");
+        const auto old_kp = seen(10, 20);
+        check(old_kp.state == "stale", "old Kp, feed still answering -> stale");
+        check(old_kp.status.contains("old Kp") && !old_kp.status.contains("SFI"), "note names only the old Kp");
+        check(old_kp.has_matrix, "old Kp keeps the matrix on screen");
+        check(old_kp.updated == now.addSecs(-10 * 3600), "age shown is the old reading's");
+        const auto old_sfi = seen(3, 85);
+        check(old_sfi.state == "stale", "SFI past a weekend, feed still answering -> stale");
+        check(old_sfi.status.contains("old SFI") && !old_sfi.status.contains("Kp"), "note names only the old SFI");
+        check(old_sfi.has_matrix, "old SFI keeps the matrix on screen");
+        const auto both = seen(10, 85);
+        check(both.state == "stale" && both.status.contains("SFI") && both.status.contains("Kp"), "both old -> both named");
+        for (const auto& note : {old_kp.status, old_sfi.status, both.status})
+            check(note.size() <= 28, "stale note fits the 800x480 footer");
+        kp_override.clear();
+        flux_override.clear();
+    }
 
     // Outage: data kept but flagged stale.
     fail_all = true;

@@ -50,6 +50,9 @@ private:
     void parse();
     void refreshState();
     void publishMapWeather();
+    bool kpIsOld(const QDateTime& now_utc) const;
+    bool solarFluxIsOld(const QDateTime& now_utc) const;
+    bool xrayIsOld(const QDateTime& now_utc) const;
 
     PolledSource* kp_source_;
     PolledSource* flux_source_;
@@ -61,6 +64,7 @@ private:
     int sfi_ = 0;
     QString xray_class_;
     double xray_flux_ = 0;
+    QDateTime kp_time_, sfi_time_, xray_time_;  // observation times from the products
 };
 
 void register_widget_spaceweather(WidgetRegistry& registry, const WidgetContext& context);

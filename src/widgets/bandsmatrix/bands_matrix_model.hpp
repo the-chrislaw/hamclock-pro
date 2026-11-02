@@ -45,6 +45,7 @@ private:
     PolledSource* kp_source_;
     PolledSource* flux_source_;
     double sfi_ = 0, kp_ = 0;
+    QDateTime sfi_time_, kp_time_;  // observation times from the products
     bool have_inputs_ = false, has_matrix_ = false, has_path_ = false;
     qint64 start_hour_ = -1;  // UTC hour the matrix was computed for
     QStringList bands_;

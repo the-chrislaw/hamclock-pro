@@ -25,6 +25,13 @@ QByteArray fixture(const QString& dir, const char* name) {
     QFile file(QDir(dir).filePath(name));
     return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
 }
+QByteArray kp_row(const QDateTime& time, double kp = 3.0) {
+    return QString(R"([{"time_tag":"%1","Kp":%2,"a_running":15,"station_count":8}])")
+        .arg(time.toString("yyyy-MM-ddTHH:mm:ss")).arg(kp).toUtf8();
+}
+QByteArray flux_row(const QDateTime& time) {
+    return QString(R"([{"flux":123,"time_tag":"%1"}])").arg(time.toString("yyyy-MM-ddTHH:mm:ss")).toUtf8();
+}
 } // namespace
 
 int main(int argc, char** argv) {
@@ -83,6 +90,7 @@ int main(int argc, char** argv) {
     WidgetContext context;
     int requests = 0;
     bool fail_all = false, storm = false;
+    QByteArray kp_body, flux_body, xray_body;  // when set, the feed answers with this instead of the fixture
     // Answers for URLs ending in one of these are held back, as when one
     // product is slow at startup while the others have arrived.
     QStringList hold;
@@ -99,7 +107,13 @@ int main(int argc, char** argv) {
             result.http_status = 200;
             result.body = "[{\"time_tag\":\"2026-10-13T15:00:00\",\"Kp\":6}]";
         }
-        else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
+        else {
+            const auto name = QFileInfo(url.path()).fileName();
+            const auto& body = name == "10cm-flux.json" ? flux_body : name == "xrays-6-hour.json" ? xray_body : kp_body;
+            result.http_status = 200;
+            const bool has_override = !body.isEmpty() && name != "xrays-1-day.json";
+            result.body = has_override ? body : fixture(dir, name.toUtf8().constData());
+        }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     SpaceWeatherModel model(context);
@@ -173,6 +187,53 @@ int main(int argc, char** argv) {
         }
         for (int i = 0; i < 20; ++i) app.processEvents();
         check(early.state() == "live", "all arrived -> live");
+    }
+
+    // The age of the values themselves, with every feed answering on time.
+    {
+        fail_all = false;
+        storm = false;
+        MapStyles::instance().set_style({"aurora", "Aurora", QImage(2, 2, QImage::Format_ARGB32), 0.6, {}, ""});
+        struct Seen { QString state, status; bool has_kp, has_sfi; bool has_style; QDateTime updated; };
+        const auto seen = [&](double kp_hours, double sfi_hours, double xray_minutes, double kp_value = 3.0) {
+            kp_body = kp_row(now.addSecs(qint64(-kp_hours * 3600)), kp_value);
+            flux_body = sfi_hours < 0 ? QByteArray("[]") : flux_row(now.addSecs(qint64(-sfi_hours * 3600)));
+            xray_body = QString(R"([{"time_tag":"%1Z","flux":7e-07,"energy":"0.1-0.8nm"}])")
+                .arg(now.addSecs(qint64(-xray_minutes * 60)).toString("yyyy-MM-ddTHH:mm:ss")).toUtf8();
+            SpaceWeatherModel aged(context);
+            aged.setClock([&] { return now; });
+            for (auto* source : {&aged.kpSource(), &aged.fluxSource(), &aged.xraySource(), &aged.xrayDaySource()}) {
+                source->setClock([&] { return now; });
+                QFile::remove(source->cachePath());
+            }
+            aged.start();
+            for (int i = 0; i < 20; ++i) app.processEvents();
+            return Seen{aged.state(), aged.statusText(), aged.hasKp(), aged.hasSolarFlux(),
+                        MapStyles::instance().active(0) != nullptr, aged.updatedAt()};
+        };
+        check(seen(3.8, 4.8, 4).state == "live", "values as the real feeds looked -> live");
+        check(seen(8, 24, 15).state == "live", "Kp row running late, SFI a day old -> live");
+        check(seen(3, 73, 4).state == "live", "SFI from Friday, on Monday -> live");
+        const auto old_kp = seen(10, 20, 4);
+        check(old_kp.state == "stale", "old Kp, feed still answering -> stale");
+        check(old_kp.status.contains("old Kp") && !old_kp.status.contains("SFI") && !old_kp.status.contains("X-ray"),
+              "note names only the old Kp");
+        check(old_kp.has_kp && old_kp.has_sfi, "old Kp keeps the values on screen");
+        check(old_kp.updated == now.addSecs(-10 * 3600), "age shown is the old reading's");
+        const auto old_sfi = seen(3, 85, 4);
+        check(old_sfi.state == "stale", "SFI past a weekend, feed still answering -> stale");
+        check(old_sfi.status.contains("old SFI") && !old_sfi.status.contains("Kp"), "note names only the old SFI");
+        const auto old_xray = seen(3, 20, 45);
+        check(old_xray.state == "stale" && old_xray.status.contains("old X-ray"), "old X-ray, feed still answering -> stale");
+        const auto all_old = seen(10, 85, 45);
+        check(all_old.state == "stale" && all_old.status.contains("Kp") && all_old.status.contains("SFI") &&
+              all_old.status.contains("X-ray"), "all old -> all named");
+        const auto old_and_missing = seen(10, -1, 45);
+        check(old_and_missing.state == "stale" && old_and_missing.status.contains("no SFI"), "a missing value is named too");
+        for (const auto& note : {old_kp.status, old_sfi.status, old_xray.status, all_old.status, old_and_missing.status})
+            check(note.size() <= 28, "stale note fits the 800x480 footer");
+        check(seen(3, 20, 4, 6).has_style, "recent Kp 6 picks the aurora style");
+        check(!seen(10, 20, 4, 6).has_style, "a storm's old Kp never picks a style");
     }
 
     std::cout << "Space weather: " << checks << " checks, " << failures << " failures\n";

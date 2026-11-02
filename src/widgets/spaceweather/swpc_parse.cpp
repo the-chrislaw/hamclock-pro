@@ -40,6 +40,17 @@ std::optional<Reading> latest(const QByteArray& body, Read read) {
 }
 } // namespace
 
+bool is_old(const QDateTime& time, const QDateTime& now_utc, qint64 max_age_secs) {
+    return time.isValid() && time.secsTo(now_utc) > max_age_secs;
+}
+
+QString stale_note(const QStringList& old_labels, const QStringList& missing_labels) {
+    QStringList parts;
+    if (!old_labels.isEmpty()) parts << "old " + old_labels.join(", ");
+    if (!missing_labels.isEmpty()) parts << "no " + missing_labels.join(", ");
+    return "SWPC · " + parts.join(", ");
+}
+
 std::optional<Reading> latest_kp(const QByteArray& body) {
     return latest(body, [](const QJsonObject& row) -> std::optional<double> {
         const auto kp = row.value("Kp");
