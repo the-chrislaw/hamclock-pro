@@ -17,7 +17,7 @@ Card {
         return [
             { label: "Next", value: v(w.kind), bold: true, rank: 0 },
             { label: "Greatest", value: v(w.when), rank: 1 },
-            { label: "In", value: v(w.countdown), rank: 2 },
+            { label: "Starts", value: v(w.countdown), rank: 2 },
             { label: "At DE", value: w.visibility, bold: true, rank: 3, hide: w.visibility === "" },
             { label: "Local", value: w.local, rank: 5, hide: w.local === "" },
             { label: "Partial", value: w.contacts, rank: 6, hide: w.contacts === "" },
