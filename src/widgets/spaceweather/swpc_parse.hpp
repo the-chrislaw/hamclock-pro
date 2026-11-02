@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QString>
+#include <QStringList>
 #include <optional>
 #include <vector>
 
@@ -13,6 +14,23 @@ struct Reading {
     double value = 0;
     QDateTime time;  // UTC observation time from the product
 };
+
+// How old a shown value may be, measured from the product's own time tag: a feed can
+// answer on time with rows that have stopped moving.
+// Kp: the tag is the START of a 3 h interval and the row appears after its end, so a
+// healthy feed reaches 6 h just before the next row. The limit allows one missed row.
+inline constexpr qint64 kKpMaxAgeSecs = 9 * 3600;
+// SFI: one reading a day, tagged 20:00 UTC. 72 h covers a Friday reading still showing
+// on Monday evening, and 12 h more lets Monday's arrive late.
+inline constexpr qint64 kSolarFluxMaxAgeSecs = 84 * 3600;
+// X-ray: a new row every minute. Matches the X-ray product's fetch limit.
+inline constexpr qint64 kXrayMaxAgeSecs = 30 * 60;
+
+// False for an unknown time and for a tag ahead of the clock.
+bool is_old(const QDateTime& time, const QDateTime& now_utc, qint64 max_age_secs);
+// Footer note for values that are old or absent, short enough for the 800x480 footer
+// with every index named: "SWPC · old Kp, SFI, no X-ray".
+QString stale_note(const QStringList& old_labels, const QStringList& missing_labels = {});
 
 // products/noaa-planetary-k-index.json: array of {time_tag, Kp, ...}.
 // Latest row with a numeric Kp in [0, 9].

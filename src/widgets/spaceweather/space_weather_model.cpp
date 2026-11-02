@@ -41,13 +41,25 @@ void SpaceWeatherModel::start() {
 
 SpaceWeatherModel::~SpaceWeatherModel() { MapStyles::instance().set_auto_space_weather(false); }
 
-// Feeds the map's automatic Aurora/DRAP choice. A value whose source is out of
-// date is passed as unknown, so an old storm never keeps a style on the map.
+bool SpaceWeatherModel::kpIsOld(const QDateTime& now_utc) const {
+    return kp_source_->isStale(now_utc) || swpc::is_old(kp_time_, now_utc, swpc::kKpMaxAgeSecs);
+}
+
+bool SpaceWeatherModel::solarFluxIsOld(const QDateTime& now_utc) const {
+    return flux_source_->isStale(now_utc) || swpc::is_old(sfi_time_, now_utc, swpc::kSolarFluxMaxAgeSecs);
+}
+
+bool SpaceWeatherModel::xrayIsOld(const QDateTime& now_utc) const {
+    return xray_source_->isStale(now_utc) || swpc::is_old(xray_time_, now_utc, swpc::kXrayMaxAgeSecs);
+}
+
+// Feeds the map's automatic Aurora/DRAP choice. An old value is passed as unknown,
+// so an old storm never keeps a style on the map.
 void SpaceWeatherModel::publishMapWeather() {
     const auto now_utc = now();
     SpaceWeatherNow weather;
-    if (has_kp_ && !kp_source_->isStale(now_utc)) weather.kp = kp_;
-    if (!xray_class_.isEmpty() && !xray_source_->isStale(now_utc)) weather.xray_flux_wm2 = xray_flux_;
+    if (has_kp_ && !kpIsOld(now_utc)) weather.kp = kp_;
+    if (!xray_class_.isEmpty() && !xrayIsOld(now_utc)) weather.xray_flux_wm2 = xray_flux_;
     MapStyles::instance().set_auto_space_weather(true, weather);
 }
 
@@ -59,10 +71,13 @@ void SpaceWeatherModel::parse() {
     const auto xray = swpc::latest_xray_flux(xray_source_->body());
     has_kp_ = kp.has_value();
     kp_ = kp ? kp->value : 0;
+    kp_time_ = kp ? kp->time : QDateTime();
     has_sfi_ = flux.has_value();
     sfi_ = flux ? static_cast<int>(std::lround(flux->value)) : 0;
+    sfi_time_ = flux ? flux->time : QDateTime();
     xray_class_ = xray ? swpc::xray_class(xray->value) : QString();
     xray_flux_ = xray ? xray->value : 0;
+    xray_time_ = xray ? xray->time : QDateTime();
     history_.clear();
     if (!xray_day_source_->isStale(now())) {
         const auto series = swpc::xray_series(xray_day_source_->body(), 10);
@@ -80,16 +95,20 @@ void SpaceWeatherModel::refreshState() {
         history_.clear();
         emit valuesChanged();
     }
-    struct Item { PolledSource* source; const char* label; bool has; };
-    const Item items[] = {{kp_source_, "Kp", has_kp_}, {flux_source_, "Solar flux", has_sfi_},
-                          {xray_source_, "X-ray", !xray_class_.isEmpty()}};
+    struct Item { PolledSource* source; const char* label; bool has; bool old; QDateTime time; };
+    const Item items[] = {{kp_source_, "Kp", has_kp_, kpIsOld(now_utc), kp_time_},
+                          {flux_source_, "SFI", has_sfi_, solarFluxIsOld(now_utc), sfi_time_},
+                          {xray_source_, "X-ray", !xray_class_.isEmpty(), xrayIsOld(now_utc), xray_time_}};
     QStringList stale, missing;
-    QDateTime oldest;
+    QDateTime oldest, oldest_reading;
     QStringList loading;
     for (const auto& item : items) {
         if (!item.has && awaitingFirstAnswer(*item.source)) { loading << item.label; continue; }
         if (!item.has) { missing << item.label; continue; }
-        if (item.source->isStale(now_utc)) stale << item.label;
+        if (item.old) {
+            stale << item.label;
+            if (!oldest_reading.isValid() || item.time < oldest_reading) oldest_reading = item.time;
+        }
         if (!oldest.isValid() || item.source->fetchedAt() < oldest) oldest = item.source->fetchedAt();
     }
     if (missing.size() + loading.size() == 3) {
@@ -104,11 +123,7 @@ void SpaceWeatherModel::refreshState() {
         return;
     }
     if (!stale.isEmpty() || !missing.isEmpty()) {
-        QStringList parts;
-        if (!stale.isEmpty()) parts << "out of date: " + stale.join(", ");
-        if (!missing.isEmpty()) parts << "missing: " + missing.join(", ");
-        if (!loading.isEmpty()) parts << "loading: " + loading.join(", ");
-        setState("stale", "NOAA SWPC (" + parts.join("; ") + ")", oldest);
+        setState("stale", swpc::stale_note(stale, missing), oldest_reading.isValid() ? oldest_reading : oldest);
         return;
     }
     setState("live", "NOAA SWPC", oldest);

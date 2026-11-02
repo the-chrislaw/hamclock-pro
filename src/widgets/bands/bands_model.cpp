@@ -4,7 +4,9 @@
 #include "../../map/styles.hpp"
 #include "../spaceweather/swpc_parse.hpp"
 #include "muf_map.hpp"
+#include <QStringList>
 #include <QTimer>
+#include <algorithm>
 
 namespace hamclock {
 namespace {
@@ -62,6 +64,8 @@ void BandsModel::parse() {
     has_outlook_ = kp && a && flux;
     if (has_outlook_) {
         kp_ = kp->value; a_ = a->value; sfi_ = flux->value;
+        sfi_time_ = flux->time;
+        kp_time_ = std::min(kp->time, a->time);  // same product; normally the same row
         outlook_ = bands::hf_outlook(sfi_, kp_, a_);
     } else {
         outlook_.clear();
@@ -83,11 +87,13 @@ void BandsModel::refreshState() {
         else setState("loading", "Contacting NOAA SWPC…");
         return;
     }
-    const auto oldest = std::min(kp_source_->fetchedAt(), flux_source_->fetchedAt());
-    if (kp_source_->isStale(now_utc) || flux_source_->isStale(now_utc))
-        setState("stale", "Estimated from out-of-date NOAA SWPC indices", oldest);
-    else setState("live", "Estimated from NOAA SWPC SFI/Kp/A", oldest);
-    updateMufStyle(kp_source_->isStale(now_utc) || flux_source_->isStale(now_utc));
+    const bool sfi_old = flux_source_->isStale(now_utc) || swpc::is_old(sfi_time_, now_utc, swpc::kSolarFluxMaxAgeSecs);
+    const bool kp_old = kp_source_->isStale(now_utc) || swpc::is_old(kp_time_, now_utc, swpc::kKpMaxAgeSecs);
+    if (sfi_old && kp_old) setState("stale", swpc::stale_note({"SFI", "Kp"}), std::min(sfi_time_, kp_time_));
+    else if (sfi_old) setState("stale", swpc::stale_note({"SFI"}), sfi_time_);
+    else if (kp_old) setState("stale", swpc::stale_note({"Kp"}), kp_time_);
+    else setState("live", "Estimated from NOAA SWPC SFI/Kp/A", std::min(kp_source_->fetchedAt(), flux_source_->fetchedAt()));
+    updateMufStyle(sfi_old || kp_old);
 }
 
 // Published only from fresh indices; redrawn every 15 minutes as the sun moves.

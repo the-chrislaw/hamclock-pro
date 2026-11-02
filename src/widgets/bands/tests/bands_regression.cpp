@@ -24,6 +24,13 @@ QByteArray fixture(const QString& dir, const char* name) {
     QFile file(QDir(dir).filePath(name));
     return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
 }
+QByteArray kp_row(const QDateTime& time, double kp = 3.0) {
+    return QString(R"([{"time_tag":"%1","Kp":%2,"a_running":15,"station_count":8}])")
+        .arg(time.toString("yyyy-MM-ddTHH:mm:ss")).arg(kp).toUtf8();
+}
+QByteArray flux_row(const QDateTime& time) {
+    return QString(R"([{"flux":123,"time_tag":"%1"}])").arg(time.toString("yyyy-MM-ddTHH:mm:ss")).toUtf8();
+}
 using hamclock::bands::Condition;
 const hamclock::bands::BandOutlook& find(const std::vector<hamclock::bands::BandOutlook>& v, const char* name) {
     for (const auto& b : v) if (b.band == name) return b;
@@ -70,6 +77,7 @@ int main(int argc, char** argv) {
     WidgetContext context;
     int requests = 0;
     bool fail_all = false;
+    QByteArray kp_body, flux_body;  // when set, the feed answers with this instead of the fixture
     // Answers for URLs ending in one of these are held back, as when one
     // product is slow at startup while the others have arrived.
     QStringList hold;
@@ -82,7 +90,12 @@ int main(int argc, char** argv) {
         }
         FetchResult result;
         if (fail_all) result.error = "Host unreachable";
-        else { result.http_status = 200; result.body = fixture(dir, QFileInfo(url.path()).fileName().toUtf8().constData()); }
+        else {
+            const auto name = QFileInfo(url.path()).fileName();
+            const auto& body = name == "10cm-flux.json" ? flux_body : kp_body;
+            result.http_status = 200;
+            result.body = !body.isEmpty() ? body : fixture(dir, name.toUtf8().constData());
+        }
         QTimer::singleShot(0, [done, result] { done(result); });
     };
     const auto now = QDateTime(QDate(2026, 10, 13), QTime(16, 0), QTimeZone::utc());
@@ -145,6 +158,66 @@ int main(int argc, char** argv) {
         bool found = false;
         for (const auto& st : MapStyles::instance().styles()) found = found || st.id == "muf";
         check(!found, "stale indices remove the MUF map style");
+    }
+
+    // The age of the values themselves, with both feeds answering on time.
+    fail_all = false;
+    {
+        struct Seen { QString state, status; bool has_outlook, has_muf; QDateTime updated; };
+        const auto seen = [&](double kp_hours, double sfi_hours) {
+            kp_body = kp_row(now.addSecs(qint64(-kp_hours * 3600)));
+            flux_body = flux_row(now.addSecs(qint64(-sfi_hours * 3600)));
+            BandsModel aged(context);
+            aged.setClock([&] { return now; });
+            for (auto* source : {&aged.kpSource(), &aged.fluxSource()}) {
+                source->setClock([&] { return now; });
+                QFile::remove(source->cachePath());
+            }
+            aged.start();
+            for (int i = 0; i < 20; ++i) app.processEvents();
+            bool muf = false;
+            for (const auto& st : MapStyles::instance().styles()) muf = muf || st.id == "muf";
+            return Seen{aged.state(), aged.statusText(), aged.hasOutlook(), muf, aged.updatedAt()};
+        };
+        // Healthy feeds. The Kp tag is the start of its 3 h interval and the row follows the
+        // interval's end, so 6 h and a bit is normal; SFI is daily, with a weekend possible.
+        check(seen(3.8, 4.8).state == "live", "Kp and SFI as the real feeds looked -> live");
+        check(seen(8, 24).state == "live", "Kp row running late, SFI a day old -> live");
+        check(seen(3, 73).state == "live", "SFI from Friday, on Monday -> live");
+        // One input of two is old: named, with the outlook kept.
+        const auto old_kp = seen(10, 20);
+        check(old_kp.state == "stale", "old Kp, feed still answering -> stale");
+        check(old_kp.status.contains("old Kp") && !old_kp.status.contains("SFI"), "note names only the old Kp");
+        check(old_kp.has_outlook, "old Kp keeps the outlook on screen");
+        check(!old_kp.has_muf, "old Kp removes the MUF map style");
+        check(old_kp.updated == now.addSecs(-10 * 3600), "age shown is the old reading's");
+        const auto old_sfi = seen(3, 85);
+        check(old_sfi.state == "stale", "SFI past a weekend, feed still answering -> stale");
+        check(old_sfi.status.contains("old SFI") && !old_sfi.status.contains("Kp"), "note names only the old SFI");
+        check(old_sfi.has_outlook, "old SFI keeps the outlook on screen");
+        const auto both = seen(10, 85);
+        check(both.state == "stale" && both.status.contains("SFI") && both.status.contains("Kp"), "both old -> both named");
+        check(both.has_outlook, "both old keeps the outlook on screen");
+        for (const auto& note : {old_kp.status, old_sfi.status, both.status})
+            check(note.size() <= 28, "stale note fits the 800x480 footer");
+
+        // The feed goes on answering with the same rows while they age: no new body is needed.
+        kp_body.clear();
+        flux_body.clear();
+        BandsModel frozen(context);
+        QDateTime clock = now;
+        frozen.setClock([&] { return clock; });
+        for (auto* source : {&frozen.kpSource(), &frozen.fluxSource()}) {
+            source->setClock([&] { return clock; });
+            QFile::remove(source->cachePath());
+        }
+        frozen.start();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(frozen.state() == "live", "fixture rows at their capture time -> live");
+        clock = now.addSecs(6 * 3600);
+        for (auto* source : {&frozen.kpSource(), &frozen.fluxSource()}) source->refreshNow();
+        for (int i = 0; i < 20; ++i) app.processEvents();
+        check(frozen.state() == "stale" && frozen.statusText().contains("old Kp"), "same rows, hours later -> stale");
     }
 
     // Day/night at a site: noon vs midnight local at lon 0.
