@@ -635,3 +635,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: bf8edd2 (merged since d4dde95: ~25 small fix PRs #764-#777 incl. HF path P.533 rating, Miles setting in hazard panes, Passes direction, eclipse countdown label, no-DX handling, weather loading, setup Find button #777). Built main; 333/333 ctest pass (the run 113 failure is fixed). Rendered and viewed 800x480 light, 1024x600 dark and 1920x1080 light: panes fill with no clipping; offline footers still elide at 800x480 (tracked in #532). PR diffs were not reviewed line by line.
 - Opened: none. Closed: none (#762 already closed by #777, verified by the passing test). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy on the Pi sizes and the settings regression is resolved. Remaining risk is elided offline footers and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-02 (UTC) QA run 115
+- Last reviewed commit: 10b38e8 (merged since bf8edd2: stale-index-age #778, my run 114 log #779). Built main; 333/333 ctest pass. #778 flags old SFI/Kp/X-ray readings by reading timestamp on Space weather, Bands and HF path; diff reviewed, tests added, no contract issue found. Screenshots not repeated (state text only changed).
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy on the Pi sizes. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
