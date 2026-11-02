@@ -2,8 +2,10 @@
 // solar_position module. Offline; no fixtures needed.
 #include "../sun_moon_model.hpp"
 #include "../../../domain/solar_position.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QTemporaryDir>
 #include <QTimeZone>
 #include <cmath>
 #include <iostream>
@@ -99,6 +101,21 @@ int main(int argc, char** argv) {
     SunMoonModel model(context);
     model.recompute();
     check(model.state() == "unconfigured" && !model.hasStation() && model.deRise().isEmpty(), "unconfigured without station");
+
+    // No DX target (saved as DX = DE, which is how first-run setup leaves it): no DX times to show.
+    {
+        QTemporaryDir dir;
+        AppSettings settings(dir.filePath("station.conf"), dir.path());
+        check(settings.saveStation("W1AW", 41.7, -72.7, 41.7, -72.7, "").isEmpty(), "station saved");
+        WidgetContext with_station;
+        with_station.settings = &settings;
+        SunMoonModel no_dx(with_station);
+        no_dx.recompute();
+        check(!no_dx.deRise().isEmpty(), "DE times with a station");
+        check(no_dx.dxRise().isEmpty() && no_dx.dxSet().isEmpty() && no_dx.dxDay().isEmpty(), "no DX target, no DX times");
+        check(settings.saveStation("W1AW", 41.7, -72.7, 35.7, 139.7, "").isEmpty(), "DX set");
+        check(!no_dx.dxRise().isEmpty(), "DX times once a target is set");
+    }
 
     std::cout << checks << " checks, " << failures << " failures\n";
     // Equinoxes and solstices 2026 (USNO/timeanddate, UTC), within 3 minutes.

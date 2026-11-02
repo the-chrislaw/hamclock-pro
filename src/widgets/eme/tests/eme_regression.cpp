@@ -1,8 +1,10 @@
 // EME planning: path loss reference and mutual-window logic, checked against
 // the lunar ephemeris itself (edges are zero crossings of the elevation).
 #include "../eme_model.hpp"
+#include "../../../ui/app_settings.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QTemporaryDir>
 #include <QTimeZone>
 #include <cmath>
 #include <iostream>
@@ -78,6 +80,21 @@ int main(int argc, char** argv) {
     check(s.distance.endsWith(" km") && s.degradation.startsWith("+") && s.de_position.startsWith("Az "), "summary text shape");
     check(s.sun.contains("from Moon"), "summary has the Sun separation");
     check(!s.window.isEmpty(), "summary has a window text");
+
+    // No DX target (saved as DX = DE, which is how first-run setup leaves it): no DX Moon, nothing mutual.
+    {
+        QTemporaryDir dir;
+        AppSettings settings(dir.filePath("station.conf"), dir.path());
+        check(settings.saveStation("W1AW", 41.7, -72.7, 41.7, -72.7, "").isEmpty(), "station saved");
+        WidgetContext with_station;
+        with_station.settings = &settings;
+        EmeModel no_dx(with_station);
+        no_dx.recompute();
+        check(!no_dx.dePosition().isEmpty(), "DE Moon with a station");
+        check(no_dx.dxPosition().isEmpty() && no_dx.window().isEmpty() && !no_dx.mutualNow(), "no DX target, no DX Moon or mutual window");
+        check(settings.saveStation("W1AW", 41.7, -72.7, 35.7, 139.7, "").isEmpty(), "DX set");
+        check(!no_dx.dxPosition().isEmpty() && !no_dx.window().isEmpty(), "DX Moon and window once a target is set");
+    }
 
     std::cout << checks << " checks, " << failures << " failures\n";
     return failures == 0 ? 0 : 1;

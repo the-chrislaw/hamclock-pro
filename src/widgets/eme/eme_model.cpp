@@ -62,6 +62,11 @@ void EmeModel::recompute() {
     }
     s_ = summarize_eme(UtcSeconds{now().toSecsSinceEpoch()}, settings_->deLatitude(), settings_->deLongitude(),
                        settings_->dxLatitude(), settings_->dxLongitude());
+    if (!settings_->hasDx()) {  // saved as DX = DE: the card shows dashes, not DE's Moon as if it were mutual
+        s_.dx_position.clear();
+        s_.window.clear();
+        s_.mutual_now = false;
+    }
     has_station_ = true;
     setState("live", "Computed offline from the system clock", now());
     emit changed();
