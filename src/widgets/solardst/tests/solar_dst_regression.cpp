@@ -73,6 +73,7 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     settle();
     check(!model.hasData() && model.history().isEmpty(), "old index never shown as current");
+    check(model.state() == "stale", "a fresh answer with only an old index is stale, not live");
 
     SolarDstModel offline(context);
     down = true;

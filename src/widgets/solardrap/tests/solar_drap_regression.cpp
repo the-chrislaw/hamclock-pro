@@ -86,6 +86,7 @@ int main(int argc, char** argv) {
     model.source().refreshNow();
     settle();
     check(!model.hasData() && !has_style(), "old table never shown or drawn as current");
+    check(model.state() == "stale", "a fresh answer with only an old table is stale, not live");
 
     SolarDrapModel offline(context);
     down = true;

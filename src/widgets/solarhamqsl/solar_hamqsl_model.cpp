@@ -15,8 +15,8 @@ constexpr int kMaxAgeSecs = 6 * 3600;
 SolarHamqslModel::SolarHamqslModel(const WidgetContext& context, QObject* parent)
     : WidgetModel("solarhamqsl", "HamQSL conditions", parent),
       source_(new PolledSource("hamqsl-solar", QUrl(kUrl), kPolicy, context.transport, this)) {
-    trackSource(*source_, "HamQSL.com (N0NBH)");
-    connect(source_, &PolledSource::updated, this, &SolarHamqslModel::parse);
+    connect(source_, &PolledSource::updated, this, &SolarHamqslModel::parse);  // before trackSource: the state reads hasData
+    trackSource(*source_, "HamQSL.com (N0NBH)", [this] { return hasData(); });
 }
 
 void SolarHamqslModel::start() { source_->start(); }
