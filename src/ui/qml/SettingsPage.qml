@@ -185,13 +185,17 @@ Rectangle {
                            color: Theme.bad; font.pixelSize: Theme.fontCaption; wrapMode: Text.WordWrap; Layout.fillWidth: true }
                     FormField { id: callsign; label: "Callsign"; text: appSettings.callsign; placeholder: "e.g. W1AW"
                                 field.inputMethodHints: Qt.ImhUppercaseOnly | Qt.ImhNoPredictiveText }
-                    RowLayout {
+                    // Plain anchors, not a RowLayout: the layout kept the button's first (narrower) width
+                    // when the theme scale settled, eliding "Find" (#762).
+                    Item {
                         Layout.fillWidth: true
-                        spacing: Theme.gap
+                        implicitHeight: place.implicitHeight
                         FormField { id: place; label: "Find a place (address or city; sent to OpenStreetMap when you press Find)"
                                     placeholder: "e.g. Portland, Oregon"
+                                    anchors { left: parent.left; right: findButton.left; rightMargin: Theme.gap; top: parent.top }
                                     Keys.onReturnPressed: findButton.clicked() }
-                        AppButton { id: findButton; text: "Find"; Layout.alignment: Qt.AlignBottom
+                        AppButton { id: findButton; text: "Find"
+                                    anchors { right: parent.right; bottom: parent.bottom }
                                     onClicked: { placeStatus.text = "Searching..."; locationTools.search(place.text) } }
                     }
                     // Apple devices only: one-shot fix from the OS location service.
