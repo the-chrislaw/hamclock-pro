@@ -32,6 +32,22 @@ if 'Qt.platform.os !== "ios"' not in screen.split("ColumnLayout", 1)[0]:
 if "!Theme.phone" not in display or 'Qt.platform.os === "ios"' not in display:
     sys.exit("DisplaySection.qml: Map size is hidden on phones and Screen rotation is iOS-only")
 
+# A pane's Open Settings goes to what that pane needs, not the top of Settings.
+slot = (root / "PaneSlot.qml").read_text()
+main = (root / "Main.qml").read_text()
+if "signal setupRequested(string paneId)" not in slot or "slot.setupRequested(wid)" not in slot:
+    sys.exit("PaneSlot.qml: setupRequested must say which pane asked")
+if main.count("function (paneId) { settingsLayer.visible = true; settingsPage.showForPane(paneId) }") != 2:
+    sys.exit("Main.qml: both pane grids must open Settings at what the pane needs")
+targets = page.split("function showForPane(", 1)[1].split("\n    }\n", 1)[0]
+for pane, target in (("dxcluster", "accounts:dxcluster"), ("bandactivity", "accounts:dxcluster"), ("hamalert", "accounts:hamalert"),
+                     ("lookup", "accounts"), ("radio", "hardware"), ("rotator", "hardware"), ("adsb", "hardware"), ("gps", "hardware"),
+                     ("mesh", "spots:mesh"), ("adif", "spots:adif")):
+    if f'{pane}: "{target}"' not in targets:
+        sys.exit(f"SettingsPage.qml: Open Settings on {pane} must go to {target}")
+if "appSettings.configured" not in targets:
+    sys.exit("SettingsPage.qml: with no station only the Station card shows, so there is nothing else to go to")
+
 # Data sources is the last card in the page.
 cards = [m.start() for m in re.finditer(r"^ {12}(?: {4})?[A-Z]\w*\s*\{", page, re.M)]   # top level, or inside moreSections
 last = page[cards[-1]:]
