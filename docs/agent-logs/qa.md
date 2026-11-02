@@ -650,3 +650,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 24f46b2 (merged since 2a008ee: only my run 116 log #782). No source, QML, test or doc change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-02 (UTC) QA run 118
+- Last reviewed commit: d50cac0 (merged since 24f46b2: Apple TV stale-index-age #783, my run 117 log #784). #783 is tvOS-only (Swift panes plus the shared core `check_indices`, new `index_age` core test); the limits mirror the main app's swpc_parse.hpp, the DEBUG-only seed hook is absent from Release, no contract issue found. Linux main build and screenshots were not repeated (no Linux source or QML change).
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise; the SWPC age limits are now duplicated between the main app and the tvOS core.
