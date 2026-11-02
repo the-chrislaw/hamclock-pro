@@ -27,6 +27,15 @@ Rectangle {
         page.closeRequested()
     }
 
+    // Start, first run: an empty station stays here and says what is missing (Later is the way out).
+    function start() {
+        if (!stationCard.typed()) {
+            stationError.text = "Add your callsign and home location to start, or press Later to do it another time."
+            return
+        }
+        saveAndClose()
+    }
+
     // Called each time Settings opens: every field shows what is saved again, so a
     // restored configuration is not overwritten by fields typed in before it.
     function reload() {
@@ -136,7 +145,7 @@ Rectangle {
             }
             // Setup: Later leaves the station for another time; Start needs it complete.
             AppButton { text: "Later"; visible: page.setupMode; onClicked: page.closeRequested() }
-            AppButton { text: "Start"; visible: page.setupMode; primary: true; onClicked: page.saveAndClose() }
+            AppButton { text: "Start"; visible: page.setupMode; primary: true; onClicked: page.start() }
             // Done keeps what was typed (iOS convention); it stays open only to show an error.
             AppButton { text: "Done"; visible: !page.setupMode; primary: true; onClicked: page.saveAndClose() }
         }
@@ -231,7 +240,11 @@ Rectangle {
                                     target: deGrid.field
                                     function onEditingFinished() {
                                         const g = locationTools.fromGrid(deGrid.text)
-                                        if (g.latitude === undefined) return
+                                        if (g.latitude === undefined) {
+                                            if (deGrid.text.trim().length) stationError.text = "“" + deGrid.text.trim() + "” is not a grid square. Try one like FN31pr."
+                                            return
+                                        }
+                                        stationError.text = ""
                                         deLat.text = g.latitude.toFixed(4)
                                         deLon.text = g.longitude.toFixed(4)
                                         stationCard.suggestZone(g.latitude, g.longitude)
@@ -291,6 +304,7 @@ Rectangle {
                     // (errors about missing input show when Settings closes).
                     function autoSave() {
                         if (!page.visible) return   // bindings settling while Settings is closed
+                        if (!callsign.text.trim().length) return   // location first is fine; Start or Done asks for it
                         if ([deLat, deLon].some(f => isNaN(coordinate(f, f === deLat)))) return
                         if (save()) stationError.text = ""
                     }
@@ -302,9 +316,9 @@ Rectangle {
                     // Saves the station and DX zone when anything changed; DX keeps the current
                     // target (set on the map). Returns false with a message in stationError
                     // when the input can't be saved.
+                    function typed() { return [callsign, deLat, deLon].some(f => f.text.trim().length > 0) }
                     function save() {
-                        const typed = callsign.text.trim().length || deLat.text.trim().length || deLon.text.trim().length
-                        if (!appSettings.configured && !typed) return true
+                        if (!appSettings.configured && !typed()) return true
                         const de = [coordinate(deLat, true), coordinate(deLon, false)]
                         if (de.some(isNaN)) {
                             stationError.text = "Add your home location: press Find, type a grid square, or enter latitude and longitude."
