@@ -32,20 +32,27 @@ void WeatherModel::start() { build(); }
 void WeatherModel::build() {
     if (hasStation()) {
         rebuildEnd(de_, "openmeteo-de", settings_->deLatitude(), settings_->deLongitude());
-        rebuildEnd(dx_, "openmeteo-dx", settings_->dxLatitude(), settings_->dxLongitude());
+        // No DX target is saved as DX = DE: nothing to fetch or show twice.
+        if (settings_->hasDx()) rebuildEnd(dx_, "openmeteo-dx", settings_->dxLatitude(), settings_->dxLongitude());
+        else clearEnd(dx_);
     }
     refreshState();
     emit changed();
 }
 
-void WeatherModel::rebuildEnd(End& end, const QString& cache_name, double lat, double lon) {
-    const double rlat = std::round(lat * 100) / 100, rlon = std::round(lon * 100) / 100;
-    if (end.source && end.lat == rlat && end.lon == rlon) return;
+void WeatherModel::clearEnd(End& end) {
     delete end.source;
     delete end.place_source;
+    end.source = nullptr;
     end.place_source = nullptr;
     end.place.clear();
     end.now.reset();
+}
+
+void WeatherModel::rebuildEnd(End& end, const QString& cache_name, double lat, double lon) {
+    const double rlat = std::round(lat * 100) / 100, rlon = std::round(lon * 100) / 100;
+    if (end.source && end.lat == rlat && end.lon == rlon) return;
+    clearEnd(end);
     end.lat = rlat;
     end.lon = rlon;
     // Cache name carries the position so a moved station starts clean.
@@ -115,22 +122,26 @@ QString WeatherModel::air(const End& e) {
 }
 
 void WeatherModel::refreshState() {
-    if (!hasStation()) { setState("unconfigured", "Set DE and DX locations in Settings"); return; }
+    if (!hasStation()) { setState("unconfigured", "Set your station location in Settings"); return; }
     End* ends[] = {&de_, &dx_};
     QStringList stale, missing;
     QDateTime oldest;
-    bool any_error = false;
+    bool any_error = false, any_answer = false;
+    int ends_in_use = 0;
     const auto now_utc = now();
     for (End* e : ends) {
         const QString label = e == &de_ ? "DE" : "DX";
         if (!e->source) continue;
+        ++ends_in_use;
         any_error = any_error || !e->source->lastError().isEmpty();
+        any_answer = any_answer || e->source->fetchedAt().isValid();
         if (!e->now) { missing << label; continue; }
         if (e->source->isStale(now_utc)) stale << label;
         if (!oldest.isValid() || e->source->fetchedAt() < oldest) oldest = e->source->fetchedAt();
     }
-    if (missing.size() == 2) {
-        if (any_error) setState("offline", "Open-Meteo unreachable: " + de_.source->lastError());
+    if (missing.size() == ends_in_use) {
+        if (any_error) setState("offline", "Open-Meteo unreachable: " + (de_.source->lastError().isEmpty() && dx_.source ? dx_.source->lastError() : de_.source->lastError()));
+        else if (any_answer) setState("stale", "Open-Meteo returned no usable weather");
         else setState("loading", "Contacting Open-Meteo…");
         return;
     }

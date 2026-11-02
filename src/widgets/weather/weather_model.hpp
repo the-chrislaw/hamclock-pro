@@ -67,6 +67,7 @@ private:
         QString place;                         // "San Francisco, US"; empty until known
     };
     void build();
+    void clearEnd(End& end);
     void rebuildEnd(End& end, const QString& cache_name, double lat, double lon);
     void parse(End& end);
     void parsePlace(End& end);
