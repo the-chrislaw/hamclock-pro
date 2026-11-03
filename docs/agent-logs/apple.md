@@ -225,3 +225,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-01 (third hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (conflicting, left alone). F10 slice: the iPad Simulator job now also boots an iPhone Simulator, installs the same app, launches it and uploads `iphone.png` with the existing screenshot artifact. The step is informational (every failure path logs and exits 0) and the job only runs on main pushes, so the first screenshot appears after merge. Not done: portrait/landscape assertions, #513 device check. CI logs only; no on-device claims.
+
+## 2026-11-03 (hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 7: added `docs/apple-sky-finder-check.md`, a manual TestFlight check (heading/tilt, point at a planet, pass reminder, camera). Docs only; nothing validated on a device. Not done: camera preview layer, starring a pass, #513 device check.
