@@ -660,3 +660,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 02be427 (merged since d50cac0: Apple TV HF bands Night heading #785, my run 118 log #786). #785 is tvOS-only (font 26 to 25 pt, spacing 6 to 10, DEBUG-only `-hcpSeedBandsAllGood` seed guarded by `#if DEBUG`, new UI test); no contract issue found. Linux build and screenshots were not repeated (no Linux source or QML change).
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-03 (UTC) QA run 120
+- Last reviewed commit: 65d3db2 (merged since 02be427: only my run 119 log #787). No source, QML, test or doc change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
