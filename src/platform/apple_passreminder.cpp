@@ -20,6 +20,37 @@ ReminderPlan planPassReminder(const QString& satellite, const QDateTime& aos_utc
     return p;
 }
 
+PassReminderSync::PassReminderSync(QObject* parent)
+    : PassReminderSync(nativeSchedulePassReminder, nativeCancelPassReminder, parent) {}
+PassReminderSync::PassReminderSync(ScheduleFn schedule, CancelFn cancel, QObject* parent)
+    : QObject(parent), schedule_(std::move(schedule)), cancel_(std::move(cancel)) {}
+
+void PassReminderSync::sync(const QVariantList& rows, const QDateTime& now_utc) {
+    QSet<QString> wanted;
+    for (const QVariant& v : rows) {
+        const QVariantMap r = v.toMap();
+        if (!r.value("starred").toBool()) continue;
+        const ReminderPlan p = planPassReminder(
+            r.value("name").toString(), QDateTime::fromSecsSinceEpoch(r.value("aos").toLongLong(), Qt::UTC),
+            QDateTime::fromSecsSinceEpoch(r.value("los").toLongLong(), Qt::UTC), r.value("maxEl").toDouble(),
+            lead_min_, now_utc);
+        if (!p.valid) continue;
+        wanted.insert(p.id);
+        if (!active_.contains(p.id) && schedule_ && schedule_(p)) active_.insert(p.id);
+    }
+    for (const QString& id : QSet<QString>(active_))
+        if (!wanted.contains(id)) { if (cancel_) cancel_(id); active_.remove(id); }
+}
+
+void PassReminderSync::clear() {
+    for (const QString& id : QSet<QString>(active_)) if (cancel_) cancel_(id);
+    active_.clear();
+}
+
+void PassReminderSync::syncNow() {
+    if (const QObject* model = sender()) sync(model->property("rows").toList(), QDateTime::currentDateTimeUtc());
+}
+
 #ifndef Q_OS_IOS
 bool nativeSchedulePassReminder(const ReminderPlan&) { return false; }
 void nativeCancelPassReminder(const QString&) {}

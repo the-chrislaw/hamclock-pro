@@ -30,5 +30,23 @@ int main(int argc, char** argv) {
     check(planPassReminder("ISS", aos.addDays(1), los.addDays(1), 54, 9999, now).fire_utc ==
               aos.addDays(1).addSecs(-7200), "lead clamps to 120 min");
     check(!nativeSchedulePassReminder(p), "no native scheduler off iOS");
+    {
+        QStringList scheduled, cancelled;
+        PassReminderSync sync([&](const ReminderPlan& pl) { scheduled << pl.id; return true; },
+                              [&](const QString& id) { cancelled << id; });
+        auto row = [&](const char* n, bool star, const QDateTime& a) {
+            return QVariant(QVariantMap{{"name", n}, {"starred", star}, {"aos", a.toSecsSinceEpoch()},
+                                        {"los", a.addSecs(600).toSecsSinceEpoch()}, {"maxEl", 40}});
+        };
+        sync.sync({row("ISS", true, aos), row("AO-91", false, aos)}, now);
+        check(scheduled.size() == 1 && scheduled[0].startsWith("pass.ISS."), "only starred rows scheduled");
+        sync.sync({row("ISS", true, aos)}, now);
+        check(scheduled.size() == 1, "unchanged rows are not rescheduled");
+        sync.sync({row("ISS", false, aos)}, now);
+        check(cancelled.size() == 1 && cancelled[0] == scheduled[0], "unstarred pass cancelled");
+        sync.sync({row("ISS", true, aos)}, now);
+        sync.clear();
+        check(scheduled.size() == 2 && cancelled.size() == 2, "clear cancels everything");
+    }
     return failures ? 1 : 0;
 }

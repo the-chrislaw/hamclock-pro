@@ -3,7 +3,11 @@
 // maths is platform-free and tested on Linux; the iOS side hands the result to
 // UNUserNotificationCenter (no server, no push).
 #include <QDateTime>
+#include <QObject>
+#include <QSet>
 #include <QString>
+#include <QVariantList>
+#include <functional>
 
 namespace hamclock {
 
@@ -25,5 +29,30 @@ ReminderPlan planPassReminder(const QString& satellite, const QDateTime& aos_utc
 // does nothing elsewhere. Permission is requested on first schedule only.
 bool nativeSchedulePassReminder(const ReminderPlan& plan);
 void nativeCancelPassReminder(const QString& id);
+
+// Keeps local reminders in step with the Passes pane: every starred row
+// ({name, aos, los, maxEl, starred} as PassesModel publishes) gets a reminder,
+// rows that disappear (unstarred, filtered, finished) get theirs cancelled.
+// The schedule/cancel functions are injectable so Linux tests can observe them.
+class PassReminderSync : public QObject {
+    Q_OBJECT
+public:
+    using ScheduleFn = std::function<bool(const ReminderPlan&)>;
+    using CancelFn = std::function<void(const QString&)>;
+    explicit PassReminderSync(QObject* parent = nullptr);
+    PassReminderSync(ScheduleFn schedule, CancelFn cancel, QObject* parent = nullptr);
+    void setLeadMinutes(int m) { lead_min_ = m; }
+    void sync(const QVariantList& rows, const QDateTime& now_utc);
+    // Cancels everything scheduled (feature turned off).
+    void clear();
+public slots:
+    // Reads the "rows" property of `sender()` (the Passes model) and syncs against the clock.
+    void syncNow();
+private:
+    ScheduleFn schedule_;
+    CancelFn cancel_;
+    QSet<QString> active_;
+    int lead_min_ = 10;
+};
 
 } // namespace hamclock
