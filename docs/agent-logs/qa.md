@@ -710,3 +710,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 7e0e224 (merged since 0b55277: #797 Apple starred-pass reminder sync, my run 128 log #798). #797 diff reviewed by reading only (iOS-only wiring in main.cpp, injectable schedule/cancel with a Linux regression test, signal/property names match PassesModel); no UI change, so screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-04 (UTC) QA run 130
+- Last reviewed commit: 93e05dc (merged since 7e0e224: only my run 128 and 129 log PRs #798 and #799). No source, QML, test or doc change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
