@@ -108,7 +108,7 @@ void PassesModel::recompute() {
         const qint64 aos = s.pass.pass.aos;
         const QDateTime utc = QDateTime::fromSecsSinceEpoch(aos, QTimeZone::utc());
         rows_.append(QVariantMap{
-            {"name", QString::fromStdString(s.name)}, {"aos", aos}, {"day", pass_day_label(aos, now_s)},
+            {"name", QString::fromStdString(s.name)}, {"aos", aos}, {"los", static_cast<qint64>(s.pass.pass.los)}, {"day", pass_day_label(aos, now_s)},
             {"utc", utc.toString("HH:mm") + "Z"},
             {"local", QDateTime::fromSecsSinceEpoch(aos).toString("HH:mm")},
             {"maxEl", qRound(s.pass.pass.max_el_deg)},

@@ -24,6 +24,7 @@
 #include "../platform/apple_attribution.hpp"
 #include "../platform/apple_devicelocation.hpp"
 #include "../platform/apple_widgetshare.hpp"
+#include "../platform/apple_passreminder.hpp"
 #include <QSettings>
 #include <QEventLoop>
 #include <QNetworkInformation>
@@ -316,6 +317,13 @@ int main(int argc, char** argv) {
     hamclock::LocationTools location_tools;
     hamclock::DeviceLocation device_location;
     device_location.setAvailableOverride(hamclock::nativeLocationAvailable());
+#if defined(Q_OS_IOS)
+    // Starred passes get a local reminder before AOS (#573 item 4); other platforms have no backend.
+    hamclock::PassReminderSync pass_reminders;
+    if (auto* passes = registry.model("passes")) {
+        QObject::connect(passes, SIGNAL(changed()), &pass_reminders, SLOT(syncNow()));
+    }
+#endif
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;

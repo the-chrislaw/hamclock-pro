@@ -228,3 +228,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-03 (hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 7: added `docs/apple-sky-finder-check.md`, a manual TestFlight check (heading/tilt, point at a planet, pass reminder, camera). Docs only; nothing validated on a device. Not done: camera preview layer, starring a pass, #513 device check.
+
+## 2026-11-04 (hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 4: `PassReminderSync` (`apple_passreminder`) keeps local notifications in step with the Passes pane: each starred row gets a reminder (stable id, so no rescheduling), reminders for rows that disappear are cancelled. Wired in `main.cpp` on iOS only; the Passes model rows gain a `los` field (area D, additive). Tested on Linux with injected schedule/cancel (`pass-reminder-regression`). Limitation: only starred passes visible under the current Passes filter are reminded. The iOS path compiles only in the Apple jobs. Not done: camera preview layer, #513 device check. No on-device claims.
