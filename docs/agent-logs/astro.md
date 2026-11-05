@@ -361,3 +361,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-10-30 (UTC), run 72
 - Issue #715 (QA): `sat_alert_service_regression` took 97 s (60 s timeout). Fixes at the cause, timeout untouched: (1) `SatellitePropagator::passes()` leaps over the hours far below the horizon (elevation cannot change faster than ~0.3 deg/s there; 0.5 deg/s used, leap capped at 10 min) instead of sampling every 20 s; new check in `widget-satellites-finder_regression` compares it with a 5 s brute-force scan of 48 h of ISS passes (same count, AOS within 6 s). (2) `SatAlertService` keeps passes per satellite: selecting a new satellite predicts only that one, deselecting or re-selecting a predicted one costs nothing (also helps the Pi, where each tap re-ran the whole selection). (3) the test feeds ISS plus 14 catalog and 2 other sets instead of all 190. Test now ~7 s in a debug build (was 97 s). Full ctest and ASan/UBSan: see PR. Not on-device; no Pi timing measured.
 - Not mine: #73 conflicting, #717 (area F) CI still running at start, left alone.
+
+## 2026-11-05 (UTC), run 73
+- Orient only: no open `auto-merge` PR of mine (only #73, conflicting, area A's, left alone); the one open `[D]` QA issue (#572) is complete on the D side. Remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change; nothing invented.
