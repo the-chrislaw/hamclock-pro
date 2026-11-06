@@ -6,6 +6,7 @@
 #include "apple_skypointer.hpp"
 
 #include <QObject>
+#include <QString>
 
 namespace hamclock {
 
@@ -25,6 +26,12 @@ public:
     void setAvailableOverride(bool on) { available_override_ = on; }
     void setAxis(PointingAxis axis) { axis_ = axis; smoother_.reset(); }
 
+    // Calibration message for the finder screen ("" when nothing to say). Updated
+    // by feedHeadingAccuracy; cleared on start().
+    QString calibrationHint() const { return hint_; }
+    // Heading accuracy in degrees (negative = unknown), from the native layer.
+    void feedHeadingAccuracy(double accuracy_deg);
+
     void start();
     void stop();
 
@@ -34,6 +41,7 @@ public:
 signals:
     void attitudeChanged(double az, double el);
     void runningChanged();
+    void calibrationHintChanged();
 
 private:
     bool running_ = false;
@@ -41,12 +49,14 @@ private:
     bool available_override_ = false;
     PointingAxis axis_ = PointingAxis::BackCamera;
     AttitudeSmoother smoother_;
+    QString hint_;
 };
 
 // Native hooks, implemented in apple_skysensor_ios.mm on iOS only.
 bool nativeSkySensorAvailable();
 // Returns true when the true-north reference frame is in use.
-bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&));
+bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&),
+                           void (*deliverAccuracy)(SkySensor*, double));
 void nativeSkySensorStop(SkySensor* owner);
 
 } // namespace hamclock
