@@ -1,11 +1,14 @@
 #include "apple_skysensor.hpp"
+#include "apple_calibration.hpp"
 
 namespace hamclock {
 
 // Off iOS, or with the finder left out of the build: no sensors.
 #if !defined(Q_OS_IOS) || !defined(HAMCLOCK_SKY_FINDER)
 bool nativeSkySensorAvailable() { return false; }
-bool nativeSkySensorStart(SkySensor*, void (*)(SkySensor*, const RotationMatrix&)) { return true; }
+bool nativeSkySensorStart(SkySensor*, void (*)(SkySensor*, const RotationMatrix&), void (*)(SkySensor*, double)) {
+    return true;
+}
 void nativeSkySensorStop(SkySensor*) {}
 #endif
 
@@ -19,7 +22,10 @@ void SkySensor::start() {
     if (running_ || !available()) return;
     smoother_.reset();
     running_ = true;
-    true_north_ = nativeSkySensorStart(this, [](SkySensor* self, const RotationMatrix& r) { self->feedAttitude(r); });
+    if (!hint_.isEmpty()) { hint_.clear(); emit calibrationHintChanged(); }
+    true_north_ = nativeSkySensorStart(
+        this, [](SkySensor* self, const RotationMatrix& r) { self->feedAttitude(r); },
+        [](SkySensor* self, double acc) { self->feedHeadingAccuracy(acc); });
     emit runningChanged();
 }
 
@@ -28,6 +34,13 @@ void SkySensor::stop() {
     running_ = false;
     nativeSkySensorStop(this);
     emit runningChanged();
+}
+
+void SkySensor::feedHeadingAccuracy(double accuracy_deg) {
+    const QString h = hamclock::calibrationHint(accuracy_deg, true_north_);
+    if (h == hint_) return;
+    hint_ = h;
+    emit calibrationHintChanged();
 }
 
 void SkySensor::feedAttitude(const RotationMatrix& r) {

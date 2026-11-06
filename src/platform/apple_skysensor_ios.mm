@@ -19,7 +19,8 @@ bool nativeSkySensorAvailable() {
     return motionManager().deviceMotionAvailable;
 }
 
-bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&)) {
+bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const RotationMatrix&),
+                           void (*deliverAccuracy)(SkySensor*, double)) {
     // True-north reference needs location services; ask only when the finder starts.
     if (!g_location) g_location = [[CLLocationManager alloc] init];
     if (g_location.authorizationStatus == kCLAuthorizationStatusNotDetermined)
@@ -41,6 +42,15 @@ bool nativeSkySensorStart(SkySensor* owner, void (*deliver)(SkySensor*, const Ro
         r.m21 = m.m21; r.m22 = m.m22; r.m23 = m.m23;
         r.m31 = m.m31; r.m32 = m.m32; r.m33 = m.m33;
         deliver(owner, r);
+        // Magnetometer calibration level -> approximate heading error in degrees.
+        double acc = -1;
+        switch (motion.magneticField.accuracy) {
+        case CMMagneticFieldCalibrationAccuracyHigh: acc = 10; break;
+        case CMMagneticFieldCalibrationAccuracyMedium: acc = 25; break;
+        case CMMagneticFieldCalibrationAccuracyLow: acc = 45; break;
+        default: break; // uncalibrated: unknown
+        }
+        deliverAccuracy(owner, acc);
     }];
     return trueNorth;
 }

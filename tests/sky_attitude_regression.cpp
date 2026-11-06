@@ -71,6 +71,17 @@ int main(int argc, char** argv) {
     check(spy.size() == 2 && spy[1].first > 0 && spy[1].first < 90,
           "second sample is smoothed");
 
+    // Calibration hint follows the heading accuracy and only signals on change.
+    int hintSignals = 0;
+    QObject::connect(&sensor, &SkySensor::calibrationHintChanged, [&] { ++hintSignals; });
+    check(sensor.calibrationHint().isEmpty(), "no hint before any accuracy");
+    sensor.feedHeadingAccuracy(45);
+    check(!sensor.calibrationHint().isEmpty() && hintSignals == 1, "poor accuracy asks for calibration");
+    sensor.feedHeadingAccuracy(50);
+    check(hintSignals == 1, "same hint does not re-emit");
+    sensor.feedHeadingAccuracy(5);
+    check(sensor.calibrationHint().isEmpty() && hintSignals == 2, "good accuracy clears the hint");
+
     std::cout << (failures ? "FAILED\n" : "OK\n");
     return failures ? 1 : 0;
 }
