@@ -15,6 +15,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skypointer.cpp
     src/platform/apple_skyproject.cpp
     src/platform/apple_camerafov.cpp
+    src/platform/apple_calibration.cpp
     src/platform/apple_skyattitude.cpp
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
@@ -296,6 +297,10 @@ if(BUILD_TESTING)
     target_link_libraries(camera-fov-regression PRIVATE hamclock-widget-core)
     add_test(NAME camera-fov-regression COMMAND camera-fov-regression)
     set_tests_properties(camera-fov-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(calibration-hint-regression tests/calibration_hint_regression.cpp)
+    target_link_libraries(calibration-hint-regression PRIVATE hamclock-widget-core)
+    add_test(NAME calibration-hint-regression COMMAND calibration-hint-regression)
+    set_tests_properties(calibration-hint-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(device-location-regression tests/device_location_regression.cpp)
     target_link_libraries(device-location-regression PRIVATE hamclock-widget-core)
     add_test(NAME device-location-regression COMMAND device-location-regression)
