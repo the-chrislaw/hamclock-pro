@@ -26,6 +26,7 @@
 #include "../platform/apple_widgetshare.hpp"
 #include "../platform/apple_passreminder.hpp"
 #include "../platform/apple_skyfinder.hpp"
+#include "../platform/apple_skymarker.hpp"
 #include "../platform/apple_skysensor.hpp"
 #include "../platform/apple_skytarget.hpp"
 #include <QSettings>
@@ -332,6 +333,7 @@ int main(int argc, char** argv) {
     // sensor reports unavailable, so QML can hide the finder.
     hamclock::SkySensor sky_sensor;
     hamclock::SkyFinder sky_finder(&sky_sensor);
+    hamclock::SkyMarker sky_marker(&sky_sensor, &sky_finder);
     // Selected satellite (satellites card detail) is the finder's target.
     hamclock::SkyTargetBridge sky_target(registry.model("satellites"), &sky_finder);
 #endif
@@ -409,6 +411,7 @@ int main(int argc, char** argv) {
 #if defined(Q_OS_IOS)
     engine.rootContext()->setContextProperty("skySensor", &sky_sensor);
     engine.rootContext()->setContextProperty("skyFinder", &sky_finder);
+    engine.rootContext()->setContextProperty("skyMarker", &sky_marker);
 #endif
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
