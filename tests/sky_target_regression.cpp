@@ -34,5 +34,9 @@ int main(int argc, char** argv) {
     check(finder.locked(), "finder uses the bridged target");
     src.set({{"az", 90}, {"el", -3}, {"above", false}});
     check(!bridge.hasTarget(), "target dropped once it sets");
+    check(!finder.locked(), "finder lock cleared once target sets");
+    check(finder.guidance().isEmpty(), "finder guidance cleared once target sets");
+    emit sensor.attitudeChanged(90, 30);
+    check(!finder.locked(), "no guidance without a target");
     return failures ? 1 : 0;
 }
