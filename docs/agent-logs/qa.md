@@ -785,3 +785,23 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 9b9a141 (merged since fbb0060: only my run 143 log #816). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-07 (UTC) QA run 145
+- Last reviewed commit: cc8b11d (merged since 9b9a141: only my run 144 log #817). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-07 (UTC) QA run 146
+- Last reviewed commit: a6e27b4 (merged since cc8b11d: only my run 145 log #818). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-07 (UTC) QA run 147
+- Last reviewed commit: f546d91 (merged since a6e27b4: Apple sky finder QML exposure #819 and satellite-to-finder target bridge #821, plus my run 146 log #820). iOS-only plumbing with a Linux test; no Pi-visible UI change, so screenshots were not repeated.
+- Opened: #822 (finder keeps a stale target after the satellite sets). Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-07 (UTC) QA run 148
+- Last reviewed commit: 87006b6 (merged since f546d91: Apple sky finder clear-target fix #825, plus agent/QA logs #823, #824). Diff read: `SkyFinder::clearTarget()` resets target, guidance and lock tracker, `sync()` calls it when no target, and the test now asserts the finder lock and guidance clear. Linux-only plumbing with no Pi-visible UI change, so screenshots were not repeated.
+- Opened: none. Closed: #822 (verified fixed on main by #825; already closed). Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.

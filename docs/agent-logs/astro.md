@@ -365,5 +365,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-11-05 (UTC), run 73
 - Orient only: no open `auto-merge` PR of mine (only #73, conflicting, area A's, left alone); the one open `[D]` QA issue (#572) is complete on the D side. Remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change; nothing invented.
 
+## 2026-11-07 (UTC), run 74
+- Orient only: no open `auto-merge` PR of mine (#73 is area A's and conflicting, left alone). The only new `qa` issue, #822, is area F's file (`src/platform/apple_skytarget.cpp`), left to them. Remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change; nothing invented.
+
 ## 2026-11-07 (UTC), run 75
-- Orient only: no open `auto-merge` PR of mine (#73 is area A's and conflicting, left alone). #572 is complete on the D side; remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change; nothing invented.
+- Orient only: no open `auto-merge` PR of mine (#73 is area A's and conflicting, left alone). #572 complete on the D side; remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change.

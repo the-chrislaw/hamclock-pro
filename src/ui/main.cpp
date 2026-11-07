@@ -25,6 +25,9 @@
 #include "../platform/apple_devicelocation.hpp"
 #include "../platform/apple_widgetshare.hpp"
 #include "../platform/apple_passreminder.hpp"
+#include "../platform/apple_skyfinder.hpp"
+#include "../platform/apple_skysensor.hpp"
+#include "../platform/apple_skytarget.hpp"
 #include <QSettings>
 #include <QEventLoop>
 #include <QNetworkInformation>
@@ -324,6 +327,14 @@ int main(int argc, char** argv) {
         QObject::connect(passes, SIGNAL(changed()), &pass_reminders, SLOT(syncNow()));
     }
 #endif
+#if defined(Q_OS_IOS)
+    // Find-in-the-sky controllers (#573); without the HAMCLOCK_SKY_FINDER option the
+    // sensor reports unavailable, so QML can hide the finder.
+    hamclock::SkySensor sky_sensor;
+    hamclock::SkyFinder sky_finder(&sky_sensor);
+    // Selected satellite (satellites card detail) is the finder's target.
+    hamclock::SkyTargetBridge sky_target(registry.model("satellites"), &sky_finder);
+#endif
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());
     hamclock::BlankingModel blanking;
@@ -395,6 +406,10 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("timeZones", &time_zone_search);
     engine.rootContext()->setContextProperty("locationTools", &location_tools);
     engine.rootContext()->setContextProperty("deviceLocation", &device_location);
+#if defined(Q_OS_IOS)
+    engine.rootContext()->setContextProperty("skySensor", &sky_sensor);
+    engine.rootContext()->setContextProperty("skyFinder", &sky_finder);
+#endif
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());

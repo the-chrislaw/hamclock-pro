@@ -17,6 +17,14 @@ void SkyFinder::setTarget(double az, double el) {
     have_target_ = true;
 }
 
+void SkyFinder::clearTarget() {
+    if (!have_target_) return;
+    have_target_ = false;
+    guide_ = PointingGuidance();
+    tracker_ = LockTracker();
+    emit guidanceChanged();
+}
+
 void SkyFinder::start() {
     if (active_) return;
     sensor_->start();
