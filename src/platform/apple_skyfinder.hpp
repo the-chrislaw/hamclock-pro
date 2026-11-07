@@ -29,6 +29,7 @@ public:
     void setHaptic(std::function<void()> fn) { haptic_ = std::move(fn); }
 
     Q_INVOKABLE void setTarget(double az, double el);
+    Q_INVOKABLE void clearTarget(); // target set/unavailable: drop guidance and lock
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
 

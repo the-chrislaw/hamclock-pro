@@ -25,6 +25,7 @@ void SkyTargetBridge::sync() {
     double az = 0, el = 0;
     have_ = finderTargetFromDetail(source_->property("detail").toMap(), az, el);
     if (have_) finder_->setTarget(az, el);
+    else finder_->clearTarget();
 }
 
 } // namespace hamclock
