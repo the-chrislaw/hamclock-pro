@@ -240,3 +240,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-07 (hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 2 slice: on iOS `main.cpp` now creates `SkySensor` and `SkyFinder` and exposes them to QML as `skySensor` / `skyFinder` (sensor reports unavailable without the sky-finder option, so QML can hide the finder). Linux/Pi/macOS unaffected (Q_OS_IOS only); the iOS path compiles only in the Apple jobs. Not done: the finder screen and calibration hint display (area A), feeding the target az/el from the Passes model, camera preview layer, #513 device check. No on-device claims.
+
+## 2026-11-07 (second hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 2 slice: `SkyTargetBridge` (`apple_skytarget`) feeds `SkyFinder::setTarget` from the satellites card's selected-satellite detail (`az`/`el`, only while above the horizon), created in `main.cpp` on iOS only. Tested on Linux with a fake source (`sky-target-regression`). Limitation: az/el come from the detail map rounded to whole degrees. The iOS path compiles only in the Apple jobs. Not done: the finder screen and hint display (area A), camera preview layer, #513 device check. No on-device claims.
