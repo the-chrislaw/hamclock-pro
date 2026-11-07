@@ -26,6 +26,7 @@
 #include "../platform/apple_widgetshare.hpp"
 #include "../platform/apple_passreminder.hpp"
 #include "../platform/apple_skyfinder.hpp"
+#include "../platform/apple_skycamera.hpp"
 #include "../platform/apple_skymarker.hpp"
 #include "../platform/apple_skysensor.hpp"
 #include "../platform/apple_skytarget.hpp"
@@ -334,6 +335,14 @@ int main(int argc, char** argv) {
     hamclock::SkySensor sky_sensor;
     hamclock::SkyFinder sky_finder(&sky_sensor);
     hamclock::SkyMarker sky_marker(&sky_sensor, &sky_finder);
+    // Camera geometry for the AR overlay; unavailable (arrow mode only) without the option or a rear camera.
+    hamclock::SkyCamera sky_camera(&sky_marker, []([[maybe_unused]] QSizeF* sensor_px) {
+#ifdef HAMCLOCK_SKY_FINDER
+        return hamclock::nativeCameraLongFovDeg(sensor_px);
+#else
+        return 0.0;
+#endif
+    });
     // Selected satellite (satellites card detail) is the finder's target.
     hamclock::SkyTargetBridge sky_target(registry.model("satellites"), &sky_finder);
 #endif
@@ -412,6 +421,7 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("skySensor", &sky_sensor);
     engine.rootContext()->setContextProperty("skyFinder", &sky_finder);
     engine.rootContext()->setContextProperty("skyMarker", &sky_marker);
+    engine.rootContext()->setContextProperty("skyCamera", &sky_camera);
 #endif
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
