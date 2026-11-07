@@ -15,6 +15,7 @@ void SkyFinder::setTarget(double az, double el) {
     target_az_ = az;
     target_el_ = el;
     have_target_ = true;
+    emit targetChanged();
 }
 
 void SkyFinder::clearTarget() {
@@ -23,6 +24,7 @@ void SkyFinder::clearTarget() {
     guide_ = PointingGuidance();
     tracker_ = LockTracker();
     emit guidanceChanged();
+    emit targetChanged();
 }
 
 void SkyFinder::start() {

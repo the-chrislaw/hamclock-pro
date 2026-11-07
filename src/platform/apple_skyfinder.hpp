@@ -24,6 +24,9 @@ public:
     bool active() const { return active_; }
     bool magneticNorth() const { return active_ && !sensor_->trueNorth(); }
     PointingGuidance current() const { return guide_; }
+    bool haveTarget() const { return have_target_; }
+    double targetAz() const { return target_az_; }
+    double targetEl() const { return target_el_; }
 
     // Replaces the haptic (default: nativeHapticTick, a no-op off iOS).
     void setHaptic(std::function<void()> fn) { haptic_ = std::move(fn); }
@@ -36,6 +39,7 @@ public:
 signals:
     void guidanceChanged();
     void activeChanged();
+    void targetChanged(); // setTarget/clearTarget changed the target
     void lockedOn(); // emitted once per arrival, together with the haptic
 
 private slots:

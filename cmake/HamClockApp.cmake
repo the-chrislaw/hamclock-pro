@@ -20,6 +20,7 @@ add_library(hamclock-widget-core STATIC
     src/platform/apple_skysensor.cpp
     src/platform/apple_skyfinder.cpp
     src/platform/apple_skytarget.cpp
+    src/platform/apple_skymarker.cpp
     src/platform/apple_passreminder.cpp
     src/platform/apple_notifications.cpp
     src/platform/apple_widgetshare.cpp
@@ -327,6 +328,10 @@ if(BUILD_TESTING)
     set_target_properties(sky-target-regression PROPERTIES AUTOMOC ON)
     add_test(NAME sky-target-regression COMMAND sky-target-regression)
     set_tests_properties(sky-target-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(sky-marker-regression tests/sky_marker_regression.cpp)
+    target_link_libraries(sky-marker-regression PRIVATE hamclock-widget-core)
+    add_test(NAME sky-marker-regression COMMAND sky-marker-regression)
+    set_tests_properties(sky-marker-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(path-text-regression tests/path_text_regression.cpp src/domain/geometry.cpp)
     target_include_directories(path-text-regression PRIVATE src)
     target_link_libraries(path-text-regression PRIVATE Qt6::Core)
