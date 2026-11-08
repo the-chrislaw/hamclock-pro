@@ -38,5 +38,19 @@ int main(int argc, char** argv) {
     check(finder.guidance().isEmpty(), "finder guidance cleared once target sets");
     emit sensor.attitudeChanged(90, 30);
     check(!finder.locked(), "no guidance without a target");
+
+    check(trackFromSkyTrack({}).empty(), "empty skyTrack");
+    check(trackFromSkyTrack({QVariantMap{{"az", 10}, {"el", 5}}, QVariantMap{{"el", 7}}, 3}).size() == 1, "malformed samples skipped");
+    SkyMarker marker(&sensor, &finder);
+    marker.setPreview(400, 800, 60, 100);
+    SkyTrackBridge tb(&src, &marker);
+    check(marker.trackPoints().isEmpty(), "no track initially");
+    QVariantList pass;
+    for (int i = 0; i < 5; ++i) pass.append(QVariantMap{{"az", 88 + i}, {"el", 28 + i}});
+    src.setTrack(pass);
+    emit sensor.attitudeChanged(90, 30);
+    check(!marker.trackPoints().isEmpty(), "track points after the model publishes a pass");
+    src.setTrack({});
+    check(marker.trackPoints().isEmpty(), "track cleared with the model's track");
     return failures ? 1 : 0;
 }
