@@ -815,3 +815,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 346bcb2 (merged since 9fc325c: Apple SkyMarker #828 and SkyCamera #830, plus agent/QA logs). Diff read: marker projects finder target to screen, camera derives aspect-fill FOV from an injected source (0 = unavailable), finder gained targetChanged; all Linux-tested iOS plumbing, no credentials or network code, no Pi-visible UI change, so build and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-08 (UTC) QA run 151
+- Last reviewed commit: 3c1b24a (merged since 346bcb2: Apple SkyMarker pass-track projection #832, plus agent/QA logs #831, #833). Diff read: `SkyMarker::setTrack` projects az/el samples to screen, drops behind/off-screen samples and flags gaps, with a Linux regression test; no credentials or network code, no Pi-visible UI change, so build and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
