@@ -820,3 +820,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 3c1b24a (merged since 346bcb2: Apple SkyMarker pass-track projection #832, plus agent/QA logs #831, #833). Diff read: `SkyMarker::setTrack` projects az/el samples to screen, drops behind/off-screen samples and flags gaps, with a Linux regression test; no credentials or network code, no Pi-visible UI change, so build and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-08 (UTC) QA run 152
+- Last reviewed commit: 0fd2b76 (merged since 3c1b24a: Apple SkyTrackBridge #835, plus my run 151 log #834). Diff read: bridge feeds SkyMarker's pass polyline from the satellites model's `skyTrack` (property and `changed()` signal verified to exist in satellites_model.hpp), malformed samples are skipped, redraw only on a changed track, Linux regression test added; iOS-only, no credentials or network code, no Pi-visible UI change, so build and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
