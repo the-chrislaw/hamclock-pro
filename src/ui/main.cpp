@@ -345,6 +345,8 @@ int main(int argc, char** argv) {
     });
     // Selected satellite (satellites card detail) is the finder's target.
     hamclock::SkyTargetBridge sky_target(registry.model("satellites"), &sky_finder);
+    // Soonest pass az/el samples become the camera overlay polyline.
+    hamclock::SkyTrackBridge sky_track(registry.model("satellites"), &sky_marker);
 #endif
     hamclock::TimersModel timers;
     hamclock::AlarmsModel alarms(settings.optionsPath());

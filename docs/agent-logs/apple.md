@@ -255,3 +255,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-08 (hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (conflicting, left alone). #573 item 3 slice: `SkyMarker::setTrack` takes a pass's az/el samples and exposes `trackPoints` (`[{x, y, gap}]` in preview pixels, only samples ahead of the camera and inside the preview, `gap` marks a break) for the camera overlay polyline. Tested on Linux (`sky-marker-regression`). Not done: feeding the track from the Passes model, the camera preview layer and overlay QML (area A), #513 device check. No on-device claims.
+
+## 2026-11-08 (second hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73 is another area's (left alone). #573 item 3 slice: `SkyTrackBridge` (`apple_skytarget`) feeds `SkyMarker::setTrack` from the satellites model's `skyTrack` (the soonest pass's az/el samples), redrawing only when the track changes; created in `main.cpp` on iOS only. Tested on Linux (`sky-target-regression`). Limitation: the track is the soonest pass, not necessarily the selected satellite's. The iOS path compiles only in the Apple jobs. Not done: camera preview layer and overlay QML (area A), #513 device check. No on-device claims.
