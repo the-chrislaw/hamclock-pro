@@ -27,4 +27,10 @@ struct AzEl {
 
 AzEl attitudeToAzEl(const RotationMatrix& r, PointingAxis axis);
 
+// Roll of the phone about the rear camera's viewing axis, degrees in (-180, 180]:
+// 0 when the top edge points at the sky (level horizon), > 0 when the phone is
+// turned clockwise as seen by the user. 0 when looking straight up or down,
+// where roll is undefined.
+double cameraRollDeg(const RotationMatrix& r);
+
 } // namespace hamclock

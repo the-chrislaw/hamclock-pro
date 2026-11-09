@@ -51,5 +51,29 @@ int main(int argc, char** argv) {
     check(marker.trackPoints().size() == 0, "track behind the phone draws nothing");
     marker.setTrack({});
     check(marker.trackPoints().isEmpty(), "empty track clears");
+
+    // Roll: phone looking north at 30 deg elevation, turned clockwise 90 degrees
+    // (landscape). A target above the view axis then appears to the left.
+    {
+        SkySensor s2;
+        s2.setAvailableOverride(true);
+        SkyFinder f2(&s2);
+        SkyMarker m2(&s2, &f2);
+        m2.setPreview(400, 800, 40, 70);
+        const double el = 30 * M_PI / 180, roll = 90 * M_PI / 180;
+        // f = (cos el, 0, sin el); u0 = (-sin el, 0, cos el); right r0 = f x u0 = (0, -1, 0)
+        const double fx = std::cos(el), fz = std::sin(el), ox = -std::sin(el), oz = std::cos(el);
+        const double ux = std::cos(roll) * ox, uy = -std::sin(roll), uz = std::cos(roll) * oz;
+        // rows: device x (right) = f x u, device y = u, device z = -f
+        RotationMatrix r;
+        r.m11 = (0 * uz - fz * uy);
+        r.m12 = (fz * ux - fx * uz);
+        r.m13 = (fx * uy - 0 * ux);
+        r.m21 = ux; r.m22 = uy; r.m23 = uz;
+        r.m31 = -fx; r.m32 = 0; r.m33 = -fz;
+        f2.setTarget(0, 35); // 5 degrees above the view axis
+        s2.feedAttitude(r);
+        check(m2.visible() && m2.x() < 200 && std::fabs(m2.y() - 400) < 60, "rolled 90 degrees clockwise: up appears to the left");
+    }
     return failures ? 1 : 0;
 }

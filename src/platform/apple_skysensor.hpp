@@ -40,6 +40,8 @@ public:
 
 signals:
     void attitudeChanged(double az, double el);
+    // Roll about the camera axis (see cameraRollDeg); emitted just before attitudeChanged.
+    void rollChanged(double roll_deg);
     void runningChanged();
     void calibrationHintChanged();
 
