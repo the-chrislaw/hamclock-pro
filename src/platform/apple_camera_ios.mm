@@ -1,6 +1,8 @@
 #include "apple_camerafov.hpp"
 
 #import <AVFoundation/AVFoundation.h>
+#include <QMetaObject>
+#include <QCoreApplication>
 
 namespace hamclock {
 
@@ -18,6 +20,19 @@ double nativeCameraLongFovDeg(QSizeF *sensor_px) {
         *sensor_px = QSizeF(d.width, d.height);
     }
     return fmt.videoFieldOfView;
+}
+
+void nativeCameraRequestAccess(std::function<void(bool)> done) {
+    auto finish = [done](bool ok) {
+        QMetaObject::invokeMethod(QCoreApplication::instance(), [done, ok] { done(ok); }, Qt::QueuedConnection);
+    };
+    switch ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo]) {
+    case AVAuthorizationStatusAuthorized: finish(true); break;
+    case AVAuthorizationStatusNotDetermined:
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) { finish(granted); }];
+        break;
+    default: finish(false); break;
+    }
 }
 
 } // namespace hamclock

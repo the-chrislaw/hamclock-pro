@@ -38,8 +38,39 @@ int main(int argc, char** argv) {
     check(marker.visible() && std::fabs(marker.x() - 200) < 1 && std::fabs(marker.y() - 400) < 1,
           "marker uses the preview geometry");
 
+    // Permission is asked only when the camera view is turned on.
+    int asked = 0;
+    std::function<void(bool)> pending;
+    check(cam.state() == "off" && !cam.enabled(), "camera starts off");
+    cam.setAccessRequester([&](std::function<void(bool)> cb) { ++asked; pending = cb; });
+    check(asked == 0, "no permission request at start");
+    cam.setEnabled(true);
+    check(asked == 1 && cam.state() == "requesting", "enabling asks and waits");
+    pending(true);
+    check(cam.state() == "on", "granted turns the camera on");
+    cam.setEnabled(false);
+    cam.setEnabled(true);
+    check(asked == 1 && cam.state() == "on", "granted answer is remembered");
+    cam.setEnabled(false);
+    check(cam.state() == "off", "disabling turns it off");
+
+    SkyCamera deny(&marker, [](QSizeF* px) { *px = QSizeF(4032, 3024); return 70.0; });
+    deny.setAccessRequester([](std::function<void(bool)> cb) { cb(false); });
+    deny.setEnabled(true);
+    check(deny.state() == "denied", "refusal shows denied");
+
+    SkyCamera race(&marker, [](QSizeF* px) { *px = QSizeF(4032, 3024); return 70.0; });
+    std::function<void(bool)> late;
+    race.setAccessRequester([&](std::function<void(bool)> cb) { late = cb; });
+    race.setEnabled(true);
+    race.setEnabled(false);
+    late(true);
+    check(race.state() == "off", "late answer after switching off is ignored");
+
     SkyCamera none(&marker, [](QSizeF*) { return 0.0; });
-    check(!none.available(), "no camera is unavailable");
+    check(!none.available() && none.state() == "unavailable", "no camera is unavailable");
+    none.setEnabled(true);
+    check(!none.enabled(), "cannot enable without a camera");
     none.setPreviewSize(400, 800);
     check(none.hfov() > 0 && none.vfov() > 0, "defaults still give usable angles");
 
