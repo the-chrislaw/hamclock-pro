@@ -850,3 +850,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: af007c4 (merged since 7068c8c: only agent logs #841 and #842). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-09 (UTC) QA run 158
+- Last reviewed commit: 99a6c91 (merged since af007c4: only agent logs #843 and #844). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
