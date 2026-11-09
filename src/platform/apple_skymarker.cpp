@@ -7,6 +7,7 @@ namespace hamclock {
 SkyMarker::SkyMarker(SkySensor* sensor, SkyFinder* finder, QObject* parent)
     : QObject(parent), finder_(finder) {
     connect(sensor, &SkySensor::attitudeChanged, this, &SkyMarker::onAttitude);
+    connect(sensor, &SkySensor::rollChanged, this, &SkyMarker::onRoll);
     connect(finder, &SkyFinder::targetChanged, this, &SkyMarker::recompute);
 }
 

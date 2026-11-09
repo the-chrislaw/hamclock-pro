@@ -35,8 +35,7 @@ public:
     // point after a break).
     QVariantList trackPoints() const { return track_pts_; }
 
-    // Preview size in pixels and field of view (see previewFov). Roll is not
-    // measured, so the horizon is assumed level.
+    // Preview size in pixels and field of view (see previewFov).
     Q_INVOKABLE void setPreview(double width, double height, double hfov_deg, double vfov_deg);
 
     // Pass track as az/el samples in degrees (from area D's pointing model).
@@ -48,6 +47,7 @@ signals:
 
 private:
     void onAttitude(double az, double el);
+    void onRoll(double roll_deg) { view_.roll_deg = roll_deg; }
     void recompute();
 
     SkyFinder* finder_;

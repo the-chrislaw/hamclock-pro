@@ -83,5 +83,23 @@ int main(int argc, char** argv) {
     check(sensor.calibrationHint().isEmpty() && hintSignals == 2, "good accuracy clears the hint");
 
     std::cout << (failures ? "FAILED\n" : "OK\n");
+    {
+        // Level phone looking north: rows are f x u, u, -f.
+        RotationMatrix lvl; // device x = (0,-1,0), y = up, z = south
+        lvl.m11 = 0; lvl.m12 = -1; lvl.m13 = 0;
+        lvl.m21 = 0; lvl.m22 = 0; lvl.m23 = 1;
+        lvl.m31 = -1; lvl.m32 = 0; lvl.m33 = 0;
+        check(std::fabs(cameraRollDeg(lvl)) < 1e-6, "level phone has zero roll");
+        const double t = 20 * M_PI / 180; // top edge tilted to the right (west is y > 0, so right = -y)
+        RotationMatrix cw = lvl;
+        cw.m21 = 0; cw.m22 = -std::sin(t); cw.m23 = std::cos(t);
+        cw.m11 = 0; cw.m12 = -std::cos(t); cw.m13 = -std::sin(t);
+        check(std::fabs(cameraRollDeg(cw) - 20) < 1e-6, "clockwise roll is positive");
+        RotationMatrix up; // looking at the zenith: roll undefined
+        up.m31 = 0; up.m32 = 0; up.m33 = -1;
+        up.m21 = 0; up.m22 = 1; up.m23 = 0;
+        up.m11 = 1; up.m12 = 0; up.m13 = 0;
+        check(cameraRollDeg(up) == 0, "roll is zero when looking straight up");
+    }
     return failures ? 1 : 0;
 }

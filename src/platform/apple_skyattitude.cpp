@@ -27,4 +27,19 @@ AzEl attitudeToAzEl(const RotationMatrix& r, PointingAxis axis) {
     return out;
 }
 
+double cameraRollDeg(const RotationMatrix& r) {
+    // Forward f = device -Z, up u = device +Y, both in the reference frame (x north, y west, z up).
+    const double fx = -r.m31, fy = -r.m32, fz = -r.m33;
+    const double ux = r.m21, uy = r.m22, uz = r.m23;
+    // Zero-roll up u0 = zenith made orthogonal to f.
+    const double ox = -fz * fx, oy = -fz * fy, oz = 1.0 - fz * fz;
+    const double on = std::sqrt(ox * ox + oy * oy + oz * oz);
+    if (on < 1e-6) return 0;
+    // Right-hand side of the view: r0 = f x u0 (u0 normalised below).
+    const double rx = fy * oz - fz * oy, ry = fz * ox - fx * oz, rz = fx * oy - fy * ox;
+    const double c = (ux * ox + uy * oy + uz * oz) / on;
+    const double s = (ux * rx + uy * ry + uz * rz) / on;
+    return std::atan2(s, c) * 180.0 / M_PI;
+}
+
 } // namespace hamclock

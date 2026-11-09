@@ -46,6 +46,7 @@ void SkySensor::feedHeadingAccuracy(double accuracy_deg) {
 void SkySensor::feedAttitude(const RotationMatrix& r) {
     const AzEl a = attitudeToAzEl(r, axis_);
     smoother_.feed(a.az, a.el);
+    emit rollChanged(axis_ == PointingAxis::BackCamera ? cameraRollDeg(r) : 0.0);
     emit attitudeChanged(smoother_.az(), smoother_.el());
 }
 
