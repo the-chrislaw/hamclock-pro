@@ -875,3 +875,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: b9b4dd4 (merged since 8ccdf30: Apple #850 sky-marker roll, #852 camera permission on demand, plus logs #848-#851). Diff read for contract issues (permission asked only when the camera is enabled, stale-answer epoch guard, roll maths and new regression tests); no weakened tests, secrets or QtWidgets. Apple-only code, so build and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-10 (UTC) QA run 163
+- Last reviewed commit: fcf8dbc (merged since b9b4dd4: only my run 162 log #853). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
