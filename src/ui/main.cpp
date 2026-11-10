@@ -343,6 +343,9 @@ int main(int argc, char** argv) {
         return 0.0;
 #endif
     });
+#if defined(HAMCLOCK_SKY_FINDER)
+    sky_camera.setAccessRequester([](std::function<void(bool)> done) { hamclock::nativeCameraRequestAccess(std::move(done)); });
+#endif
     // Selected satellite (satellites card detail) is the finder's target.
     hamclock::SkyTargetBridge sky_target(registry.model("satellites"), &sky_finder);
     // Soonest pass az/el samples become the camera overlay polyline.

@@ -4,6 +4,7 @@
 // (AVCaptureDeviceFormat.videoFieldOfView); the preview crops it to fill the
 // view, so the projection needs the cropped values. Pure maths, tested on Linux.
 #include <QSizeF>
+#include <functional>
 
 namespace hamclock {
 
@@ -21,6 +22,10 @@ PreviewFov previewFov(double sensor_long_fov_deg, const QSizeF &sensor_px, const
 #ifdef HAMCLOCK_SKY_FINDER
 // iOS only (apple_camera_ios.mm). Returns 0 when no rear camera is available.
 double nativeCameraLongFovDeg(QSizeF *sensor_px);
+
+// Ask for camera permission (shows the system prompt the first time). `done(granted)` is
+// called on the main thread. Only call when the user turns the camera view on.
+void nativeCameraRequestAccess(std::function<void(bool)> done);
 #endif
 
 } // namespace hamclock
