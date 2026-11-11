@@ -50,6 +50,7 @@ Card {
 
         Timer { id: exitDisarm; interval: 5000; onTriggered: section.exitArmed = false }
         Flow {
+            visible: canQuit
             Layout.fillWidth: true
             spacing: Theme.gap * 0.6
             AppButton {

@@ -428,6 +428,12 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("skyMarker", &sky_marker);
     engine.rootContext()->setContextProperty("skyCamera", &sky_camera);
 #endif
+#if defined(Q_OS_IOS)
+    // App Store: an iOS app must not offer its own Exit button (guideline 4.0 / HIG).
+    engine.rootContext()->setContextProperty("canQuit", false);
+#else
+    engine.rootContext()->setContextProperty("canQuit", true);
+#endif
     engine.rootContext()->setContextProperty("safeArea", &safe_area);
     engine.rootContext()->setContextProperty("textEntryHint", &text_entry_hint);
     engine.rootContext()->setContextProperty("dataSources", hamclock::attributionModel());
