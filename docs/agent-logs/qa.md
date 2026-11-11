@@ -905,3 +905,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 74ba65d (merged since 20eb0fb: Apple #861 hides the Exit button on iOS via a `canQuit` context property, plus my run 167 log #860). Diff read: property is set on every platform in main.cpp, the only QML entry point, so no undefined-property risk; no secrets, QtWidgets or weakened tests. Apple-only behaviour, so build and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-11 (UTC) QA run 169
+- Last reviewed commit: 0d7f5ff (merged since 74ba65d: only my run 168 log #862 and astro agent log #863). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
