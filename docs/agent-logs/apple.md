@@ -267,3 +267,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-10 (hourly run)
 - No qa issues for area F beyond #513/#521/#573; none of my PRs open; #73/#643/#682 are not mine (left alone). #573 item 6 slice: new `canQuit` QML context property (false on iOS only); Settings > Screen hides the "Exit HamClock Pro" button on iOS, as App Store apps must not offer their own exit. One-line additive change in `ScreenSection.qml` (area A) and `src/ui/main.cpp`. Linux full ctest passes (337); the iOS branch compiles only in the Apple jobs. Not done: other Pi-only settings (GPIO, kiosk schedules) on iOS, #513 device check. No on-device claims.
+
+## 2026-11-12 (hourly run)
+- No qa issues for area F beyond #513/#521/#573; none of my PRs open; #643/#682/#73/#875 are not mine (left alone). #875 is red on the intermittent `qml-fill-satellites-*` fill test (issue #876, area D), not an Apple problem. #573 item 6 re-checked: the whole Settings > Screen card (blanking, TV inset, Exit) is already hidden on iOS and there is no GPIO setting in QML, so the item is complete. What remains for #573 is area A (finder screen, camera preview layer and overlay QML) or needs a device (#513 keyboard check, finder accuracy). No code change; no on-device claims.
