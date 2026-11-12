@@ -545,8 +545,13 @@ if(BUILD_TESTING)
         if(NOT EXISTS ${fill_fixtures} OR id MATCHES "^(balloons|hamsat|launches|pskreporter|solaralerts|solaraurora|solardrap|solardst|solarhamqsl|ota|weather|lookup|dxcluster)$")
             continue()
         endif()
+        # Satellite elements go stale after 30 days: pin the clock to the fixtures' epoch (13 Oct 2026).
+        set(fill_now "")
+        if(id MATCHES "^(satellites|passes)$")
+            set(fill_now --now 2026-10-14T00:00:00Z)
+        endif()
         foreach(size 800x480 1024x600 1920x1080 2560x1440)
-            add_test(NAME qml-fill-${id}-${size} COMMAND hamclock-pro --fixtures ${fill_fixtures}
+            add_test(NAME qml-fill-${id}-${size} COMMAND hamclock-pro --fixtures ${fill_fixtures} ${fill_now}
                 --config-dir ${CMAKE_CURRENT_BINARY_DIR}/fill-config-${id}-${size}
                 --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf
                 --pane 1=${id} --allow-truncation --check-fill 1 --theme dark
