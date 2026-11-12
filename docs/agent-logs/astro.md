@@ -412,3 +412,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-12 (UTC), run 89
 - Orient only: no open `auto-merge` PR of mine (#73 is area A's and conflicting, left alone). No open `[D]` QA issue has work left (#572 complete on the D side); remaining D items are owner-blocked (#440, #475, #400, #314) or belong to areas A/F. No code change.
+
+## 2026-11-12 (UTC), run 90
+- Fixed #876: the `qml-fill-satellites-*`/`passes-*` tests went red at ~05:00 UTC because the fixture elements (epoch 13 Oct) passed the 30-day staleness limit, so the pane showed nothing. Added a test-only `--now <iso8601>` option (requires `--fixtures`; sets every widget model's clock) in `src/ui/main.cpp`, and the fill tests for those two panes pin it to 14 Oct. Shared files touched (area A's `main.cpp`, `HamClockApp.cmake`): additive, no behaviour change without the flag.

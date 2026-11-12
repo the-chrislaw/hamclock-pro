@@ -251,6 +251,7 @@ int main(int argc, char** argv) {
     const QCommandLineOption touch_keyboard("touch-keyboard", "Show an on-screen keyboard for text fields (touch-only kiosks).");
     const QCommandLineOption offline("offline", "Do not use the network (cached data only).");
     const QCommandLineOption fixtures("fixtures", "Serve data from files in DIR instead of the network.", "dir");
+    const QCommandLineOption fixed_now("now", "Test only, with --fixtures: pretend it is this UTC time (ISO 8601) so dated fixtures stay current.", "iso8601");
     const QCommandLineOption screenshot("screenshot", "Render once to PNG and exit.", "png");
     const QCommandLineOption size("size", "Window size for --screenshot, e.g. 1024x600.", "WxH", "1024x600");
     const QCommandLineOption theme("theme", "Force light or dark.", "light|dark");
@@ -259,7 +260,7 @@ int main(int argc, char** argv) {
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
     const QCommandLineOption fake_safe_area("safe-area", "With --screenshot, lay out as if the iOS safe-area insets were L,T,R,B and fail (exit 7) when text or a button reaches into them.", "L,T,R,B");
-    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, screenshot, size, theme, pane})
+    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, fixed_now, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -306,6 +307,15 @@ int main(int argc, char** argv) {
         sat_alerts.setElements(sats->elements()); // a cached set may already be loaded
     }
     QTimer::singleShot(0, &sat_alerts, &hamclock::SatAlertService::start);
+    if (parser.isSet(fixed_now)) {
+        const QDateTime fixed = QDateTime::fromString(parser.value(fixed_now), Qt::ISODate).toUTC();
+        if (!parser.isSet(fixtures) || !fixed.isValid()) {
+            std::fprintf(stderr, "--now needs --fixtures and an ISO 8601 UTC time.\n");
+            return 2;
+        }
+        for (const QString& id : registry.ids())
+            if (auto* wm = qobject_cast<hamclock::WidgetModel*>(registry.model(id))) wm->setClock([fixed] { return fixed; });
+    }
     for (const auto& assignment : parser.values(pane)) {
         const auto parts = assignment.split('=');
         bool number_ok = false;
