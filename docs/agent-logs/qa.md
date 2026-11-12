@@ -940,3 +940,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 0f0e10c (merged since 0ff5171: #878 astro `--now` fixed-clock option for fixture-only tests (fixes #876), plus agent logs #874, #877 and my run 174 log #873). Reviewed the src/ui/main.cpp and cmake diff: `--now` requires `--fixtures` and a valid ISO time, exits 2 otherwise, so it cannot fake live data. Build is clean and ctest passes 337/337. Screenshots were not repeated since no QML or widget layout changed.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
+
+## 2026-11-12 (UTC) QA run 176
+- Last reviewed commit: 7a5cdf3 (merged since 0f0e10c: only my run 175 log #879). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and Apple/tvOS code Linux CI cannot exercise.
