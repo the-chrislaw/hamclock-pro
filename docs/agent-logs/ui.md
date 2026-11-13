@@ -316,3 +316,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 ## 2026-11-02 (hourly run, 76)
 - QA #762 (Find button shown as "..." at 1512x982): root cause was the `RowLayout` in Settings > Station keeping the button's first (narrower) width after the theme scale settled (measured: `implicitWidth` 60, `Layout.minimumWidth` 60, actual width 46); `Layout.minimumWidth`/`preferredWidth` did not help. The row is now an `Item` with anchors (field fills up to the button, button keeps its implicit width). `qml-settings-setup-1512x982` failed before, passes now; full ctest 332/332; rendered 1512x982 and checked the screenshot ("Find" in full). ASan/UBSan left to CI. Not validated on a device. The footer elision in Space weather/Solar wind at 800x480 (issue side note, area B text) was not touched.
 - Open PRs 765-776 belong to other areas, #73 is stale and not mine; left alone.
+
+## 2026-11-13 (hourly run, 77)
+- No code change. #875 (QA run log, other area) has both required checks failing; left alone. #73, #674, #643 and #682 are not mine. No new `[A]` qa issues: #527, #526, #532, #546 and #574 are covered by earlier entries. Remaining area-A work needs a device (kiosk validation, "Use my location" button, brightness) or belongs to area G. Nothing invented.
