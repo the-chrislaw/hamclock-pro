@@ -39,13 +39,15 @@ src/widgets/<id>/
 Each area (A–H): one owner agent, branches `agent/<area>-<slug>`, files listed are exclusive to that area.
 
 
-## 1.0 release focus (owner, Oct 20)
+## 1.0 release freeze (owner, Nov 14)
 
-The feature set is close to complete. Until 1.0 ships, every area works in this order:
-1. Open `qa` issues for your area (bugs first).
-2. Release items: SD-card image (#526) and README/screenshots (#527) for area A; launch smoke tests for every artifact (area F, #521); keep each area's panes free of clipping at 800×480, 1024×600 and 1920×1080.
-3. Polish what exists: error states, empty states, offline behaviour, attribution, text size, keyboard/remote focus. No new panes or data sources unless they close a parity gap with the original HamClock (docs/FEATURE-AUDIT.md).
-4. If nothing is left, write the run log and stop. Don't invent work.
+1.0 is in device testing. Until it ships, only these count as work. Anything else is out of scope, even if it's on your backlog below.
+1. Open `qa` issues for your area, bugs first.
+2. Release issues: #532 and #527 (A), #531 (B), #521 and #513 (F). Real bugs found on devices or in CI screenshots, and clipping at 800x480, 1024x600 and 1920x1080.
+3. Don't work on #546 (Pi updater; the lead has it), the sky finder (#572, #573; `HAMCLOCK_SKY_FINDER` is off for 1.0), new panes, new data sources, or new features.
+4. **If none of the above has work for you, stop without committing anything.** Don't open a PR just to add a run log.
+
+Areas C, D, E, G and H are paused for 1.0. Open their bugs as `qa` issues and the lead assigns them.
 
 ### A. UI shell and design (owns `src/ui/`, `cmake/HamClockApp.cmake`, `docs/WIDGETS.md` contract section)
 0. 🟡 **Top priority: one-page slot layout** (done: no scrolling, three pane slots, chooser, choices saved; map now fills its item without the widget's inner margin; done: dense small-screen shell (no header, tight spacing, settings button in the station card) and tap-anywhere/swipe pane switching; done: long-press pane options (change, step, empty, reset); done: per-slot rotation (off/5/10/30/60 s, set from the long-press menu, saved) with custom rotation sets (long-press: add/remove the shown widget; empty set = all widgets); done: category picker (all registered widgets categorised, tested); done: adaptive pane grid (as many panes as fit at their minimum size, never fewer than three, up to 12 saved slots; desktops, tablets and monitors keep scale 1.0 and gain panes, TV-sized screens still grow the type; Settings → Map size large/medium/small trades map height for a second row of panes); pending: side panes, `compact` layouts in each widget card). Remove page scrolling. Build the fixed slot grid (station column + pane row + map, scaling from 800×480 to 4K), a pane chooser (tap pane title → list of widgets; keyboard/remote accessible), per-slot choice saved in settings, optional rotation interval per slot. Default arrangement at 1024×600: station column left, three panes on top (Space weather, Solar wind, DX cluster), map filling the rest. Verify by screenshots at 800×480, 1024×600, 1280×800, 1920×1080 that nothing is clipped and nothing scrolls. Real-screen issues to fix: docs/hardware-validation.md.
