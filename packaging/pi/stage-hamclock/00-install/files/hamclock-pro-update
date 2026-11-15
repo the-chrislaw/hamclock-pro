@@ -150,8 +150,9 @@ main() {
   jq -e 'type == "object"' >/dev/null <<<"$json" || refuse "release metadata is not a JSON object"
   tag=$(jq -r '.tag_name // ""' <<<"$json")
   [[ $tag =~ ^v[0-9]+(\.[0-9]+){0,3}([~+-][0-9A-Za-z.~+]+)?$ ]] || refuse "unexpected release tag '$tag'"
-  [ "$(jq -r '.prerelease' <<<"$json")" = false ] && [ "$(jq -r '.draft' <<<"$json")" = false ] \
-    || refuse "release $tag is a pre-release or draft"
+  if [ "$(jq -r '.prerelease' <<<"$json")" != false ] || [ "$(jq -r '.draft' <<<"$json")" != false ]; then
+    refuse "release $tag is a pre-release or draft"
+  fi
   version=${tag#v}
 
   # shellcheck disable=SC2016  # ${Version} is a dpkg-query format field, not a shell expansion
