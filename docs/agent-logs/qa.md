@@ -1031,3 +1031,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Reviewed: updater fails closed without a key, verifies Ed25519 signature, checksum, package/arch/version and rolls back; the release/image workflows check the same; the iOS fix has a regression guard. No contract violations found.
 - Opened: none. Closed: none. Still open: #546 (updater code landed; closure needs a RELEASE_SIGNING_KEY secret plus a signed release, not verifiable on main), #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is healthy. Remaining risk is elided offline footers (#532) and the signing secret not yet proven end to end.
+
+## 2026-11-15 (UTC) QA run 194
+- Last reviewed commit: d06f3bd (merged since 272c32d: only my run 193 log #902). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and the signing secret not yet proven end to end.
