@@ -30,7 +30,6 @@ fail() { echo "FAIL - $1"; failures=$((failures + 1)); }
 
 # ---- fake system tools ------------------------------------------------------------------------
 bin="$work/bin"; mkdir -p "$bin"
-ln -s "$openssl_bin" "$bin/openssl"
 if ! command -v sha256sum >/dev/null; then
   printf '#!/bin/sh\nexec shasum -a 256 "$@"\n' > "$bin/sha256sum"; chmod +x "$bin/sha256sum"
 fi
@@ -104,6 +103,8 @@ case "$1" in
 esac
 EOF
 chmod +x "$bin"/*
+# After the chmod: chmod follows symlinks and must not touch the system openssl.
+ln -s "$openssl_bin" "$bin/openssl"
 
 # ---- keys -------------------------------------------------------------------------------------
 "$openssl_bin" genpkey -algorithm ed25519 -out "$work/good.key" 2>/dev/null
