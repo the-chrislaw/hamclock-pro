@@ -53,4 +53,11 @@ cards = [m.start() for m in re.finditer(r"^ {12}(?: {4})?[A-Z]\w*\s*\{", page, r
 last = page[cards[-1]:]
 if not re.search(r'title:\s*"(About and data sources|Data sources)"', last[:300]) or "dataSources" not in last:
     sys.exit("SettingsPage.qml: Data sources must be the last section")
+
+# The Exit row is hidden on iOS (canQuit false). Hidden, the layout no longer sizes its Flow, so
+# a child sized from the Flow ("width: parent.width") makes the Flow follow its own child: the
+# polish never settles and the app hangs on a white screen at launch (iPhone, Qt 6.5).
+exit_row = screen[screen.index("visible: canQuit"):]
+if re.search(r"width:\s*parent\.width", exit_row):
+    sys.exit("ScreenSection.qml: size the Exit caption from the column, not the hidden Flow (launch hang on iOS)")
 print("ok")

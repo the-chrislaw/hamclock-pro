@@ -11,6 +11,7 @@ Card {
     property bool exitArmed: false
 
     ColumnLayout {
+        id: screenColumn
         // Hidden on iOS, the card has zero width; wrapped labels at zero width loop the polish.
         width: parent.width > 0 ? parent.width : implicitWidth
         spacing: Theme.gap
@@ -67,7 +68,10 @@ Card {
                 color: Theme.secondary
                 font.pixelSize: Theme.fontCaption
                 wrapMode: Text.WordWrap
-                width: parent.width
+                // The column's width, not the Flow's: hidden (canQuit false, iOS) the
+                // layout stops sizing the Flow, and the Flow's width then follows this
+                // text, which looped the polish forever and hung the app at launch.
+                width: screenColumn.width
             }
         }
     }
