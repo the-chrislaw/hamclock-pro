@@ -1,40 +1,191 @@
-#!/bin/sh
-# Opt-in updater (timer is NOT enabled in the image): installs the newest STABLE HamClock Pro release .deb for this
-# OS release/arch from GitHub Releases, only if the release's SHA256SUMS asset lists it and the checksum matches.
-# Pre-releases (the rolling build) are never installed. Only github.com is contacted; nothing is sent beyond an
-# honest User-Agent. The previous .deb is kept in /var/lib/hamclock-pro-update and reinstalled if the new one fails.
-# Note: SHA256SUMS comes from the same release as the .deb, so this detects corruption, not a hostile publisher;
-# detached-signature verification needs a signing key (see docs/install-pi.md).
-set -eu
-repo=the-chrislaw/hamclock-pro
-arch=$(dpkg --print-architecture)
-rel=$(. /etc/os-release; echo "$VERSION_CODENAME")
-ua="hamclock-pro-update (+https://github.com/$repo)"
-keep=/var/lib/hamclock-pro-update
-json=$(curl -fsSL -A "$ua" "https://api.github.com/repos/$repo/releases/latest")  # latest = newest non-pre-release
-assets=$(printf '%s\n' "$json" | grep -o '"browser_download_url": *"[^"]*"' | sed 's/^[^:]*: *"//; s/"$//')
-url=$(printf '%s\n' "$assets" | grep "/[^/]*_${rel}_${arch}\.deb\$" | head -n1 || true)
-sums=$(printf '%s\n' "$assets" | grep '/SHA256SUMS$' | head -n1 || true)
-[ -n "$url" ] || { echo "no stable release .deb for $rel/$arch"; exit 0; }
-[ -n "$sums" ] || { echo "release has no SHA256SUMS; not installing"; exit 1; }
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-name=$(basename "$url")
-curl -fsSL -A "$ua" -o "$tmp/$name" "$url"
-curl -fsSL -A "$ua" -o "$tmp/SHA256SUMS" "$sums"
-want=$(awk -v n="$name" '{f=$2; sub(/^\*/,"",f); if (f==n) print $1}' "$tmp/SHA256SUMS" | head -n1)
-have=$(sha256sum "$tmp/$name" | cut -d' ' -f1)
-[ -n "$want" ] && [ "$want" = "$have" ] || { echo "checksum mismatch or missing for $name; not installing"; exit 1; }
-new=$(dpkg-deb -f "$tmp/$name" Version)
-cur=$(dpkg-query -W -f='${Version}' hamclock-pro 2>/dev/null || true)
-[ "$new" != "$cur" ] || exit 0
-mkdir -p "$keep"
-if [ -n "$cur" ] && [ -f "$keep/current.deb" ]; then mv -f "$keep/current.deb" "$keep/previous.deb"; fi
-if apt-get install -y "$tmp/$name"; then
-  cp -f "$tmp/$name" "$keep/current.deb"
-  systemctl restart hamclock-kiosk.service
-else
-  echo "install failed; rolling back"
-  [ -f "$keep/previous.deb" ] && apt-get install -y --allow-downgrades "$keep/previous.deb" || true
-  systemctl restart hamclock-kiosk.service || true
-  exit 1
-fi
+#!/bin/bash
+# HamClock Pro updater for the Pi image (issue #546). Opt-in: the timer is NOT enabled in the image.
+#
+# Installs the newest STABLE release .deb for this OS release and architecture, and only when:
+#   1. the release's SHA256SUMS carries a valid Ed25519 signature (SHA256SUMS.sig) from the release key
+#      baked into the image (/usr/local/share/hamclock-pro-update/release-signing.pub);
+#   2. the .deb's SHA-256 matches its line in that signed SHA256SUMS;
+#   3. it is package hamclock-pro, for this architecture, with the version named by the release tag,
+#      and newer than the installed version (no downgrades).
+# Without a real key installed it refuses every update (fail closed). Pre-releases are never installed.
+# Only https://api.github.com (release metadata) and https://github.com/<repo>/releases/download/<tag>/
+# (assets, which GitHub redirects to its own storage over https) are contacted.
+# The running app is untouched until a package is verified. If the install fails, or the kiosk does
+# not come back up, the last package this updater installed (kept in the state dir) is reinstalled.
+#
+# The HCP_UPDATE_* variables exist for the offline test (tests/pi_updater_regression.sh); the
+# systemd unit sets none of them.
+set -euo pipefail
+umask 077
+
+readonly REPO=the-chrislaw/hamclock-pro
+readonly PACKAGE=hamclock-pro
+readonly KIOSK=hamclock-kiosk.service
+readonly API_URL="https://api.github.com/repos/$REPO/releases/latest"  # newest non-pre-release
+readonly DOWNLOAD_PREFIX="https://github.com/$REPO/releases/download"
+readonly USER_AGENT="hamclock-pro-update (+https://github.com/$REPO)"
+readonly MAX_DOWNLOAD_BYTES=$((256 * 1024 * 1024))
+readonly PUBKEY=${HCP_UPDATE_PUBKEY:-/usr/local/share/hamclock-pro-update/release-signing.pub}
+readonly STATE_DIR=${HCP_UPDATE_STATE_DIR:-/var/lib/hamclock-pro-update}
+readonly OS_RELEASE=${HCP_UPDATE_OS_RELEASE:-/etc/os-release}
+readonly HEALTH_WAIT_SECONDS=${HCP_UPDATE_HEALTH_WAIT:-20}
+
+log() { printf 'hamclock-pro-update: %s\n' "$*" >&2; }
+refuse() { log "$*; not installing"; exit 1; }
+
+fetch() {  # <url> [output file]
+  local args=(--fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2
+              --connect-timeout 30 --max-time 900 --max-filesize "$MAX_DOWNLOAD_BYTES" -A "$USER_AGENT")
+  if [ $# -gt 1 ]; then curl "${args[@]}" -o "$2" "$1"; else curl "${args[@]}" "$1"; fi
+}
+
+require_signing_key() {
+  local text
+  if [ ! -r "$PUBKEY" ] || ! grep -q 'BEGIN PUBLIC KEY' "$PUBKEY"; then
+    refuse "no release signing key installed at $PUBKEY (fail closed; see docs/install-pi.md)"
+  fi
+  text=$(openssl pkey -pubin -in "$PUBKEY" -noout -text 2>/dev/null) || text=
+  case "$text" in
+    [Ee][Dd]25519\ Public-Key*) ;;
+    *) refuse "release signing key at $PUBKEY is not an Ed25519 public key" ;;
+  esac
+}
+
+system_codename() {
+  local codename
+  codename=$(sed -n 's/^VERSION_CODENAME=//p' "$OS_RELEASE" | tr -d '"' | head -n1)
+  [[ $codename =~ ^[a-z]+$ ]] || refuse "cannot read VERSION_CODENAME from $OS_RELEASE"
+  printf '%s\n' "$codename"
+}
+
+system_arch() {
+  local arch
+  arch=$(dpkg --print-architecture)
+  [[ $arch =~ ^[a-z0-9]+$ ]] || refuse "unexpected dpkg architecture '$arch'"
+  printf '%s\n' "$arch"
+}
+
+# Echoes the asset's download URL after checking it is exactly the repo's release URL for it.
+asset_url() {  # <release json> <tag> <asset name>
+  local urls count
+  urls=$(jq -r --arg n "$3" '.assets[] | select(.name == $n) | .browser_download_url' <<<"$1")
+  count=$(grep -c . <<<"$urls" || true)
+  [ "$count" -ge 1 ] || refuse "release $2 has no $3 asset"
+  [ "$count" -eq 1 ] || refuse "release $2 has $count assets named $3"
+  [ "$urls" = "$DOWNLOAD_PREFIX/$2/$3" ] || refuse "unexpected download URL for $3: $urls"
+  printf '%s\n' "$urls"
+}
+
+verify_signed_checksum() {  # <dir> <deb name>
+  local want have
+  openssl pkeyutl -verify -pubin -inkey "$PUBKEY" -rawin -in "$1/SHA256SUMS" -sigfile "$1/SHA256SUMS.sig" >/dev/null 2>&1 \
+    || refuse "SHA256SUMS signature does not verify against $PUBKEY"
+  log "SHA256SUMS signature verified"
+  want=$(awk -v n="$2" '{f=$2; sub(/^\*/, "", f); if (f == n) print $1}' "$1/SHA256SUMS")
+  [[ $want =~ ^[0-9a-f]{64}$ ]] || refuse "signed SHA256SUMS has no single checksum for $2"
+  have=$(sha256sum "$1/$2" | cut -d' ' -f1)
+  [ "$want" = "$have" ] || refuse "checksum of $2 does not match the signed SHA256SUMS"
+  log "checksum of $2 matches"
+}
+
+verify_control() {  # <deb> <expected version> <arch>
+  local field package version arch
+  for field in Package Version Architecture; do
+    dpkg-deb -f "$1" "$field" >/dev/null 2>&1 || refuse "downloaded file is not a readable .deb"
+  done
+  package=$(dpkg-deb -f "$1" Package)
+  version=$(dpkg-deb -f "$1" Version)
+  arch=$(dpkg-deb -f "$1" Architecture)
+  [ "$package" = "$PACKAGE" ] || refuse "package is '$package', expected $PACKAGE"
+  [ "$arch" = "$3" ] || refuse "package architecture '$arch' does not match this system ($3)"
+  [ "$version" = "$2" ] || refuse "package version $version does not match the release tag (v$2)"
+}
+
+apt_install() {
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::=--force-confold "$@"
+}
+
+kiosk_healthy() {
+  sleep "$HEALTH_WAIT_SECONDS"
+  systemctl is-active --quiet "$KIOSK"
+}
+
+roll_back() {  # <kiosk was active: yes|no>
+  if [ -f "$STATE_DIR/current.deb" ]; then
+    log "rolling back to the previously installed package"
+    apt_install --allow-downgrades "$STATE_DIR/current.deb" || log "rollback install failed; see journalctl -u hamclock-pro-update"
+  else
+    log "no saved previous package to roll back to"
+  fi
+  if [ "$1" = yes ]; then systemctl restart "$KIOSK" || log "could not restart $KIOSK"; fi
+}
+
+install_verified() {  # <deb> <version> <installed version>
+  local was_active=no
+  if systemctl is-active --quiet "$KIOSK"; then was_active=yes; fi
+  apt-get update -q || log "apt-get update failed; installing with the current package lists"
+  if ! apt_install "$1"; then
+    log "install of $PACKAGE $2 failed"
+    roll_back "$was_active"; exit 1
+  fi
+  if [ "$was_active" = yes ]; then
+    systemctl restart "$KIOSK"
+    if ! kiosk_healthy; then
+      log "$KIOSK is not running after updating to $2"
+      roll_back "$was_active"; exit 1
+    fi
+  fi
+  if [ -f "$STATE_DIR/current.deb" ]; then mv -f "$STATE_DIR/current.deb" "$STATE_DIR/previous.deb"; fi
+  cp -f "$1" "$STATE_DIR/current.deb"
+  log "updated $PACKAGE ${3:-none} -> $2"
+}
+
+main() {
+  local codename arch json tag version installed debs count deb_name tmp sums_url sig_url deb_url
+  require_signing_key
+  codename=$(system_codename)
+  arch=$(system_arch)
+
+  json=$(fetch "$API_URL") || refuse "could not fetch $API_URL"
+  jq -e 'type == "object"' >/dev/null <<<"$json" || refuse "release metadata is not a JSON object"
+  tag=$(jq -r '.tag_name // ""' <<<"$json")
+  [[ $tag =~ ^v[0-9]+(\.[0-9]+){0,3}([~+-][0-9A-Za-z.~+]+)?$ ]] || refuse "unexpected release tag '$tag'"
+  [ "$(jq -r '.prerelease' <<<"$json")" = false ] && [ "$(jq -r '.draft' <<<"$json")" = false ] \
+    || refuse "release $tag is a pre-release or draft"
+  version=${tag#v}
+
+  # shellcheck disable=SC2016  # ${Version} is a dpkg-query format field, not a shell expansion
+  installed=$(dpkg-query -W -f='${Version}' "$PACKAGE" 2>/dev/null || true)
+  if [ -n "$installed" ]; then
+    if [ "$installed" = "$version" ]; then log "$PACKAGE $installed is current"; exit 0; fi
+    if dpkg --compare-versions "$version" lt "$installed"; then
+      refuse "release $version is older than installed $installed (downgrade refused)"
+    fi
+  fi
+
+  debs=$(jq -r --arg s "_${codename}_${arch}.deb" '.assets[] | select(.name | endswith($s)) | .name' <<<"$json")
+  count=$(grep -c . <<<"$debs" || true)
+  if [ "$count" -eq 0 ]; then log "release $tag has no .deb for $codename/$arch"; exit 0; fi
+  [ "$count" -eq 1 ] || refuse "release $tag must have exactly one .deb for $codename/$arch, found $count"
+  deb_name=$debs
+  [[ $deb_name =~ ^${PACKAGE}_[0-9A-Za-z.+~-]+_${codename}_${arch}\.deb$ ]] || refuse "unexpected asset name '$deb_name'"
+
+  install -d -m 0700 "$STATE_DIR" && chmod 0700 "$STATE_DIR"
+  tmp=$(mktemp -d "$STATE_DIR/tmp.XXXXXX")
+  # shellcheck disable=SC2064  # expand now: tmp is local to main
+  trap "rm -rf '$tmp'" EXIT
+
+  sums_url=$(asset_url "$json" "$tag" SHA256SUMS) || exit 1
+  sig_url=$(asset_url "$json" "$tag" SHA256SUMS.sig) || exit 1
+  deb_url=$(asset_url "$json" "$tag" "$deb_name") || exit 1
+  log "downloading $deb_name from release $tag"
+  fetch "$sums_url" "$tmp/SHA256SUMS" || refuse "could not download SHA256SUMS"
+  fetch "$sig_url" "$tmp/SHA256SUMS.sig" || refuse "could not download SHA256SUMS.sig"
+  fetch "$deb_url" "$tmp/$deb_name" || refuse "could not download $deb_name"
+
+  verify_signed_checksum "$tmp" "$deb_name"
+  verify_control "$tmp/$deb_name" "$version" "$arch"
+  install_verified "$tmp/$deb_name" "$version" "$installed"
+}
+
+main "$@"
