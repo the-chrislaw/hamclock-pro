@@ -1,0 +1,3 @@
+# PLACEHOLDER: no release signing key has been created yet (issue #546).
+# The Pi updater refuses to install anything until this file is replaced by the real Ed25519
+# public key in PEM form. See "Signed releases" in docs/install-pi.md.

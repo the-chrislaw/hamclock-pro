@@ -3,3 +3,5 @@ curl
 ca-certificates
 chrony
 fonts-dejavu-core
+jq
+openssl

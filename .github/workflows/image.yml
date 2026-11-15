@@ -35,11 +35,23 @@ jobs:
               echo "waiting for $GITHUB_REF_NAME release .deb ($i/60)"; sleep 120
             done
             test -n "$name"
-            gh release download "$GITHUB_REF_NAME" --pattern "$name" --output "$files/hamclock-pro.deb"
+            release="$GITHUB_REF_NAME"
           else
             # Manual run: newest published build (the rolling pre-release included).
-            gh release download latest --pattern "*$DEB_SUFFIX" --output "$files/hamclock-pro.deb"
+            release=latest
+            name=$(gh release view latest --json assets --jq ".assets[].name | select(endswith(\"$DEB_SUFFIX\"))" | head -n1)
           fi
+          check=$(mktemp -d)
+          gh release download "$release" --pattern "$name" --pattern 'SHA256SUMS*' --dir "$check"
+          # Same checks as the Pi updater (#546): the checksum always, the signature once a key exists.
+          (cd "$check" && grep -E "^[0-9a-f]{64} [ *]?${name}\$" SHA256SUMS | sha256sum -c -)
+          pub=packaging/pi/stage-hamclock/00-install/files/release-signing.pub
+          if grep -q 'BEGIN PUBLIC KEY' "$pub"; then
+            openssl pkeyutl -verify -pubin -inkey "$pub" -rawin -in "$check/SHA256SUMS" -sigfile "$check/SHA256SUMS.sig"
+          else
+            echo "::warning::release-signing.pub is the placeholder: the image's .deb is checksummed but not signature-checked."
+          fi
+          mv "$check/$name" "$files/hamclock-pro.deb"
           dpkg-deb -f "$files/hamclock-pro.deb" Package Version Architecture
       - name: Fetch pi-gen
         run: git clone --depth 1 --branch arm64 https://github.com/RPi-Distro/pi-gen.git ../pi-gen

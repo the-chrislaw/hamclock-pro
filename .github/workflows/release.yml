@@ -107,19 +107,47 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: packaging/pi/stage-hamclock/00-install/files/release-signing.pub
+          sparse-checkout-cone-mode: false
+          path: src
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
+      - name: Checksum and sign
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          ls -l dist
+          # The Pi updater (packaging/pi/.../hamclock-pro-update) installs a release .deb only if
+          # SHA256SUMS lists it with a matching checksum AND SHA256SUMS.sig verifies against the
+          # Ed25519 public key baked into the image (release-signing.pub). Issue #546.
+          (cd dist && sha256sum -- *.deb *.zip > SHA256SUMS && cat SHA256SUMS)
+          if [ -z "$RELEASE_SIGNING_KEY" ]; then
+            echo "::warning::RELEASE_SIGNING_KEY is not set: this release is unsigned and Pi updaters will refuse it."
+            exit 0
+          fi
+          key="$RUNNER_TEMP/release-signing.key"
+          trap 'rm -f "$key"' EXIT
+          (umask 077 && printf '%s\n' "$RELEASE_SIGNING_KEY" > "$key")
+          openssl pkeyutl -sign -inkey "$key" -rawin -in dist/SHA256SUMS -out dist/SHA256SUMS.sig
+          openssl pkey -in "$key" -pubout -out "$RUNNER_TEMP/derived.pub"
+          pub=src/packaging/pi/stage-hamclock/00-install/files/release-signing.pub
+          if grep -q 'BEGIN PUBLIC KEY' "$pub"; then
+            # A key that does not match the committed public key would produce releases no Pi accepts.
+            cmp -s <(openssl pkey -pubin -in "$pub" -outform DER) <(openssl pkey -pubin -in "$RUNNER_TEMP/derived.pub" -outform DER) \
+              || { echo "::error::RELEASE_SIGNING_KEY does not match the committed release-signing.pub"; exit 1; }
+            openssl pkeyutl -verify -pubin -inkey "$pub" -rawin -in dist/SHA256SUMS -sigfile dist/SHA256SUMS.sig
+          else
+            echo "::warning::release-signing.pub is still the placeholder; commit the public key so images accept signed releases."
+          fi
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          ls -l dist
-          # The Pi updater (packaging/pi/.../hamclock-pro-update) installs a release .deb only if
-          # this file lists it with a matching checksum.
-          (cd dist && sha256sum -- *.deb *.zip > SHA256SUMS && cat SHA256SUMS)
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             # apple.yml attaches the notarized Mac DMG to the same release and may get
             # there first, so create it or add to it.

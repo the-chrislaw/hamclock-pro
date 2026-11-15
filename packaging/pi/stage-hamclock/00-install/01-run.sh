@@ -5,6 +5,12 @@ install -m 0755 files/hamclock-kiosk "${ROOTFS_DIR}/usr/local/bin/hamclock-kiosk
 install -m 0644 files/hamclock-kiosk.service "${ROOTFS_DIR}/etc/systemd/system/hamclock-kiosk.service"
 install -m 0644 files/hamclock-pro-update.service "${ROOTFS_DIR}/etc/systemd/system/hamclock-pro-update.service"
 install -m 0644 files/hamclock-pro-update.timer "${ROOTFS_DIR}/etc/systemd/system/hamclock-pro-update.timer"
+# Public half of the release signing key; the updater refuses every update while it is the placeholder.
+install -d -m 0755 "${ROOTFS_DIR}/usr/local/share/hamclock-pro-update"
+install -m 0644 files/release-signing.pub "${ROOTFS_DIR}/usr/local/share/hamclock-pro-update/release-signing.pub"
+# Keep the baked-in package so a failed first update can roll back to it.
+install -d -m 0700 "${ROOTFS_DIR}/var/lib/hamclock-pro-update"
+install -m 0600 files/hamclock-pro*.deb "${ROOTFS_DIR}/var/lib/hamclock-pro-update/current.deb"
 install -m 0644 files/hamclock-pro*.deb "${ROOTFS_DIR}/tmp/"
 on_chroot << EOF
 apt-get install -y /tmp/hamclock-pro*.deb
