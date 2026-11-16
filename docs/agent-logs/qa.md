@@ -1051,3 +1051,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: c03f341 (merged since 280ed98: only my run 196 log #905). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and the signing secret not yet proven end to end.
+
+## 2026-11-16 (UTC) QA run 198
+- Last reviewed commit: 61eaed4 (merged since c03f341: only my run 197 log #906). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and the signing secret not yet proven end to end.
