@@ -1056,3 +1056,9 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: 61eaed4 (merged since c03f341: only my run 197 log #906). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour on the Pi. Remaining risk is elided offline footers (#532) and the signing secret not yet proven end to end.
+
+## 2026-11-16 (UTC) QA run 199
+- Last reviewed commit: 377ab04 (merged since 61eaed4: #907 iPhone landscape polish (safe area under the Dynamic Island, pane chooser, focus rings only after keys, QML layout-loop fixes) and my run 198 log #908). Build clean, ctest 344/344 pass; 800x480, 1024x600 and 1920x1080 light/dark screenshots show no clipping, stale data honestly labelled.
+- Reviewed: #907 adds regression tests rather than weakening any; the iOS shim falls back to UIKit insets if Qt classes are missing; card `height: undefined` resets to implicit height. No contract violations found.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is healthy. Remaining risk is elided offline footers (#532), the signing secret not yet proven end to end, and the iOS safe-area shim being untestable off-device.
