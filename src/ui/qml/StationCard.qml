@@ -135,8 +135,15 @@ Card {
 
         Rectangle { visible: !root.compact; color: Theme.divider; implicitHeight: 1; Layout.fillWidth: true }
 
-        GridLayout {
+        // A Grid positioner with widths worked out here, not a GridLayout: the column count
+        // changes when a phone rotates, and rewrapping the sunrise lines inside the card's layout
+        // pass then looped the polish (Qt 6.5, iPhone).
+        Grid {
+            id: deDxGrid
+            readonly property real cellWidth: Math.max(0, root.wide ? (width - columnSpacing) / 2 : width)
             Layout.fillWidth: true
+            // Its cells follow its width, so its own size must not ask the column for more.
+            Layout.preferredWidth: 0
             columns: root.wide ? 2 : 1
             columnSpacing: Theme.gap
             rowSpacing: Theme.gap * 0.8
@@ -151,9 +158,7 @@ Card {
                 readonly property string sun: isDx ? station.dxSun : station.deSun
                 readonly property string local: isDx ? station.dxLocal : ""
                 spacing: 1
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.alignment: Qt.AlignTop
+                width: deDxGrid.cellWidth
                 Text { visible: !root.compact; text: parent.label; color: Theme.secondary; font.pixelSize: Theme.fontCaption }
                 Text { text: (root.compact ? parent.label.split(" ")[0] + "  " : "") + (parent.isDx ? station.dxGrid : station.deGrid)
                        color: Theme.ink; font.pixelSize: Theme.fontTitle * (root.compact ? 1.05 : 1.3); font.weight: Font.DemiBold }

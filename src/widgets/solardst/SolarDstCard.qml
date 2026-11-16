@@ -15,7 +15,7 @@ Card {
     readonly property bool showDetail: root.ok && (!root.compact || root.stacked)
     ColumnLayout {
         width: parent.width
-        height: root.fillPlot ? parent.height : implicitHeight
+        height: root.fillPlot ? parent.height : undefined
         spacing: Theme.gap * 0.6
         // Tall pane: value with its label and storm word as caption.
         Metric {

@@ -124,8 +124,8 @@ Card {
                 background: Rectangle {
                     radius: Theme.radius
                     color: row.down ? Theme.divider : row.hovered ? Theme.surfaceRaised : Theme.surface
-                    border.color: row.activeFocus ? Theme.focus : Theme.divider
-                    border.width: row.activeFocus ? 2 : 1
+                    border.color: row.activeFocus && Theme.keyboardFocus ? Theme.focus : Theme.divider
+                    border.width: row.activeFocus && Theme.keyboardFocus ? 2 : 1
                 }
                 contentItem: Item {}
                 RowLayout {

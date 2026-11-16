@@ -199,8 +199,9 @@ Rectangle {
 
     radius: Theme.radius
     color: Theme.surface
-    border.color: activeFocus ? Theme.focus : Theme.divider
-    border.width: activeFocus ? 2 : 1
+    // Keyboard and remote focus only: a pane whose title was tapped keeps no ring.
+    border.color: activeFocus && Theme.keyboardFocus ? Theme.focus : Theme.divider
+    border.width: activeFocus && Theme.keyboardFocus ? 2 : 1
     activeFocusOnTab: true
     clip: true
     Keys.onReturnPressed: if (chooser) titleActivated()
@@ -269,40 +270,47 @@ Rectangle {
                 transformOrigin: Item.TopLeft
                 visible: !card.needsSetup && !card.waiting
             }
-            ColumnLayout {
+            // Centred through a plain item: a layout moved by its own anchors re-runs its layout from
+            // inside that layout whenever its height changes ("Detected recursive rearrange", Qt 6.5).
+            Item {
                 visible: card.needsSetup || card.waiting
                 anchors.centerIn: parent
                 width: Math.min(parent.width, 360 * Theme.scale)
-                spacing: Theme.gap
-                Text {
-                    visible: card.waiting
-                    text: card.widget && card.widget.state === "loading" ? "Loading…" : "No data yet"
-                    color: Theme.ink
-                    font.pixelSize: Theme.fontTitle
-                    font.weight: Font.DemiBold
-                    horizontalAlignment: Text.AlignHCenter
-                    Layout.fillWidth: true
-                }
-                Text {
-                    // While loading the heading says it all; a long error reason keeps to three lines.
-                    visible: text.length > 0
-                    // Request URLs in an error reason mean nothing on a dashboard: leave them out.
-                    text: !card.widget || (card.waiting && card.widget.state === "loading") ? ""
-                        : card.widget.statusText.replace(/\s*https?:\/\/\S+/g, "")
-                    color: Theme.secondary
-                    font.pixelSize: Theme.fontBody
-                    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
-                    maximumLineCount: card.waiting ? 3 : 6
-                    elide: Text.ElideRight
-                    objectName: "elideOk"
-                    horizontalAlignment: Text.AlignHCenter
-                    Layout.fillWidth: true
-                }
-                AppButton {
-                    visible: card.needsSetup
-                    text: "Open Settings"
-                    Layout.alignment: Qt.AlignHCenter
-                    onClicked: card.setupRequested()
+                height: notice.implicitHeight
+                ColumnLayout {
+                    id: notice
+                    width: parent.width
+                    spacing: Theme.gap
+                    Text {
+                        visible: card.waiting
+                        text: card.widget && card.widget.state === "loading" ? "Loading…" : "No data yet"
+                        color: Theme.ink
+                        font.pixelSize: Theme.fontTitle
+                        font.weight: Font.DemiBold
+                        horizontalAlignment: Text.AlignHCenter
+                        Layout.fillWidth: true
+                    }
+                    Text {
+                        // While loading the heading says it all; a long error reason keeps to three lines.
+                        visible: text.length > 0
+                        // Request URLs in an error reason mean nothing on a dashboard: leave them out.
+                        text: !card.widget || (card.waiting && card.widget.state === "loading") ? ""
+                            : card.widget.statusText.replace(/\s*https?:\/\/\S+/g, "")
+                        color: Theme.secondary
+                        font.pixelSize: Theme.fontBody
+                        wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                        maximumLineCount: card.waiting ? 3 : 6
+                        elide: Text.ElideRight
+                        objectName: "elideOk"
+                        horizontalAlignment: Text.AlignHCenter
+                        Layout.fillWidth: true
+                    }
+                    AppButton {
+                        visible: card.needsSetup
+                        text: "Open Settings"
+                        Layout.alignment: Qt.AlignHCenter
+                        onClicked: card.setupRequested()
+                    }
                 }
             }
         }

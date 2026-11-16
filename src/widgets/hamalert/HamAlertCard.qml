@@ -8,7 +8,7 @@ Card {
     readonly property bool full: !compact || tall || roomy
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        height: root.full ? parent.height : undefined
         spacing: Theme.gap
         Metric {
             label: root.compact ? "Alerts" : "HamAlert spots"

@@ -35,6 +35,19 @@ def check_shim_defers_to_qt(errors: list[str]) -> None:
         errors.append("shim must target Qt's QIOSApplicationDelegate and QUIWindow")
 
 
+def check_shim_safe_area(errors: list[str]) -> None:
+    # Qt 6.5 creates its QUIWindow before the scene connects, so UIKit never gives that window an
+    # interface orientation: on iOS 26 it kept the portrait insets (62 pt top, no left or right) in
+    # landscape and showed the status bar, and the Dynamic Island covered the station card.
+    shim = (ROOT / "src/platform/apple_scene_ios.mm").read_text()
+    if "initWithWindowScene:" not in shim:
+        errors.append("shim must read safe-area insets from a window created in the scene (landscape island)")
+    if not re.search(r"@selector\(safeAreaInsets\)", shim) or "QUIView" not in shim:
+        errors.append("shim must answer safeAreaInsets for Qt's QUIWindow and QUIView from the scene's insets")
+    if "@selector(prefersStatusBarHidden)" not in shim:
+        errors.append("shim must hide the status bar in landscape on iPhone, as UIKit does for scene-born windows")
+
+
 def check_plist(errors: list[str]) -> None:
     text = (ROOT / "packaging/apple/Info-ios.plist").read_text()
     # The ${...} line is a CMake substitution; drop it so the plist parses.
@@ -58,7 +71,7 @@ def check_testflight_qt(errors: list[str]) -> None:
 
 def main() -> int:
     errors: list[str] = []
-    for check in (check_cmake_gate, check_shim_defers_to_qt, check_plist, check_testflight_qt):
+    for check in (check_cmake_gate, check_shim_defers_to_qt, check_shim_safe_area, check_plist, check_testflight_qt):
         check(errors)
     for error in errors:
         print("FAIL:", error)

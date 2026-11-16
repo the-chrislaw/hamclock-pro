@@ -16,6 +16,8 @@ Rectangle {
 
     readonly property real inset: boxed ? Theme.pad : 0
     readonly property real contentWidth: width - 2 * inset
+    // How far the header's focus ring sits outside the title row (inside the card's padding).
+    readonly property real ringOutset: Theme.gap * 0.6
 
     implicitHeight: column.implicitHeight + 2 * inset
     radius: boxed ? Theme.radius : 0
@@ -43,11 +45,16 @@ Rectangle {
             Accessible.name: group.title + (group.summary.length ? ", " + group.summary : "")
                              + (group.expanded ? ", open" : ", closed")
             onClicked: group.expanded = !group.expanded
+            // Drawn a little outside the row, so the focus ring and the pressed fill clear the
+            // title instead of touching it (the header has no padding: the title lines up with
+            // the group's contents). Keyboard and remote focus only.
             background: Rectangle {
+                anchors.fill: parent
+                anchors.margins: -group.ringOutset
                 radius: Theme.radius * 0.6
                 color: header.down ? Theme.divider : (header.hovered ? Theme.surfaceRaised : "transparent")
-                border.color: header.activeFocus ? Theme.focus : "transparent"
-                border.width: header.activeFocus ? 2 : 0
+                border.color: header.activeFocus && Theme.keyboardFocus ? Theme.focus : "transparent"
+                border.width: header.activeFocus && Theme.keyboardFocus ? 2 : 0
             }
             contentItem: RowLayout {
                 spacing: Theme.gap

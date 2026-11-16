@@ -92,6 +92,7 @@ add_executable(hamclock-pro MACOSX_BUNDLE
     src/ui/alarms_model.cpp
     src/ui/blanking_model.cpp
     src/ui/key_injector.cpp
+    src/ui/focus_visibility.cpp
     src/ui/window_geometry.cpp
     src/domain/locator_input.cpp
     src/ui/map_item.cpp
@@ -264,6 +265,12 @@ if(BUILD_TESTING)
     set_target_properties(key-injector-regression PROPERTIES AUTOMOC ON)
     add_test(NAME key-injector-regression COMMAND key-injector-regression)
     set_tests_properties(key-injector-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+    add_executable(focus-visibility-regression tests/focus_visibility_regression.cpp src/ui/focus_visibility.cpp)
+    target_include_directories(focus-visibility-regression PRIVATE src)
+    target_link_libraries(focus-visibility-regression PRIVATE Qt6::Gui)
+    set_target_properties(focus-visibility-regression PROPERTIES AUTOMOC ON)
+    add_test(NAME focus-visibility-regression COMMAND focus-visibility-regression)
+    set_tests_properties(focus-visibility-regression PROPERTIES TIMEOUT 30 ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
     add_executable(touch-keyboard-regression tests/touch_keyboard_regression.cpp src/ui/key_injector.cpp)
     target_include_directories(touch-keyboard-regression PRIVATE src)
     target_compile_definitions(touch-keyboard-regression PRIVATE HC_QML_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/ui/qml")
@@ -442,6 +449,18 @@ if(BUILD_TESTING)
         set_tests_properties(qml-safe-area-${size} qml-safe-area-settings-${size} qml-safe-area-first-run-${size} PROPERTIES TIMEOUT 30
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     endforeach()
+    # The pane chooser fits a phone held sideways (Dynamic Island at the sides, home indicator below) and
+    # upright, and the smallest dashboard: no clipped text, nothing in the safe area, no QML warnings.
+    foreach(layout 852x393=59,0,59,21 393x852=0,59,0,34 800x480=0,0,0,0)
+        string(REPLACE "=" ";" layout_parts ${layout})
+        list(GET layout_parts 0 size)
+        list(GET layout_parts 1 insets)
+        add_test(NAME qml-chooser-${size} COMMAND hamclock-pro --offline --config-dir ${CMAKE_CURRENT_BINARY_DIR}/smoke-config-chooser-${size}
+            --station ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf --chooser 1
+            --screenshot ${CMAKE_CURRENT_BINARY_DIR}/smoke-chooser-${size}.png --size ${size} --safe-area ${insets})
+        set_tests_properties(qml-chooser-${size} PROPERTIES TIMEOUT 30
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
+    endforeach()
     # A configured station fills every card (#587: at 800x480 the content item stayed 1024x600 and the grab was cropped).
     # 1920x1080 and 2560x1440 add the adaptive grid with a station (#638: all slots were 0x0; exit 4 reports an empty pane slot).
     foreach(size 800x480 1024x600 1920x1080 2560x1440)
@@ -463,6 +482,12 @@ if(BUILD_TESTING)
                 ENVIRONMENT "QT_QPA_PLATFORM=offscreen;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
         endforeach()
     endforeach()
+    # No layout polish, binding or recursive-rearrange loops on a phone, in Settings and across a
+    # rotation (#900: a loop hung the iPhone app at launch). Qt 6.5 reports the most of these.
+    add_test(NAME qml-layout-loops-regression COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/qml_layout_loops_regression.py
+        $<TARGET_FILE:hamclock-pro> ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/station-configured.conf)
+    set_tests_properties(qml-layout-loops-regression PROPERTIES TIMEOUT 300
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;PYTHONDONTWRITEBYTECODE=1;XDG_CACHE_HOME=${CMAKE_CURRENT_BINARY_DIR}/smoke-cache")
     # First run (no station): Settings in setup mode, the Station card with Later and Start only (no clipped text, no QML errors).
     foreach(size 390x844 1024x600 1512x982)
         add_test(NAME qml-settings-setup-${size} COMMAND hamclock-pro --offline --first-run

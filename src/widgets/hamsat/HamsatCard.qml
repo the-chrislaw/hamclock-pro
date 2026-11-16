@@ -12,7 +12,7 @@ Card {
     readonly property real rowSpacing: Theme.gap * 0.5
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        height: root.full ? parent.height : undefined
         spacing: Theme.gap
         Metric {
             label: root.full ? "Next satellite activation" : "Next activation"

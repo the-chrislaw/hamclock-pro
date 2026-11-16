@@ -68,7 +68,7 @@ Card {
     ColumnLayout {
         visible: root.compact && !root.tall
         width: parent.width
-        height: root.fillPlots ? parent.height : implicitHeight
+        height: root.fillPlots ? parent.height : undefined
         spacing: Theme.gap * 0.4
         // A fixed two-row model: the rows read their values through bindings. A model array rebuilt
         // on every reading destroyed and recreated both rows, sometimes while the layout was placing
