@@ -7,6 +7,8 @@ import HamClock
 Button {
     id: control
     property bool primary: false
+    // Keyboard and remote focus only: a tapped button keeps no ring.
+    readonly property bool focusRing: activeFocus && Theme.keyboardFocus
     implicitHeight: Theme.touch
     leftPadding: Theme.pad
     rightPadding: Theme.pad
@@ -27,8 +29,8 @@ Button {
         radius: height / 2
         color: control.primary ? (control.down ? Qt.darker(Theme.accent, 1.15) : Theme.accent)
                                : (control.down ? Theme.divider : (control.hovered ? Theme.surfaceRaised : "transparent"))
-        border.color: control.activeFocus ? Theme.focus : (control.primary ? "transparent" : Theme.divider)
-        border.width: control.activeFocus ? 2 : 1
+        border.color: control.focusRing ? Theme.focus : (control.primary ? "transparent" : Theme.divider)
+        border.width: control.focusRing ? 2 : 1
         Behavior on color { ColorAnimation { duration: 90 } }
     }
 }

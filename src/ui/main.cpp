@@ -7,6 +7,7 @@
 #include "alarms_model.hpp"
 #include "blanking_model.hpp"
 #include "key_injector.hpp"
+#include "focus_visibility.hpp"
 #include "timers_model.hpp"
 #include "time_zone_search.hpp"
 #include "location_tools.hpp"
@@ -31,6 +32,7 @@
 #include "../platform/apple_skysensor.hpp"
 #include "../platform/apple_skytarget.hpp"
 #include <QSettings>
+#include <QElapsedTimer>
 #include <QEventLoop>
 #include <QNetworkInformation>
 #include <QGuiApplication>
@@ -67,6 +69,39 @@ namespace {
             if (!ok) return std::nullopt;
         }
         return QMarginsF(values[0], values[1], values[2], values[3]);
+    }
+
+    std::optional<QSize> parse_size(const QString& text) {
+        const auto parts = text.split('x');
+        bool width_ok = false;
+        bool height_ok = false;
+        const QSize parsed(parts.value(0).toInt(&width_ok), parts.value(1).toInt(&height_ok));
+        if (parts.size() != 2 || !width_ok || !height_ok || parsed.isEmpty()) return std::nullopt;
+        return parsed;
+    }
+
+    // The window's resize event reaches the content item asynchronously on some
+    // platforms (offscreen), so a grab straight away can show the old 1024x600
+    // layout cropped to the new size (#587). Resize, then wait until the content
+    // item has followed.
+    void resize_and_wait(QQuickWindow* window, const QSize& wanted) {
+        window->resize(wanted);
+        for (int i = 0; i < 200 && window->contentItem()->size().toSize() != wanted; ++i) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+            if (window->contentItem()->size().toSize() != wanted) QThread::msleep(5);
+        }
+        if (window->contentItem()->size().toSize() != wanted) window->contentItem()->setSize(wanted);
+    }
+
+    // Lets the layout at the current size settle (polish, timers) before a rotation.
+    constexpr int kRotateSettleMs = 400;
+    void settle(int ms) {
+        QElapsedTimer clock;
+        clock.start();
+        while (clock.elapsed() < ms) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+            QThread::msleep(5);
+        }
     }
 
     // Counts visible, non-empty Text-like items whose text is cut off (issue
@@ -259,8 +294,10 @@ int main(int argc, char** argv) {
     const QCommandLineOption open_settings("settings", "Open Settings at a section at start: station, accounts, display, screen, spots, hardware, advanced or about, or accounts:ID to open one account (screenshots).", "section");
     const QCommandLineOption allow_truncation("allow-truncation", "With --screenshot, report truncated text but do not fail.");
     const QCommandLineOption check_fill("check-fill", "With --screenshot, report every pane's blank space; fail (exit 5) when pane N has data but leaves too much blank (0 = report only).", "N");
+    const QCommandLineOption open_chooser("chooser", "Open the pane chooser for pane N (1-based) at start (screenshots).", "N");
+    const QCommandLineOption rotate_from("rotate-from", "With --screenshot, lay out at WxH first and then turn to --size, as a phone does when rotated.", "WxH");
     const QCommandLineOption fake_safe_area("safe-area", "With --screenshot, lay out as if the iOS safe-area insets were L,T,R,B and fail (exit 7) when text or a button reaches into them.", "L,T,R,B");
-    for (const auto& option : {fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, fixed_now, screenshot, size, theme, pane})
+    for (const auto& option : {open_chooser, rotate_from, fake_safe_area, check_fill, open_settings, allow_truncation, first_run, touch_keyboard, station, config, fullscreen, windowed, offline, fixtures, fixed_now, screenshot, size, theme, pane})
         parser.addOption(option);
     if (text_only_request(argc, argv)) {
         QCoreApplication text_app(argc, argv);
@@ -392,7 +429,7 @@ int main(int argc, char** argv) {
 
     QQuickStyle::setStyle("Basic"); // fully themed by our QML, identical on every platform
     qmlRegisterType<hamclock::MapItem>("HamClock", 1, 0, "WorldMap");
-    qmlRegisterSingletonType(QUrl("qrc:/ui/Theme.qml"), "HamClock", 1, 0, "Theme");
+    const int theme_type = qmlRegisterSingletonType(QUrl("qrc:/ui/Theme.qml"), "HamClock", 1, 0, "Theme");
     // Shared building blocks so widget cards (in other qrc folders) can `import HamClock`.
     for (const char* type : {"Card", "Metric", "StatusBadge", "AppButton", "FormField"})
         qmlRegisterType(QUrl(QString("qrc:/ui/%1.qml").arg(type)), "HamClock", 1, 0, type);
@@ -452,6 +489,8 @@ int main(int argc, char** argv) {
     engine.rootContext()->setContextProperty("touchKeyboard", parser.isSet(touch_keyboard));
     engine.rootContext()->setContextProperty("keyInjector", &key_injector);
     engine.rootContext()->setContextProperty("openSettings", parser.value(open_settings));
+    // --chooser N: the pane chooser open for pane N (0-based in QML; -1 = closed).
+    engine.rootContext()->setContextProperty("openChooser", parser.isSet(open_chooser) ? parser.value(open_chooser).toInt() - 1 : -1);
 #ifdef Q_OS_MACOS
     // Native menu bar (About, Settings..., Edit, View, Window, Help); not for screenshot runs.
     engine.rootContext()->setContextProperty("nativeMenuBar", !parser.isSet(screenshot));
@@ -462,6 +501,10 @@ int main(int argc, char** argv) {
     engine.load(QUrl("qrc:/ui/Main.qml"));
     if (engine.rootObjects().isEmpty()) return 1;
     safe_area.attach(qobject_cast<QWindow*>(engine.rootObjects().first()));
+    // Focus rings only after a key press, not after a tap (Theme.keyboardFocus).
+    hamclock::FocusVisibility focus_visibility;
+    focus_visibility.install(&app);
+    focus_visibility.mirrorTo(engine.singletonInstance<QObject*>(theme_type), "keyboardFocus");
 #if !defined(Q_OS_IOS)
     // Desktop: reopen at the last window size and position (not for kiosk full screen or screenshots).
     if (!parser.isSet(screenshot) && !start_fullscreen)
@@ -484,19 +527,14 @@ int main(int argc, char** argv) {
     }
     if (parser.isSet(screenshot)) {
         auto* window = qobject_cast<QQuickWindow*>(engine.rootObjects().first());
-        const auto parts = parser.value(size).split('x');
-        if (!window || parts.size() != 2) return 2;
-        // The window's resize event reaches the content item asynchronously on some
-        // platforms (offscreen), so a grab straight away can show the old 1024x600
-        // layout cropped to the new size (#587). Resize, then wait until the content
-        // item has followed before the screenshot timer starts.
-        const QSize wanted(parts[0].toInt(), parts[1].toInt());
-        window->resize(wanted);
-        for (int i = 0; i < 200 && window->contentItem()->size().toSize() != wanted; ++i) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
-            if (window->contentItem()->size().toSize() != wanted) QThread::msleep(5);
+        const auto wanted = parse_size(parser.value(size));
+        const auto first = parser.isSet(rotate_from) ? parse_size(parser.value(rotate_from)) : wanted;
+        if (!window || !wanted || !first) return 2;
+        if (parser.isSet(rotate_from)) {
+            resize_and_wait(window, *first);
+            settle(kRotateSettleMs);
         }
-        if (window->contentItem()->size().toSize() != wanted) window->contentItem()->setSize(wanted);
+        resize_and_wait(window, *wanted);
         const auto out = parser.value(screenshot);
         QTimer::singleShot(kScreenshotDelayMs, &app, [window, out, &qml_warnings, report_only = parser.isSet(allow_truncation),
                                                 fill_slot = parser.isSet(check_fill) ? check_fill_slot : -1, insets] {

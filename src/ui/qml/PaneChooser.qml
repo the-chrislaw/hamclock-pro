@@ -6,15 +6,23 @@ import HamClock
 Popup {
     id: chooser
     property int slot: 0
-    readonly property real roomW: parent ? parent.width : 640
-    readonly property real roomH: parent ? parent.height : 400
+    // The window less the safe area: in landscape on an iPhone the Dynamic Island and the home
+    // indicator take the sides and the bottom.
+    readonly property real roomW: (parent ? parent.width : 640) - safeArea.left - safeArea.right
+    readonly property real roomH: (parent ? parent.height : 400) - safeArea.top - safeArea.bottom
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     padding: Theme.pad
-    width: Math.min(roomW - 2 * Theme.pad, 360 * Theme.scale)
-    height: Math.min(roomH - 2 * Theme.pad, list.contentHeight + 2 * Theme.pad + titleText.height + tabs.height + 2 * Theme.gap + Theme.touch)
-    anchors.centerIn: parent
+    // A short window (a phone held sideways): the tabs scroll sideways on one row and Empty pane
+    // sits beside the title, so the list keeps most of the height (it showed three and a half
+    // entries, with Empty pane off the bottom). Wider too, so the tabs mostly fit on that row.
+    readonly property bool lowRoom: roomH < 440
+    width: Math.min(roomW - 2 * Theme.pad, (lowRoom ? 720 : 360) * Theme.scale)
+    height: Math.min(roomH - 2 * Theme.pad, list.contentHeight + 2 * Theme.pad + header.height + tabs.height + 2 * Theme.gap
+                                            + (lowRoom ? 0 : Theme.touch))
+    x: safeArea.left + (roomW - width) / 2
+    y: safeArea.top + (roomH - height) / 2
 
     // Category tabs narrow the list (A8). Unknown widget ids fall under "Other".
     readonly property var categoryNames: ["All", "Space Wx", "DX & Contest", "Weather", "Sky & Space", "Station", "Other"]
@@ -63,45 +71,85 @@ Popup {
         list.forceActiveFocus()
     }
 
+    Component {
+        id: emptyFooter
+        Item { width: list.width; height: Theme.touch
+            AppButton { anchors.fill: parent; text: "Empty pane"; onClicked: chooser.pickEmpty() }
+        }
+    }
+    function pickEmpty() {
+        appSettings.setPane(slot, "none")
+        close()
+    }
+
     contentItem: Column {
         spacing: Theme.gap
-        Text {
-            id: titleText
-            text: "Show in pane " + (chooser.slot + 1)
-            color: Theme.ink
-            font.pixelSize: Theme.fontTitle
-            font.weight: Font.DemiBold
+        Item {
+            id: header
+            width: parent.width
+            height: Math.max(titleText.implicitHeight, chooser.lowRoom ? emptyButton.implicitHeight : 0)
+            Text {
+                id: titleText
+                anchors { left: parent.left; right: emptyButton.visible ? emptyButton.left : parent.right
+                          rightMargin: Theme.gap; verticalCenter: parent.verticalCenter }
+                text: "Show in pane " + (chooser.slot + 1)
+                color: Theme.ink
+                font.pixelSize: Theme.fontTitle
+                font.weight: Font.DemiBold
+                elide: Text.ElideRight
+            }
+            AppButton {
+                id: emptyButton
+                visible: chooser.lowRoom
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                text: "Empty pane"
+                onClicked: chooser.pickEmpty()
+            }
         }
-        Flow {
+        // Wraps onto more rows normally; one row that scrolls sideways when the window is short.
+        Flickable {
             id: tabs
             width: parent.width
-            spacing: Theme.gap / 2
-            Repeater {
-                model: chooser.categoryNames
-                delegate: AppButton {
-                    required property int index
-                    required property string modelData
-                    text: modelData
-                    visible: chooser.hasPanes(index)
-                    primary: chooser.category === index
-                    onClicked: chooser.category = index
+            height: tabFlow.implicitHeight
+            contentWidth: chooser.lowRoom ? tabFlow.childrenRect.width : width
+            contentHeight: height
+            flickableDirection: Flickable.HorizontalFlick
+            interactive: contentWidth > width
+            boundsBehavior: Flickable.StopAtBounds
+            clip: chooser.lowRoom
+            Flow {
+                id: tabFlow
+                // Short: wide enough that every tab stays on the one scrolling row.
+                width: chooser.lowRoom ? 100000 : tabs.width
+                spacing: Theme.gap / 2
+                Repeater {
+                    model: chooser.categoryNames
+                    delegate: AppButton {
+                        required property int index
+                        required property string modelData
+                        text: modelData
+                        visible: chooser.hasPanes(index)
+                        primary: chooser.category === index
+                        onClicked: chooser.category = index
+                        // Keyboard and remote: keep the focused tab in view on the scrolling row.
+                        onActiveFocusChanged: if (activeFocus && chooser.lowRoom) {
+                            tabs.contentX = Math.max(0, Math.min(x, tabs.contentWidth - tabs.width))
+                        }
+                    }
                 }
             }
         }
         ListView {
             id: list
             width: parent.width
-            height: Math.min(contentHeight, chooser.roomH - 6 * Theme.pad - titleText.height - tabs.height)
+            // At least one row: a ListView with no height creates no rows, so its content height
+            // would stay zero (the Empty pane footer used to give it that first row).
+            height: Math.min(Math.max(contentHeight, Theme.touch), chooser.roomH - 6 * Theme.pad - header.height - tabs.height)
             clip: true
             model: widgetRegistry
             keyNavigationEnabled: true
             boundsBehavior: Flickable.StopAtBounds
-            footer: Item { width: list.width; height: Theme.touch
-                AppButton {
-                    anchors.fill: parent; text: "Empty pane"
-                    onClicked: { appSettings.setPane(chooser.slot, "none"); chooser.close() }
-                }
-            }
+            footer: chooser.lowRoom ? null : emptyFooter
             delegate: ItemDelegate {
                 width: list.width
                 visible: chooser.inCategory(widgetId)
@@ -122,7 +170,8 @@ Popup {
                 background: Rectangle {
                     radius: Theme.radius / 2
                     color: parent.down ? Theme.divider : "transparent"
-                    border.color: parent.activeFocus || parent.highlighted ? Theme.focus : "transparent"
+                    // The keyboard cursor; after a tap the current pane shows in the accent colour only.
+                    border.color: (parent.activeFocus || parent.highlighted) && Theme.keyboardFocus ? Theme.focus : "transparent"
                     border.width: 2
                 }
             }

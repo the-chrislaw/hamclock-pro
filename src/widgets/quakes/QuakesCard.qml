@@ -15,7 +15,7 @@ Card {
     function magColor(m) { return m >= 7 ? Theme.bad : m >= 6 ? Theme.warn : Theme.ink }
     ColumnLayout {
         width: parent.width
-        height: root.full ? parent.height : implicitHeight
+        height: root.full ? parent.height : undefined
         spacing: Theme.gap
         Metric {
             label: root.tall && widget && widget.hasData ? "Strongest of " + widget.count + " in 24 h"

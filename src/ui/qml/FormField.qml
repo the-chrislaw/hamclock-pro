@@ -4,7 +4,11 @@ import QtQuick.Layouts
 import HamClock
 
 // Labelled text field sized for touch.
-ColumnLayout {
+// A Column, not a ColumnLayout: its wrapped caption settles in its own polish instead of
+// inside the layout around it, which on Qt 6.5 counted each rewrap as a polish loop when
+// the width changed (iPhone rotation, account sheets) and stopped laying the row out.
+Column {
+    id: formField
     property alias label: caption.text
     property alias text: field.text
     property alias placeholder: field.placeholderText
@@ -22,10 +26,10 @@ ColumnLayout {
     Layout.preferredWidth: 0
 
     Text { id: caption; color: Theme.secondary; font.pixelSize: Theme.fontCaption; font.weight: Font.DemiBold
-           wrapMode: Text.WordWrap; Layout.fillWidth: true }
+           wrapMode: Text.WordWrap; width: formField.width }
     TextField {
         id: field
-        Layout.fillWidth: true
+        width: formField.width
         implicitHeight: Theme.touch
         font.pixelSize: Theme.fontBody
         color: Theme.ink
@@ -49,7 +53,7 @@ ColumnLayout {
         text: textEntryHint.message
         color: Theme.warn
         wrapMode: Text.WordWrap
-        Layout.fillWidth: true
+        width: formField.width
         font.pixelSize: Theme.fontCaption
     }
 }

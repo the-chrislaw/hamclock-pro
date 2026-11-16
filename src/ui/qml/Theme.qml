@@ -12,6 +12,9 @@ QtObject {
     // Accent choice from Settings: 0 blue, 1 green, 2 amber, 3 red, 4 purple.
     property int accentStyle: 0
     property bool phone: false   // portrait phone: one column, one pane
+    // True after a key press until the next tap or click (C++ FocusVisibility): focus rings
+    // show for keyboard and remote navigation only, never on a control that was just touched.
+    property bool keyboardFocus: false
     // Height the on-screen keyboard (--touch-keyboard) covers at the bottom of the window; 0 when hidden.
     property real keyboardInset: 0
 

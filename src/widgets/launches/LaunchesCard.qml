@@ -20,7 +20,7 @@ Card {
     ColumnLayout {
         width: parent.width
         // Nothing scheduled: no empty list to stretch, so the card centres the short summary.
-        height: root.full && widget && widget.hasNext ? parent.height : implicitHeight
+        height: root.full && widget && widget.hasNext ? parent.height : undefined
         spacing: Theme.gap
         Metric {
             label: root.full ? "Next launch (NET)" : "Next launch"

@@ -105,7 +105,10 @@ Popup {
         ScrollIndicator.vertical: ScrollIndicator {}
         ColumnLayout {
             id: body
-            width: parent.width
+            // The sheet's own width, not the Flickable's: the Flickable only takes its width when
+            // the sheet's height is set, and a body that then rewrapped changed that height
+            // while it was being set (binding loop on height, Qt 6.5).
+            width: sheet.availableWidth
             spacing: Theme.gap * 0.8
 
             RowLayout {

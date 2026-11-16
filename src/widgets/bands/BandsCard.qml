@@ -26,7 +26,7 @@ Card {
     ColumnLayout {
         id: content
         width: parent.width
-        height: root.stacked || root.twoUp ? parent.height : implicitHeight
+        height: root.stacked || root.twoUp ? parent.height : undefined
         spacing: Theme.gap * 0.4
         Text {
             visible: !(root.widget && root.widget.hasOutlook)

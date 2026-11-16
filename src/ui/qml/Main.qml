@@ -20,6 +20,7 @@ ApplicationWindow {
     Component.onCompleted: {
         if (firstRun && !station.configured) { settingsLayer.visible = true; settingsPage.focusFirstField() }
         if (openSettings.length) { settingsLayer.visible = true; settingsPage.show(openSettings) }
+        if (openChooser >= 0) paneChooser.openFor(openChooser)
         if (nativeMenuBar) createMacMenuBar()
     }
 
@@ -295,7 +296,7 @@ ApplicationWindow {
                     activeFocusOnTab: true
                     Keys.onReturnPressed: mapMenuArea.clicked(null)
                     Keys.onSpacePressed: mapMenuArea.clicked(null)
-                    border.color: activeFocus ? Theme.focus : "transparent"
+                    border.color: activeFocus && Theme.keyboardFocus ? Theme.focus : "transparent"
                     border.width: 2
                     // A tap on the button while the menu is open closes it on press
                     // (outside the popup); the click that follows must not re-open it.

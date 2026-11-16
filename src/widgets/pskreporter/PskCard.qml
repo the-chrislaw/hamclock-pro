@@ -9,7 +9,7 @@ Card {
     ColumnLayout {
         width: parent.width
         // A few reports: no long list to stretch, so the card grows and centres the block.
-        height: root.full && widget && widget.count > 4 ? parent.height : implicitHeight
+        height: root.full && widget && widget.count > 4 ? parent.height : undefined
         spacing: Theme.gap
         Metric {
             label: root.compact ? "Heard by" : "Stations hearing me"

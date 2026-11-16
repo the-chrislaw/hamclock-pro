@@ -462,19 +462,29 @@ Rectangle {
                             id: otaGroup; boxed: false; Layout.fillWidth: true; title: "Parks and summits on the air"
                             summary: [appSettings.otaProgram || "POTA, SOTA and WWFF", appSettings.otaBand, appSettings.otaMode]
                                      .filter(s => s.length).join(" · ")
-                            // Five filters: one row on wide screens, two columns on a phone.
-                            GridLayout {
-                                Layout.fillWidth: true
+                            // Five filters: one row on wide screens, two columns on a phone. A Grid positioner
+                            // with widths worked out here, not a GridLayout: rewrapping the captions inside the
+                            // group's layout pass, as the column count changed on rotation, looped the polish
+                            // on Qt 6.5 (iPhone).
+                            Grid {
+                                id: otaGrid
                                 // From the card's width, not the grid's own: a column count that follows the
                                 // grid's own width can flip 2 <-> 5 inside an opened group (Qt 6.4 polish loop).
-                                columns: clusterCard.width < 600 * Theme.scale ? 2 : 5
+                                readonly property bool oneRow: clusterCard.width >= 600 * Theme.scale
+                                // One row: the program field takes two shares and the others one each.
+                                readonly property real share: Math.max(0, oneRow ? (width - 4 * columnSpacing) / 6 : (width - columnSpacing) / 2)
+                                Layout.fillWidth: true
+                                // Its children follow its width, so its own size must not ask the group for more.
+                                Layout.preferredWidth: 0
+                                columns: oneRow ? 5 : 2
                                 columnSpacing: Theme.gap
                                 rowSpacing: Theme.gap * 0.8
-                                FormField { id: otaProgram; label: "POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram; Layout.preferredWidth: 2 }
-                                FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; Layout.preferredWidth: 1 }
-                                FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; Layout.preferredWidth: 1 }
-                                FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; Layout.preferredWidth: 1 }
-                                FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; Layout.preferredWidth: 1
+                                FormField { id: otaProgram; label: "POTA/SOTA/WWFF (empty = all)"; text: appSettings.otaProgram
+                                            width: otaGrid.oneRow ? 2 * otaGrid.share : otaGrid.share }
+                                FormField { id: otaBand; label: "Band (20m)"; text: appSettings.otaBand; width: otaGrid.share }
+                                FormField { id: otaMode; label: "Mode (CW)"; text: appSettings.otaMode; width: otaGrid.share }
+                                FormField { id: otaSort; label: "Sort (time, freq, dist)"; text: appSettings.otaSort; width: otaGrid.share }
+                                FormField { id: otaAge; label: "Max age, min (0 = any)"; text: appSettings.otaMaxAgeMin; width: otaGrid.share
                                             field.inputMethodHints: Qt.ImhDigitsOnly }
                             }
                         }
@@ -731,7 +741,9 @@ Rectangle {
                             color: Theme.secondary
                             font.pixelSize: Theme.fontCaption
                             wrapMode: Text.WordWrap
-                            width: parent.width
+                            // The group's width, not the Flow's: while the group is closed nothing sizes
+                            // the Flow, which would then follow this text and loop the polish (#900).
+                            width: advancedSection.contentWidth
                         }
                     }
                 }
