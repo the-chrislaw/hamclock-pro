@@ -133,3 +133,7 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Main's tvOS CI green; no open PR of mine, no [I] qa issues. Reviewed the design doc against the code: every approved pane, iCloud KVS settings, attribution, burn-in protection and page navigation are in. The doc header and the WIDGETS row still said "awaiting owner review" although #157 was approved and closed on 2026-10-14; docs-only PR to correct them.
 - Not done: tropical-storm forecast tracks (TCM text), signing/TestFlight (owner approval on #58 needed), real-device checks (no Xcode in the sandbox).
 - Next: nothing blocking; only pane polish remains unless the owner asks for more.
+
+## 2026-11-17
+- Main's tvOS CI green (run 818); no open PR of mine, no [I] qa issues. Backlog 4 is complete apart from storm forecast tracks and signing (#58). Docs-only: WIDGETS row 3 still said "first CI run pending"; now marked done.
+- Next: nothing blocking; only pane polish unless the owner asks for more.
