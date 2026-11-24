@@ -227,7 +227,7 @@ Source: OpenHamClock `ESPHamClock/setup.cpp` (the fork current users run; some i
 
 | Original setting | Purpose | Owner | Status |
 |---|---|---|---|
-| Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Partial: decimal only; add DMS and grid entry (see A0b) |
+| Callsign; DE lat/long (decimal or DD:MM:SS, N/S/E/W); grid square (auto from lat/long) | Station | A | Done: decimal, DD:MM:SS with N/S/E/W, and grid entry (Settings > Station; `location_tools_regression`) |
 | DX cluster host, port, **login with SSID (1–99)**, watch list, native commands sent after login, UDP/multicast option (e.g. WSJT-X) | Spots | C | Partial: host/port, login SSID (1–99) and receive-only post-login commands done; watch list and UDP spot input (N1MM/DXLog `<spot>` XML or plain "DX de" lines, off by default, localhost or LAN) done; WSJT-X binary protocol, multicast group and "UDP sets DX" (opt-in, session-only) done |
 | **HamAlert.org** telnet login + password | Personal spot alerts | C | Partial: user/password saved in the owner-only credentials file (password C++ only), pane connects to hamalert.org:7300; map overlay done (entity centres, live only; per-source Settings toggle "Show on map"); trigger names and per-alert filters missing |
 | **APRS-IS** server (default rotate.aprs2.net), port 14580, search radius; receive-only login with callsign | Nearby APRS stations on the map | C | Partial: card lists nearest stations (plain and compressed positions); server, port and radius (1–500 km) set in Settings (options.ini `[aprs]`, reconnects on change); map overlay done |
