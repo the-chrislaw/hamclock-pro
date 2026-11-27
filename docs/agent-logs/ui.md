@@ -322,3 +322,6 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 
 ## 2026-11-24 (hourly run, 78)
 - Docs only: the WIDGETS.md row for station lat/long/grid said "Partial: decimal only", but `LocationTools::parseCoordinate` already accepts DD:MM:SS with hemisphere letters and Settings > Station has a grid-square field (tests in `location_tools_regression`). Row updated. No code change. Open `auto-merge` PRs #875 (other area, failing) and #73 (stale, conflicting) left alone; the `[A]` qa issues remain covered by earlier entries; remaining area-A work needs a device or belongs to area G.
+
+## 2026-11-27 (hourly run, 79)
+- No code change. #977 (QA run log, other area) had both checks still running; #875 (failing) and #73 (stale) are not mine; left alone. No new `[A]` qa issues: #574, #546, #532, #527 and #526 are covered by earlier entries. Remaining area-A work needs a device or belongs to area G. Nothing invented.
