@@ -1422,3 +1422,8 @@ Newest entries at the bottom. One entry per run: date UTC, what merged (PR links
 - Last reviewed commit: dac3a83 (merged since b8c8b28: my run 269 and 270 log PRs #983 and #984 only). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
 - Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
 - Health: main is unchanged in behaviour since the run 199 review. Remaining risk is elided offline footers (#532), the signing secret not yet proven end to end, and the iOS safe-area shim being untestable off-device.
+
+## 2026-11-28 (UTC) QA run 272
+- Last reviewed commit: 76a682e (merged since dac3a83: only my run 271 log PR #985). No source, QML, test or workflow change, so build, tests and screenshots were not repeated.
+- Opened: none. Closed: none. Still open: #546, #531, #532, #527, #526, #521, #513 plus the owner-input issues.
+- Health: main is unchanged in behaviour since the run 199 review. Remaining risk is elided offline footers (#532), the signing secret not yet proven end to end, and the iOS safe-area shim being untestable off-device.
