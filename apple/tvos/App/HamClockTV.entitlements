@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- iCloud key-value store for the hcp.* settings (AppSettings.swift). The default
+	     identifier (team prefix + bundle id) is the same one an iPhone/iPad build of
+	     com.chrislaw.hamclockpro gets, so settings can reach the TV once the phone mirrors them.
+	     Needs iCloud (key-value storage) enabled on the App ID first: docs/RELEASE-1.0.md section 1. -->
+	<key>com.apple.developer.ubiquity-kvstore-identifier</key>
+	<string>$(TeamIdentifierPrefix)$(CFBundleIdentifier)</string>
+</dict>
+</plist>
